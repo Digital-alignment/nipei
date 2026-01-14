@@ -12,7 +12,7 @@ interface StockControlModalProps {
 
 const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose }) => {
     const { logProductionAction } = useProducts();
-    const [mode, setMode] = useState<'main' | 'sending' | 'problem'>('main');
+    const [mode, setMode] = useState<'main' | 'sending' | 'problem' | 'producing'>('main');
     const [loading, setLoading] = useState(false);
 
     // Sending State
@@ -20,20 +20,29 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [description, setDescription] = useState('');
 
+    // Producing State
+    const [produceQuantity, setProduceQuantity] = useState(1);
+
     // Problem State
     const [problemDescription, setProblemDescription] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleProduce = async () => {
+    const handleProduce = () => {
+        setMode('producing');
+    };
+
+    const handleProduceSubmit = async () => {
         setLoading(true);
-        // Default produce +1 for single tap interaction, or maybe we want a "Confirm" flow? 
-        // User requested massive buttons. Single tap +1 might be too risky, but "Glanceable" and "Control Remote" implies speed.
-        // Let's stick to the "Confirm" flow requested in the prompt: "Alternativa: Salvamento automático com 'Undo' (Desfazer) flutuante phor 3 segundos."
-        // For now, let's just do atomic update immediately for "Produced".
-        await logProductionAction(product.id, 'produced', 1);
-        setLoading(false);
-        // Visual feedback? handled by UI update
+        try {
+            await logProductionAction(product.id, 'produced', produceQuantity);
+            onClose();
+        } catch (error) {
+            console.error('Error producing:', error);
+            alert('Erro ao registrar produção.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSendSubmit = async () => {
@@ -110,7 +119,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                             className="bg-orange-800/80 disabled:opacity-30 disabled:cursor-not-allowed rounded-3xl flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform"
                         >
                             <Send size={48} className="text-orange-200" />
-                            <span className="text-orange-100 font-bold text-2xl">ENVIADO</span>
+                            <span className="text-orange-100 font-bold text-2xl">ENVIAR</span>
                         </button>
 
                         {/* PRODUCE BUTTON */}
@@ -121,7 +130,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                         >
                             {loading && <div className="absolute inset-0 bg-black/20 flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>}
                             <Droplet size={48} className="text-emerald-200" />
-                            <span className="text-emerald-100 font-bold text-2xl">PRODUZI</span>
+                            <span className="text-emerald-100 font-bold text-2xl">PRODUZIR</span>
                         </button>
                     </div>
 
@@ -179,7 +188,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                                 </>
                             )}
                         </div>
-                        </div>
+
 
                         {/* Description Input */}
                         <div className="bg-white/10 rounded-2xl p-4">
@@ -205,38 +214,79 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                         </button>
                     </div>
                 </div>
-                </div >
+
             )}
 
-{/* PROBLEM MODE */ }
-{
-    mode === 'problem' && (
-        <div className="flex flex-col w-full h-full">
-            <h3 className="text-2xl text-red-400 font-bold mb-6 flex items-center gap-2">
-                <TriangleAlert /> Reportar Problema
-            </h3>
+            {/* PRODUCING MODE */}
+            {mode === 'producing' && (
+                <div className="flex flex-col w-full h-full">
+                    <h3 className="text-2xl text-white font-bold mb-6">Registrar Produção</h3>
 
-            <textarea
-                className="flex-1 bg-white/10 rounded-2xl p-4 text-white placeholder-white/40 resize-none text-lg"
-                placeholder="O que aconteceu? (Ex: Quebra de máquina, chuva forte...)"
-                value={problemDescription}
-                onChange={(e) => setProblemDescription(e.target.value)}
-            />
+                    <div className="flex-1 flex flex-col justify-center gap-6">
+                        {/* Quantity Selector */}
+                        <div className="bg-white/10 rounded-2xl p-10 flex flex-col items-center">
+                            <span className="text-white/60 mb-4 text-lg">Quantidade Produzida</span>
+                            <div className="flex items-center gap-8">
+                                <button
+                                    onClick={() => setProduceQuantity(Math.max(1, produceQuantity - 1))}
+                                    className="w-16 h-16 rounded-full bg-white/20 text-white text-3xl active:scale-90 transition-transform"
+                                >
+                                    -
+                                </button>
+                                <span className="text-6xl font-bold text-white min-w-[3ch] text-center">{produceQuantity}</span>
+                                <button
+                                    onClick={() => setProduceQuantity(produceQuantity + 1)}
+                                    className="w-16 h-16 rounded-full bg-white/20 text-white text-3xl active:scale-90 transition-transform"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-            <div className="flex gap-4 mt-6">
-                <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Cancelar</button>
-                <button
-                    onClick={handleProblemSubmit}
-                    disabled={loading || !problemDescription}
-                    className="flex-1 py-4 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                    {loading ? <Loader2 className="animate-spin" /> : <Send />}
-                    Relatar
-                </button>
-            </div>
-        </div>
-    )
-}
+                    <div className="flex gap-4 mt-6">
+                        <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Cancelar</button>
+                        <button
+                            onClick={handleProduceSubmit}
+                            disabled={loading}
+                            className="flex-1 py-4 rounded-xl bg-emerald-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {loading ? <Loader2 className="animate-spin" /> : <Droplet />}
+                            Confirmar
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* PROBLEM MODE */}
+            {
+                mode === 'problem' && (
+                    <div className="flex flex-col w-full h-full">
+                        <h3 className="text-2xl text-red-400 font-bold mb-6 flex items-center gap-2">
+                            <TriangleAlert /> Reportar Problema
+                        </h3>
+
+                        <textarea
+                            className="flex-1 bg-white/10 rounded-2xl p-4 text-white placeholder-white/40 resize-none text-lg"
+                            placeholder="O que aconteceu? (Ex: Quebra de máquina, chuva forte...)"
+                            value={problemDescription}
+                            onChange={(e) => setProblemDescription(e.target.value)}
+                        />
+
+                        <div className="flex gap-4 mt-6">
+                            <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Cancelar</button>
+                            <button
+                                onClick={handleProblemSubmit}
+                                disabled={loading || !problemDescription}
+                                className="flex-1 py-4 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {loading ? <Loader2 className="animate-spin" /> : <Send />}
+                                Relatar
+                            </button>
+                        </div>
+                    </div>
+                )
+            }
         </motion.div >
     );
 };

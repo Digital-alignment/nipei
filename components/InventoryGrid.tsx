@@ -107,7 +107,7 @@ const ProductCard: React.FC<{ product: Product; onClick: () => void }> = ({ prod
                         </div>
                     )}
                     <div className="text-[10px] text-emerald-400 font-bold ml-auto">
-                        Prod: {product.stock_quantity || 0}
+                        Estoque: {product.stock_quantity || 0}
                     </div>
                 </div>
             </div>

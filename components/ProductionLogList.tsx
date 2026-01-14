@@ -84,7 +84,7 @@ const ProductionLogList: React.FC = () => {
     return (
         <div className="w-full max-w-4xl mx-auto mt-12 mb-20">
             <h2 className="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">
-                Histórico Recent
+                Histórico Recente
             </h2>
 
             <div className="space-y-4">
