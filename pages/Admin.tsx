@@ -44,27 +44,38 @@ const Admin: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-neutral-900 text-white p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <Link to="/" className="p-3 bg-neutral-800 rounded-xl hover:bg-neutral-700 transition-colors text-emerald-500">
-                            <ArrowLeft size={24} />
-                        </Link>
-                        <div>
-                            <h1 className="text-3xl font-bold font-serif">Painel Administrativo</h1>
-                            <p className="opacity-60 text-sm">Medicinas da Floresta</p>
+        <div className="min-h-screen bg-neutral-900 text-white pb-20 md:pb-8"> {/* Added padding bottom for mobile if we decided to do bottom nav, but top nav is fine too */}
+            <div className="max-w-7xl mx-auto p-4 md:p-8">
+                <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Link to="/" className="p-3 bg-neutral-800 rounded-xl hover:bg-neutral-700 transition-colors text-emerald-500">
+                                <ArrowLeft size={24} />
+                            </Link>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold font-serif">Painel Admin</h1>
+                                <p className="opacity-60 text-xs md:text-sm">Medicinas da Floresta</p>
+                            </div>
                         </div>
+
+                        {/* Mobile Logout Button (Visible only on mobile) */}
+                        <button
+                            onClick={handleSignOut}
+                            className="md:hidden p-3 bg-red-500/10 text-red-500 rounded-xl"
+                        >
+                            <LogOut size={20} />
+                        </button>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex bg-neutral-800 p-1 rounded-lg">
+                    {/* Navigation Tabs - Scrollable on mobile */}
+                    <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                        <div className="flex bg-neutral-800 p-1 rounded-xl w-full md:w-auto">
                             <button
                                 onClick={() => {
                                     setView('dashboard');
                                     setEditingProduct(null);
                                 }}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === 'dashboard' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-white'}`}
+                                className={`flex-1 md:flex-none px-6 py-3 md:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${view === 'dashboard' ? 'bg-neutral-700 text-white shadow-md' : 'text-neutral-400 hover:text-white'}`}
                             >
                                 Dashboard
                             </button>
@@ -73,16 +84,18 @@ const Admin: React.FC = () => {
                                     setView('list');
                                     setEditingProduct(null);
                                 }}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === 'list' || view === 'form' ? 'bg-neutral-700 text-white' : 'text-neutral-400 hover:text-white'}`}
+                                className={`flex-1 md:flex-none px-6 py-3 md:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${view === 'list' || view === 'form' ? 'bg-neutral-700 text-white shadow-md' : 'text-neutral-400 hover:text-white'}`}
                             >
                                 Produtos
                             </button>
                         </div>
+
+                        {/* Desktop Logout Button */}
                         <button
                             onClick={handleSignOut}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors font-bold text-sm"
+                            className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors font-bold text-sm"
                         >
-                            <LogOut size={16} /> <span className="hidden md:inline">Sair</span>
+                            <LogOut size={16} /> <span>Sair</span>
                         </button>
                     </div>
                 </header>

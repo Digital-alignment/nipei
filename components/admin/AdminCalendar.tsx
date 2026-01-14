@@ -196,13 +196,13 @@ const AdminCalendar: React.FC = () => {
 
                 <div className="grid grid-cols-7 mb-4">
                     {weekDays.map(d => (
-                        <div key={d} className="text-center text-white/40 text-sm font-medium py-2 uppercase tracking-wider">
+                        <div key={d} className="text-center text-white/40 text-[10px] md:text-sm font-medium py-2 uppercase tracking-wider">
                             {d}
                         </div>
                     ))}
                 </div>
 
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 md:gap-2">
                     {days.map((day, idx) => {
                         const dayEvents = getDayEvents(day);
                         const isSelected = selectedDate && isSameDay(day, selectedDate);
@@ -212,20 +212,20 @@ const AdminCalendar: React.FC = () => {
                                 key={day.toString()}
                                 onClick={() => setSelectedDate(day)}
                                 className={`
-                                    min-h-[80px] p-2 rounded-xl cursor-pointer transition-all border
+                                    min-h-[60px] md:min-h-[80px] p-1 md:p-2 rounded-lg md:rounded-xl cursor-pointer transition-all border
                                     ${!isSameMonth(day, monthStart) ? 'bg-white/[0.02] border-transparent text-white/20' : 'bg-white/5 border-white/5 text-white'}
                                     ${isToday(day) ? 'ring-1 ring-emerald-500/50 bg-emerald-500/10' : ''}
                                     ${isSelected ? 'ring-2 ring-white/50 bg-white/10' : 'hover:bg-white/10'}
                                 `}
                             >
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className={`text-sm font-medium ${isToday(day) ? 'text-emerald-400' : ''}`}>{format(day, 'd')}</span>
+                                    <span className={`text-xs md:text-sm font-medium ${isToday(day) ? 'text-emerald-400' : ''}`}>{format(day, 'd')}</span>
                                     {dayEvents.length > 0 && (
-                                        <div className="flex gap-1">
-                                            {dayEvents.slice(0, 3).map((ev, i) => (
-                                                <div key={i} className={`w-2 h-2 rounded-full ${getTypeColor(ev.type)}`} />
+                                        <div className="flex gap-0.5 md:gap-1 flex-wrap justify-end max-w-[70%]">
+                                            {dayEvents.slice(0, 4).map((ev, i) => (
+                                                <div key={i} className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${getTypeColor(ev.type)}`} />
                                             ))}
-                                            {dayEvents.length > 3 && <div className="w-2 h-2 rounded-full bg-white/30" />}
+                                            {dayEvents.length > 4 && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/30" />}
                                         </div>
                                     )}
                                 </div>

@@ -102,11 +102,14 @@ const AdminDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Stock Table */}
+                {/* Stock Overview - Responsive */}
                 <div className="bg-[#1A1A1A]/80 border border-white/5 rounded-3xl p-6 backdrop-blur-xl">
                     <div className="p-6 border-b border-neutral-700">
                         <h3 className="text-lg font-bold text-white">Visão Geral de Estoque</h3>
                     </div>
-                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
+
+                    {/* Desktop Table */}
+                    <div className="hidden md:block overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
                         <table className="w-full text-left">
                             <thead className="bg-neutral-900/50 text-neutral-400 text-sm uppercase sticky top-0 backdrop-blur-sm">
                                 <tr>
@@ -140,6 +143,57 @@ const AdminDashboard: React.FC = () => {
                                 })}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile Cards */}
+                    <div className="md:hidden divide-y divide-neutral-700">
+                        {products.map(product => {
+                            const stock = product.stock_quantity || 0;
+                            const goal = product.monthly_production_goal || 0;
+                            const percentage = goal > 0 ? (stock / goal) * 100 : 0;
+                            const isLowStock = stock < 10;
+
+                            return (
+                                <div key={product.id} className="py-4 space-y-3">
+                                    <div className="flex justify-between items-start">
+                                        <h4 className="font-bold text-white text-base">{product.name}</h4>
+                                        {isLowStock ? (
+                                            <span className="px-2 py-1 rounded bg-red-500/10 text-red-500 text-[10px] font-bold uppercase">
+                                                Baixo
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase">
+                                                Normal
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-white/5 p-3 rounded-xl text-center">
+                                            <p className="text-neutral-400 text-[10px] uppercase mb-1">Estoque</p>
+                                            <p className="text-white font-bold text-lg">{stock}</p>
+                                        </div>
+                                        <div className="bg-white/5 p-3 rounded-xl text-center">
+                                            <p className="text-neutral-400 text-[10px] uppercase mb-1">Meta</p>
+                                            <p className="text-white font-bold text-lg">{goal}</p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-[10px] mb-1">
+                                            <span className="text-neutral-400">Progresso</span>
+                                            <span className="text-white font-medium">{Math.round(percentage)}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full ${isLowStock ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                                style={{ width: `${Math.min(percentage, 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
