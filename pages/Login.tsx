@@ -9,7 +9,7 @@ const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
-    const [role, setRole] = useState<'admin' | 'inventory_manager' | 'public'>('public');
+    const [role, setRole] = useState<'admin' | 'inventory_manager' | 'sales_viewer'>('sales_viewer');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -95,7 +95,7 @@ const Login: React.FC = () => {
                                     onChange={(e) => setRole(e.target.value as any)}
                                     className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-colors appearance-none"
                                 >
-                                    <option value="public">Usuário Comum (Visualizar)</option>
+                                    <option value="sales_viewer">Usuário Comum (Visualizar)</option>
                                     <option value="inventory_manager">Gerente de Estoque (Mutum)</option>
                                     <option value="admin">Administrador (Total)</option>
                                 </select>
