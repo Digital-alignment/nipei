@@ -9,6 +9,7 @@ interface ProductContextType {
     updateProduct: (product: Product) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
     logProductionAction: (productId: string, actionType: 'produced' | 'sent' | 'problem', quantity: number, description?: string, imageUrl?: string, expectedArrivalDate?: string) => Promise<void>;
+    createShipment: (data: { description: string, voucherUrl: string, packageUrl: string, expectedArrivalDate: string }, items: { product_id: string, quantity: number }[]) => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -54,6 +55,39 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    const createShipment = async (
+        data: { description: string, voucherUrl: string, packageUrl: string, expectedArrivalDate: string },
+        items: { product_id: string, quantity: number }[]
+    ) => {
+        try {
+            // Optimistic Update
+            setProducts(prev => prev.map(p => {
+                const item = items.find(i => i.product_id === p.id);
+                if (item) {
+                    return { ...p, stock_quantity: Math.max(0, (p.stock_quantity || 0) - item.quantity) };
+                }
+                return p;
+            }));
+
+            const { error } = await supabase.rpc('create_shipment', {
+                p_description: data.description,
+                p_voucher_url: data.voucherUrl,
+                p_package_url: data.packageUrl,
+                p_expected_arrival_date: data.expectedArrivalDate,
+                p_items: items
+            });
+
+            if (error) {
+                console.error('RPC Error:', error);
+                await fetchProducts(); // Rollback
+                throw error;
+            }
+        } catch (error) {
+            console.error('Error creating shipment:', error);
+            throw error;
+        }
+    };
 
     const addProduct = async (product: Product) => {
         try {
@@ -178,7 +212,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     return (
-        <ProductContext.Provider value={{ products, loading, addProduct, updateProduct, deleteProduct, logProductionAction }}>
+        <ProductContext.Provider value={{ products, loading, addProduct, updateProduct, deleteProduct, logProductionAction, createShipment }}>
             {children}
         </ProductContext.Provider>
     );

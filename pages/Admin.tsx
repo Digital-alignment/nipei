@@ -4,13 +4,14 @@ import { ArrowLeft, LogOut } from 'lucide-react';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import ProductList from '../components/admin/ProductList';
 import ProductForm from '../components/admin/ProductForm';
+import ShipmentList from '../components/admin/ShipmentList';
 import { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const Admin: React.FC = () => {
     const { session, loading, signOut } = useAuth();
     const navigate = useNavigate();
-    const [view, setView] = useState<'dashboard' | 'list' | 'form'>('dashboard');
+    const [view, setView] = useState<'dashboard' | 'list' | 'form' | 'shipments'>('dashboard');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
     useEffect(() => {
@@ -88,6 +89,15 @@ const Admin: React.FC = () => {
                             >
                                 Produtos
                             </button>
+                            <button
+                                onClick={() => {
+                                    setView('shipments');
+                                    setEditingProduct(null);
+                                }}
+                                className={`flex-1 md:flex-none px-6 py-3 md:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${view === 'shipments' ? 'bg-neutral-700 text-white shadow-md' : 'text-neutral-400 hover:text-white'}`}
+                            >
+                                Envios
+                            </button>
                         </div>
 
                         {/* Desktop Logout Button */}
@@ -108,6 +118,10 @@ const Admin: React.FC = () => {
 
                 {view === 'form' && (
                     <ProductForm product={editingProduct} onClose={handleCloseForm} />
+                )}
+
+                {view === 'shipments' && (
+                    <ShipmentList />
                 )}
             </div>
         </div>

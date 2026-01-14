@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useProducts } from '../context/ProductContext';
 import { Product } from '../types';
+import ShipmentModal from './ShipmentModal';
 import StockControlModal from './StockControlModal';
-import { Leaf, AlertCircle } from 'lucide-react';
+import { Leaf, AlertCircle, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const InventoryGrid: React.FC = () => {
     const { products, loading } = useProducts();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
 
     const productsSorted = [...products].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -17,14 +19,35 @@ const InventoryGrid: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-black p-4 pb-20">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
-                    Prateleira Digital
-                </h1>
-                <div className="text-emerald-500/80 text-sm font-medium">
-                    {products.length} Itens
+            {/* Header & Actions */}
+            <div className="flex flex-col gap-4 mb-8">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-600">
+                        Prateleira Digital
+                    </h1>
+                    <div className="text-emerald-500/80 text-sm font-medium">
+                        {products.length} Itens
+                    </div>
                 </div>
+
+                {/* Big Send Button */}
+                <button
+                    onClick={() => setIsShipmentModalOpen(true)}
+                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-800 rounded-2xl p-6 flex items-center justify-between shadow-lg shadow-emerald-900/20 active:scale-[0.98] transition-all group"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/20 p-3 rounded-xl group-hover:rotate-12 transition-transform">
+                            <Package size={32} className="text-white" />
+                        </div>
+                        <div className="text-left">
+                            <h2 className="text-white text-xl font-bold">Novo Envio</h2>
+                            <p className="text-emerald-200 text-sm">Registrar saída de produtos</p>
+                        </div>
+                    </div>
+                    <div className="bg-white/10 px-4 py-2 rounded-lg text-white font-bold">
+                        ➔
+                    </div>
+                </button>
             </div>
 
             {/* Grid */}
@@ -38,12 +61,21 @@ const InventoryGrid: React.FC = () => {
                 ))}
             </div>
 
-            {/* Modal */}
+            {/* Product Modal */}
             <AnimatePresence>
                 {selectedProduct && (
                     <StockControlModal
                         product={selectedProduct}
                         onClose={() => setSelectedProduct(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Shipment Modal */}
+            <AnimatePresence>
+                {isShipmentModalOpen && (
+                    <ShipmentModal
+                        onClose={() => setIsShipmentModalOpen(false)}
                     />
                 )}
             </AnimatePresence>

@@ -12,14 +12,8 @@ interface StockControlModalProps {
 
 const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose }) => {
     const { logProductionAction } = useProducts();
-    const [mode, setMode] = useState<'main' | 'sending' | 'problem' | 'producing'>('main');
+    const [mode, setMode] = useState<'main' | 'problem' | 'producing'>('main');
     const [loading, setLoading] = useState(false);
-
-    // Sending State
-    const [sendQuantity, setSendQuantity] = useState(1);
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [description, setDescription] = useState('');
-    const [arrivalDate, setArrivalDate] = useState('');
 
     // Producing State
     const [produceQuantity, setProduceQuantity] = useState(1);
@@ -41,29 +35,6 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
         } catch (error) {
             console.error('Error producing:', error);
             alert('Erro ao registrar produção.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSendSubmit = async () => {
-        if (!imageFile) return alert('Por favor, adicione uma foto do envio.');
-        setLoading(true);
-
-        try {
-            // Upload Image
-            const filename = `shipments/${Date.now()}_${imageFile.name}`;
-            const { data, error } = await supabase.storage.from('production-evidence').upload(filename, imageFile);
-
-            if (error) throw error;
-
-            const publicUrl = supabase.storage.from('production-evidence').getPublicUrl(filename).data.publicUrl;
-
-            await logProductionAction(product.id, 'sent', sendQuantity, description, publicUrl, arrivalDate);
-            onClose();
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert('Erro ao enviar. Tente novamente.');
         } finally {
             setLoading(false);
         }
@@ -112,26 +83,16 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                     </div>
 
                     {/* Massive Buttons */}
-                    <div className="w-full grid grid-cols-2 gap-4 h-64 mb-4">
-                        {/* SEND BUTTON */}
-                        <button
-                            disabled={(product.stock_quantity || 0) <= 0}
-                            onClick={() => setMode('sending')}
-                            className="bg-orange-800/80 disabled:opacity-30 disabled:cursor-not-allowed rounded-3xl flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform"
-                        >
-                            <Send size={48} className="text-orange-200" />
-                            <span className="text-orange-100 font-bold text-2xl">ENVIAR</span>
-                        </button>
-
+                    <div className="w-full h-32 mb-4">
                         {/* PRODUCE BUTTON */}
                         <button
                             onClick={handleProduce}
                             disabled={loading}
-                            className="bg-emerald-800/80 rounded-3xl flex flex-col items-center justify-center gap-4 active:scale-95 transition-transform relative overflow-hidden"
+                            className="w-full h-full bg-emerald-800/80 rounded-3xl flex items-center justify-center gap-6 active:scale-95 transition-transform relative overflow-hidden text-emerald-100"
                         >
                             {loading && <div className="absolute inset-0 bg-black/20 flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>}
                             <Droplet size={48} className="text-emerald-200" />
-                            <span className="text-emerald-100 font-bold text-2xl">PRODUZIR</span>
+                            <span className="font-bold text-3xl">PRODUZIR</span>
                         </button>
                     </div>
 
@@ -146,89 +107,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                 </>
             )}
 
-            {/* SENDING MODE */}
-            {mode === 'sending' && (
-                <div className="flex flex-col w-full h-full">
-                    <h3 className="text-2xl text-white font-bold mb-6">Registrar Envio</h3>
 
-                    <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
-                        {/* Quantity Selector */}
-                        <div className="bg-white/10 rounded-2xl p-6 flex flex-col items-center">
-                            <span className="text-white/60 mb-2">Quantidade</span>
-                            <div className="flex items-center gap-6">
-                                <button onClick={() => setSendQuantity(Math.max(1, sendQuantity - 1))} className="w-12 h-12 rounded-full bg-white/20 text-white text-2xl">-</button>
-                                <span className="text-4xl font-bold text-white">{sendQuantity}</span>
-                                <button onClick={() => setSendQuantity(Math.min((product.stock_quantity || 0), sendQuantity + 1))} className="w-12 h-12 rounded-full bg-white/20 text-white text-2xl">+</button>
-                            </div>
-                        </div>
-
-                        {/* Arrival Date Input */}
-                        <div className="bg-white/10 rounded-2xl p-4">
-                            <label className="block text-white/60 text-sm mb-2">Previsão de Chegada</label>
-                            <input
-                                type="date"
-                                value={arrivalDate}
-                                onChange={(e) => setArrivalDate(e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                                className="w-full bg-transparent text-white text-lg outline-none cursor-pointer"
-                            />
-                        </div>
-
-                        {/* Image Upload */}
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`
-                                flex-1 min-h-[120px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors
-                                ${imageFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/20 hover:border-white/40'}
-                            `}
-                        >
-                            <input
-                                type="file"
-                                accept="image/*"
-                                ref={fileInputRef}
-                                className="hidden"
-                                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                            />
-                            {imageFile ? (
-                                <>
-                                    <img src={URL.createObjectURL(imageFile)} className="h-32 rounded-lg object-contain" alt="Preview" />
-                                    <span className="text-emerald-400 font-medium">{imageFile.name}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Camera size={48} className="text-white/50" />
-                                    <span className="text-white/50">Toque para adicionar foto</span>
-                                </>
-                            )}
-                        </div>
-
-
-                        {/* Description Input */}
-                        <div className="bg-white/10 rounded-2xl p-4">
-                            <label className="block text-white/60 text-sm mb-2">Observações / Descrição</label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Detalhes sobre o envio..."
-                                className="w-full bg-transparent text-white placeholder-white/30 outline-none resize-none h-20"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4 mt-6">
-                        <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Voltar</button>
-                        <button
-                            onClick={handleSendSubmit}
-                            disabled={loading || !imageFile || !arrivalDate}
-                            className="flex-1 py-4 rounded-xl bg-emerald-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : <Check />}
-                            Confirmar Envio
-                        </button>
-                    </div>
-                </div>
-
-            )}
 
             {/* PRODUCING MODE */}
             {mode === 'producing' && (
