@@ -99,11 +99,17 @@ const ProductCard: React.FC<{ product: Product; onClick: () => void }> = ({ prod
                         />
                     </div>
                 )}
-                {product.monthly_production_goal > 0 && (
-                    <div className="text-[10px] text-white/60 mt-0.5 text-right">
-                        Meta: {product.monthly_production_goal}
+                {/* Goal & Stock footer */}
+                <div className="flex justify-between items-end mt-1">
+                    {product.monthly_production_goal > 0 && (
+                        <div className="text-[10px] text-white/60">
+                            Meta: {product.monthly_production_goal}
+                        </div>
+                    )}
+                    <div className="text-[10px] text-emerald-400 font-bold ml-auto">
+                        Prod: {product.stock_quantity || 0}
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Alert Icon if stock is low or 0 */}

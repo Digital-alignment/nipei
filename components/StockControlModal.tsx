@@ -18,6 +18,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
     // Sending State
     const [sendQuantity, setSendQuantity] = useState(1);
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [description, setDescription] = useState('');
 
     // Problem State
     const [problemDescription, setProblemDescription] = useState('');
@@ -48,7 +49,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
 
             const publicUrl = supabase.storage.from('production-evidence').getPublicUrl(filename).data.publicUrl;
 
-            await logProductionAction(product.id, 'sent', sendQuantity, undefined, publicUrl);
+            await logProductionAction(product.id, 'sent', sendQuantity, description, publicUrl);
             onClose();
         } catch (error) {
             console.error('Upload error:', error);
@@ -178,6 +179,18 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                                 </>
                             )}
                         </div>
+                        </div>
+
+                        {/* Description Input */}
+                        <div className="bg-white/10 rounded-2xl p-4">
+                            <label className="block text-white/60 text-sm mb-2">Observações / Descrição</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Detalhes sobre o envio..."
+                                className="w-full bg-transparent text-white placeholder-white/30 outline-none resize-none h-20"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex gap-4 mt-6">
@@ -192,36 +205,39 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                         </button>
                     </div>
                 </div>
+                </div >
             )}
 
-            {/* PROBLEM MODE */}
-            {mode === 'problem' && (
-                <div className="flex flex-col w-full h-full">
-                    <h3 className="text-2xl text-red-400 font-bold mb-6 flex items-center gap-2">
-                        <TriangleAlert /> Reportar Problema
-                    </h3>
+{/* PROBLEM MODE */ }
+{
+    mode === 'problem' && (
+        <div className="flex flex-col w-full h-full">
+            <h3 className="text-2xl text-red-400 font-bold mb-6 flex items-center gap-2">
+                <TriangleAlert /> Reportar Problema
+            </h3>
 
-                    <textarea
-                        className="flex-1 bg-white/10 rounded-2xl p-4 text-white placeholder-white/40 resize-none text-lg"
-                        placeholder="O que aconteceu? (Ex: Quebra de máquina, chuva forte...)"
-                        value={problemDescription}
-                        onChange={(e) => setProblemDescription(e.target.value)}
-                    />
+            <textarea
+                className="flex-1 bg-white/10 rounded-2xl p-4 text-white placeholder-white/40 resize-none text-lg"
+                placeholder="O que aconteceu? (Ex: Quebra de máquina, chuva forte...)"
+                value={problemDescription}
+                onChange={(e) => setProblemDescription(e.target.value)}
+            />
 
-                    <div className="flex gap-4 mt-6">
-                        <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Cancelar</button>
-                        <button
-                            onClick={handleProblemSubmit}
-                            disabled={loading || !problemDescription}
-                            className="flex-1 py-4 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : <Send />}
-                            Relatar
-                        </button>
-                    </div>
-                </div>
-            )}
-        </motion.div>
+            <div className="flex gap-4 mt-6">
+                <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Cancelar</button>
+                <button
+                    onClick={handleProblemSubmit}
+                    disabled={loading || !problemDescription}
+                    className="flex-1 py-4 rounded-xl bg-red-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                    {loading ? <Loader2 className="animate-spin" /> : <Send />}
+                    Relatar
+                </button>
+            </div>
+        </div>
+    )
+}
+        </motion.div >
     );
 };
 

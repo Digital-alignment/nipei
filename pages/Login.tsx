@@ -23,12 +23,18 @@ const Login: React.FC = () => {
 
         try {
             if (isLogin) {
-                const { error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
                 if (error) throw error;
-                navigate('/admin');
+
+                const userRole = data.session?.user?.user_metadata?.role;
+                if (userRole === 'inventory_manager') {
+                    navigate('/inventory');
+                } else {
+                    navigate('/admin');
+                }
             } else {
                 const { error } = await supabase.auth.signUp({
                     email,
