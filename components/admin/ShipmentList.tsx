@@ -99,8 +99,8 @@ const ShipmentList: React.FC = () => {
                                     {shipment.items.reduce((acc, item) => acc + item.quantity, 0)} unidades total
                                 </span>
                             </div>
-                            <div className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-bold text-xs uppercase border border-blue-500/20">
-                                Em Trânsito
+                            <div className={`px-3 py-1 rounded-full font-bold text-xs uppercase border ${shipment.status === 'received' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                                {shipment.status === 'received' ? 'Recebido' : 'Em Trânsito'}
                             </div>
                         </div>
                     </div>
@@ -118,13 +118,44 @@ const ShipmentList: React.FC = () => {
                 <ShipmentDetailModal
                     shipment={selectedShipment}
                     onClose={() => setSelectedShipment(null)}
+                    onUpdate={() => {
+                        fetchShipments();
+                        // Also update the selected status to reflect changes immediately in UI if helpful,
+                        // but fetchShipments handles list. For modal internal state, we rely on parent re-render?
+                        // Actually, better to just refetch list and close, or update selected local state.
+                        // Ideally we close modal or keep it open with new status.
+                        // Let's rely on fetchShipments and if modal stays open it needs updated shipment prop.
+                        // For now we close modal in child on success.
+                    }}
                 />
             )}
         </div>
     );
 };
 
-const ShipmentDetailModal: React.FC<{ shipment: Shipment; onClose: () => void }> = ({ shipment, onClose }) => {
+const ShipmentDetailModal: React.FC<{ shipment: Shipment; onClose: () => void, onUpdate: () => void }> = ({ shipment, onClose, onUpdate }) => {
+    const [updating, setUpdating] = useState(false);
+
+    const handleMarkAsReceived = async () => {
+        if (!confirm('Confirmar recebimento deste envio?')) return;
+        setUpdating(true);
+        try {
+            const { error } = await supabase
+                .from('shipments')
+                .update({ status: 'received' })
+                .eq('id', shipment.id);
+
+            if (error) throw error;
+            onUpdate();
+            onClose();
+        } catch (error) {
+            console.error('Error updating shipment:', error);
+            alert('Erro ao atualizar status.');
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
             <div
@@ -135,7 +166,7 @@ const ShipmentDetailModal: React.FC<{ shipment: Shipment; onClose: () => void }>
                 <div className="p-6 border-b border-white/10 flex justify-between items-start bg-neutral-800/50">
                     <div>
                         <h2 className="text-2xl font-bold text-white mb-1">Detalhes do Envio</h2>
-                        <p className="text-emerald-400 font-mono text-sm">ID: {shipment.id}</p>
+                        <p className="text-emerald-400 font-mono text-sm">ID: #{shipment.id.slice(0, 8)}</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors">
                         X
@@ -143,6 +174,22 @@ const ShipmentDetailModal: React.FC<{ shipment: Shipment; onClose: () => void }>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* Status Badge */}
+                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5">
+                        <span className="text-neutral-400">Status Atual</span>
+                        {shipment.status === 'received' ? (
+                            <div className="flex items-center gap-2 text-emerald-400 font-bold bg-emerald-400/10 px-4 py-2 rounded-lg">
+                                <CheckCircle size={20} />
+                                <span>Recebido & Conferido</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-blue-400 font-bold bg-blue-400/10 px-4 py-2 rounded-lg">
+                                <Clock size={20} />
+                                <span>Em Trânsito / Pendente</span>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Info Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
@@ -214,10 +261,20 @@ const ShipmentDetailModal: React.FC<{ shipment: Shipment; onClose: () => void }>
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-white/10 bg-neutral-900 flex justify-end">
-                    <button onClick={onClose} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold transition-colors">
+                <div className="p-4 border-t border-white/10 bg-neutral-900 flex justify-between gap-4">
+                    <button onClick={onClose} className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-colors">
                         Fechar
                     </button>
+                    {shipment.status !== 'received' && (
+                        <button
+                            onClick={handleMarkAsReceived}
+                            disabled={updating}
+                            className="flex-1 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20"
+                        >
+                            {updating ? <Loader2 className="animate-spin" /> : <CheckCircle />}
+                            Confirmar Recebimento
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
