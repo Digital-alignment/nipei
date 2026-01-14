@@ -19,7 +19,8 @@ const emptyProduct: Product = {
     composition: '',
     labels: [{ key: '', value: '' }],
     audioSlots: [],
-    isVisible: true
+    isVisible: true,
+    monthly_production_goal: 0
 };
 
 const ProductForm: React.FC<ProductFormProps> = ({ product, onClose }) => {
@@ -138,17 +139,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose }) => {
                             className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-emerald-500 outline-none"
                         />
                     </div>
-                    <div className="flex items-end pb-1">
-                        <label className="flex items-center gap-3 cursor-pointer group bg-neutral-900 border border-neutral-700 rounded-lg p-3 w-full hover:border-emerald-500 transition-colors">
-                            <input
-                                type="checkbox"
-                                checked={formData.isVisible}
-                                onChange={e => setFormData({ ...formData, isVisible: e.target.checked })}
-                                className="w-5 h-5 accent-emerald-500 cursor-pointer"
-                            />
-                            <span className="text-white font-medium">Visível no Catálogo</span>
-                        </label>
+                    <div className="space-y-2">
+                        <label className="text-sm text-neutral-400">Meta de Produção Mensal</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={formData.monthly_production_goal || 0}
+                            onChange={e => setFormData({ ...formData, monthly_production_goal: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-emerald-500 outline-none"
+                        />
                     </div>
+                </div>
+                <div className="flex items-end pb-1">
+                    <label className="flex items-center gap-3 cursor-pointer group bg-neutral-900 border border-neutral-700 rounded-lg p-3 w-full hover:border-emerald-500 transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={formData.isVisible}
+                            onChange={e => setFormData({ ...formData, isVisible: e.target.checked })}
+                            className="w-5 h-5 accent-emerald-500 cursor-pointer"
+                        />
+                        <span className="text-white font-medium">Visível no Catálogo</span>
+                    </label>
                 </div>
             </section>
 
