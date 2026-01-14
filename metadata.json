@@ -1,0 +1,7 @@
+{
+  "name": "Medicinas da Floresta - Catálogo Jungle Vibe",
+  "description": "Um catálogo digital de luxo para medicinas sagradas da Amazônia, apresentando sliders dinâmicos, animações imersivas e relatos em áudio de anciãos da aldeia.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
