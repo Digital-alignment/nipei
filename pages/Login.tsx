@@ -45,6 +45,7 @@ const Login: React.FC = () => {
                 setIsLogin(true); // Switch back to login
             }
         } catch (err: any) {
+            console.error('Registration/Login Error:', err);
             setError(err.message || 'Erro ao realizar autenticação.');
         } finally {
             setLoading(false);
