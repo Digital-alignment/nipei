@@ -8,6 +8,7 @@ interface ProductContextType {
     addProduct: (product: Product) => Promise<void>;
     updateProduct: (product: Product) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
+    logProductionAction: (productId: string, actionType: 'produced' | 'sent' | 'problem', quantity: number, description?: string, imageUrl?: string) => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -37,7 +38,9 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 safetyRequirement: item.safety_requirement,
                 labels: item.labels || [],
                 audioSlots: item.audio_slots || [],
-                isVisible: item.is_visible
+                isVisible: item.is_visible,
+                stock_quantity: item.stock_quantity || 0,
+                monthly_production_goal: item.monthly_production_goal || 0
             }));
 
             setProducts(mappedProducts);
@@ -67,7 +70,9 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 safety_requirement: product.safetyRequirement,
                 labels: product.labels,
                 audio_slots: product.audioSlots,
-                is_visible: product.isVisible
+                is_visible: product.isVisible,
+                stock_quantity: product.stock_quantity,
+                monthly_production_goal: product.monthly_production_goal
             };
 
             const { error } = await supabase
@@ -96,7 +101,9 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 safety_requirement: updatedProduct.safetyRequirement,
                 labels: updatedProduct.labels,
                 audio_slots: updatedProduct.audioSlots,
-                is_visible: updatedProduct.isVisible
+                is_visible: updatedProduct.isVisible,
+                stock_quantity: updatedProduct.stock_quantity,
+                monthly_production_goal: updatedProduct.monthly_production_goal
             };
 
             const { error } = await supabase
@@ -129,8 +136,47 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     };
 
+    const logProductionAction = async (
+        productId: string,
+        actionType: 'produced' | 'sent' | 'problem',
+        quantity: number,
+        description?: string,
+        imageUrl?: string
+    ) => {
+        try {
+            // Optimistic Update
+            if (actionType === 'produced' || actionType === 'sent') {
+                const delta = actionType === 'produced' ? quantity : -quantity;
+                setProducts(prev => prev.map(p => {
+                    if (p.id === productId) {
+                        return { ...p, stock_quantity: Math.max(0, (p.stock_quantity || 0) + delta) };
+                    }
+                    return p;
+                }));
+            }
+
+            const { error } = await supabase.rpc('log_production_action', {
+                p_product_id: productId,
+                p_action_type: actionType,
+                p_quantity: quantity,
+                p_description: description,
+                p_image_url: imageUrl
+            });
+
+            if (error) {
+                // Rollback if needed (simplified: just fetch again)
+                console.error('RPC Error:', error);
+                await fetchProducts();
+                throw error;
+            }
+        } catch (error) {
+            console.error('Error logging production action:', error);
+            alert('Erro ao registrar ação. Verifique sua conexão.');
+        }
+    };
+
     return (
-        <ProductContext.Provider value={{ products, loading, addProduct, updateProduct, deleteProduct }}>
+        <ProductContext.Provider value={{ products, loading, addProduct, updateProduct, deleteProduct, logProductionAction }}>
             {children}
         </ProductContext.Provider>
     );

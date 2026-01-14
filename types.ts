@@ -22,6 +22,8 @@ export interface Product {
   }[];
   audioSlots: AudioSlot[];
   isVisible: boolean;
+  stock_quantity: number;
+  monthly_production_goal: number;
 }
 
 export type Theme = 'light' | 'dark';

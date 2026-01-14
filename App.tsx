@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import Inventory from './pages/Inventory';
 
 const App: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/inventory" element={<Inventory />} />
           </Routes>
         </Router>
       </ProductProvider>
