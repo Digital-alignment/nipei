@@ -19,6 +19,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
     const [sendQuantity, setSendQuantity] = useState(1);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [description, setDescription] = useState('');
+    const [arrivalDate, setArrivalDate] = useState('');
 
     // Producing State
     const [produceQuantity, setProduceQuantity] = useState(1);
@@ -58,7 +59,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
 
             const publicUrl = supabase.storage.from('production-evidence').getPublicUrl(filename).data.publicUrl;
 
-            await logProductionAction(product.id, 'sent', sendQuantity, description, publicUrl);
+            await logProductionAction(product.id, 'sent', sendQuantity, description, publicUrl, arrivalDate);
             onClose();
         } catch (error) {
             console.error('Upload error:', error);
@@ -150,7 +151,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                 <div className="flex flex-col w-full h-full">
                     <h3 className="text-2xl text-white font-bold mb-6">Registrar Envio</h3>
 
-                    <div className="flex-1 flex flex-col gap-6">
+                    <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
                         {/* Quantity Selector */}
                         <div className="bg-white/10 rounded-2xl p-6 flex flex-col items-center">
                             <span className="text-white/60 mb-2">Quantidade</span>
@@ -161,11 +162,23 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                             </div>
                         </div>
 
+                        {/* Arrival Date Input */}
+                        <div className="bg-white/10 rounded-2xl p-4">
+                            <label className="block text-white/60 text-sm mb-2">Previsão de Chegada</label>
+                            <input
+                                type="date"
+                                value={arrivalDate}
+                                onChange={(e) => setArrivalDate(e.target.value)}
+                                min={new Date().toISOString().split('T')[0]}
+                                className="w-full bg-transparent text-white text-lg outline-none cursor-pointer"
+                            />
+                        </div>
+
                         {/* Image Upload */}
                         <div
                             onClick={() => fileInputRef.current?.click()}
                             className={`
-                                flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors
+                                flex-1 min-h-[120px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors
                                 ${imageFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/20 hover:border-white/40'}
                             `}
                         >
@@ -206,7 +219,7 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
                         <button onClick={() => setMode('main')} className="flex-1 py-4 rounded-xl bg-white/10 text-white font-bold">Voltar</button>
                         <button
                             onClick={handleSendSubmit}
-                            disabled={loading || !imageFile}
+                            disabled={loading || !imageFile || !arrivalDate}
                             className="flex-1 py-4 rounded-xl bg-emerald-600 text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 className="animate-spin" /> : <Check />}

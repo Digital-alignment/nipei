@@ -8,7 +8,7 @@ interface ProductContextType {
     addProduct: (product: Product) => Promise<void>;
     updateProduct: (product: Product) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
-    logProductionAction: (productId: string, actionType: 'produced' | 'sent' | 'problem', quantity: number, description?: string, imageUrl?: string) => Promise<void>;
+    logProductionAction: (productId: string, actionType: 'produced' | 'sent' | 'problem', quantity: number, description?: string, imageUrl?: string, expectedArrivalDate?: string) => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -141,7 +141,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         actionType: 'produced' | 'sent' | 'problem',
         quantity: number,
         description?: string,
-        imageUrl?: string
+        imageUrl?: string,
+        expectedArrivalDate?: string
     ) => {
         try {
             // Optimistic Update
@@ -160,7 +161,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 p_action_type: actionType,
                 p_quantity: quantity,
                 p_description: description,
-                p_image_url: imageUrl
+                p_image_url: imageUrl,
+                p_expected_arrival_date: expectedArrivalDate
             });
 
             if (error) {
