@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, AudioSlot } from '../types';
 import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 interface ProductContextType {
     products: Product[];
@@ -15,6 +16,7 @@ interface ProductContextType {
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { session } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -190,13 +192,28 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 }));
             }
 
+            // Calculate Unit Labor Cost
+            let unitLaborCost = 0;
+            if (actionType === 'produced' && session?.user) {
+                const { data: workerSettings } = await supabase
+                    .from('worker_settings')
+                    .select('production_rate, payment_type')
+                    .eq('user_id', session.user.id)
+                    .single();
+
+                if (workerSettings && (workerSettings.payment_type === 'production' || workerSettings.payment_type === 'mixed')) {
+                    unitLaborCost = workerSettings.production_rate || 0;
+                }
+            }
+
             const { error } = await supabase.rpc('log_production_action', {
                 p_product_id: productId,
                 p_action_type: actionType,
                 p_quantity: quantity,
                 p_description: description,
                 p_image_url: imageUrl,
-                p_expected_arrival_date: expectedArrivalDate
+                p_expected_arrival_date: expectedArrivalDate,
+                p_unit_labor_cost: unitLaborCost
             });
 
             if (error) {

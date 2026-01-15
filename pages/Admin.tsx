@@ -5,13 +5,14 @@ import AdminDashboard from '../components/admin/AdminDashboard';
 import ProductList from '../components/admin/ProductList';
 import ProductForm from '../components/admin/ProductForm';
 import ShipmentList from '../components/admin/ShipmentList';
+import FinanceLayout from '../components/admin/finance/FinanceLayout';
 import { Product } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const Admin: React.FC = () => {
     const { session, loading, signOut } = useAuth();
     const navigate = useNavigate();
-    const [view, setView] = useState<'dashboard' | 'list' | 'form' | 'shipments'>('dashboard');
+    const [view, setView] = useState<'dashboard' | 'list' | 'form' | 'shipments' | 'finance'>('dashboard');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
     useEffect(() => {
@@ -98,6 +99,15 @@ const Admin: React.FC = () => {
                             >
                                 Envios
                             </button>
+                            <button
+                                onClick={() => {
+                                    setView('finance');
+                                    setEditingProduct(null);
+                                }}
+                                className={`flex-1 md:flex-none px-6 py-3 md:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${view === 'finance' ? 'bg-neutral-700 text-white shadow-md' : 'text-neutral-400 hover:text-white'}`}
+                            >
+                                Finanças
+                            </button>
                         </div>
 
                         {/* Desktop Logout Button */}
@@ -122,6 +132,10 @@ const Admin: React.FC = () => {
 
                 {view === 'shipments' && (
                     <ShipmentList />
+                )}
+
+                {view === 'finance' && (
+                    <FinanceLayout />
                 )}
             </div>
         </div>

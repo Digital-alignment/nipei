@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { User, LogOut } from 'lucide-react';
 import InventoryGrid from '../components/InventoryGrid';
 import ProductionLogList from '../components/ProductionLogList';
+import WorkerProfileModal from '../components/inventory/WorkerProfileModal';
+import ToolTracker from '../components/inventory/ToolTracker';
+import { useNavigate } from 'react-router-dom';
 
 const Inventory: React.FC = () => {
+    const { user, signOut } = useAuth();
+    const navigate = useNavigate();
     const [requests, setRequests] = React.useState<any[]>([]);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'production' | 'tools'>('production');
 
     React.useEffect(() => {
         const fetchRequests = async () => {
@@ -25,31 +34,77 @@ const Inventory: React.FC = () => {
     }, []);
 
     const markAsDone = async (id: string, productId: string, quantity: number) => {
-        // Here we could auto-open the modal to produce, but for now let's just mark as done
-        // ideally: open modal -> produce -> then update request status
-        // simpler for MVP: just mark as done and assume they will "Produce" separately
-        // OR: "Produzir Agora" opens the StockControlModal? 
-        // Let's keep it simple: "Marcar como Atendido" button.
-
         await supabase
             .from('production_requests')
             .update({ status: 'completed' })
             .eq('id', id);
     };
 
+    const handleLogout = async () => {
+        await signOut();
+        navigate('/login');
+    };
+
+    const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Guardião';
+
     return (
-        <div className="min-h-screen bg-black">
+        <div className="min-h-screen bg-black pb-20">
+            {/* New Header */}
+            <div className="bg-neutral-900/50 backdrop-blur-md sticky top-0 z-30 border-b border-white/5 py-4 px-4 mb-4">
+                <div className="flex justify-between items-center max-w-7xl mx-auto">
+                    <div>
+                        <p className="text-[10px] text-neutral-400 uppercase tracking-widest mb-1">Área da Produção</p>
+                        <h1 className="text-lg font-bold text-white">
+                            Bem-vindo, <span className="text-emerald-400">{firstName}</span>
+                        </h1>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleLogout}
+                            className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-colors"
+                            title="Sair"
+                        >
+                            <LogOut size={20} />
+                        </button>
+                        <button
+                            onClick={() => setIsProfileOpen(true)}
+                            className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+                        >
+                            <User size={20} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-4 mt-4 border-b border-white/5 pb-1 max-w-7xl mx-auto">
+                    <button
+                        onClick={() => setActiveTab('production')}
+                        className={`pb-2 px-2 text-sm font-bold uppercase tracking-wider transition-colors ${activeTab === 'production' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-neutral-500 hover:text-white'
+                            }`}
+                    >
+                        Produção
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tools')}
+                        className={`pb-2 px-2 text-sm font-bold uppercase tracking-wider transition-colors ${activeTab === 'tools' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-neutral-500 hover:text-white'
+                            }`}
+                    >
+                        Inventário (Ferramentas)
+                    </button>
+                </div>
+            </div>
+
             {/* Pending Requests Alert */}
             {requests.length > 0 && (
-                <div className="p-4 bg-purple-900/20 border-b border-purple-500/20">
+                <div className="p-4 bg-purple-900/20 border-b border-purple-500/20 mb-4">
                     <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
                         Solicitações de Produção ({requests.length})
                     </h3>
-                    <div className="flex gap-4 overflow-x-auto pb-2">
+                    <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
                         {requests.map(req => (
                             <div key={req.id} className="min-w-[200px] bg-[#1A1A1A] p-4 rounded-xl border border-purple-500/30">
-                                <h4 className="text-white font-bold">{req.products?.name}</h4>
-                                <div className="text-purple-200 text-sm mt-1">
+                                <h4 className="text-white font-bold text-sm">{req.products?.name}</h4>
+                                <div className="text-purple-200 text-xs mt-1">
                                     Qtd: <strong>{req.quantity}</strong>
                                 </div>
                                 <div className="text-white/40 text-xs mt-1">
@@ -67,10 +122,25 @@ const Inventory: React.FC = () => {
                 </div>
             )}
 
-            <InventoryGrid />
-            <div className="px-4">
-                <ProductionLogList />
-            </div>
+            {activeTab === 'production' ? (
+                <>
+                    <InventoryGrid />
+
+                    <div className="px-4 mt-8">
+                        <h3 className="text-neutral-500 text-xs uppercase tracking-widest mb-4">Histórico Recente</h3>
+                        <ProductionLogList />
+                    </div>
+                </>
+            ) : (
+                <div className="px-4">
+                    <ToolTracker />
+                </div>
+            )}
+
+            <WorkerProfileModal
+                isOpen={isProfileOpen}
+                onClose={() => setIsProfileOpen(false)}
+            />
         </div>
     );
 };
