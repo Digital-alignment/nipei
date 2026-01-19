@@ -10,8 +10,8 @@ interface ProductGridProps {
   theme: Theme;
 }
 
-const ProductCard: React.FC<{ 
-  product: Product; 
+const ProductCard: React.FC<{
+  product: Product;
   onSelect: (product: Product) => void;
   theme: Theme;
 }> = ({ product, onSelect, theme }) => {
@@ -31,8 +31,8 @@ const ProductCard: React.FC<{
     >
       {/* Image Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <motion.img 
-          src={product.images[0]} 
+        <motion.img
+          src={product.images?.[0] || 'https://via.placeholder.com/300?text=No+Image'}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
@@ -55,7 +55,7 @@ const ProductCard: React.FC<{
           <p className="text-white/60 text-sm line-clamp-2 font-light leading-relaxed mb-6 group-hover:text-white/80 transition-colors">
             {product.benefits}
           </p>
-          
+
           <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all">
             Descobrir Medicina <ArrowUpRight size={14} />
           </div>
@@ -76,11 +76,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onSelect, theme }) 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
       {products.map((product) => (
-        <ProductCard 
-          key={product.id} 
-          product={product} 
-          onSelect={onSelect} 
-          theme={theme} 
+        <ProductCard
+          key={product.id}
+          product={product}
+          onSelect={onSelect}
+          theme={theme}
         />
       ))}
     </div>

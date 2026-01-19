@@ -58,7 +58,11 @@ const StockControlModal: React.FC<StockControlModalProps> = ({ product, onClose 
             {/* Header / Close */}
             <div className="w-full flex justify-between items-start mb-4">
                 <div className="flex items-center gap-4">
-                    <img src={product.images[0]} className="w-16 h-16 rounded-lg object-cover border border-white/20" alt="Mini" />
+                    {product.images[0] ? (
+                        <img src={product.images[0]} className="w-16 h-16 rounded-lg object-cover border border-white/20" alt="Mini" />
+                    ) : (
+                        <div className="w-16 h-16 rounded-lg bg-neutral-800 border border-white/20 flex items-center justify-center text-xs text-neutral-500">Sem Foto</div>
+                    )}
                     <div>
                         <h2 className="text-white text-xl font-bold leading-none">{product.name}</h2>
                         <span className="text-white/50 text-sm">{product.technicalName || 'N/A'}</span>

@@ -42,17 +42,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
 
   return (
     <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 mt-8">
-      
+
       {/* Left Column: Media Gallery & Technical Details */}
       <div className="lg:col-span-5 space-y-10">
-        <motion.div 
+        <motion.div
           layoutId={`image-${product.id}`}
           className="aspect-[4/5] rounded-[3.5rem] overflow-hidden bg-black/10 relative shadow-2xl"
         >
           <AnimatePresence mode="wait">
-            <motion.img 
+            <motion.img
               key={activeImage}
-              src={product.images[activeImage]} 
+              src={product.images?.[activeImage] || 'https://via.placeholder.com/600?text=No+Image'}
               alt={product.name}
               initial={{ opacity: 0, scale: 1.1 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -63,10 +63,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
           </AnimatePresence>
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
         </motion.div>
-        
+
         <div className="grid grid-cols-4 gap-4">
           {product.images.map((img, idx) => (
-            <button 
+            <button
               key={idx}
               onClick={() => setActiveImage(idx)}
               className={`aspect-square rounded-[1.5rem] overflow-hidden border-2 transition-all duration-300 ${activeImage === idx ? 'border-emerald-500 scale-110 shadow-xl' : 'border-transparent opacity-50 hover:opacity-100 hover:scale-105'}`}
@@ -76,7 +76,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
           ))}
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           className={`p-8 rounded-[2.5rem] border ${theme === 'dark' ? 'bg-black/30 border-green-800/40' : 'bg-green-50/50 border-green-200 shadow-lg'}`}
@@ -119,7 +119,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
         </section>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             className={sectionClass}
@@ -131,7 +131,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
             <p className="text-lg leading-relaxed opacity-70 font-light">{product.composition}</p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -148,7 +148,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
         {/* Podcast Section: Talk of the Elders */}
         <section className={`${sectionClass} border-2 border-emerald-500/20 overflow-hidden relative group`}>
           <div className="absolute -top-10 -right-10 w-48 h-48 bg-emerald-500/5 blur-[80px] rounded-full group-hover:bg-emerald-500/10 transition-colors" />
-          
+
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
               <div className="flex items-center gap-4 mb-3">
@@ -159,7 +159,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
               </div>
               <p className="text-lg opacity-60 font-light max-w-md">Ensinamentos sagrados e relatos exclusivos diretamente das aldeias.</p>
             </div>
-            
+
             <label className="flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] cursor-pointer transition-all shadow-xl hover:scale-105 active:scale-95 text-base font-bold">
               <Upload size={20} />
               <span>Subir Relato</span>
@@ -170,13 +170,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
           <div className="space-y-4">
             {/* Native Audio Slots */}
             {product.audioSlots.map((audio) => (
-              <motion.div 
-                key={audio.id} 
+              <motion.div
+                key={audio.id}
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 className={`p-6 rounded-[2rem] flex items-center gap-6 transition-all duration-500 border-2 ${playingAudioId === audio.id ? 'bg-emerald-500/15 border-emerald-500/40 scale-[1.02] shadow-2xl shadow-emerald-500/10' : 'bg-black/5 border-transparent hover:bg-black/10'}`}
               >
-                <button 
+                <button
                   onClick={() => toggleAudio(audio.id)}
                   className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all ${playingAudioId === audio.id ? 'bg-emerald-500 text-white animate-spin-slow' : 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white'}`}
                 >
@@ -195,13 +195,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
 
             {/* User Uploaded Audio Slots */}
             {customAudios.map((audio) => (
-              <motion.div 
-                key={audio.id} 
+              <motion.div
+                key={audio.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className={`p-6 rounded-[2rem] flex items-center gap-6 transition-all border-2 border-dashed border-emerald-500/40 ${playingAudioId === audio.id ? 'bg-amber-500/10 border-amber-500/40' : 'bg-black/5 border-emerald-500/10'}`}
               >
-                <button 
+                <button
                   onClick={() => toggleAudio(audio.id)}
                   className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg ${playingAudioId === audio.id ? 'bg-amber-500 text-white' : 'bg-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-white'}`}
                 >
@@ -211,7 +211,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
                   <h4 className="font-bold text-xl mb-1 truncate max-w-[200px] md:max-w-md">{audio.title}</h4>
                   <p className="text-xs opacity-50 italic font-medium">{audio.author}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => removeAudio(audio.id)}
                   className="p-3 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
                 >
@@ -221,7 +221,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
             ))}
 
             {customAudios.length === 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.4 }}
                 className="py-12 border-2 border-dashed border-black/10 rounded-[2.5rem] flex flex-col items-center justify-center gap-3"
@@ -234,7 +234,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, theme }) => {
         </section>
 
         {product.safetyRequirement && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             className={`p-8 rounded-[2rem] border-l-[12px] shadow-xl ${theme === 'dark' ? 'bg-amber-950/20 border-amber-600' : 'bg-amber-50 border-amber-500'}`}

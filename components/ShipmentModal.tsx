@@ -129,7 +129,11 @@ const ShipmentModal: React.FC<ShipmentModalProps> = ({ onClose }) => {
                                     key={product.id}
                                     className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${isSelected ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-white/5 border border-white/10'}`}
                                 >
-                                    <img src={product.images[0]} className="w-16 h-16 rounded-lg object-cover bg-black/40" alt={product.name} />
+                                    {product.images?.[0] ? (
+                                        <img src={product.images[0]} className="w-16 h-16 rounded-lg object-cover bg-black/40" alt={product.name} />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-lg bg-neutral-800 flex items-center justify-center text-xs text-neutral-500">None</div>
+                                    )}
 
                                     <div className="flex-1">
                                         <h3 className="text-white font-bold">{product.name}</h3>

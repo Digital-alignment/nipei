@@ -286,7 +286,7 @@ const ProductionLogList: React.FC<ProductionLogListProps> = ({ variant = 'defaul
                                 {isLog && (item as ProductionLog).image_url && (
                                     <div className="mt-3">
                                         <img
-                                            src={(item as ProductionLog).image_url}
+                                            src={(item as ProductionLog).image_url || ''}
                                             alt="Evidência"
                                             className="h-24 rounded-lg border border-white/10 hover:scale-105 transition-transform cursor-pointer"
                                             onClick={() => window.open((item as ProductionLog).image_url, '_blank')}

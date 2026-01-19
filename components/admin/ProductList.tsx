@@ -46,7 +46,11 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate }) => {
                     <div key={product.id} className={`flex items-center justify-between p-4 border rounded-xl transition-all ${product.isVisible ? 'bg-neutral-800/50 border-neutral-700 hover:border-emerald-500/30' : 'bg-neutral-900/30 border-neutral-800 opacity-60'}`}>
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-700 relative">
-                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                {product.images?.[0] ? (
+                                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-neutral-600 text-xs">Sem Foto</div>
+                                )}
                                 {!product.isVisible && (
                                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-neutral-400">
                                         <EyeOff size={20} />
