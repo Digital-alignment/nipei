@@ -8,11 +8,16 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Inventory from './pages/Inventory';
 import SupadminDashboard from './pages/SupadminDashboard';
+import SupadminUsers from './pages/SupadminUsers';
 import S5Admin from './pages/S5Admin';
+import Supaglobal from './pages/Supaglobal';
+import UserForm from './pages/UserForm';
+import NotificationToast from './components/NotificationToast';
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
+      <NotificationToast />
       <ProductProvider>
         <FinanceProvider>
           <Router>
@@ -22,7 +27,10 @@ const App: React.FC = () => {
               <Route path="/s2admin" element={<Admin />} />
               <Route path="/s5admin" element={<S5Admin />} />
               <Route path="/supadmin" element={<SupadminDashboard />} />
+              <Route path="/supadmin/users" element={<SupadminUsers />} />
+              <Route path="/supaglobal" element={<Supaglobal />} />
               <Route path="/inventory" element={<Inventory />} />
+              <Route path="/u/:slug" element={<UserForm />} />
             </Routes>
           </Router>
         </FinanceProvider>

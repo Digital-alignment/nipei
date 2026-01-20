@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, TreePine, Leaf, Info, Volume2, ArrowLeft, Sparkles, Youtube, Play, X, UserCog } from 'lucide-react';
+import { Sun, Moon, TreePine, Leaf, Info, Volume2, ArrowLeft, Sparkles, Youtube, Play, X, LogIn } from 'lucide-react';
 import { Product, Theme } from '../types';
 import { useProducts } from '../context/ProductContext';
 import ProductGrid from '../components/ProductGrid';
 import ProductDetail from '../components/ProductDetail';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import ProfileMenu from '../components/ProfileMenu';
 
 const Home: React.FC = () => {
     const { products, loading } = useProducts();
+    const { user } = useAuth();
     const [theme, setTheme] = useState<Theme>('dark');
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [youtubeUrl, setYoutubeUrl] = useState<string>('');
@@ -74,9 +77,13 @@ const Home: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link to="/admin" className={`p-3 rounded-2xl transition-all duration-300 ${theme === 'dark' ? 'hover:bg-green-800 text-green-200' : 'hover:bg-emerald-100 text-emerald-800'}`}>
-                        <UserCog size={20} />
-                    </Link>
+                    {user ? (
+                        <ProfileMenu />
+                    ) : (
+                        <Link to="/login" className={`p-3 rounded-2xl transition-all duration-300 ${theme === 'dark' ? 'hover:bg-green-800 text-green-200' : 'hover:bg-emerald-100 text-emerald-800'}`}>
+                            <LogIn size={20} />
+                        </Link>
+                    )}
                     <button
                         onClick={toggleTheme}
                         className={`p-3 rounded-2xl transition-all duration-300 shadow-xl ${theme === 'dark' ? 'bg-green-800 text-yellow-400 hover:bg-green-700' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}`}

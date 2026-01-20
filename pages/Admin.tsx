@@ -6,6 +6,7 @@ import ProductList from '../components/admin/ProductList';
 import ProductForm from '../components/admin/ProductForm';
 import { Product, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
+import ProfileMenu from '../components/ProfileMenu';
 
 const Admin: React.FC = () => {
     const { session, loading, signOut } = useAuth();
@@ -65,13 +66,10 @@ const Admin: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Mobile Logout Button (Visible only on mobile) */}
-                        <button
-                            onClick={handleSignOut}
-                            className="md:hidden p-3 bg-red-500/10 text-red-500 rounded-xl"
-                        >
-                            <LogOut size={20} />
-                        </button>
+                        {/* Profile Menu */}
+                        <div>
+                            <ProfileMenu />
+                        </div>
                     </div>
 
                     {/* Navigation Tabs - Scrollable on mobile */}
@@ -98,13 +96,6 @@ const Admin: React.FC = () => {
 
                         </div>
 
-                        {/* Desktop Logout Button */}
-                        <button
-                            onClick={handleSignOut}
-                            className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors font-bold text-sm"
-                        >
-                            <LogOut size={16} /> <span>Sair</span>
-                        </button>
                     </div>
                 </header>
 

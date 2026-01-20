@@ -18,6 +18,7 @@ import {
     Users,
     LogOut
 } from 'lucide-react';
+import ProfileMenu from '../components/ProfileMenu';
 
 interface DashboardCardProps {
     title: string;
@@ -103,7 +104,9 @@ const SupadminDashboard: React.FC = () => {
             title: "Global",
             description: "Resumo geral de todos os squads e métricas principais.",
             icon: <Globe size={24} />,
-            active: false
+            active: true,
+            onClick: () => navigate('/supaglobal'),
+            color: "emerald"
         },
         {
             title: "Squad 1: Liderança & Estratégia",
@@ -179,7 +182,9 @@ const SupadminDashboard: React.FC = () => {
             title: "Usuários",
             description: "Informações sobre futuros compradores e base de usuários.",
             icon: <Users size={24} />,
-            active: false
+            active: true,
+            onClick: () => navigate('/supadmin/users'),
+            color: "blue"
         }
     ];
 
@@ -194,12 +199,9 @@ const SupadminDashboard: React.FC = () => {
                         <p className="text-neutral-400 mt-2">Central de Comando Unificada</p>
                     </div>
 
-                    <button
-                        onClick={handleSignOut}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors font-bold text-sm self-start md:self-auto"
-                    >
-                        <LogOut size={16} /> <span>Sair</span>
-                    </button>
+                    <div className="self-start md:self-auto">
+                        <ProfileMenu />
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
