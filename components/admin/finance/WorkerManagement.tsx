@@ -31,7 +31,10 @@ const WorkerManagement: React.FC = () => {
             alert('Guardião adicionado com sucesso!');
         } catch (error: any) {
             console.error(error);
-            alert('Erro ao criar usuário: ' + (error.message || 'Erro desconhecido. Verifique se a Edge Function está implantada.'));
+            alert('Erro ao criar usuário: ' + (error.message || 'Erro desconhecido. Verifique se você está logado como admin e a Edge Function está implantada.'));
+            if (error.message?.includes('401')) {
+                alert('Sessão expirada ou sem permissão. Tente fazer login novamente.');
+            }
         } finally {
             setCreating(false);
         }

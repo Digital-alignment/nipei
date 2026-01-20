@@ -25,7 +25,10 @@ export interface Product {
   stock_quantity: number;
 
   monthly_production_goal: number;
+  allowed_squads?: string[];
 }
+
+export type UserRole = 'superadmin' | 'otter' | 'mutum_manager' | 'squad3' | 'squad4' | 'squad5' | 'squad6' | 'squad7' | 'squad8' | 'squad9' | 'public' | 'sales_viewer';
 
 export type PaymentType = 'fixed' | 'production' | 'mixed';
 
@@ -36,7 +39,7 @@ export interface WorkerSettings {
   production_rate: number;
   active: boolean;
   full_name?: string; // Joined from profiles
-  role?: string;      // Joined from profiles
+  role?: UserRole;      // Joined from profiles
 }
 
 export type ExpenseCategory = 'raw_material' | 'logistics' | 'fixed' | 'marketing' | 'other';

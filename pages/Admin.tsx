@@ -6,7 +6,7 @@ import ProductList from '../components/admin/ProductList';
 import ProductForm from '../components/admin/ProductForm';
 import ShipmentList from '../components/admin/ShipmentList';
 import FinanceLayout from '../components/admin/finance/FinanceLayout';
-import { Product } from '../types';
+import { Product, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const Admin: React.FC = () => {
@@ -16,8 +16,15 @@ const Admin: React.FC = () => {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
     useEffect(() => {
-        if (!loading && !session) {
-            navigate('/login');
+        if (!loading) {
+            if (!session) {
+                navigate('/login');
+            } else {
+                const role = session.user?.user_metadata?.role as UserRole;
+                if (role !== 'superadmin' && role !== 'otter') {
+                    navigate('/');
+                }
+            }
         }
     }, [session, loading, navigate]);
 
@@ -51,11 +58,11 @@ const Admin: React.FC = () => {
                 <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Link to="/" className="p-3 bg-neutral-800 rounded-xl hover:bg-neutral-700 transition-colors text-emerald-500">
+                            <Link to="/supadmin" className="p-3 bg-neutral-800 rounded-xl hover:bg-neutral-700 transition-colors text-emerald-500">
                                 <ArrowLeft size={24} />
                             </Link>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold font-serif">Painel Admin</h1>
+                                <h1 className="text-2xl md:text-3xl font-bold font-serif">Yawanawa aqui chegou</h1>
                                 <p className="opacity-60 text-xs md:text-sm">Medicinas da Floresta</p>
                             </div>
                         </div>

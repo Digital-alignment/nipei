@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Inventory from './pages/Inventory';
+import SupadminDashboard from './pages/SupadminDashboard';
 
 const App: React.FC = () => {
   return (
@@ -17,7 +18,8 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/s2admin" element={<Admin />} />
+              <Route path="/supadmin" element={<SupadminDashboard />} />
               <Route path="/inventory" element={<Inventory />} />
             </Routes>
           </Router>

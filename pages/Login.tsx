@@ -4,12 +4,14 @@ import { supabase } from '../lib/supabase';
 import { TreePine, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { UserRole } from '../types';
+
 const Login: React.FC = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
-    const [role, setRole] = useState<'admin' | 'inventory_manager' | 'sales_viewer'>('sales_viewer');
+    const [role, setRole] = useState<UserRole>('public');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -29,11 +31,14 @@ const Login: React.FC = () => {
                 });
                 if (error) throw error;
 
-                const userRole = data.session?.user?.user_metadata?.role;
-                if (userRole === 'inventory_manager') {
+                const userRole = data.session?.user?.user_metadata?.role as UserRole;
+                
+                if (userRole === 'mutum_manager') {
                     navigate('/inventory');
+                } else if (userRole === 'superadmin' || userRole === 'otter') {
+                    navigate('/supadmin');
                 } else {
-                    navigate('/admin');
+                    navigate('/'); // Default for public/squads for now
                 }
             } else {
                 const { error } = await supabase.auth.signUp({
@@ -99,12 +104,20 @@ const Login: React.FC = () => {
                                 <label className="block text-sm text-neutral-400 mb-2">Tipo de Conta</label>
                                 <select
                                     value={role}
-                                    onChange={(e) => setRole(e.target.value as any)}
+                                    onChange={(e) => setRole(e.target.value as UserRole)}
                                     className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-colors appearance-none"
                                 >
-                                    <option value="sales_viewer">Usuário Comum (Visualizar)</option>
-                                    <option value="inventory_manager">Gerente de Estoque (Mutum)</option>
-                                    <option value="admin">Administrador (Total)</option>
+                                    <option value="public">Público (Visitante)</option>
+                                    <option value="superadmin">Superadmin</option>
+                                    <option value="otter">Otter (Dev)</option>
+                                    <option value="mutum_manager">Gerente Mutum</option>
+                                    <option value="squad3">Squad 3</option>
+                                    <option value="squad4">Squad 4</option>
+                                    <option value="squad5">Squad 5</option>
+                                    <option value="squad6">Squad 6</option>
+                                    <option value="squad7">Squad 7</option>
+                                    <option value="squad8">Squad 8</option>
+                                    <option value="squad9">Squad 9</option>
                                 </select>
                             </div>
                         </>
