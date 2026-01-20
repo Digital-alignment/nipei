@@ -43,7 +43,10 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 audioSlots: item.audio_slots || [],
                 isVisible: item.is_visible,
                 stock_quantity: item.stock_quantity || 0,
-                monthly_production_goal: item.monthly_production_goal || 0
+                monthly_production_goal: item.monthly_production_goal || 0,
+                production_type: item.production_type,
+                product_type: item.product_type,
+                variation_data: item.variation_data
             }));
 
             setProducts(mappedProducts);
@@ -108,7 +111,10 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 audio_slots: product.audioSlots,
                 is_visible: product.isVisible,
                 stock_quantity: product.stock_quantity,
-                monthly_production_goal: product.monthly_production_goal
+                monthly_production_goal: product.monthly_production_goal,
+                production_type: product.production_type,
+                product_type: product.product_type,
+                variation_data: product.variation_data
             };
 
             const { error } = await supabase
@@ -139,7 +145,10 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 audio_slots: updatedProduct.audioSlots,
                 is_visible: updatedProduct.isVisible,
                 stock_quantity: updatedProduct.stock_quantity,
-                monthly_production_goal: updatedProduct.monthly_production_goal
+                monthly_production_goal: updatedProduct.monthly_production_goal,
+                production_type: updatedProduct.production_type,
+                product_type: updatedProduct.product_type,
+                variation_data: updatedProduct.variation_data
             };
 
             const { error } = await supabase

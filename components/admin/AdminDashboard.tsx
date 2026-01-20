@@ -3,17 +3,20 @@ import { useProducts } from '../../context/ProductContext';
 import { supabase } from '../../lib/supabase';
 import { Package, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
 import ProductionLogList from '../ProductionLogList';
+import { Product } from '../../types';
 
 const AdminCalendar = React.lazy(() => import('./AdminCalendar'));
 const ProductionRequestModal = React.lazy(() => import('./ProductionRequestModal'));
 
-const AdminDashboard: React.FC = () => {
+const AdminDashboard: React.FC<{ filter?: (p: Product) => boolean }> = ({ filter }) => {
     const { products } = useProducts();
     const [unreadCount, setUnreadCount] = useState(0);
     const [showRequestModal, setShowRequestModal] = useState(false);
 
-    const totalStock = products.reduce((acc, p) => acc + (p.stock_quantity || 0), 0);
-    const lowStockProducts = products.filter(p => (p.stock_quantity || 0) < 10);
+    const filteredProducts = filter ? products.filter(filter) : products;
+
+    const totalStock = filteredProducts.reduce((acc, p) => acc + (p.stock_quantity || 0), 0);
+    const lowStockProducts = filteredProducts.filter(p => (p.stock_quantity || 0) < 10);
 
     const fetchUnreadCount = async () => {
         const { count, error } = await supabase
@@ -120,7 +123,7 @@ const AdminDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="text-sm divide-y divide-neutral-700">
-                                {products.map(product => {
+                                {filteredProducts.map(product => {
                                     const stock = product.stock_quantity || 0;
                                     const goal = product.monthly_production_goal || 0;
                                     const percentage = goal > 0 ? (stock / goal) * 100 : 0;
@@ -147,7 +150,7 @@ const AdminDashboard: React.FC = () => {
 
                     {/* Mobile Cards */}
                     <div className="md:hidden divide-y divide-neutral-700">
-                        {products.map(product => {
+                        {filteredProducts.map(product => {
                             const stock = product.stock_quantity || 0;
                             const goal = product.monthly_production_goal || 0;
                             const percentage = goal > 0 ? (stock / goal) * 100 : 0;
@@ -209,7 +212,7 @@ const AdminDashboard: React.FC = () => {
             {showRequestModal && (
                 <React.Suspense fallback={null}>
                     <ProductionRequestModal
-                        products={products}
+                        products={filteredProducts}
                         onClose={() => setShowRequestModal(false)}
                     />
                 </React.Suspense>

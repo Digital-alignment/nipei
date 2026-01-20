@@ -20,6 +20,7 @@ const emptyProduct: Product = {
     labels: [{ key: '', value: '' }],
     audioSlots: [],
     isVisible: true,
+    stock_quantity: 0,
     monthly_production_goal: 0
 };
 
@@ -149,8 +150,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose }) => {
                             className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-emerald-500 outline-none"
                         />
                     </div>
+
                 </div>
-                <div className="flex items-end pb-1">
+                <div className="flex items-end pb-1 gap-4">
                     <label className="flex items-center gap-3 cursor-pointer group bg-neutral-900 border border-neutral-700 rounded-lg p-3 w-full hover:border-emerald-500 transition-colors">
                         <input
                             type="checkbox"
@@ -158,9 +160,57 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onClose }) => {
                             onChange={e => setFormData({ ...formData, isVisible: e.target.checked })}
                             className="w-5 h-5 accent-emerald-500 cursor-pointer"
                         />
-                        <span className="text-white font-medium">Visível no Catálogo</span>
+                        <span className="text-white font-medium">Visível no Catálogo (Vendas)</span>
                     </label>
+
+                    <div className="w-full space-y-2">
+                         <label className="text-sm text-neutral-400">Tipo de Produto (Squad 2)</label>
+                         <select
+                            value={formData.production_type || ''}
+                            onChange={(e) => setFormData({ ...formData, production_type: e.target.value })}
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-emerald-500 outline-none"
+                         >
+                            <option value="">Selecione...</option>
+                            <option value="hidrolato">Hidrolato</option>
+                            <option value="oleo_essencial">Óleo Essencial</option>
+                            <option value="tintura">Tintura</option>
+                            <option value="outro">Outro</option>
+                         </select>
+                    </div>
                 </div>
+
+                {/* Variations / Sizes */}
+                {(formData.production_type || formData.product_type === 'bulk') && (
+                     <div className="bg-neutral-900/50 p-4 rounded-xl border border-neutral-700 space-y-3">
+                        <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-widest">Variações / Tamanhos (Produção)</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                             {['2 Litros', '5 Litros', '10 Litros', '10ml', '30ml', '50ml', '500ml', '1 Litro'].map(size => (
+                                 <label key={size} className="flex items-center gap-2 p-2 bg-neutral-800 rounded-lg border border-neutral-700 hover:border-emerald-500 cursor-pointer">
+                                     <input 
+                                         type="checkbox"
+                                         checked={formData.variation_data?.sizes?.includes(size) || false}
+                                         onChange={(e) => {
+                                             const currentSizes = formData.variation_data?.sizes || [];
+                                             let newSizes;
+                                             if (e.target.checked) {
+                                                 newSizes = [...currentSizes, size];
+                                             } else {
+                                                 newSizes = currentSizes.filter((s: string) => s !== size);
+                                             }
+                                             setFormData({ 
+                                                 ...formData, 
+                                                 variation_data: { ...formData.variation_data, sizes: newSizes },
+                                                 product_type: 'bulk' // Force bulk if setting sizes here
+                                             });
+                                         }}
+                                         className="accent-emerald-500"
+                                     />
+                                     <span className="text-sm text-white">{size}</span>
+                                 </label>
+                             ))}
+                        </div>
+                     </div>
+                )}
             </section>
 
             {/* Content */}

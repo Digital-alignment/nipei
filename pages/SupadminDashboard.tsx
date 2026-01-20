@@ -135,7 +135,9 @@ const SupadminDashboard: React.FC = () => {
             title: "Squad 5: Vendas",
             description: "Gestão comercial e relacionamento com clientes.",
             icon: <BadgeDollarSign size={24} />,
-            active: false
+            active: true,
+            onClick: () => navigate('/s5admin'),
+            color: "blue"
         },
         {
             title: "Squad 6: Administrativo & Legal",

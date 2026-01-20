@@ -26,6 +26,9 @@ export interface Product {
 
   monthly_production_goal: number;
   allowed_squads?: string[];
+  production_type?: string;     // 'hidrolato', 'oleo_essencial', etc.
+  product_type?: 'retail' | 'bulk';
+  variation_data?: any;         // JSONB for flexible data (e.g. sizes)
 }
 
 export type UserRole = 'superadmin' | 'otter' | 'mutum_manager' | 'squad3' | 'squad4' | 'squad5' | 'squad6' | 'squad7' | 'squad8' | 'squad9' | 'public' | 'sales_viewer';

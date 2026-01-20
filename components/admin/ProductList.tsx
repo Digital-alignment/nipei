@@ -6,10 +6,13 @@ import { useProducts } from '../../context/ProductContext';
 interface ProductListProps {
     onEdit: (product: Product) => void;
     onCreate: () => void;
+    filter?: (product: Product) => boolean;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate }) => {
+const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate, filter }) => {
     const { products, deleteProduct, loading } = useProducts();
+
+    const filteredProducts = filter ? products.filter(filter) : products;
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Tem certeza que deseja excluir este produto?')) {
@@ -42,7 +45,7 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate }) => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                     <div key={product.id} className={`flex items-center justify-between p-4 border rounded-xl transition-all ${product.isVisible ? 'bg-neutral-800/50 border-neutral-700 hover:border-emerald-500/30' : 'bg-neutral-900/30 border-neutral-800 opacity-60'}`}>
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-20 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-700 relative">
@@ -90,7 +93,7 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate }) => {
                     </div>
                 ))}
 
-                {products.length === 0 && (
+                {filteredProducts.length === 0 && (
                     <div className="text-center py-20 text-neutral-500">
                         Nenhum produto cadastrado.
                     </div>

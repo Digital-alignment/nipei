@@ -13,7 +13,19 @@ const Home: React.FC = () => {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [youtubeUrl, setYoutubeUrl] = useState<string>('');
     const [videoId, setVideoId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    // Filter only RETAIL products for Home Page
+    const filteredProducts = products.filter(p => {
+        const isRetail = p.product_type === 'retail' || (!p.product_type && p.isVisible); // Fallback for legacy
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory ? p.production_type === selectedCategory : true;
+        
+        return isRetail && matchesSearch && matchesCategory && p.isVisible;
+    });
 
     // Body theme class toggle
     useEffect(() => {
