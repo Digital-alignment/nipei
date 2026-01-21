@@ -9,6 +9,8 @@ import { motion } from 'framer-motion';
 interface UserProfile {
     id: string;
     full_name: string;
+    yawanawa_name?: string;
+    avatar_url?: string;
     role: UserRole;
     created_at: string;
     user_forms: {
@@ -43,6 +45,8 @@ const SupadminUsers: React.FC = () => {
             .select(`
                 id,
                 full_name,
+                yawanawa_name,
+                avatar_url,
                 role,
                 created_at,
                 user_forms:user_forms(slug, status, updated_at)
@@ -91,14 +95,23 @@ const SupadminUsers: React.FC = () => {
                             className="bg-neutral-800/50 border border-neutral-700 rounded-2xl p-6 flex flex-col md:flex-row items-center md:justify-between gap-6 hover:border-neutral-600 transition-all"
                         >
                             <div className="flex items-center gap-4 w-full md:w-auto">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
-                                    <User size={24} />
+                                <div className="w-14 h-14 rounded-full bg-neutral-700/50 flex-shrink-0 flex items-center justify-center border border-neutral-600 overflow-hidden">
+                                     {user.avatar_url ? (
+                                         <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                                     ) : (
+                                        <div className="text-emerald-500 bg-emerald-500/10 w-full h-full flex items-center justify-center">
+                                            <User size={28} />
+                                        </div>
+                                     )}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg">{user.full_name || 'Usuário Sem Nome'}</h3>
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-700 text-neutral-300 capitalize">
-                                        {user.role}
-                                    </span>
+                                    <h3 className="font-bold text-lg leading-tight">{user.yawanawa_name || user.full_name || 'Usuário Sem Nome'}</h3>
+                                    {user.yawanawa_name && <p className="text-sm text-neutral-400">{user.full_name}</p>}
+                                    <div className="mt-1 flex gap-2">
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-700 text-neutral-300 capitalize">
+                                            {user.role}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
