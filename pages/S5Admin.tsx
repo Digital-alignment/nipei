@@ -21,10 +21,13 @@ const S5Admin: React.FC = () => {
                 navigate('/login');
             } else {
                 const role = session.user?.user_metadata?.role as UserRole;
-                // Allow superadmin, otter, and squad5
-                if (role !== 'superadmin' && role !== 'otter' && role !== 'squad5') {
-                    // navigate('/');
-                    // Temporarily allowing logic to pass or we need to update roles.
+                const squads = session.user?.user_metadata?.squads || [];
+                
+                // Allow superadmin, otter, or users with squad5 in their role OR squads list
+                const hasAccess = role === 'superadmin' || role === 'otter' || role === 'squad5' || (squads && squads.includes('squad5'));
+                
+                if (!hasAccess) {
+                    navigate('/');
                 }
             }
         }

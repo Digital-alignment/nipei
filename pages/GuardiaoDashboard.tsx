@@ -119,15 +119,58 @@ const GuardiaoDashboard: React.FC = () => {
                                 </h3>
                                 
                                 {profile.squads && profile.squads.length > 0 ? (
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {profile.squads.map(squad => (
-                                            <div key={squad} className="bg-neutral-700/30 border border-neutral-600 rounded-xl p-4 flex items-center justify-between group hover:border-emerald-500/50 transition-all">
-                                                <span className="capitalize font-medium text-lg text-neutral-200">
-                                                    {squad === 'mutum_manager' ? 'Mutum (Squad 2)' : squad}
-                                                </span>
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.5)] transition-all" />
-                                            </div>
-                                        ))}
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {profile.squads.map(squad => {
+                                            let squadName = squad;
+                                            let link = '';
+                                            let color = 'text-neutral-200';
+                                            let border = 'border-neutral-600';
+                                            let bg = 'bg-neutral-700/30';
+                                            let icon = <Shield size={20} />;
+
+                                            if (squad === 'mutum_manager') {
+                                                squadName = 'Squad 2: Mutum & Produção';
+                                                link = '/mutumproducao';
+                                                color = 'text-emerald-400';
+                                                border = 'border-emerald-500/30';
+                                                bg = 'bg-emerald-500/10';
+                                                icon = <Users size={20} className="text-emerald-400" />;
+                                            } else if (squad === 'squad5') {
+                                                squadName = 'Squad 5: Gestão de Pessoas';
+                                                link = '/s5admin';
+                                                color = 'text-blue-400';
+                                                border = 'border-blue-500/30';
+                                                bg = 'bg-blue-500/10';
+                                                icon = <Users size={20} className="text-blue-400" />;
+                                            }
+
+                                            return (
+                                                <div key={squad} className={`${bg} ${border} border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:shadow-lg transition-all`}>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-12 h-12 rounded-xl ${bg} border ${border} flex items-center justify-center shadow-inner`}>
+                                                            {icon}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className={`font-bold text-lg ${color}`}>{squadName}</h4>
+                                                            <p className="text-xs text-neutral-400">Acesso autorizado de guardião</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {link ? (
+                                                        <button 
+                                                            onClick={() => navigate(link)}
+                                                            className={`px-6 py-2 rounded-xl font-bold text-sm bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-600 hover:border-white/50 transition-all flex items-center gap-2 shadow-lg`}
+                                                        >
+                                                            Acessar Dashboard <ArrowRight size={16} />
+                                                        </button>
+                                                    ) : (
+                                                        <div className="px-4 py-2 rounded-xl border border-neutral-700 text-neutral-500 text-xs font-bold bg-neutral-900/50 cursor-not-allowed">
+                                                            Dashboard indisponível
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 ) : (
                                     <div className="text-center py-8 bg-neutral-700/20 rounded-xl border border-neutral-700/50 border-dashed">

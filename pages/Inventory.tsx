@@ -6,12 +6,43 @@ import InventoryGrid from '../components/InventoryGrid';
 import ProductionLogList from '../components/ProductionLogList';
 import WorkerProfileModal from '../components/inventory/WorkerProfileModal';
 import ToolTracker from '../components/inventory/ToolTracker';
+import ActiveProductionGoals from '../components/inventory/ActiveProductionGoals';
 import { useNavigate } from 'react-router-dom';
 
 const Inventory: React.FC = () => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
     const [requests, setRequests] = React.useState<any[]>([]);
+    
+    // Auth Check
+    React.useEffect(() => {
+        const checkAccess = async () => {
+             if (user) {
+                // Fetch latest profile to ensure up-to-date squads
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, squads')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    const role = profile.role;
+                    const squads = profile.squads || [];
+                     // Access: Superadmin, Otter, Mutum Manager, or Guardian with Mutum access
+                    const hasAccess = role === 'superadmin' || role === 'otter' || role === 'mutum_manager' || (role === 'guardiao' && squads.includes('mutum_manager'));
+                    
+                    if (!hasAccess) {
+                        navigate('/');
+                    }
+                } else {
+                     navigate('/');
+                }
+            }
+        };
+        
+        checkAccess();
+    }, [user, navigate]);
+
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'production' | 'tools'>('production');
 
@@ -124,6 +155,7 @@ const Inventory: React.FC = () => {
 
             {activeTab === 'production' ? (
                 <>
+                    <ActiveProductionGoals />
                     <InventoryGrid />
 
                     <div className="px-4 mt-8">

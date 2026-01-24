@@ -1,5 +1,6 @@
 import React from 'react';
-import { Edit, Trash2, Plus, Eye, EyeOff } from 'lucide-react';
+import CreateProductionGoalModal from './CreateProductionGoalModal';
+import { Edit, Trash2, Plus, Eye, EyeOff, Target } from 'lucide-react';
 import { Product } from '../../types';
 import { useProducts } from '../../context/ProductContext';
 

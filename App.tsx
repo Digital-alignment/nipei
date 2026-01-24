@@ -31,7 +31,7 @@ const App: React.FC = () => {
               <Route path="/supadmin/users" element={<SupadminUsers />} />
               <Route path="/supaglobal" element={<Supaglobal />} />
               <Route path="/guardiao" element={<GuardiaoDashboard />} />
-              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/mutumproducao" element={<Inventory />} />
               <Route path="/u/:slug" element={<UserForm />} />
             </Routes>
           </Router>

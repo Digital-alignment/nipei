@@ -40,6 +40,7 @@ export interface WorkerSettings {
   payment_type: PaymentType;
   fixed_salary: number;
   production_rate: number;
+  payment_date?: string; // e.g. "Dia 5", "Weekly", etc.
   active: boolean;
   full_name?: string; // Joined from profiles
   role?: UserRole;      // Joined from profiles

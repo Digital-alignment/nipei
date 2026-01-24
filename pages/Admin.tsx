@@ -4,6 +4,8 @@ import { ArrowLeft, LogOut } from 'lucide-react';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import ProductList from '../components/admin/ProductList';
 import ProductForm from '../components/admin/ProductForm';
+import MutumProductForm from '../components/admin/MutumProductForm';
+import Squad2Finance from '../components/admin/finance/Squad2Finance';
 import { Product, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 import ProfileMenu from '../components/ProfileMenu';
@@ -11,7 +13,7 @@ import ProfileMenu from '../components/ProfileMenu';
 const Admin: React.FC = () => {
     const { session, loading, signOut } = useAuth();
     const navigate = useNavigate();
-    const [view, setView] = useState<'dashboard' | 'list' | 'form'>('dashboard');
+    const [view, setView] = useState<'dashboard' | 'list' | 'form' | 'finance'>('dashboard');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
     useEffect(() => {
@@ -93,7 +95,15 @@ const Admin: React.FC = () => {
                             >
                                 Produtos
                             </button>
-
+                            <button
+                                onClick={() => {
+                                    setView('finance');
+                                    setEditingProduct(null);
+                                }}
+                                className={`flex-1 md:flex-none px-6 py-3 md:py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${view === 'finance' ? 'bg-neutral-700 text-white shadow-md' : 'text-neutral-400 hover:text-white'}`}
+                            >
+                                Finanças
+                            </button>
                         </div>
 
                     </div>
@@ -110,7 +120,11 @@ const Admin: React.FC = () => {
                 )}
 
                 {view === 'form' && (
-                    <ProductForm product={editingProduct} onClose={handleCloseForm} />
+                    <MutumProductForm product={editingProduct} onClose={handleCloseForm} />
+                )}
+
+                {view === 'finance' && (
+                    <Squad2Finance />
                 )}
             </div>
         </div>

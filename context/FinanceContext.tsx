@@ -217,11 +217,24 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const getTotalExpenses = (month?: number, year?: number) => {
-        // Simple client-side calc for now
-        return expenses.reduce((acc, curr) => {
-            // TODO: Filter by date if month/year provided
+        // 1. Sum recorded expenses
+        const expenseTotal = expenses.reduce((acc, curr) => {
+             // TODO: Filter by date if month/year provided
+             // For now, simple sum of all (as per previous logic, but should ideally filter)
             return acc + Number(curr.amount);
         }, 0);
+
+        // 2. Sum fixed payroll (Projected monthly cost)
+        // Only active workers with fixed or mixed payment type
+        const payrollTotal = workers.reduce((acc, curr) => {
+            if (!curr.active) return acc;
+            if (curr.payment_type === 'fixed' || curr.payment_type === 'mixed') {
+                return acc + Number(curr.fixed_salary || 0);
+            }
+            return acc;
+        }, 0);
+
+        return expenseTotal + payrollTotal;
     };
 
     return (
