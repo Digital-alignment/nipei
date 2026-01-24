@@ -31,7 +31,7 @@ export interface Product {
   variation_data?: any;         // JSONB for flexible data (e.g. sizes)
 }
 
-export type UserRole = 'superadmin' | 'otter' | 'mutum_manager' | 'squad3' | 'squad4' | 'squad5' | 'squad6' | 'squad7' | 'squad8' | 'squad9' | 'public' | 'sales_viewer';
+export type UserRole = 'superadmin' | 'otter' | 'mutum_manager' | 'squad3' | 'squad4' | 'squad5' | 'squad6' | 'squad7' | 'squad8' | 'squad9' | 'public' | 'sales_viewer' | 'guardiao';
 
 export type PaymentType = 'fixed' | 'production' | 'mixed';
 

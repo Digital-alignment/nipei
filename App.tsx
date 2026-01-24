@@ -13,6 +13,7 @@ import S5Admin from './pages/S5Admin';
 import Supaglobal from './pages/Supaglobal';
 import UserForm from './pages/UserForm';
 import NotificationToast from './components/NotificationToast';
+import GuardiaoDashboard from './pages/GuardiaoDashboard';
 
 const App: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const App: React.FC = () => {
               <Route path="/supadmin" element={<SupadminDashboard />} />
               <Route path="/supadmin/users" element={<SupadminUsers />} />
               <Route path="/supaglobal" element={<Supaglobal />} />
+              <Route path="/guardiao" element={<GuardiaoDashboard />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/u/:slug" element={<UserForm />} />
             </Routes>

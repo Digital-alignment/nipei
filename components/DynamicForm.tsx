@@ -156,15 +156,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ slug, userId, isOwner, isAdmi
         }
     };
     
-    // ... inside renderField switch ...
-            case 'section_title':
-                return (
-                    <div className="mt-6 mb-2 pt-4 border-t border-neutral-700/50">
-                        <h4 className="text-xl font-bold text-emerald-400 font-serif">{field.label}</h4>
-                        {field.description && <p className="text-sm text-neutral-400">{field.description}</p>}
-                    </div>
-                );
-    // ...
+
 
     // New Success View Logic
     if (successMessage === "Jornada finalizada com sucesso!" && status === 'submitted') {
@@ -405,6 +397,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ slug, userId, isOwner, isAdmi
                                 {renderField(subField, field.key)}
                             </div>
                         ))}
+                    </div>
+                );
+            case 'section_title':
+                return (
+                    <div className="mt-6 mb-2 pt-4 border-t border-neutral-700/50">
+                        <h4 className="text-xl font-bold text-emerald-400 font-serif">{field.label}</h4>
+                        {field.description && <p className="text-sm text-neutral-400">{field.description}</p>}
                     </div>
                 );
             default:

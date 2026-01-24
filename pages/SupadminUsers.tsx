@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import { ArrowLeft, User, FileText, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
+import { ArrowLeft, User, FileText, CheckCircle, AlertTriangle, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
+import EditUserModal from '../components/admin/EditUserModal';
 
 interface UserProfile {
     id: string;
@@ -12,6 +13,7 @@ interface UserProfile {
     yawanawa_name?: string;
     avatar_url?: string;
     role: UserRole;
+    squads?: string[];
     created_at: string;
     user_forms: {
         slug: string;
@@ -25,6 +27,8 @@ const SupadminUsers: React.FC = () => {
     const navigate = useNavigate();
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
+    const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+    const [filter, setFilter] = useState<'all' | 'submitted' | 'draft' | 'none'>('all');
 
     useEffect(() => {
         if (!authLoading && session) {
@@ -48,6 +52,7 @@ const SupadminUsers: React.FC = () => {
                 yawanawa_name,
                 avatar_url,
                 role,
+                squads,
                 created_at,
                 user_forms:user_forms(slug, status, updated_at)
             `)
@@ -66,6 +71,30 @@ const SupadminUsers: React.FC = () => {
         }
         setLoading(false);
     };
+
+    const handleSaveUser = async (userId: string, newRole: UserRole, newSquads: string[]) => {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ role: newRole, squads: newSquads })
+            .eq('id', userId);
+
+        if (error) {
+            console.error('Error updating user:', error);
+            alert('Erro ao atualizar usuário');
+        } else {
+            // Update local state
+            setUsers(users.map(u => u.id === userId ? { ...u, role: newRole, squads: newSquads } : u));
+            setEditingUser(null);
+        }
+    };
+
+    const filteredUsers = users.filter(user => {
+        if (filter === 'all') return true;
+        if (filter === 'submitted') return user.user_forms?.status === 'submitted';
+        if (filter === 'draft') return user.user_forms?.status === 'draft';
+        if (filter === 'none') return !user.user_forms;
+        return true;
+    });
 
     if (loading || authLoading) return <div className="min-h-screen bg-neutral-900 flex items-center justify-center text-white">Carregando...</div>;
 
@@ -86,8 +115,36 @@ const SupadminUsers: React.FC = () => {
             </nav>
 
             <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+                {/* Filter Tabs */}
+                <div className="flex gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
+                    <button 
+                        onClick={() => setFilter('all')}
+                        className={`px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${filter === 'all' ? 'bg-white text-neutral-900' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    >
+                        Todos ({users.length})
+                    </button>
+                    <button 
+                        onClick={() => setFilter('submitted')}
+                        className={`px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${filter === 'submitted' ? 'bg-emerald-500 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    >
+                        <CheckCircle size={14} /> Enviados ({users.filter(u => u.user_forms?.status === 'submitted').length})
+                    </button>
+                    <button 
+                        onClick={() => setFilter('draft')}
+                        className={`px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${filter === 'draft' ? 'bg-amber-500 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    >
+                        <AlertTriangle size={14} /> Rascunhos ({users.filter(u => u.user_forms?.status === 'draft').length})
+                    </button>
+                     <button 
+                        onClick={() => setFilter('none')}
+                        className={`px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${filter === 'none' ? 'bg-neutral-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    >
+                        Não Iniciado ({users.filter(u => !u.user_forms).length})
+                    </button>
+                </div>
+
                 <div className="grid gap-4">
-                    {users.map((user) => (
+                    {filteredUsers.map((user) => (
                         <motion.div 
                             key={user.id}
                             initial={{ opacity: 0, y: 10 }}
@@ -105,12 +162,26 @@ const SupadminUsers: React.FC = () => {
                                      )}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg leading-tight">{user.yawanawa_name || user.full_name || 'Usuário Sem Nome'}</h3>
+                                    <h3 className="font-bold text-lg leading-tight flex items-center gap-2">
+                                        {user.yawanawa_name || user.full_name || 'Usuário Sem Nome'}
+                                        {user.role === 'guardiao' && (
+                                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                                Guardião
+                                            </span>
+                                        )}
+                                    </h3>
                                     {user.yawanawa_name && <p className="text-sm text-neutral-400">{user.full_name}</p>}
-                                    <div className="mt-1 flex gap-2">
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-700 text-neutral-300 capitalize">
+                                    <div className="mt-1 flex flex-wrap gap-2">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${user.role === 'guardiao' ? 'bg-neutral-700 text-neutral-400 line-through opacity-50' : 'bg-neutral-700 text-neutral-300'}`}>
                                             {user.role}
                                         </span>
+                                        {user.squads && user.squads.length > 0 && user.role === 'guardiao' && (
+                                            user.squads.map(sq => (
+                                                <span key={sq} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900/40 text-emerald-300 border border-emerald-700/50 capitalize">
+                                                    {sq}
+                                                </span>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -135,19 +206,36 @@ const SupadminUsers: React.FC = () => {
                                     )}
                                 </div>
 
-                                {user.user_forms && (
+                                <div className="flex gap-2">
                                     <button
-                                        onClick={() => navigate(`/u/${user.user_forms!.slug}`)}
-                                        className="h-10 px-4 flex items-center gap-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-xl transition-all font-bold text-sm shadow-md"
+                                        onClick={() => setEditingUser(user)}
+                                        className="h-10 w-10 flex items-center justify-center bg-neutral-700 hover:bg-neutral-600 text-neutral-300 hover:text-white rounded-xl transition-all shadow-md group"
+                                        title="Editar Função/Squads"
                                     >
-                                        <FileText size={16} /> Ver
+                                        <Edit size={16} className="group-hover:scale-110 transition-transform" />
                                     </button>
-                                )}
+
+                                    {user.user_forms && (
+                                        <button
+                                            onClick={() => navigate(`/u/${user.user_forms!.slug}`)}
+                                            className="h-10 px-4 flex items-center gap-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-xl transition-all font-bold text-sm shadow-md"
+                                        >
+                                            <FileText size={16} /> Ver
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     ))}
                 </div>
             </main>
+
+            <EditUserModal 
+                isOpen={!!editingUser}
+                onClose={() => setEditingUser(null)}
+                user={editingUser}
+                onSave={handleSaveUser}
+            />
         </div>
     );
 };

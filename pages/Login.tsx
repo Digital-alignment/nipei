@@ -37,6 +37,8 @@ const Login: React.FC = () => {
                     navigate('/inventory');
                 } else if (userRole === 'superadmin' || userRole === 'otter') {
                     navigate('/supadmin');
+                } else if (userRole === 'guardiao') {
+                    navigate('/guardiao');
                 } else {
                     navigate('/'); // Default for public/squads for now
                 }
@@ -107,17 +109,9 @@ const Login: React.FC = () => {
                                     onChange={(e) => setRole(e.target.value as UserRole)}
                                     className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-white focus:border-emerald-500 outline-none transition-colors appearance-none"
                                 >
-                                    <option value="public">Público (Visitante)</option>
+                                    <option value="public">Visitante (Público)</option>
+                                    <option value="guardiao">Guardião</option>
                                     <option value="superadmin">Superadmin</option>
-                                    <option value="otter">Otter (Dev)</option>
-                                    <option value="mutum_manager">Gerente Mutum</option>
-                                    <option value="squad3">Squad 3</option>
-                                    <option value="squad4">Squad 4</option>
-                                    <option value="squad5">Squad 5</option>
-                                    <option value="squad6">Squad 6</option>
-                                    <option value="squad7">Squad 7</option>
-                                    <option value="squad8">Squad 8</option>
-                                    <option value="squad9">Squad 9</option>
                                 </select>
                             </div>
                         </>
