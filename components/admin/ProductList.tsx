@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CreateProductionGoalModal from './CreateProductionGoalModal';
-import { Edit, Trash2, Plus, Eye, EyeOff, Target } from 'lucide-react';
+import { Edit, Trash2, Plus, Eye, EyeOff, Target, Search } from 'lucide-react';
 import { Product } from '../../types';
 import { useProducts } from '../../context/ProductContext';
 
@@ -8,12 +8,18 @@ interface ProductListProps {
     onEdit: (product: Product) => void;
     onCreate: () => void;
     filter?: (product: Product) => boolean;
+    allowProductionGoals?: boolean;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate, filter }) => {
+const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate, filter, allowProductionGoals = false }) => {
     const { products, deleteProduct, loading } = useProducts();
+    const [goalProduct, setGoalProduct] = React.useState<Product | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredProducts = filter ? products.filter(filter) : products;
+    const filteredProducts = (filter ? products.filter(filter) : products).filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        p.technicalName?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Tem certeza que deseja excluir este produto?')) {
@@ -43,6 +49,16 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate, filter }) =
                     <Plus size={20} />
                     Novo Produto
                 </button>
+            </div>
+
+            <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={20} />
+                <input
+                    placeholder="Buscar produtos..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl p-4 pl-12 text-white placeholder-neutral-500 focus:border-emerald-500 outline-none"
+                />
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -76,6 +92,15 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate, filter }) =
                         </div>
 
                         <div className="flex items-center gap-3">
+                            {(allowProductionGoals || product.production_type || product.product_type === 'bulk') && (
+                                <button
+                                    onClick={() => setGoalProduct(product)}
+                                    className="p-2 text-emerald-400 hover:text-white hover:bg-emerald-500/20 rounded-lg transition-colors border border-emerald-500/20"
+                                    title="Metas de Produção"
+                                >
+                                    <Target size={20} />
+                                </button>
+                            )}
                             <button
                                 onClick={() => onEdit(product)}
                                 className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-lg transition-colors"
@@ -100,6 +125,13 @@ const ProductList: React.FC<ProductListProps> = ({ onEdit, onCreate, filter }) =
                     </div>
                 )}
             </div>
+
+            {goalProduct && (
+                <CreateProductionGoalModal 
+                    product={goalProduct} 
+                    onClose={() => setGoalProduct(null)} 
+                />
+            )}
         </div>
     );
 };

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase'; // Adjust path
-import { Target, Calendar, ChevronRight, Package, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { supabase } from '../../lib/supabase';
+import { Target, Calendar, Package, ChevronRight, Droplet, Send, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Product } from '../../types';
+import ShipmentModal from '../ShipmentModal';
 
 interface ProductionGoal {
     id: string;
@@ -9,16 +11,18 @@ interface ProductionGoal {
     deadline: string;
     status: string;
     targets: Record<string, number>;
-    product: {
-        id: string;
-        name: string;
-        images: string[];
-    };
+    current_progress: Record<string, number>;
+    product: Product;
 }
 
-const ActiveProductionGoals: React.FC = () => {
+interface ActiveProductionGoalsProps {
+    onSelectGoal?: (product: Product) => void;
+}
+
+const ActiveProductionGoals: React.FC<ActiveProductionGoalsProps> = ({ onSelectGoal }) => {
     const [goals, setGoals] = useState<ProductionGoal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [shipmentModalOpen, setShipmentModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchGoals = async () => {
@@ -30,13 +34,13 @@ const ActiveProductionGoals: React.FC = () => {
                     deadline, 
                     status, 
                     targets,
-                    product:products (id, name, images)
+                    current_progress,
+                    product:products (*)
                 `)
                 .neq('status', 'completed')
                 .order('deadline', { ascending: true });
 
             if (data) {
-                // Transform data to match interface if needed (Supabase returns arrays for joins sometimes)
                 const formattedGoals = data.map(item => ({
                     ...item,
                     product: Array.isArray(item.product) ? item.product[0] : item.product
@@ -48,7 +52,6 @@ const ActiveProductionGoals: React.FC = () => {
 
         fetchGoals();
 
-        // Optional: Subscribe to changes
         const subscription = supabase
             .channel('production_goals_channel')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'production_goals' }, fetchGoals)
@@ -57,70 +60,144 @@ const ActiveProductionGoals: React.FC = () => {
         return () => { subscription.unsubscribe(); };
     }, []);
 
-    if (loading) return <div className="p-4 text-center text-white/50 animate-pulse">Carregando metas...</div>;
+    if (loading) return <div className="p-8 text-center text-white/50 animate-pulse text-xl">Carregando metas...</div>;
 
-    if (goals.length === 0) return null;
+    if (goals.length === 0) return (
+        <div className="p-8 bg-neutral-900/50 rounded-3xl border border-white/5 text-center mb-8">
+            <Target className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Sem metas ativas</h3>
+            <p className="text-neutral-500">Nenhuma meta de produção definida no momento.</p>
+        </div>
+    );
 
     return (
-        <div className="mb-8 px-4">
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Target className="text-emerald-500" />
-                Metas de Produção Ativas
+        <div className="mb-12 px-4">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                    <Target className="text-emerald-500" size={24} />
+                </div>
+                Metas de Produção
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {goals.map(goal => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {goals.map(goal => {
+                    // Check Completion
+                    const targets = goal.targets || {};
+                    const progress = goal.current_progress || {};
+                    
+                    let isComplete = true;
+                    // If no targets (manual), it's never "auto-complete" unless specific logic
+                    // If targets exist, check if all met
+                    if (Object.keys(targets).length > 0) {
+                         for (const key in targets) {
+                             if ((progress[key] || 0) < targets[key]) {
+                                 isComplete = false;
+                                 break;
+                             }
+                         }
+                    } else {
+                        isComplete = false; // Manual goals don't auto-complete
+                    }
+
+                    return (
                     <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
+                        key={goal.id}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        key={goal.id} 
-                        className="bg-neutral-800/80 border border-neutral-700/50 rounded-2xl p-4 relative overflow-hidden group hover:border-emerald-500/30 transition-all shadow-lg"
+                        className={`rounded-3xl overflow-hidden border shadow-xl flex flex-col transition-all ${isComplete ? 'bg-[#1A3A2A] border-emerald-500/50 shadow-emerald-900/40' : 'bg-[#1A1A1A] border-white/10'}`}
                     >
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-neutral-700 overflow-hidden border border-neutral-600">
-                                    {goal.product?.images?.[0] ? (
-                                        <img src={goal.product.images[0]} alt={goal.product.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-neutral-500"><Package size={20} /></div>
-                                    )}
-                                </div>
+                        {/* Header Image & Status */}
+                        <div className="h-32 relative bg-neutral-800">
+                            {goal.product?.images?.[0] ? (
+                                <img src={goal.product.images[0]} alt={goal.product.name} className="w-full h-full object-cover opacity-60" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-neutral-600"><Package size={40} /></div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A1A] to-transparent" />
+                            
+                            <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
                                 <div>
-                                    <h3 className="font-bold text-lg text-white leading-tight">{goal.product?.name}</h3>
-                                    <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider">{goal.name}</p>
+                                    <h3 className="text-2xl font-bold text-white leading-tight shadow-black drop-shadow-md">{goal.product?.name}</h3>
+                                    <p className="text-emerald-400 font-bold text-sm uppercase tracking-wider">{goal.name}</p>
                                 </div>
                             </div>
-                            <div className={`
-                                px-2 py-1 rounded text-[10px] font-bold uppercase border
-                                ${new Date(goal.deadline) < new Date() ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-neutral-900 text-neutral-400 border-neutral-700'}
-                            `}>
-                                {new Date(goal.deadline) < new Date() ? 'Atrasado' : 'No Prazo'}
+
+                            <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-bold uppercase backdrop-blur-md border shadow-lg ${
+                                isComplete ? 'bg-emerald-500 text-black border-emerald-400' :
+                                new Date(goal.deadline) < new Date() 
+                                ? 'bg-red-500/20 text-red-100 border-red-500/30' 
+                                : 'bg-emerald-500/20 text-emerald-100 border-emerald-500/30'
+                            }`}>
+                                {isComplete ? 'Concluído!' : (new Date(goal.deadline) < new Date() ? 'Atrasado' : 'No Prazo')}
                             </div>
                         </div>
 
-                        {/* Deadline */}
-                        <div className="flex items-center gap-2 text-sm text-neutral-300 mb-4 bg-black/20 p-2 rounded-lg">
-                            <Calendar size={14} className="text-emerald-500" />
-                            <span>Entrega: <strong className="text-white">{new Date(goal.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}</strong></span>
-                        </div>
+                        {/* Content */}
+                        <div className="p-6 flex-1 flex flex-col">
+                            {/* Deadline */}
+                            <div className="flex items-center gap-3 text-neutral-400 mb-6 bg-white/5 p-3 rounded-xl">
+                                <Calendar className="text-emerald-500" size={20} />
+                                <span className="text-sm font-medium">
+                                    Meta para: <strong className="text-white text-lg ml-1">{goal.deadline ? new Date(goal.deadline + 'T12:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</strong>
+                                </span>
+                            </div>
 
-                        {/* Targets Grid */}
-                        <div className="bg-neutral-900/50 rounded-xl p-3 border border-white/5">
-                            <p className="text-[10px] text-neutral-500 uppercase font-bold mb-2">Objetivos</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {Object.entries(goal.targets || {}).map(([size, quantity]) => (
-                                    <div key={size} className="flex justify-between items-center bg-neutral-800 px-2 py-1.5 rounded-lg border border-neutral-700/50">
-                                        <span className="text-xs text-neutral-400 font-medium">{size}</span>
-                                        <span className="text-sm font-bold text-white">{quantity} <span className="text-[10px] text-neutral-600">un</span></span>
+                            {/* Targets List with Progress */}
+                            <div className="space-y-4 mb-8 flex-1">
+                                {Object.entries(goal.targets || {}).map(([size, value]) => {
+                                    const targetQty = value as number;
+                                    const currentQty = (progress[size] as number) || 0;
+                                    const percent = Math.min(100, (currentQty / targetQty) * 100);
+                                    
+                                    return (
+                                        <div key={size} className="space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-neutral-400 font-medium">{size}</span>
+                                                <span className="text-white font-bold">
+                                                    <span className={currentQty >= targetQty ? 'text-emerald-400' : ''}>{currentQty}</span> / {targetQty} un
+                                                </span>
+                                            </div>
+                                            <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all duration-500 ${currentQty >= targetQty ? 'bg-emerald-500' : 'bg-emerald-600/50'}`} 
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Action Button */}
+                            {isComplete ? (
+                                <div className="space-y-3">
+                                    <div className="text-center p-2 mb-2">
+                                        <h4 className="text-xl font-bold text-emerald-400 flex items-center justify-center gap-2">
+                                            <CheckCircle2 /> Meta Atingida!
+                                        </h4>
+                                        <p className="text-white/60 text-sm">Parabéns! Tudo pronto para envio.</p>
                                     </div>
-                                ))}
-                            </div>
+                                    <button 
+                                        onClick={() => setShipmentModalOpen(true)}
+                                        className="w-full bg-white text-emerald-900 hover:bg-neutral-200 font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg"
+                                    >
+                                        <Send size={24} />
+                                        ENVIAR PRODUÇÃO
+                                    </button>
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={() => onSelectGoal && onSelectGoal(goal.product)}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg"
+                                >
+                                    <Droplet size={24} />
+                                    REGISTRAR PRODUÇÃO
+                                </button>
+                            )}
                         </div>
-
-                        {/* Hover Action */}
-                        <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     </motion.div>
-                ))}
+                );
+                })}
             </div>
         </div>
     );

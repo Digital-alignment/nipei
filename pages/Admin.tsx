@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft, LogOut, Target } from 'lucide-react';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import ProductList from '../components/admin/ProductList';
 import ProductForm from '../components/admin/ProductForm';
 import MutumProductForm from '../components/admin/MutumProductForm';
 import Squad2Finance from '../components/admin/finance/Squad2Finance';
+import CreateProductionGoalModal from '../components/admin/CreateProductionGoalModal';
 import { Product, UserRole } from '../types';
 import { useAuth } from '../context/AuthContext';
 import ProfileMenu from '../components/ProfileMenu';
@@ -15,6 +16,7 @@ const Admin: React.FC = () => {
     const navigate = useNavigate();
     const [view, setView] = useState<'dashboard' | 'list' | 'form' | 'finance'>('dashboard');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [showGoalModal, setShowGoalModal] = useState(false);
 
     useEffect(() => {
         if (!loading) {
@@ -69,7 +71,14 @@ const Admin: React.FC = () => {
                         </div>
 
                         {/* Profile Menu */}
-                        <div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowGoalModal(true)}
+                                className="hidden md:flex items-center gap-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-500 border border-emerald-500/30 px-4 py-2 rounded-lg font-bold transition-colors"
+                            >
+                                <Target size={18} />
+                                Nova Meta
+                            </button>
                             <ProfileMenu />
                         </div>
                     </div>
@@ -116,6 +125,7 @@ const Admin: React.FC = () => {
                         onCreate={handleCreate} 
                         onEdit={handleEdit} 
                         filter={p => p.product_type === 'bulk' || Boolean(p.production_type)}
+                        allowProductionGoals={true}
                     />
                 )}
 
@@ -125,6 +135,12 @@ const Admin: React.FC = () => {
 
                 {view === 'finance' && (
                     <Squad2Finance />
+                )}
+
+                {showGoalModal && (
+                    <CreateProductionGoalModal
+                        onClose={() => setShowGoalModal(false)}
+                    />
                 )}
             </div>
         </div>

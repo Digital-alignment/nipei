@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { useProducts } from '../context/ProductContext';
 import { Product } from '../types';
 import ShipmentModal from './ShipmentModal';
-import StockControlModal from './StockControlModal';
-import { Leaf, AlertCircle, Package } from 'lucide-react';
+import { Package, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const InventoryGrid: React.FC = () => {
+interface InventoryGridProps {
+    onSelectProduct: (product: Product) => void;
+}
+
+const InventoryGrid: React.FC<InventoryGridProps> = ({ onSelectProduct }) => {
     const { products, loading } = useProducts();
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
 
     const productsSorted = [...products].sort((a, b) => a.name.localeCompare(b.name));
@@ -56,20 +58,12 @@ const InventoryGrid: React.FC = () => {
                     <ProductCard
                         key={product.id}
                         product={product}
-                        onClick={() => setSelectedProduct(product)}
+                        onClick={() => onSelectProduct(product)}
                     />
                 ))}
             </div>
 
-            {/* Product Modal */}
-            <AnimatePresence>
-                {selectedProduct && (
-                    <StockControlModal
-                        product={selectedProduct}
-                        onClose={() => setSelectedProduct(null)}
-                    />
-                )}
-            </AnimatePresence>
+
 
             {/* Shipment Modal */}
             <AnimatePresence>

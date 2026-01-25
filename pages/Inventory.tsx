@@ -7,6 +7,9 @@ import ProductionLogList from '../components/ProductionLogList';
 import WorkerProfileModal from '../components/inventory/WorkerProfileModal';
 import ToolTracker from '../components/inventory/ToolTracker';
 import ActiveProductionGoals from '../components/inventory/ActiveProductionGoals';
+import StockControlModal from '../components/StockControlModal';
+import { Product } from '../types';
+import { AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const Inventory: React.FC = () => {
@@ -44,6 +47,7 @@ const Inventory: React.FC = () => {
     }, [user, navigate]);
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [activeTab, setActiveTab] = useState<'production' | 'tools'>('production');
 
     React.useEffect(() => {
@@ -155,8 +159,8 @@ const Inventory: React.FC = () => {
 
             {activeTab === 'production' ? (
                 <>
-                    <ActiveProductionGoals />
-                    <InventoryGrid />
+                    <ActiveProductionGoals onSelectGoal={setSelectedProduct} />
+                    <InventoryGrid onSelectProduct={setSelectedProduct} />
 
                     <div className="px-4 mt-8">
                         <h3 className="text-neutral-500 text-xs uppercase tracking-widest mb-4">Histórico Recente</h3>
@@ -173,6 +177,15 @@ const Inventory: React.FC = () => {
                 isOpen={isProfileOpen}
                 onClose={() => setIsProfileOpen(false)}
             />
+
+            <AnimatePresence>
+                {selectedProduct && (
+                    <StockControlModal
+                        product={selectedProduct}
+                        onClose={() => setSelectedProduct(null)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };
