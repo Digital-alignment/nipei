@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { User, LogOut } from 'lucide-react';
 import InventoryGrid from '../components/InventoryGrid';
 import ProductionLogList from '../components/ProductionLogList';
 import WorkerProfileModal from '../components/inventory/WorkerProfileModal';
@@ -11,6 +10,7 @@ import StockControlModal from '../components/StockControlModal';
 import { Product } from '../types';
 import { AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import MutumHeader from '../components/MutumHeader';
 
 const Inventory: React.FC = () => {
     const { user, signOut } = useAuth();
@@ -75,58 +75,29 @@ const Inventory: React.FC = () => {
             .eq('id', id);
     };
 
-    const handleLogout = async () => {
-        await signOut();
-        navigate('/login');
-    };
 
-    const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Guardião';
 
     return (
         <div className="min-h-screen bg-black pb-20">
             {/* New Header */}
-            <div className="bg-neutral-900/50 backdrop-blur-md sticky top-0 z-30 border-b border-white/5 py-4 px-4 mb-4">
-                <div className="flex justify-between items-center max-w-7xl mx-auto">
-                    <div>
-                        <p className="text-[10px] text-neutral-400 uppercase tracking-widest mb-1">Área da Produção</p>
-                        <h1 className="text-lg font-bold text-white">
-                            Bem-vindo, <span className="text-emerald-400">{firstName}</span>
-                        </h1>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleLogout}
-                            className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-colors"
-                            title="Sair"
-                        >
-                            <LogOut size={20} />
-                        </button>
-                        <button
-                            onClick={() => setIsProfileOpen(true)}
-                            className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
-                        >
-                            <User size={20} />
-                        </button>
-                    </div>
-                </div>
+            <MutumHeader />
 
-                {/* Tabs */}
-                <div className="flex gap-4 mt-4 border-b border-white/5 pb-1 max-w-7xl mx-auto">
-                    <button
-                        onClick={() => setActiveTab('production')}
-                        className={`pb-2 px-2 text-sm font-bold uppercase tracking-wider transition-colors ${activeTab === 'production' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-neutral-500 hover:text-white'
-                            }`}
-                    >
-                        Produção
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('tools')}
-                        className={`pb-2 px-2 text-sm font-bold uppercase tracking-wider transition-colors ${activeTab === 'tools' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-neutral-500 hover:text-white'
-                            }`}
-                    >
-                        Inventário (Ferramentas)
-                    </button>
-                </div>
+            {/* Tabs */}
+            <div className="flex gap-4 mt-4 border-b border-white/5 pb-1 max-w-7xl mx-auto px-4">
+                <button
+                    onClick={() => setActiveTab('production')}
+                    className={`pb-2 px-2 text-sm font-bold uppercase tracking-wider transition-colors ${activeTab === 'production' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-neutral-500 hover:text-white'
+                        }`}
+                >
+                    Produção
+                </button>
+                <button
+                    onClick={() => setActiveTab('tools')}
+                    className={`pb-2 px-2 text-sm font-bold uppercase tracking-wider transition-colors ${activeTab === 'tools' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-neutral-500 hover:text-white'
+                        }`}
+                >
+                    Inventário (Ferramentas)
+                </button>
             </div>
 
             {/* Pending Requests Alert */}
