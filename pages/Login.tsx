@@ -31,7 +31,15 @@ const Login: React.FC = () => {
                 });
                 if (error) throw error;
 
-                const userRole = data.session?.user?.user_metadata?.role as UserRole;
+                // Fetch the role consistently from the profiles table
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.session?.user?.id)
+                    .single();
+
+                // Fallback to metadata if profile fetch fails or role is missing (though profile reference is safer)
+                const userRole = profileData?.role || data.session?.user?.user_metadata?.role as UserRole;
                 
                 if (userRole === 'mutum_manager') {
                     navigate('/inventory');

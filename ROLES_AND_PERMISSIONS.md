@@ -21,7 +21,14 @@ A special developer role with equivalent permissions to Superadmin.
 - **Capabilities:** Full CRUD on ALL content. Debugging and maintenance access.
 - **Scope:** Global.
 
-### 🦜 **Mutum Manager (formerly Inventory Manager)**
+### 🛡️ **Guardião**
+
+Trusted community member responsible for logging journeys and managing specific squad activities.
+
+- **Capabilities:** Access to Guardiao Dashboard, can submit journey forms.
+- **Scope:** Assigned Squads.
+
+### 🦜 **Mutum Manager (Squad2 - formerly Inventory Manager)**
 
 Focused on logistics and stock availability.
 
@@ -55,6 +62,7 @@ The `user_role` database enum will be updated to include:
 - `superadmin`
 - `otter`
 - `mutum_manager`
+- `guardiao`
 - `squad3`, `squad4`, ... `squad9`
 - `public` (concept, not DB role)
 
