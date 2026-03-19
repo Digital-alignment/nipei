@@ -1,6 +1,3 @@
-# Execute e implante seu aplicativo AI Studio
-
-![GHBanner](https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6)
 
 Isso contém tudo o que você precisa para executar seu aplicativo localmente.
 
