@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 import MarkdownView from "./MarkdownView";
 import ParasiteSeoPanel from "./ParasiteSeoPanel";
+import GenericContentStudio from "./GenericContentStudio";
 
-type Tab = "research" | "parasite" | "openseo" | "office" | "generate" | "deploy" | "history" | "transcripts" | "skill";
+type Tab = "studio" | "research" | "parasite" | "openseo" | "office" | "generate" | "deploy" | "history" | "transcripts" | "skill";
 
 interface ResearchTopic {
   keyword: string; score: number; badges: string[];
@@ -80,7 +81,7 @@ function badgeClass(b: string): string {
 }
 
 export default function SEOView() {
-  const [tab, setTab] = useState<Tab>("generate");
+  const [tab, setTab] = useState<Tab>("studio");
 
   // ── Generate state ─────────────────────────────────────────────────
   const [keyword, setKeyword] = useState("");
@@ -396,6 +397,7 @@ export default function SEOView() {
   }
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { key: "studio",      label: "Content Studio (MVF)", icon: <Sparkles size={14} /> },
     { key: "research",    label: "Research",    icon: <Search size={14} /> },
     { key: "parasite",    label: "Parasite SEO", icon: <Crosshair size={14} /> },
     { key: "openseo",     label: "OpenSEO",     icon: <TrendingUp size={14} /> },
@@ -1212,6 +1214,8 @@ export default function SEOView() {
           )}
         </div>
       )}
+
+      {tab === "studio" && <GenericContentStudio />}
 
       {tab === "skill" && <MarkdownView src="/api/seo/skill" />}
     </div>

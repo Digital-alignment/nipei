@@ -20,15 +20,17 @@ import {
   Feather,
   ShoppingBag,
   HeartHandshake,
-  Lock,
   Upload,
   Link as LinkIcon,
+  Layers,
+  Award,
 } from "lucide-react";
 
 interface CategoryOption {
   id: string;
   vaultFolder: string;
   title: string;
+  subtitle: string;
   description: string;
   icon: React.ReactNode;
   suggestedSquad: string;
@@ -40,8 +42,9 @@ const CATEGORIES: CategoryOption[] = [
     id: "vision_philosophy",
     vaultFolder: "Master_Sources/Vision_Philosophy",
     title: "Visión & Sabiduría Ancestral",
-    description: "Libros sagrados, filosofía Inî Rau, manifiestos y declaraciones de origen.",
-    icon: <Feather className="w-5 h-5 text-amber-400" />,
+    subtitle: "Filosofía, Manifiestos & Fundamentos",
+    description: "Libros sagrados, filosofía Inî Rau, manifiestos de origen y principios orientadores de Nipëi OS.",
+    icon: <Feather className="w-6 h-6 text-amber-400" />,
     suggestedSquad: "squad_1_ceo",
     defaultTags: ["vision", "filosofia", "sabiduria", "sagrado"],
   },
@@ -49,8 +52,9 @@ const CATEGORIES: CategoryOption[] = [
     id: "botanical_catalog",
     vaultFolder: "Master_Sources/Botanical_Catalog",
     title: "Botánica & Farmacopea Florestal",
-    description: "Fichas de plantas medicinales, preparaciones botánicas y recetas tradicionales.",
-    icon: <BookOpen className="w-5 h-5 text-emerald-400" />,
+    subtitle: "Medicina Tradicional & Recetario",
+    description: "Fichas de plantas medicinales, preparaciones botánicas, recetarios tradicionales y formulaciones Mutum.",
+    icon: <BookOpen className="w-6 h-6 text-emerald-400" />,
     suggestedSquad: "squad_2_mutum",
     defaultTags: ["botanica", "fitoterapia", "farmacopea", "mutum"],
   },
@@ -58,17 +62,19 @@ const CATEGORIES: CategoryOption[] = [
     id: "retreat_protocols",
     vaultFolder: "Master_Sources/Retreat_Protocols",
     title: "Operaciones & Protocolos de Retiro",
-    description: "Guías de facilitación, seguridad médica, dietas samakey e intenciones de retiro.",
-    icon: <HeartHandshake className="w-5 h-5 text-purple-400" />,
+    subtitle: "Guías de Facilitación & Anamnesis",
+    description: "Protocolos de facilitación, seguridad médica, dietas samakey y cuestionarios de anamnesis espiritual.",
+    icon: <HeartHandshake className="w-6 h-6 text-purple-400" />,
     suggestedSquad: "squad_3_retiros",
     defaultTags: ["retiros", "protocolos", "hospitalidad", "anamnesis"],
   },
   {
     id: "commercial_ethical",
     vaultFolder: "Master_Sources/Commercial_Ethical",
-    title: "Comercio Ético & Modelo de Negocio",
-    description: "Políticas de precios, certificación de origen, acuerdos de distribución e Inî Rau E-Commerce.",
-    icon: <ShoppingBag className="w-5 h-5 text-blue-400" />,
+    title: "Comercio Ético & Catálogo de Productos",
+    subtitle: "Modelos Comerciales & Precios",
+    description: "Políticas de precios, certificación de origen ético, fichas de catálogo e Inî Rau E-Commerce.",
+    icon: <ShoppingBag className="w-6 h-6 text-blue-400" />,
     suggestedSquad: "squad_4_vendas_mkt",
     defaultTags: ["comercio", "lotes", "precios", "e_commerce"],
   },
@@ -76,8 +82,9 @@ const CATEGORIES: CategoryOption[] = [
     id: "corporate_squads",
     vaultFolder: "Master_Sources/Corporate_Squads",
     title: "Estructura Corporativa & Squads",
-    description: "Organigramas, gobernanza del Instituto Mutum, contratos legales y centro de costos.",
-    icon: <Building className="w-5 h-5 text-cyan-400" />,
+    subtitle: "Gobernanza & Acuerdos Legales",
+    description: "Organigramas, gobernanza del Instituto Mutum, contratos legales, DRE y centros de costo.",
+    icon: <Building className="w-6 h-6 text-cyan-400" />,
     suggestedSquad: "squad_5_adm_legal",
     defaultTags: ["gobernanza", "legal", "instituto", "dre"],
   },
@@ -134,7 +141,6 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
       const res = await fetch(urlInput);
       if (res.ok) {
         const text = await res.text();
-        // Clean simple HTML
         const clean = text
           .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
           .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
@@ -214,29 +220,45 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
   };
 
   return (
-    <div className="bg-[#111622] border border-[#1e293b] rounded-2xl p-6 shadow-2xl text-slate-200">
-      {/* Step Progress Bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          <span className={step >= 1 ? "text-emerald-400 flex items-center gap-1" : ""}>
-            1. Categoría
-          </span>
-          <span className={step >= 2 ? "text-emerald-400 flex items-center gap-1" : ""}>
-            2. Metadatos
-          </span>
-          <span className={step >= 3 ? "text-emerald-400 flex items-center gap-1" : ""}>
-            3. Contenido
-          </span>
-          <span className={step >= 4 ? "text-emerald-400 flex items-center gap-1" : ""}>
-            4. Certificación
-          </span>
-          <span className={step >= 5 ? "text-emerald-400 flex items-center gap-1" : ""}>
-            5. Ingestado
-          </span>
+    <div className="bg-gradient-to-b from-[#0e1610] via-[#09100a] to-[#050805] border border-[#1b331c] rounded-3xl p-6 md:p-8 shadow-2xl text-slate-200">
+      {/* Header Badge & Title */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#182a18]">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="px-3 py-1 text-[11px] font-black tracking-wider uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 rounded-full flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              NIPËI OS MASTER KNOWLEDGE VAULT
+            </span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+            Ingestión Guiada de Fuentes Maestras
+          </h2>
+          <p className="text-xs md:text-sm text-[#8aa88a] mt-1">
+            Curaduría estructurada de sabiduría, protocolos e información corporativa verificada sin alucinaciones.
+          </p>
         </div>
-        <div className="w-full h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
+
+        <div className="flex items-center gap-2 bg-[#0c180e] p-3 rounded-2xl border border-[#1b331c]">
+          <Award className="w-6 h-6 text-emerald-400" />
+          <div className="text-xs">
+            <p className="text-[#688a68]">Nivel de Gobernanza:</p>
+            <p className="font-bold text-white">Certificado Cero-Alucinación</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Step Visual Indicator */}
+      <div className="mb-10">
+        <div className="grid grid-cols-5 gap-2 text-center text-xs font-bold uppercase tracking-wider mb-3">
+          <div className={step >= 1 ? "text-emerald-400 font-extrabold" : "text-slate-600"}>1. Categoría</div>
+          <div className={step >= 2 ? "text-emerald-400 font-extrabold" : "text-slate-600"}>2. Metadatos</div>
+          <div className={step >= 3 ? "text-emerald-400 font-extrabold" : "text-slate-600"}>3. Contenido</div>
+          <div className={step >= 4 ? "text-emerald-400 font-extrabold" : "text-slate-600"}>4. Certificación</div>
+          <div className={step >= 5 ? "text-emerald-400 font-extrabold" : "text-slate-600"}>5. Ingestado</div>
+        </div>
+        <div className="w-full h-2 bg-[#122013] rounded-full overflow-hidden p-0.5 border border-[#182a18]">
           <div
-            className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300"
+            className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full transition-all duration-500 shadow-md shadow-emerald-500/50"
             style={{ width: `${(step / 5) * 100}%` }}
           />
         </div>
@@ -245,12 +267,12 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
       {/* STEP 1: CATEGORY SELECTION */}
       {step === 1 && (
         <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Compass className="w-6 h-6 text-emerald-400" /> Paso 1: Selecciona el Eje Temático Maestro
+          <div className="bg-[#0b140c] border border-[#172818] p-5 rounded-2xl">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Compass className="w-5 h-5 text-emerald-400" /> Paso 1: Selecciona el Eje Temático Maestro
             </h3>
-            <p className="text-sm text-slate-400 mt-1">
-              Escoge el eje temático para organizar correctamente el documento en el **Master Knowledge Vault**.
+            <p className="text-xs text-[#8aa88a] mt-1">
+              Clasifica la fuente en el árbol temático oficial de **Nipëi Vault** para indexación instantánea.
             </p>
           </div>
 
@@ -261,23 +283,29 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
                 <div
                   key={cat.id}
                   onClick={() => handleSelectCategory(cat)}
-                  className={`cursor-pointer p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between ${
+                  className={`cursor-pointer p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${
                     isSelected
-                      ? "bg-[#162032] border-emerald-500 shadow-lg shadow-emerald-950/40"
-                      : "bg-[#0b0f19] border-[#1e293b] hover:border-slate-700 hover:bg-[#111827]"
+                      ? "bg-[#112413] border-emerald-500 shadow-xl shadow-emerald-950/60 ring-2 ring-emerald-500/30"
+                      : "bg-[#080f09] border-[#152416] hover:border-[#223d23] hover:bg-[#0c180e]"
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="p-2 bg-[#1e293b] rounded-lg">{cat.icon}</div>
-                      {isSelected && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-3 bg-[#162a18] border border-emerald-500/30 rounded-xl shadow-md">{cat.icon}</div>
+                      {isSelected ? (
+                        <span className="px-3 py-1 text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-slate-950 rounded-full flex items-center gap-1 shadow-sm">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Seleccionado
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#688a68] font-mono">{cat.suggestedSquad}</span>
+                      )}
                     </div>
-                    <h4 className="font-semibold text-white text-base">{cat.title}</h4>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">{cat.description}</p>
+                    <h4 className="font-extrabold text-white text-base">{cat.title}</h4>
+                    <p className="text-xs font-semibold text-emerald-400/90 mt-0.5">{cat.subtitle}</p>
+                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">{cat.description}</p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-[#1e293b] flex items-center justify-between text-xs text-slate-500 font-mono">
-                    <span>{cat.vaultFolder}</span>
-                    <span className="text-emerald-400/80">{cat.suggestedSquad}</span>
+                  <div className="mt-4 pt-3 border-t border-[#172818] flex items-center justify-between text-[11px] text-[#688a68] font-mono">
+                    <span>📁 {cat.vaultFolder}</span>
                   </div>
                 </div>
               );
@@ -287,7 +315,7 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
           <div className="flex justify-end pt-4">
             <button
               onClick={() => setStep(2)}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-950/40"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black px-7 py-3 rounded-2xl transition-all shadow-xl shadow-emerald-950/50 text-sm"
             >
               Siguiente: Metadatos <ArrowRight className="w-4 h-4" />
             </button>
@@ -298,18 +326,18 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
       {/* STEP 2: METADATA */}
       {step === 2 && (
         <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-cyan-400" /> Paso 2: Metadatos de la Fuente Maestra
+          <div className="bg-[#0b140c] border border-[#172818] p-5 rounded-2xl">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-cyan-400" /> Paso 2: Metadatos de la Fuente Maestra
             </h3>
-            <p className="text-sm text-slate-400 mt-1">
-              Identifica la fuente y especifica el Squad custodio responsable de esta sabiduría.
+            <p className="text-xs text-[#8aa88a] mt-1">
+              Especifique el título, autor/origen y el Squad custodio responsable de mantener actualizada esta fuente.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5 bg-[#080f09] border border-[#152416] p-6 rounded-2xl">
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label className="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">
                 Título del Documento / Manual Maestro *
               </label>
               <input
@@ -317,13 +345,13 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej. Libro Inî Rau: Filosofía y Protocolos Sagrados Mutum"
-                className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                className="w-full bg-[#0d180f] border border-[#1b331c] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 font-semibold"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                <label className="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">
                   Autor / Origen de la Fuente
                 </label>
                 <input
@@ -331,18 +359,18 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
                   placeholder="Ej. Pajé Mutum, Dra. Ana Castro"
-                  className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-[#0d180f] border border-[#1b331c] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+                <label className="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">
                   Squad Custodio Responsable
                 </label>
                 <select
                   value={squad}
                   onChange={(e) => setSquad(e.target.value)}
-                  className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-[#0d180f] border border-[#1b331c] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 font-semibold"
                 >
                   {SQUADS_LIST.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -354,28 +382,28 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
+              <label className="block text-xs font-extrabold uppercase text-slate-300 mb-1.5">
                 Resumen Ejecutivo / Descripción Corta
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-                placeholder="Breve explicación del propósito de este documento maestro y cómo debe ser usado por Nipëi OS..."
-                className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                rows={3}
+                placeholder="Explicación concisa del propósito de esta fuente y cómo debe ser consultada por los Agentes de Nipëi OS..."
+                className="w-full bg-[#0d180f] border border-[#1b331c] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-300 mb-1 flex items-center gap-1">
-                <Tag className="w-3.5 h-3.5" /> Tags de Búsqueda (separados por coma)
+              <label className="block text-xs font-extrabold uppercase text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-emerald-400" /> Tags de Indexación (separados por coma)
               </label>
               <input
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 placeholder="vision, sagrado, mutum, botanica"
-                className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono"
+                className="w-full bg-[#0d180f] border border-[#1b331c] rounded-xl px-4 py-3 text-xs text-emerald-300 focus:outline-none focus:border-emerald-500 font-mono"
               />
             </div>
           </div>
@@ -383,7 +411,7 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
           <div className="flex justify-between pt-4">
             <button
               onClick={() => setStep(1)}
-              className="flex items-center gap-2 bg-[#1e293b] hover:bg-slate-800 text-slate-300 px-5 py-2.5 rounded-xl font-medium text-sm transition-all"
+              className="flex items-center gap-2 bg-[#122214] hover:bg-[#18301b] text-slate-300 px-6 py-2.5 rounded-2xl font-bold text-sm transition-all border border-[#1c351f]"
             >
               <ArrowLeft className="w-4 h-4" /> Atrás
             </button>
@@ -395,7 +423,7 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
                 }
                 setStep(3);
               }}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-950/40"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black px-7 py-3 rounded-2xl transition-all shadow-xl shadow-emerald-950/50 text-sm"
             >
               Siguiente: Contenido <ArrowRight className="w-4 h-4" />
             </button>
@@ -406,98 +434,99 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
       {/* STEP 3: CONTENT */}
       {step === 3 && (
         <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <FileText className="w-6 h-6 text-amber-400" /> Paso 3: Carga del Contenido de la Fuente
+          <div className="bg-[#0b140c] border border-[#172818] p-5 rounded-2xl">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-amber-400" /> Paso 3: Carga del Contenido de la Fuente
             </h3>
-            <p className="text-sm text-slate-400 mt-1">
-              Proporciona el texto completo, extrae el contenido desde una URL o sube un archivo Markdown/Texto.
+            <p className="text-xs text-[#8aa88a] mt-1">
+              Ingresa el texto maestro en Markdown, extrae el contenido directamente desde una URL o importa un archivo.
             </p>
           </div>
 
-          {/* Content Method Selector */}
-          <div className="flex gap-2 p-1 bg-[#0b0f19] border border-[#1e293b] rounded-xl w-fit">
+          {/* Method Picker */}
+          <div className="flex gap-2 p-1.5 bg-[#080f09] border border-[#152416] rounded-2xl w-fit">
             <button
               onClick={() => setContentMethod("text")}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 contentMethod === "text"
-                  ? "bg-[#1e293b] text-emerald-400 shadow-sm"
+                  ? "bg-[#142916] text-emerald-400 border border-emerald-500/40 shadow-md"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <FileText className="w-3.5 h-3.5" /> Pegar Texto / Markdown
+              <FileText className="w-4 h-4" /> Texto / Markdown Directo
             </button>
             <button
               onClick={() => setContentMethod("url")}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 contentMethod === "url"
-                  ? "bg-[#1e293b] text-cyan-400 shadow-sm"
+                  ? "bg-[#142916] text-cyan-400 border border-cyan-500/40 shadow-md"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <LinkIcon className="w-3.5 h-3.5" /> Extraer URL
+              <LinkIcon className="w-4 h-4" /> Extraer desde URL
             </button>
             <button
               onClick={() => setContentMethod("file")}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 contentMethod === "file"
-                  ? "bg-[#1e293b] text-purple-400 shadow-sm"
+                  ? "bg-[#142916] text-purple-400 border border-purple-500/40 shadow-md"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <Upload className="w-3.5 h-3.5" /> Cargar Archivo
+              <Upload className="w-4 h-4" /> Archivo (.md / .txt)
             </button>
           </div>
 
           {contentMethod === "url" && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 bg-[#080f09] border border-[#152416] p-4 rounded-2xl">
               <input
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder="https://ejemplo.com/documento-maestro"
-                className="flex-1 bg-[#0b0f19] border border-[#1e293b] rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                className="flex-1 bg-[#0d180f] border border-[#1b331c] rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-cyan-500"
               />
               <button
                 onClick={handleFetchUrl}
                 disabled={loadingUrl}
-                className="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50"
+                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black px-5 py-2 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50"
               >
-                {loadingUrl ? "Obteniendo..." : "Extraer URL"}
+                {loadingUrl ? "Extrayendo..." : "Extraer Web"}
               </button>
             </div>
           )}
 
           {contentMethod === "file" && (
-            <div className="border-2 border-dashed border-[#1e293b] hover:border-slate-600 rounded-xl p-6 text-center bg-[#0b0f19]">
-              <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-              <p className="text-xs text-slate-300">Selecciona un archivo Markdown o Texto plano (.md, .txt)</p>
+            <div className="border-2 border-dashed border-[#1b331c] hover:border-emerald-500 rounded-2xl p-6 text-center bg-[#080f09] transition-all">
+              <Upload className="w-8 h-8 text-purple-400 mx-auto mb-2 animate-bounce" />
+              <p className="text-xs font-bold text-slate-200">Arrastra o selecciona un archivo Markdown (.md) o Texto (.txt)</p>
               <input
                 type="file"
                 accept=".md,.txt,.json"
                 onChange={handleFileUpload}
-                className="mt-3 text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#1e293b] file:text-purple-300 hover:file:bg-slate-800"
+                className="mt-3 text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#162a18] file:text-emerald-300 hover:file:bg-[#1e3b21]"
               />
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold uppercase text-slate-300 mb-1">
-              Contenido de la Fuente * ({content.length} caracteres)
+          <div className="bg-[#080f09] border border-[#152416] p-5 rounded-2xl">
+            <label className="block text-xs font-extrabold uppercase text-slate-300 mb-2 flex justify-between items-center">
+              <span>Contenido de la Fuente *</span>
+              <span className="text-emerald-400 font-mono text-[11px]">{content.length} caracteres</span>
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={12}
-              placeholder="Pega aquí el contenido completo del documento maestro en formato Markdown..."
-              className="w-full bg-[#0b0f19] border border-[#1e293b] rounded-xl p-4 text-xs font-mono text-slate-200 focus:outline-none focus:border-amber-500 leading-relaxed"
+              placeholder="Escribe o pega aquí el contenido completo del documento maestro..."
+              className="w-full bg-[#0d180f] border border-[#1b331c] rounded-xl p-4 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500 leading-relaxed"
             />
           </div>
 
           <div className="flex justify-between pt-4">
             <button
               onClick={() => setStep(2)}
-              className="flex items-center gap-2 bg-[#1e293b] hover:bg-slate-800 text-slate-300 px-5 py-2.5 rounded-xl font-medium text-sm transition-all"
+              className="flex items-center gap-2 bg-[#122214] hover:bg-[#18301b] text-slate-300 px-6 py-2.5 rounded-2xl font-bold text-sm transition-all border border-[#1c351f]"
             >
               <ArrowLeft className="w-4 h-4" /> Atrás
             </button>
@@ -509,7 +538,7 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
                 }
                 setStep(4);
               }}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-950/40"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black px-7 py-3 rounded-2xl transition-all shadow-xl shadow-emerald-950/50 text-sm"
             >
               Siguiente: Certificación <ArrowRight className="w-4 h-4" />
             </button>
@@ -520,79 +549,79 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
       {/* STEP 4: ETHICAL CERTIFICATION */}
       {step === 4 && (
         <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-emerald-400" /> Paso 4: Certificación de Origen Ético & Gobernanza
+          <div className="bg-[#0b140c] border border-[#172818] p-5 rounded-2xl">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" /> Paso 4: Certificación de Origen Ético & Gobernanza
             </h3>
-            <p className="text-sm text-slate-400 mt-1">
-              Verifica los controles de calidad y gobernanza para garantizar el cumplimiento del principio de **Cero Alucinación**.
+            <p className="text-xs text-[#8aa88a] mt-1">
+              Confirma que la fuente cumple los requisitos del Núcleo para ser utilizada sin alucinaciones por los Agentes IA.
             </p>
           </div>
 
-          <div className="space-y-3 bg-[#0b0f19] border border-[#1e293b] rounded-xl p-5">
-            <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-[#111827] rounded-lg transition-colors">
+          <div className="space-y-3 bg-[#080f09] border border-[#152416] rounded-2xl p-6">
+            <label className="flex items-start gap-3.5 cursor-pointer p-3 hover:bg-[#0d180f] rounded-xl transition-all border border-transparent hover:border-[#1b331c]">
               <input
                 type="checkbox"
                 checked={originAudited}
                 onChange={(e) => setOriginAudited(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-emerald-500 rounded"
+                className="mt-1 w-5 h-5 accent-emerald-500 rounded cursor-pointer"
               />
               <div>
-                <span className="font-semibold text-white text-sm">🟢 Origem Auditada e Verificada</span>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  La fuente proviene directamente de líderes autorizados del Núcleo o documentos corporativos oficiales.
+                <span className="font-extrabold text-white text-sm">🟢 Origem Auditada e Verificada</span>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  Documento auténtico verificado por líderes del Núcleo o dirección ejecutiva de Nipëi OS.
                 </p>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-[#111827] rounded-lg transition-colors">
+            <label className="flex items-start gap-3.5 cursor-pointer p-3 hover:bg-[#0d180f] rounded-xl transition-all border border-transparent hover:border-[#1b331c]">
               <input
                 type="checkbox"
                 checked={zeroHallucinationCompliant}
                 onChange={(e) => setZeroHallucinationCompliant(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-emerald-500 rounded"
+                className="mt-1 w-5 h-5 accent-emerald-500 rounded cursor-pointer"
               />
               <div>
-                <span className="font-semibold text-white text-sm">🟢 Conformidade Cero-Alucinação (RAG Strict)</span>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Este texto servirá como referencia estricta e inquebrantable para las respuestas de los Agentes de IA.
+                <span className="font-extrabold text-white text-sm">🟢 Conformidade Cero-Alucinação (RAG Strict)</span>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  Texto inquebrantable de consulta estricta para los agentes de IA (Hermes, Antigravity, Claude).
                 </p>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-[#111827] rounded-lg transition-colors">
+            <label className="flex items-start gap-3.5 cursor-pointer p-3 hover:bg-[#0d180f] rounded-xl transition-all border border-transparent hover:border-[#1b331c]">
               <input
                 type="checkbox"
                 checked={aiCommunityApproved}
                 onChange={(e) => setAiCommunityApproved(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-emerald-500 rounded"
+                className="mt-1 w-5 h-5 accent-emerald-500 rounded cursor-pointer"
               />
               <div>
-                <span className="font-semibold text-white text-sm">🟢 Aprovado para Consulta Comunitária pelos Agentes</span>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Habilita a Hermes, Antigravity y Claude para consultar y resumir esta fuente cuando sea relevante.
+                <span className="font-extrabold text-white text-sm">🟢 Aprovado para Consulta Comunitária pelos Agentes</span>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  Habilita la lectura automatizada por los Squads de Nipëi OS para generar resúmenes y responder consultas.
                 </p>
               </div>
             </label>
 
-            <label className="flex items-start gap-3 cursor-pointer p-2 hover:bg-[#111827] rounded-lg transition-colors">
+            <label className="flex items-start gap-3.5 cursor-pointer p-3 hover:bg-[#0d180f] rounded-xl transition-all border border-transparent hover:border-[#1b331c]">
               <input
                 type="checkbox"
                 checked={commercialVetoChecked}
                 onChange={(e) => setCommercialVetoChecked(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-emerald-500 rounded"
+                className="mt-1 w-5 h-5 accent-emerald-500 rounded cursor-pointer"
               />
               <div>
-                <span className="font-semibold text-white text-sm">🟢 Verificação de Veto Comercial e Respeito Éico</span>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  No transgrede los límites sagrados ni las cláusulas de privacidad corporativa.
+                <span className="font-extrabold text-white text-sm">🟢 Verificação de Veto Comercial e Respeito Éico</span>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                  Respeto a los límites sagrados y cláusulas de confidencialidad corporativa.
                 </p>
               </div>
             </label>
           </div>
 
           {errorMessage && (
-            <div className="p-4 bg-red-950/60 border border-red-800/80 rounded-xl text-xs text-red-200">
+            <div className="p-4 bg-red-950/80 border border-red-800 rounded-2xl text-xs text-red-200">
               ⚠️ Error: {errorMessage}
             </div>
           )}
@@ -600,14 +629,14 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
           <div className="flex justify-between pt-4">
             <button
               onClick={() => setStep(3)}
-              className="flex items-center gap-2 bg-[#1e293b] hover:bg-slate-800 text-slate-300 px-5 py-2.5 rounded-xl font-medium text-sm transition-all"
+              className="flex items-center gap-2 bg-[#122214] hover:bg-[#18301b] text-slate-300 px-6 py-2.5 rounded-2xl font-bold text-sm transition-all border border-[#1c351f]"
             >
               <ArrowLeft className="w-4 h-4" /> Atrás
             </button>
             <button
               onClick={handleSaveMasterSource}
               disabled={isSubmitting}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-slate-950 font-extrabold px-8 py-3 rounded-xl transition-all shadow-xl shadow-emerald-950/50 text-sm disabled:opacity-50"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-black px-8 py-3 rounded-2xl transition-all shadow-xl shadow-emerald-950/50 text-sm disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -626,23 +655,23 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
       {/* STEP 5: COMPLETED */}
       {step === 5 && submitResult && (
         <div className="space-y-6 text-center py-6">
-          <div className="w-16 h-16 bg-emerald-950/80 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-400 shadow-xl shadow-emerald-950/60">
-            <CheckCircle2 className="w-10 h-10" />
+          <div className="w-20 h-20 bg-emerald-950 border-2 border-emerald-500 rounded-3xl flex items-center justify-center mx-auto text-emerald-400 shadow-2xl shadow-emerald-950/80">
+            <CheckCircle2 className="w-12 h-12" />
           </div>
 
           <div>
-            <h3 className="text-2xl font-extrabold text-white">¡Fuente Maestra Ingestada con Éxito!</h3>
-            <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
-              El documento fue procesado, firmado con checksum SHA256 y guardado en la estructura oficial de **Nipëi Vault**.
+            <h3 className="text-2xl md:text-3xl font-black text-white">¡Fuente Maestra Ingestada!</h3>
+            <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-md mx-auto">
+              El documento fue procesado, firmado con checksum SHA256 y guardado en **Nipëi Vault**.
             </p>
           </div>
 
-          <div className="bg-[#0b0f19] border border-[#1e293b] rounded-xl p-4 max-w-xl mx-auto text-left text-xs font-mono space-y-2">
-            <div className="flex justify-between text-slate-400">
+          <div className="bg-[#080f09] border border-[#152416] rounded-2xl p-5 max-w-xl mx-auto text-left text-xs font-mono space-y-2.5 shadow-inner">
+            <div className="flex justify-between text-slate-400 border-b border-[#152416] pb-2">
               <span>Ruta Guardada:</span>
               <span className="text-emerald-400 font-bold">{submitResult.vaultPath}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-400 border-b border-[#152416] pb-2">
               <span>Archivo:</span>
               <span className="text-slate-200">{submitResult.filename}</span>
             </div>
@@ -653,14 +682,14 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
           </div>
 
           {submitResult.aiDigest?.keyTakeaways?.length > 0 && (
-            <div className="bg-[#162032] border border-emerald-900/60 rounded-xl p-4 max-w-xl mx-auto text-left">
+            <div className="bg-[#0c180e] border border-emerald-900/60 rounded-2xl p-5 max-w-xl mx-auto text-left">
               <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Zap className="w-4 h-4" /> AI Digest Automático
               </h4>
-              <ul className="space-y-1 text-xs text-slate-300">
+              <ul className="space-y-1.5 text-xs text-slate-300">
                 {submitResult.aiDigest.keyTakeaways.map((t: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="text-emerald-400">•</span> {t}
+                    <span className="text-emerald-400 font-bold">•</span> {t}
                   </li>
                 ))}
               </ul>
@@ -675,7 +704,7 @@ export default function GuidedIngestionWizard({ onComplete }: { onComplete?: () 
                 setContent("");
                 setStep(1);
               }}
-              className="bg-[#1e293b] hover:bg-slate-800 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-all"
+              className="bg-[#122214] hover:bg-[#18301b] text-emerald-300 border border-[#1c351f] font-extrabold px-6 py-3 rounded-2xl text-xs transition-all shadow-md"
             >
               ➕ Ingestar Otra Fuente Maestra
             </button>

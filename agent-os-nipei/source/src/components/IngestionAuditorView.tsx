@@ -62,7 +62,7 @@ interface VaultStats {
 }
 
 export default function IngestionAuditorView() {
-  const [activeTab, setActiveTab] = useState<"ingest" | "guided" | "audit" | "vault">("guided");
+  const [activeTab, setActiveTab] = useState<"ingest" | "guided" | "audit" | "vault">("ingest");
   const [ingestMethod, setIngestMethod] = useState<"text" | "url" | "file">("text");
 
   // URL State
@@ -332,18 +332,6 @@ export default function IngestionAuditorView() {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 mt-6 border-b border-[#182818] pb-3">
           <button
-            onClick={() => setActiveTab("guided")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer ${
-              activeTab === "guided"
-                ? "bg-gradient-to-r from-emerald-950 to-teal-950 text-emerald-300 border border-emerald-500/50 shadow-lg shadow-green-950/40 font-bold"
-                : "text-[#88a888] hover:text-white hover:bg-[#0c140c]"
-            }`}
-          >
-            <Sparkles size={16} className="text-emerald-400" />
-            🧙‍♂️ Ingestión Guiada (Master Vault)
-          </button>
-
-          <button
             onClick={() => setActiveTab("ingest")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer ${
               activeTab === "ingest"
@@ -382,6 +370,18 @@ export default function IngestionAuditorView() {
           >
             <FolderCheck size={16} />
             Vault Explorer ({vaultStats?.knowledgeCount || 0} Notas)
+          </button>
+
+          <button
+            onClick={() => setActiveTab("guided")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer ${
+              activeTab === "guided"
+                ? "bg-gradient-to-r from-emerald-950 to-teal-950 text-emerald-300 border border-emerald-500/50 shadow-lg shadow-green-950/40 font-bold"
+                : "text-[#88a888] hover:text-white hover:bg-[#0c140c]"
+            }`}
+          >
+            <Sparkles size={16} className="text-emerald-400" />
+            🧙‍♂️ Ingestión Guiada (Master Vault)
           </button>
         </div>
       </div>
