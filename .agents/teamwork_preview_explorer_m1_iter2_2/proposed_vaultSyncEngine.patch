@@ -1,0 +1,177 @@
+--- a/agent-os-nipei/source/src/lib/vaultSyncEngine.ts
++++ b/agent-os-nipei/source/src/lib/vaultSyncEngine.ts
+@@ -111,9 +111,20 @@
+-// Concurrency mutex per file path to prevent race conditions during atomic writes
+-const fileLocks = new Map<string, Promise<unknown>>();
+-function withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
+-  const current = fileLocks.get(filePath) || Promise.resolve();
+-  const next = current.then(fn, fn);
+-  fileLocks.set(filePath, next as Promise<unknown>);
+-  return next;
+-}
++// Concurrency mutex per file path to prevent race conditions during atomic writes.
++// Normalizes and canonicalizes lock keys to avoid case mismatch on Windows NTFS.
++export function getLockKey(filePath: string): string {
++  const resolved = path.resolve(filePath);
++  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
++}
++
++const fileLocks = new Map<string, Promise<unknown>>();
++export function withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
++  const key = getLockKey(filePath);
++  const current = fileLocks.get(key) || Promise.resolve();
++  const next = current
++    .then(fn, fn)
++    .finally(() => {
++      if (fileLocks.get(key) === next) {
++        fileLocks.delete(key);
++      }
++    });
++  fileLocks.set(key, next as Promise<unknown>);
++  return next;
++}
+@@ -237,6 +248,73 @@
++/**
++ * Detects transient filesystem errors on Windows during concurrent file operations.
++ */
++export function isTransientFsError(code?: string): boolean {
++  if (!code) return false;
++  return (
++    code === "EBUSY" ||
++    code === "EPERM" ||
++    code === "EACCES" ||
++    code === "ENOENT" ||
++    code === "EMFILE" ||
++    code === "ENFILE"
++  );
++}
++
++/**
++ * Calculates exponential backoff delay with proportional jitter.
++ */
++export function calculateBackoffWithJitter(
++  attempt: number,
++  initialDelayMs = 25,
++  maxDelayMs = 200
++): number {
++  const base = Math.min(maxDelayMs, initialDelayMs * Math.pow(2, attempt));
++  const jitter = 0.75 + Math.random() * 0.5;
++  return Math.max(10, Math.floor(base * jitter));
++}
++
++const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
++
++/**
++ * Reads a file with retry backoff to survive transient locks when other processes write.
++ */
++export async function readFileWithRetry(filePath: string, maxRetries = 5): Promise<string> {
++  let lastErr: unknown;
++  for (let attempt = 0; attempt <= maxRetries; attempt++) {
++    try {
++      return await fs.promises.readFile(filePath, "utf8");
++    } catch (err: any) {
++      lastErr = err;
++      if (!isTransientFsError(err?.code) || attempt === maxRetries) {
++        throw lastErr;
++      }
++      const delay = calculateBackoffWithJitter(attempt, 20, 150);
++      await sleep(delay);
++    }
++  }
++  throw lastErr;
++}
++
++/**
++ * Replaces targetPath with tmpPath using an atomic rename loop with exponential backoff & jitter.
++ * Falls back to copyFile with backoff retry if rename is blocked by OS security / cross-link policies.
++ */
++export async function atomicReplaceWithRetry(
++  tmpPath: string,
++  targetPath: string,
++  maxRetries = 6
++): Promise<void> {
++  let lastErr: unknown = null;
++  for (let attempt = 0; attempt <= maxRetries; attempt++) {
++    try {
++      await fs.promises.rename(tmpPath, targetPath);
++      return;
++    } catch (err: any) {
++      lastErr = err;
++      if (!isTransientFsError(err?.code) || attempt === maxRetries) {
++        break;
++      }
++      const delay = calculateBackoffWithJitter(attempt, 25, 200);
++      await sleep(delay);
++    }
++  }
++  for (let attempt = 0; attempt <= maxRetries; attempt++) {
++    try {
++      await fs.promises.copyFile(tmpPath, targetPath);
++      return;
++    } catch (err: any) {
++      lastErr = err;
++      if (!isTransientFsError(err?.code) || attempt === maxRetries) {
++        throw lastErr;
++      }
++      const delay = calculateBackoffWithJitter(attempt, 25, 200);
++      await sleep(delay);
++    }
++  }
++  throw lastErr;
++}
++
+ /**
+  * Reads and parses a vault note into structured VaultNoteData adhering to da-vault-schema.
+  */
+@@ -246,5 +324,5 @@
+   let content: string;
+   try {
+-    content = await fs.promises.readFile(notePath, "utf8");
++    content = await readFileWithRetry(notePath);
+   } catch {
+     return null;
+   }
+@@ -502,3 +580,3 @@
+   // Serialize writes to the same file path using mutex
+-  return withFileLock(targetPath, async () => {
++  return withFileLock(getLockKey(targetPath), async () => {
+     try {
+@@ -509,3 +587,3 @@
+       if (fs.existsSync(targetPath)) {
+-        const content = await fs.promises.readFile(targetPath, "utf8");
++        const content = await readFileWithRetry(targetPath);
+         const split = splitFrontmatter(content);
+@@ -555,16 +633,26 @@
+       if (fs.existsSync(targetPath)) {
+         try {
+-          await fs.promises.copyFile(targetPath, bakPath);
++          for (let attempt = 0; attempt < 3; attempt++) {
++            try {
++              await fs.promises.copyFile(targetPath, bakPath);
++              break;
++            } catch (bErr: any) {
++              if (!isTransientFsError(bErr?.code) || attempt === 2) break;
++              await sleep(calculateBackoffWithJitter(attempt, 20, 80));
++            }
++          }
+         } catch {
+           // Backup failure non-fatal
+         }
+       }
+ 
+-      try {
+-        await fs.promises.rename(tmpPath, targetPath);
+-      } catch {
+-        // Fallback for Windows file locks
+-        await fs.promises.copyFile(tmpPath, targetPath);
+-        await fs.promises.unlink(tmpPath).catch(() => {});
++      try {
++        await atomicReplaceWithRetry(tmpPath, targetPath, 6);
++        return { success: true, filePath: targetPath };
++      } finally {
++        if (fs.existsSync(tmpPath)) {
++          await fs.promises.unlink(tmpPath).catch(() => {});
++        }
+       }
+-
+-      return { success: true, filePath: targetPath };
