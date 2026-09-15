@@ -180,6 +180,7 @@ export interface GlobalTask {
   executionLogs?: string[];
   comments?: TaskComment[];
   checklist?: TaskChecklistItem[];
+  vaultPath?: string;
 }
 
 export interface PassiveCaptureLog {

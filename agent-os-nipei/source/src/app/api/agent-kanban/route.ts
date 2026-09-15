@@ -22,6 +22,9 @@ interface GlobalTask {
 export async function GET() {
   try {
     const vaultRoot = defaultVault();
+    if (!vaultRoot) {
+      return NextResponse.json({ success: false, tasks: [] });
+    }
     const todoDir = path.join(vaultRoot, "Todo_Audit_Lists");
 
     if (!fs.existsSync(todoDir)) {
@@ -126,6 +129,9 @@ export async function POST(req: Request) {
     }
 
     const vaultRoot = defaultVault();
+    if (!vaultRoot) {
+      return NextResponse.json({ success: false, error: "Vault root not configured" }, { status: 500 });
+    }
     const todoDir = path.join(vaultRoot, "Todo_Audit_Lists");
     if (!fs.existsSync(todoDir)) {
       fs.mkdirSync(todoDir, { recursive: true });
@@ -187,6 +193,9 @@ export async function PATCH(req: Request) {
     }
 
     const vaultRoot = defaultVault();
+    if (!vaultRoot) {
+      return NextResponse.json({ success: false, error: "Vault root not configured" }, { status: 500 });
+    }
     const fullPath = path.join(vaultRoot, vaultPath);
 
     if (fs.existsSync(fullPath)) {

@@ -16,7 +16,7 @@ interface RecentNote { path: string; title: string; mtime: number; }
 
 export type MemoryTab = "ingestion" | "graph" | "recent" | "search" | "omi";
 
-export default function MemoryPanel({ initialTab = "ingestion" }: { initialTab?: MemoryTab }) {
+export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: MemoryTab }) {
   const [tab, setTab] = useState<MemoryTab>(initialTab);
   const [galaxyMode, setGalaxyMode] = useState(true); // cinematic Memory Galaxy is the default wow view
   const [q, setQ] = useState("");
@@ -68,11 +68,11 @@ export default function MemoryPanel({ initialTab = "ingestion" }: { initialTab?:
   }
 
   const tabs: { key: MemoryTab; label: string; count?: number; icon: React.ReactNode }[] = [
-    { key: "ingestion", label: "Ingestão & Vault (60 Notas)", icon: <ShieldCheck size={13} className="text-[#22c55e]" />, count: 60 },
     { key: "graph", label: "Graph (3D Galaxy)", icon: <Network size={12} /> },
-    { key: "recent", label: "Recent", icon: <Clock size={12} />, count: recent.length },
     { key: "search", label: "Notes", icon: <FileText size={12} />, count: notes.length },
+    { key: "recent", label: "Recent", icon: <Clock size={12} />, count: recent.length },
     { key: "omi", label: "Omi", icon: <Sparkles size={12} />, count: omi.length },
+    { key: "ingestion", label: "Ingestão & Vault", icon: <ShieldCheck size={13} className="text-[#22c55e]" /> },
   ];
 
   const highlight = (text: string) => {
