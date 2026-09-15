@@ -13,18 +13,19 @@ import HermesGoals from "@/components/HermesGoals";
 import HermesMCPCatalog from "@/components/HermesMCPCatalog";
 import HermesStudio from "@/components/HermesStudio";
 import HermesManage from "@/components/HermesManage";
+import HermesOrchestratorView from "@/components/HermesOrchestratorView";
 // Phone tab intentionally NOT mounted in the dashboard — the phone agent runs
 // standalone (see ~/.nipei-os/phone-go-live.sh). Component kept on disk.
 // import HermesPhone from "@/components/HermesPhone";
 import ApolloView from "@/components/ApolloView";
 import HermesMuse from "@/components/HermesMuse";
 
-type HermesTab = "chat" | "radar" | "muse" | "astros" | "apollo" | "studio" | "sessions" | "goals" | "workspace" | "mcps" | "manage" | "control" | "outreach" | "moa";
+type HermesTab = "orchestrator" | "chat" | "radar" | "muse" | "astros" | "apollo" | "studio" | "sessions" | "goals" | "workspace" | "mcps" | "manage" | "control" | "outreach" | "moa";
 interface HmVitals { ok: boolean; model: string; provider: string; }
 
 
 export default function HermesRoute() {
-  const [tab, setTab] = useState<HermesTab>("chat");
+  const [tab, setTab] = useState<HermesTab>("orchestrator");
   const [v, setV] = useState<HmVitals | null>(null);
 
   // Deep-link: /hermes?tab=manage opens that sub-tab directly.
@@ -32,7 +33,7 @@ export default function HermesRoute() {
     let t = new URLSearchParams(window.location.search).get("tab") as HermesTab | null;
     if ((t as string) === "jarvis" || (t as string) === "venu") t = "apollo"; // legacy links: ?tab=jarvis/venu → Apollo
     if ((t as string) === "furnace") t = "muse"; // legacy links: ?tab=furnace → Hermes Muse
-    const valid: HermesTab[] = ["chat", "radar", "muse", "astros", "apollo", "studio", "sessions", "goals", "workspace", "mcps", "manage", "control", "outreach", "moa"];
+    const valid: HermesTab[] = ["orchestrator", "chat", "radar", "muse", "astros", "apollo", "studio", "sessions", "goals", "workspace", "mcps", "manage", "control", "outreach", "moa"];
     if (t && valid.includes(t)) setTab(t);
   }, []);
 
@@ -54,6 +55,7 @@ export default function HermesRoute() {
     <div className="space-y-5">
       <div className="flex items-center gap-2 scroll-rail pb-1 -mx-1 px-1">
         {([
+          { key: "orchestrator", label: "Centro de Comando 2.0", icon: <LayoutDashboard size={14} /> },
           { key: "chat",      label: "Chat",         icon: <MessageSquare size={14} /> },
           { key: "apollo",    label: "Venu", icon: <Sun size={14} /> },
           { key: "radar",     label: "Hermes Oracle", icon: <Radar size={14} /> },
@@ -87,7 +89,9 @@ export default function HermesRoute() {
         })}
       </div>
 
-      {tab === "chat" ? (
+      {tab === "orchestrator" ? (
+        <HermesOrchestratorView />
+      ) : tab === "chat" ? (
         <UnifiedChat defaultAgent="hermes" showAgentSwitcher={false} />
       ) : tab === "radar" ? (
         <RadarView />
