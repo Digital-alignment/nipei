@@ -396,18 +396,25 @@ export default function SEOView() {
     refreshHistory();
   }
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
+  const [showAdvancedMenu, setShowAdvancedMenu] = useState(false);
+
+  const primaryTabs: { key: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { key: "studio",      label: "Content Studio (MVF)", icon: <Sparkles size={14} /> },
-    { key: "research",    label: "Research",    icon: <Search size={14} /> },
-    { key: "parasite",    label: "Parasite SEO", icon: <Crosshair size={14} /> },
-    { key: "openseo",     label: "OpenSEO",     icon: <TrendingUp size={14} /> },
-    { key: "office",      label: "SEO Office",  icon: <Globe size={14} /> },
-    { key: "generate",    label: "Generate",    icon: <Sparkles size={14} /> },
-    { key: "deploy",      label: "Deploy",      icon: <Rocket size={14} /> },
-    { key: "history",     label: "History",     icon: <HistoryIcon size={14} />, badge: historySessions.length + historyDeploys.length },
-    { key: "transcripts", label: "Transcripts", icon: <FileText size={14} /> },
-    { key: "skill",       label: "Skill",       icon: <BookOpen size={14} /> },
+    { key: "transcripts", label: "Transcripts & Fuentes", icon: <FileText size={14} /> },
+    { key: "history",     label: "Histórico & Exportación", icon: <HistoryIcon size={14} />, badge: historySessions.length + historyDeploys.length },
   ];
+
+  const advancedTabs: { key: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
+    { key: "research",    label: "Research (Search Console)", icon: <Search size={14} />, desc: "Análisis de tráfico de Google Search Console" },
+    { key: "parasite",    label: "Parasite SEO Indexer",     icon: <Crosshair size={14} />, desc: "Indexación avanzada en plataformas externas" },
+    { key: "openseo",     label: "OpenSEO Tracker",          icon: <TrendingUp size={14} />, desc: "Monitoreo de posicionamiento y rankings" },
+    { key: "office",      label: "SEO Office (Local 3D)",    icon: <Globe size={14} />, desc: "Servidor local 3D (localhost:3000)" },
+    { key: "generate",    label: "Multi-Site Generate",      icon: <Sparkles size={14} />, desc: "Generación masiva multi-sitio" },
+    { key: "deploy",      label: "Netlify Auto-Deploy",       icon: <Rocket size={14} />, desc: "Despliegues automatizados a Netlify" },
+    { key: "skill",       label: "Skill & Documentación",   icon: <BookOpen size={14} />, desc: "Guía técnica interna de SEO Pack" },
+  ];
+
+  const isAdvancedTabActive = advancedTabs.some((t) => t.key === tab);
 
   function fmtAgo(ts: number): string {
     const d = Date.now() - ts;
@@ -425,35 +432,88 @@ export default function SEOView() {
 
   return (
     <div className="space-y-5">
-      {/* Tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {tabs.map((t) => {
+      {/* Primary Navigation Bar */}
+      <div className="flex items-center gap-2 flex-wrap bg-[#080d08] p-2 rounded-2xl border border-[#182818]">
+        {primaryTabs.map((t) => {
           const active = tab === t.key;
           return (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full border text-[12.5px] transition"
-              style={{
-                background: active ? "rgba(163,230,53,0.16)" : "transparent",
-                borderColor: active ? "#a3e635" : "var(--panel-border)",
-                color: active ? "var(--fg)" : "var(--fg-dim)",
+              onClick={() => {
+                setTab(t.key);
+                setShowAdvancedMenu(false);
               }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                active
+                  ? "bg-[#183018] text-[#22c55e] border border-[#22c55e]/40 shadow-lg shadow-green-950/30 font-extrabold"
+                  : "text-slate-400 hover:text-white hover:bg-[#0c140c]"
+              }`}
             >
               {t.icon}{t.label}
               {typeof t.badge === "number" && t.badge > 0 && (
-                <span className="text-[10px] metric px-1.5 py-0.5 rounded-full bg-[rgba(255,255,255,0.06)] text-[var(--fg-dim)]">
+                <span className="text-[10px] metric px-1.5 py-0.5 rounded-full bg-[#182818] text-[#88a888]">
                   {t.badge}
                 </span>
               )}
             </button>
           );
         })}
+
+        {/* Grouped Advanced Menu Dropdown Toggle */}
+        <div className="relative">
+          <button
+            onClick={() => setShowAdvancedMenu(!showAdvancedMenu)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              isAdvancedTabActive || showAdvancedMenu
+                ? "bg-[#162032] text-cyan-300 border border-cyan-500/40 shadow-lg"
+                : "text-slate-400 hover:text-white hover:bg-[#0c140c]"
+            }`}
+          >
+            <Globe size={14} className="text-cyan-400" />
+            🔮 Herramientas Avanzadas (Futuro)
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-950 text-cyan-400 font-extrabold border border-cyan-800">
+              {advancedTabs.length}
+            </span>
+          </button>
+
+          {/* Advanced Dropdown Panel */}
+          {showAdvancedMenu && (
+            <div className="absolute left-0 mt-2 w-80 bg-[#0c140c] border border-[#1f381f] rounded-2xl shadow-2xl p-3 z-50 space-y-1">
+              <div className="px-3 py-1.5 text-[10px] font-black uppercase text-[#688a68] border-b border-[#182818] mb-1">
+                Herramientas Avanzadas & Multi-Sitio
+              </div>
+              {advancedTabs.map((t) => {
+                const active = tab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => {
+                      setTab(t.key);
+                      setShowAdvancedMenu(false);
+                    }}
+                    className={`w-full flex items-start gap-3 p-2.5 rounded-xl text-left transition-all ${
+                      active
+                        ? "bg-[#183018] text-[#22c55e] font-bold border border-[#22c55e]/30"
+                        : "hover:bg-[#122214] text-slate-300"
+                    }`}
+                  >
+                    <div className="p-1.5 bg-[#142614] rounded-lg text-emerald-400 mt-0.5">{t.icon}</div>
+                    <div>
+                      <p className="text-xs font-bold">{t.label}</p>
+                      <p className="text-[10px] text-slate-400 leading-tight">{t.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* AIPB share-pack actions — let members open the setup guide or grab
             the zip. Pushed to the right via ml-auto so they don't crowd tabs. */}
         <a
           href="/seo-guide"
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] transition border-[var(--panel-border)] text-[var(--fg-dim)] hover:text-[var(--fg)] hover:border-[rgba(163,230,53,0.4)]"
+          className="ml-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-bold transition border-[#182818] text-slate-400 hover:text-white hover:border-[#22c55e]/40"
           title="Open the step-by-step SEO setup guide for AIPB members"
         >
           <BookOpen size={14} /> Setup Guide

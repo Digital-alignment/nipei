@@ -13,6 +13,8 @@ import {
   Share2,
   List,
   RefreshCw,
+  FolderPlus,
+  ArrowRight,
 } from "lucide-react";
 
 interface VaultNoteOption {
@@ -31,6 +33,8 @@ export default function GenericContentStudio() {
   const [generatedOutput, setGeneratedOutput] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [savedToVault, setSavedToVault] = useState(false);
+  const [savingVault, setSavingVault] = useState(false);
+  const [savedVaultPath, setSavedVaultPath] = useState<string | null>(null);
 
   // Load vault notes list for grounding selection
   useEffect(() => {
@@ -57,6 +61,7 @@ export default function GenericContentStudio() {
     setIsGenerating(true);
     setCopied(false);
     setSavedToVault(false);
+    setSavedVaultPath(null);
     try {
       const res = await fetch("/api/content/generate-generic", {
         method: "POST",
@@ -98,6 +103,34 @@ export default function GenericContentStudio() {
     a.download = `contenido_generado_${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleSaveToVault = async () => {
+    if (!generatedOutput?.generatedMarkdown) return;
+    setSavingVault(true);
+    try {
+      const res = await fetch("/api/vault/save-generated", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: generatedOutput.title,
+          generatedMarkdown: generatedOutput.generatedMarkdown,
+          sourceVaultPath: generatedOutput.sourceVaultPath,
+          format: contentType,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setSavedToVault(true);
+        setSavedVaultPath(json.vaultPath);
+      } else {
+        alert("Error al guardar en Vault: " + json.error);
+      }
+    } catch (e: any) {
+      alert("Falló la conexión al guardar en Vault: " + e.message);
+    } finally {
+      setSavingVault(false);
+    }
   };
 
   return (
@@ -244,7 +277,7 @@ export default function GenericContentStudio() {
         {/* Output Preview Column */}
         <div className="lg:col-span-7 bg-[#080f09] border border-[#152416] p-6 rounded-2xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#152416]">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-[#152416]">
               <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-400" /> Previsualización del Contenido Generado
               </h3>
@@ -265,9 +298,24 @@ export default function GenericContentStudio() {
                   >
                     <Download className="w-3.5 h-3.5" /> Descargar
                   </button>
+
+                  <button
+                    onClick={handleSaveToVault}
+                    disabled={savingVault || savedToVault}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#162032] hover:bg-[#1e2f4a] text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold transition-all disabled:opacity-60"
+                  >
+                    {savedToVault ? <Check className="w-3.5 h-3.5 text-purple-400" /> : <FolderPlus className="w-3.5 h-3.5" />}
+                    {savedToVault ? "Guardado" : savingVault ? "Guardando..." : "Guardar en Vault"}
+                  </button>
                 </div>
               )}
             </div>
+
+            {savedVaultPath && (
+              <div className="mb-3 p-2.5 bg-purple-950/40 border border-purple-500/40 rounded-xl text-[11px] text-purple-300 flex items-center gap-2">
+                <Check className="w-4 h-4 text-purple-400" /> Guardado en Vault: <span className="font-mono text-white font-bold">{savedVaultPath}</span>
+              </div>
+            )}
 
             {generatedOutput ? (
               <div className="space-y-4">
