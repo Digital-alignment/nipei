@@ -28,6 +28,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import GuidedIngestionWizard from "@/components/GuidedIngestionWizard";
 
 interface ExtractedSquad {
   squadId: string;
@@ -61,7 +62,7 @@ interface VaultStats {
 }
 
 export default function IngestionAuditorView() {
-  const [activeTab, setActiveTab] = useState<"ingest" | "audit" | "vault">("ingest");
+  const [activeTab, setActiveTab] = useState<"ingest" | "guided" | "audit" | "vault">("guided");
   const [ingestMethod, setIngestMethod] = useState<"text" | "url" | "file">("text");
 
   // URL State
@@ -287,7 +288,7 @@ export default function IngestionAuditorView() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 text-xs font-bold bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30 rounded-full">
-                  FASE 6.3 — INGESTIÓN AUTÓNOMA & PROACTIVA
+                  FASE 7.1 — INGESTIÓN GUIADA & FUENTES MAESTRAS
                 </span>
                 <span className="text-xs text-[#a0caa0]">Zero-Hallucination AI Digest</span>
               </div>
@@ -295,7 +296,7 @@ export default function IngestionAuditorView() {
                 Agente Auditor de Ingesta <span className="text-[#22c55e]">(Nipëi Vault)</span>
               </h1>
               <p className="text-sm text-[#88a888] mt-0.5">
-                Ingesta proactiva con IA Digest, extracción de tareas al Kanban y mapa visual del conocimiento.
+                Ingesta guiada por categorías maestras, curaduría de sabiduría y auditoría proactiva.
               </p>
             </div>
           </div>
@@ -329,7 +330,19 @@ export default function IngestionAuditorView() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 mt-6 border-b border-[#182818] pb-3">
+        <div className="flex flex-wrap items-center gap-2 mt-6 border-b border-[#182818] pb-3">
+          <button
+            onClick={() => setActiveTab("guided")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer ${
+              activeTab === "guided"
+                ? "bg-gradient-to-r from-emerald-950 to-teal-950 text-emerald-300 border border-emerald-500/50 shadow-lg shadow-green-950/40 font-bold"
+                : "text-[#88a888] hover:text-white hover:bg-[#0c140c]"
+            }`}
+          >
+            <Sparkles size={16} className="text-emerald-400" />
+            🧙‍♂️ Ingestión Guiada (Master Vault)
+          </button>
+
           <button
             onClick={() => setActiveTab("ingest")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer ${
@@ -339,7 +352,7 @@ export default function IngestionAuditorView() {
             }`}
           >
             <Upload size={16} />
-            Ingestar Información
+            Ingesta Rápida
           </button>
 
           <button
@@ -372,6 +385,13 @@ export default function IngestionAuditorView() {
           </button>
         </div>
       </div>
+
+      {/* TAB 0: GUIDED MASTER INGESTION WIZARD */}
+      {activeTab === "guided" && (
+        <div className="max-w-5xl mx-auto">
+          <GuidedIngestionWizard onComplete={() => fetchStats()} />
+        </div>
+      )}
 
       {/* TAB 1: INGESTION FORM */}
       {activeTab === "ingest" && (
