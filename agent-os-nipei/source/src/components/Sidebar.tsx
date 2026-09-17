@@ -34,6 +34,7 @@ const NAV: NavItem[] = [
   { href: "/memory",         label: "Nipëi Memory (Vault)",           icon: <Brain size={16} />,                           accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/organograma",    label: "Organograma",                    icon: <Network size={16} />,                         accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/infrastructure", label: "Servicios Conectados",           icon: <Server size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
+  { href: "/brand",          label: "Nipëi Brand",                    icon: <Palette size={16} />,                         accent: "#e879f9", dim: "rgba(232,121,249,0.16)", group: "active" },
 
   // 🔮 2. Specialized Future Agents (Collapsible)
   { href: "/claude",         label: "Claude",                         icon: <AgentAvatar agent="claude" size={22} />,      accent: "#d97757", dim: "rgba(217,119,87,0.16)", group: "agents_future" },
