@@ -116,6 +116,63 @@ export async function deliverArchifyHtml(
 }
 
 /**
+ * Compare two architecture specs (Before vs After) using Archify Architecture Delta CLI
+ */
+export async function compareArchifySpecs(
+  baseSpec: any,
+  headSpec: any,
+  options: RenderOptions = {}
+): Promise<{ html: string; success: boolean }> {
+  await ensureTempDir();
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 7);
+  const basePath = path.join(TEMP_DIR, `base-${timestamp}-${random}.json`);
+  const headPath = path.join(TEMP_DIR, `head-${timestamp}-${random}.json`);
+  const outputPath = path.join(TEMP_DIR, `compare-${timestamp}-${random}.html`);
+
+  const enrichedHeadSpec = {
+    ...headSpec,
+    meta: {
+      ...headSpec.meta,
+      ...(options.preset ? { visual_preset: options.preset } : {}),
+      ...(options.animation ? { animation: options.animation } : {}),
+      quality_profile: options.quality || headSpec.meta?.quality_profile || "showcase",
+    },
+  };
+
+  try {
+    await fs.writeFile(basePath, JSON.stringify(baseSpec, null, 2), "utf-8");
+    await fs.writeFile(headPath, JSON.stringify(enrichedHeadSpec, null, 2), "utf-8");
+
+    const qualityFlag = options.quality || "showcase";
+    const compareCmd = `node "${ARCHIFY_BIN}" compare architecture "${basePath}" "${headPath}" "${outputPath}" --quality ${qualityFlag}`;
+
+    try {
+      await execAsync(compareCmd);
+    } catch (cmdErr: any) {
+      console.warn("Archify compare note:", cmdErr?.stderr || cmdErr?.message);
+    }
+
+    if (existsSync.existsSync(outputPath)) {
+      const htmlContent = await fs.readFile(outputPath, "utf-8");
+      return { html: htmlContent, success: true };
+    }
+
+    // Fallback if comparison output missing: deliver head HTML
+    const fallbackHtml = await deliverArchifyHtml("architecture", enrichedHeadSpec, options);
+    return { html: fallbackHtml, success: true };
+  } catch (err: any) {
+    console.error("Error comparing Archify specs:", err);
+    const fallbackHtml = await deliverArchifyHtml("architecture", enrichedHeadSpec, options);
+    return { html: fallbackHtml, success: false };
+  } finally {
+    try { await fs.unlink(basePath); } catch {}
+    try { await fs.unlink(headPath); } catch {}
+    try { await fs.unlink(outputPath); } catch {}
+  }
+}
+
+/**
  * Get pre-built diagram by ID
  */
 export function getPrebuiltDiagram(id: string): PrebuiltDiagram | null {

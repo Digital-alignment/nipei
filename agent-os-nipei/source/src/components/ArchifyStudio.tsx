@@ -17,7 +17,9 @@ import {
   Eye,
   SlidersHorizontal,
   Info,
-  Zap
+  Zap,
+  GitCompare,
+  Terminal,
 } from "lucide-react";
 import { PREBUILT_DIAGRAMS, PrebuiltDiagram } from "@/data/archifySpecs";
 
@@ -60,7 +62,7 @@ const TOPIC_SUGGESTIONS = [
 ];
 
 export default function ArchifyStudio() {
-  const [activeTab, setActiveTab] = useState<"curated" | "rag_generator">("curated");
+  const [activeTab, setActiveTab] = useState<"curated" | "rag_generator" | "architecture_delta">("curated");
   const [selectedDiagramId, setSelectedDiagramId] = useState<string>("nipei-ecosystem-architecture");
   
   // Custom generated state
@@ -72,6 +74,15 @@ export default function ArchifyStudio() {
   const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
   const [lastAgentUsed, setLastAgentUsed] = useState<string | null>(null);
   
+  // Architecture Delta (Before vs After) state
+  const [compareBaseId, setCompareBaseId] = useState<string>("nipei-ecosystem-architecture");
+  const [compareHeadId, setCompareHeadId] = useState<string>("nipei-ecosystem-v2-future");
+  const [compareHtml, setCompareHtml] = useState<string | null>(null);
+  const [isComparing, setIsComparing] = useState<boolean>(false);
+  const [agentProposalPrompt, setAgentProposalPrompt] = useState<string>(
+    "Migración a Cloudflare WAF Global, Caché Redis L1 y réplica de lectura en Supabase"
+  );
+
   // Visual presentation options
   const [visualPreset, setVisualPreset] = useState<string>("blueprint");
   const [traceMotion, setTraceMotion] = useState<boolean>(true);
@@ -84,10 +95,46 @@ export default function ArchifyStudio() {
   // Active diagram metadata
   const currentPrebuilt = PREBUILT_DIAGRAMS.find((d) => d.id === selectedDiagramId) || PREBUILT_DIAGRAMS[0];
 
+  const handleRunCompare = async () => {
+    setIsComparing(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/archify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "compare",
+          baseId: compareBaseId,
+          headId: compareHeadId,
+          preset: visualPreset,
+          animation: traceMotion ? "trace" : "none",
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || "Fallo en la comparación Architecture Delta.");
+      }
+      setCompareHtml(data.html);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Error al ejecutar Architecture Delta.");
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "architecture_delta" && !compareHtml) {
+      handleRunCompare();
+    }
+  }, [activeTab]);
+
   // Re-render generated HTML when preset or animation toggles
   useEffect(() => {
     if (activeTab === "rag_generator" && generatedSpec) {
       reRenderGeneratedSpec(generatedSpec, visualPreset, traceMotion);
+    } else if (activeTab === "architecture_delta" && compareHtml) {
+      handleRunCompare();
     }
   }, [visualPreset, traceMotion]);
 
@@ -224,6 +271,17 @@ export default function ArchifyStudio() {
             <Sparkles size={14} className="text-amber-400" />
             <span>Generador RAG por IA</span>
           </button>
+          <button
+            onClick={() => setActiveTab("architecture_delta")}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md transition ${
+              activeTab === "architecture_delta"
+                ? "bg-[#162c16] text-emerald-400 border border-[#22c55e]/30 shadow"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <GitCompare size={14} className="text-cyan-400" />
+            <span>🤖 Architecture Delta (Before / After)</span>
+          </button>
         </div>
 
         {/* VISUAL CONTROLS (PRESETS & ANIMATION) */}
@@ -306,6 +364,87 @@ export default function ArchifyStudio() {
                   );
                 })}
               </div>
+            </div>
+          ) : activeTab === "architecture_delta" ? (
+            /* ARCHITECTURE DELTA CONTROL FORM */
+            <div className="bg-[#091409] border border-[#162a18] rounded-xl p-4 space-y-4 font-sans">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <GitCompare size={14} className="text-cyan-400" />
+                  <span>Architecture Delta</span>
+                </h2>
+                <span className="text-[9px] bg-cyan-950/60 text-cyan-400 px-1.5 py-0.5 rounded border border-cyan-800/40 font-mono">
+                  Before vs After
+                </span>
+              </div>
+
+              {/* Base Architecture Selector */}
+              <div className="space-y-1 font-mono">
+                <label className="text-[11px] font-bold text-slate-300">Arquitectura Base (Before):</label>
+                <select
+                  value={compareBaseId}
+                  onChange={(e) => setCompareBaseId(e.target.value)}
+                  className="w-full bg-[#050b05] border border-[#162a18] rounded-lg p-2 text-xs text-white outline-none focus:border-[#22c55e]"
+                >
+                  {PREBUILT_DIAGRAMS.filter((d) => d.type === "architecture").map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Head Architecture Selector */}
+              <div className="space-y-1 font-mono">
+                <label className="text-[11px] font-bold text-slate-300">Arquitectura Destino (After / Delta):</label>
+                <select
+                  value={compareHeadId}
+                  onChange={(e) => setCompareHeadId(e.target.value)}
+                  className="w-full bg-[#050b05] border border-[#162a18] rounded-lg p-2 text-xs text-white outline-none focus:border-[#22c55e]"
+                >
+                  {PREBUILT_DIAGRAMS.filter((d) => d.type === "architecture").map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Compare Button */}
+              <button
+                onClick={handleRunCompare}
+                disabled={isComparing}
+                className="w-full py-2.5 px-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-md font-mono"
+              >
+                {isComparing ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>Comparando Arquitecturas...</span>
+                  </>
+                ) : (
+                  <>
+                    <GitCompare size={14} />
+                    <span>Comparar Delta (Before / After)</span>
+                  </>
+                )}
+              </button>
+
+              {/* Agent CLI Command Snippet Box */}
+              <div className="pt-2 border-t border-[#142614] space-y-2 font-mono">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <Terminal size={12} className="text-emerald-400" /> CLI Tool for Agents:
+                </span>
+                <div className="bg-[#020502] border border-[#142614] p-2.5 rounded-lg text-[10px] text-emerald-400 space-y-1 leading-relaxed overflow-x-auto">
+                  <div>node bin/archify.mjs compare architecture base.json head.json delta.html</div>
+                  <div className="text-slate-500">// Usado por @planner & @builder en refactorizaciones</div>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="p-2.5 bg-red-950/80 border border-red-800/60 rounded-lg text-[10px] text-red-300 font-mono">
+                  {errorMsg}
+                </div>
+              )}
             </div>
           ) : (
             /* DYNAMIC RAG AI GENERATOR FORM */
@@ -439,10 +578,12 @@ export default function ArchifyStudio() {
                 <span className="text-xs font-bold text-white truncate">
                   {activeTab === "curated"
                     ? currentPrebuilt.name
+                    : activeTab === "architecture_delta"
+                    ? `Architecture Delta: ${PREBUILT_DIAGRAMS.find(d => d.id === compareBaseId)?.name || compareBaseId} ➔ ${PREBUILT_DIAGRAMS.find(d => d.id === compareHeadId)?.name || compareHeadId}`
                     : topicInput || "Diagrama RAG Generado"}
                 </span>
                 <span className="px-2 py-0.5 text-[9px] font-bold uppercase rounded bg-[#142614] text-emerald-400 border border-[#1e381e]">
-                  {activeTab === "curated" ? currentPrebuilt.type : selectedType}
+                  {activeTab === "curated" ? currentPrebuilt.type : activeTab === "architecture_delta" ? "DELTA" : selectedType}
                 </span>
                 {activeTab === "rag_generator" && lastAgentUsed && (
                   <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
@@ -471,6 +612,32 @@ export default function ArchifyStudio() {
                   className="w-full h-[620px] rounded-lg border border-[#142614] bg-black"
                   title={currentPrebuilt.name}
                 />
+              ) : activeTab === "architecture_delta" ? (
+                isComparing ? (
+                  <div className="text-center p-12 space-y-3 font-mono">
+                    <RefreshCw size={28} className="text-cyan-400 animate-spin mx-auto" />
+                    <h3 className="text-sm font-bold text-white">Calculando Architecture Delta...</h3>
+                    <p className="text-xs text-slate-400">Comparando componentes y conexiones entre Base y Head spec.</p>
+                  </div>
+                ) : compareHtml ? (
+                  <iframe
+                    key={`compare-${compareBaseId}-${compareHeadId}-${visualPreset}-${traceMotion}`}
+                    srcDoc={compareHtml}
+                    className="w-full h-[620px] rounded-lg border border-[#142614] bg-black"
+                    title="Architecture Delta Compare"
+                  />
+                ) : (
+                  <div className="text-center p-12 space-y-3 font-mono">
+                    <GitCompare size={32} className="text-cyan-400 mx-auto" />
+                    <h3 className="text-sm font-bold text-white">Listo para Comparar Arquitecturas</h3>
+                    <button
+                      onClick={handleRunCompare}
+                      className="px-4 py-2 bg-cyan-600 text-white font-bold text-xs rounded-lg hover:bg-cyan-500"
+                    >
+                      Ejecutar Comparación
+                    </button>
+                  </div>
+                )
               ) : generatedHtml ? (
                 <iframe
                   key={`generated-${visualPreset}-${traceMotion}`}

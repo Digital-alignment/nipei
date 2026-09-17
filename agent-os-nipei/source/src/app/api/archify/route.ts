@@ -4,6 +4,7 @@ import {
   validateArchifySpec,
   getPrebuiltDiagram,
   generateDynamicArchifySpec,
+  compareArchifySpecs,
   RenderOptions,
 } from "@/lib/archifyEngine";
 import { PREBUILT_DIAGRAMS } from "@/data/archifySpecs";
@@ -106,6 +107,43 @@ export async function POST(req: NextRequest) {
         diagramType,
         agentUsed,
         spec,
+        html,
+      });
+    }
+
+    if (action === "compare") {
+      let baseSpec = body.baseSpec;
+      let headSpec = body.headSpec;
+      const preset = body.preset || "blueprint";
+      const animation = body.animation || "trace";
+
+      if (!baseSpec && body.baseId) {
+        const foundBase = getPrebuiltDiagram(body.baseId);
+        if (foundBase) baseSpec = foundBase.spec;
+      }
+
+      if (!headSpec && body.headId) {
+        const foundHead = getPrebuiltDiagram(body.headId);
+        if (foundHead) headSpec = foundHead.spec;
+      }
+
+      if (!baseSpec || !headSpec) {
+        return NextResponse.json(
+          { success: false, error: "Se requieren 'baseSpec' y 'headSpec' (o 'baseId' y 'headId') para comparar la arquitectura." },
+          { status: 400 }
+        );
+      }
+
+      const { html, success } = await compareArchifySpecs(baseSpec, headSpec, {
+        preset,
+        animation,
+      });
+
+      return NextResponse.json({
+        success,
+        compared: true,
+        baseTitle: baseSpec?.meta?.title || "Base Architecture",
+        headTitle: headSpec?.meta?.title || "Head Architecture",
         html,
       });
     }
