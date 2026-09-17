@@ -220,9 +220,15 @@ export default function CompanyHubStudio() {
                   </div>
 
                   <div>
-                    <h2 className="text-xl font-black text-white group-hover:text-[#22c55e] transition">
-                      {c.name}
-                    </h2>
+                    <Link
+                      href={`/empresas/${c.id}`}
+                      className="text-xl font-black text-white hover:text-[#22c55e] transition flex items-center justify-between group/title"
+                    >
+                      <span>{c.name}</span>
+                      <span className="text-xs font-mono text-emerald-400 opacity-0 group-hover/title:opacity-100 transition">
+                        Ficha 360° →
+                      </span>
+                    </Link>
                     {c.location && (
                       <span className="text-xs font-mono text-slate-400">📍 {c.location}</span>
                     )}
@@ -285,6 +291,14 @@ export default function CompanyHubStudio() {
                     <Target size={13} />
                     {isFocused ? "Desenfocar (Ver Todas)" : "Focar nesta Empresa"}
                   </button>
+
+                  <Link
+                    href={`/empresas/${c.id}`}
+                    className="py-2 px-3 bg-[#050805] hover:bg-[#142614] text-slate-200 border border-[#182818] rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5"
+                    title="Ver Ficha 360°"
+                  >
+                    <Building2 size={13} className="text-[#22c55e]" /> Ficha 360°
+                  </Link>
 
                   {/* Edit Button */}
                   <button
