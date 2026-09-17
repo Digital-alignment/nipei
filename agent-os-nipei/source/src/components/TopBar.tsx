@@ -73,6 +73,7 @@ const TITLES: Record<string, PageMeta> = {
 };
 
 import TopHeaderBar from "./TopHeaderBar";
+import CompanySelector from "./CompanySelector";
 
 const SQUAD_HEADER_META: Record<SquadId, { numeral: string; label: string; title: string; sub: string }> = {
   super_user: {
@@ -150,6 +151,7 @@ export default function TopBar() {
       {/* Row 1: Executive Utility & Command Bar */}
       <div className="w-full p-2.5 rounded-xl border border-[#1e381e] bg-[#0c140c] shadow-lg flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
+          <CompanySelector />
           <TopHeaderBar />
           <SquadSelector activeSquad={activeSquad} onSquadChange={setActiveSquad} />
           <CommandPalette />

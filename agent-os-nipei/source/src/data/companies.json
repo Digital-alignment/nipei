@@ -1,0 +1,223 @@
+[
+  {
+    "id": "ini-rau",
+    "name": "Ini Rau",
+    "category": "client",
+    "status": "active",
+    "description": "Cosmética sagrada etnobotânica, fitoterapia e produtos medicinais rituais da Aldeia Mutum.",
+    "location": "Aldeia Mutum, Acre, Brasil",
+    "websites": [
+      "https://inirau.com"
+    ],
+    "socialMedia": {
+      "instagram": "@inirau.oficial"
+    },
+    "goals": [
+      "Expandir distribuição internacional de medicinais sagrados com certificação de origem.",
+      "Automatizar funil de vendas e-commerce e catálogo fitoterápico no Nipëi OS.",
+      "Integrar rastreabilidade de extração sustentável da Squad II."
+    ],
+    "peopleInvolved": [
+      {
+        "name": "Pajé Yawanawá",
+        "role": "Líder Espiritual & Etnobotânico",
+        "type": "client_contact"
+      },
+      {
+        "name": "Ana Castro",
+        "role": "Coordenadora Operacional Digital Alignment",
+        "type": "team_member"
+      }
+    ],
+    "assignedSquads": [
+      "Squad II (Produção Mutum)",
+      "Squad IV (Vendas & Marketing)"
+    ],
+    "assignedAgents": [
+      "hermes",
+      "venu"
+    ],
+    "vaultPath": "Clientes/Ini Rau.md",
+    "accentColor": "#10b981",
+    "createdAt": "2026-09-01T00:00:00Z",
+    "updatedAt": "2026-09-17T00:00:00Z"
+  },
+  {
+    "id": "muv-grafica",
+    "name": "MUV Gráfica",
+    "category": "client",
+    "status": "active",
+    "description": "Agencia de impresión de alta precisión, packaging ecológico y material publicitario.",
+    "location": "Buenos Aires, Argentina",
+    "websites": [
+      "https://muvgrafica.com.ar"
+    ],
+    "socialMedia": {
+      "instagram": "@muvgrafica"
+    },
+    "goals": [
+      "Implementación de presupuestador automático de imprenta.",
+      "Integración de agentes para atención al cliente vía WhatsApp."
+    ],
+    "peopleInvolved": [
+      {
+        "name": "Dirección MUV",
+        "role": "Gerente General",
+        "type": "client_contact"
+      },
+      {
+        "name": "Equipo DA",
+        "role": "Tech Lead",
+        "type": "team_member"
+      }
+    ],
+    "assignedSquads": [
+      "Squad IV (Vendas & Mkt)",
+      "Squad V (Adm/Legal)"
+    ],
+    "assignedAgents": [
+      "hermes"
+    ],
+    "vaultPath": "Clientes/MUV Gráfica.md",
+    "accentColor": "#3b82f6",
+    "createdAt": "2026-09-05T00:00:00Z",
+    "updatedAt": "2026-09-17T00:00:00Z"
+  },
+  {
+    "id": "oca-yary",
+    "name": "Oca Yary",
+    "category": "client",
+    "status": "active",
+    "description": "Producción de yerba mate barbacuá artesanal y alimentos agroecológicos.",
+    "location": "Misiones, Argentina",
+    "websites": [
+      "https://ocayary.com"
+    ],
+    "socialMedia": {
+      "instagram": "@ocayary.yerba"
+    },
+    "goals": [
+      "Trazabilidad de cosecha agroecológica y sellos de origen.",
+      "Desarrollo de e-commerce de suscripción mensual."
+    ],
+    "peopleInvolved": [
+      {
+        "name": "Productor Yary",
+        "role": "Fundador",
+        "type": "client_contact"
+      }
+    ],
+    "assignedSquads": [
+      "Squad II (Produção)",
+      "Squad IV (Vendas)"
+    ],
+    "assignedAgents": [
+      "hermes"
+    ],
+    "vaultPath": "Clientes/Oca Yary.md",
+    "accentColor": "#84cc16",
+    "createdAt": "2026-09-10T00:00:00Z",
+    "updatedAt": "2026-09-17T00:00:00Z"
+  },
+  {
+    "id": "mystical-yoga-farm",
+    "name": "Mystical Yoga Farm",
+    "category": "client",
+    "status": "active",
+    "description": "Santuario de formación de yoga, retiros holísticos y permacultura a orillas del Lago Atitlán.",
+    "location": "Lago Atitlán, Guatemala",
+    "websites": [
+      "https://mysticalyogafarm.com"
+    ],
+    "socialMedia": {
+      "instagram": "@mysticalyogafarm"
+    },
+    "goals": [
+      "Sistema de reservas de retiros y gestión de voluntarios.",
+      "CRM 360 de huéspedes y dietas especiales."
+    ],
+    "peopleInvolved": [
+      {
+        "name": "Coordinador Farm",
+        "role": "Director de Retiros",
+        "type": "client_contact"
+      }
+    ],
+    "assignedSquads": [
+      "Squad III (Retiros & Hospitalidade)"
+    ],
+    "assignedAgents": [
+      "venu"
+    ],
+    "vaultPath": "Clientes/Mystical Yoga Farm.md",
+    "accentColor": "#a855f7",
+    "createdAt": "2026-09-12T00:00:00Z",
+    "updatedAt": "2026-09-17T00:00:00Z"
+  },
+  {
+    "id": "samakey",
+    "name": "Samakey Retiros",
+    "category": "product",
+    "status": "active",
+    "description": "Producto propio Digital Alignment: Eco-resort e centro de retiros medicinais em Serra Grande.",
+    "location": "Serra Grande, Bahia, Brasil",
+    "websites": [
+      "https://samakey.com"
+    ],
+    "goals": [
+      "Plataforma completa de agendamento Venu.",
+      "Gestão de leitos, facilitadores e fichas de anamnese protegidas."
+    ],
+    "peopleInvolved": [
+      {
+        "name": "Equipo Samakey",
+        "role": "Facilitador Principal",
+        "type": "team_member"
+      }
+    ],
+    "assignedSquads": [
+      "Squad III (Retiros)",
+      "Squad I (CEO)"
+    ],
+    "assignedAgents": [
+      "venu",
+      "hermes"
+    ],
+    "vaultPath": "Productos/Samakey.md",
+    "accentColor": "#c084fc",
+    "createdAt": "2026-08-15T00:00:00Z",
+    "updatedAt": "2026-09-17T00:00:00Z"
+  },
+  {
+    "id": "rifa-basica",
+    "name": "Rifa Básica",
+    "category": "product",
+    "status": "active",
+    "description": "Producto propio Digital Alignment: Software SAAS para creación de rifas y sorteos transparentes.",
+    "websites": [
+      "https://rifabasica.com"
+    ],
+    "goals": [
+      "Checkout ultrarrápido con Pix y MercadoPago.",
+      "Asignación automática de números de la suerte."
+    ],
+    "peopleInvolved": [
+      {
+        "name": "Dev Lead DA",
+        "role": "Fullstack Architect",
+        "type": "team_member"
+      }
+    ],
+    "assignedSquads": [
+      "Squad IV (Vendas)",
+      "Squad VI (Infra)"
+    ],
+    "assignedAgents": [
+      "antigravity"
+    ],
+    "vaultPath": "Productos/Rifa Básica.md",
+    "accentColor": "#00CCFF",
+    "createdAt": "2026-08-20T00:00:00Z",
+    "updatedAt": "2026-09-17T00:00:00Z"
+  }
+]
