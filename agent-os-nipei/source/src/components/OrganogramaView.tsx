@@ -9,6 +9,7 @@ import {
   ChevronDown, CheckCircle2, UserCheck, Bot, Heart, Compass
 } from "lucide-react";
 import { SQUADS, type SquadId } from "@/lib/nipeiStore";
+import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
 interface TeamMember {
   name: string;
@@ -169,6 +170,7 @@ const ORGANIGRAM_DATA: SquadOrgData[] = [
 
 export default function OrganogramaView() {
   const [selectedSquad, setSelectedSquad] = useState<SquadId | "all">("all");
+  const [showArchifyWorkflow, setShowArchifyWorkflow] = useState<boolean>(false);
 
   const filteredSquads =
     selectedSquad === "all"
@@ -206,9 +208,12 @@ export default function OrganogramaView() {
       {/* Filter Switcher Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scroll">
         <button
-          onClick={() => setSelectedSquad("all")}
+          onClick={() => {
+            setSelectedSquad("all");
+            setShowArchifyWorkflow(false);
+          }}
           className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition shrink-0 ${
-            selectedSquad === "all"
+            selectedSquad === "all" && !showArchifyWorkflow
               ? "bg-[#22c55e] text-[#050805] shadow"
               : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
           }`}
@@ -216,12 +221,27 @@ export default function OrganogramaView() {
           🌐 Organograma Global (Duplo Núcleo)
         </button>
 
+        <button
+          onClick={() => setShowArchifyWorkflow(!showArchifyWorkflow)}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition shrink-0 flex items-center gap-1.5 border ${
+            showArchifyWorkflow
+              ? "bg-[#142614] text-[#22c55e] border-[#22c55e]"
+              : "bg-[#091409] text-[#a7f3d0] border-[#1e381e] hover:bg-[#142414]"
+          }`}
+        >
+          <Workflow size={13} />
+          <span>{showArchifyWorkflow ? "Ocultar Diagrama Workflow" : "📐 Diagrama Archify Workflow"}</span>
+        </button>
+
         {SQUADS.filter((s) => s.id !== "super_user").map((sq) => (
           <button
             key={sq.id}
-            onClick={() => setSelectedSquad(sq.id)}
+            onClick={() => {
+              setSelectedSquad(sq.id);
+              setShowArchifyWorkflow(false);
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-              selectedSquad === sq.id
+              selectedSquad === sq.id && !showArchifyWorkflow
                 ? "bg-[#22c55e] text-[#050805] font-bold shadow"
                 : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
             }`}
@@ -230,6 +250,19 @@ export default function OrganogramaView() {
           </button>
         ))}
       </div>
+
+      {/* Archify Interactive Workflow View */}
+      {showArchifyWorkflow && (
+        <div className="space-y-4">
+          <ArchifyDiagramWidget
+            prebuiltId="squads-operations-workflow"
+            defaultTopic="Operaciones de Squads, Trazabilidad e Impacto"
+            defaultType="workflow"
+            title="Diagrama Interactivo Archify — Workflow Operacional dos 7 Squads"
+            height="580px"
+          />
+        </div>
+      )}
 
       {/* 0. Duplo Núcleo High Level Structure Diagram */}
       {selectedSquad === "all" && (

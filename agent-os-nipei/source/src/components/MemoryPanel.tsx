@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Search, FileText, Sparkles, Clock, Network, ShieldCheck, Database, Building2 } from "lucide-react";
+import { Brain, Search, FileText, Sparkles, Clock, Network, ShieldCheck, Database, Building2, Workflow } from "lucide-react";
 import { useCompany } from "@/context/CompanyContext";
 import dynamic from "next/dynamic";
 import Panel from "./Panel";
 import IngestionAuditorView from "./IngestionAuditorView";
+import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
 // Three.js bundle is heavy — keep it out of the initial render path.
 const VaultGraph3D = dynamic(() => import("./VaultGraph3D"), { ssr: false });
@@ -15,7 +16,7 @@ const MemoryGalaxy = dynamic(() => import("./MemoryGalaxy"), { ssr: false });
 interface NoteHit { path: string; title: string; preview: string; score: number; mtime: number; }
 interface RecentNote { path: string; title: string; mtime: number; }
 
-export type MemoryTab = "ingestion" | "graph" | "recent" | "search" | "omi";
+export type MemoryTab = "ingestion" | "graph" | "recent" | "search" | "omi" | "archify";
 
 export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: MemoryTab }) {
   const { activeCompany } = useCompany();
@@ -27,6 +28,7 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
   const [recent, setRecent] = useState<RecentNote[]>([]);
   const [open, setOpen] = useState<{ path: string; content: string } | null>(null);
   const [searching, setSearching] = useState(false);
+  const [archifyTopic, setArchifyTopic] = useState<string>("Secuencia RAG Hermes 2.0");
   const inputRef = useRef<HTMLInputElement>(null);
   const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,6 +77,7 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
     { key: "recent", label: "Recent", icon: <Clock size={12} />, count: recent.length },
     { key: "omi", label: "Omi", icon: <Sparkles size={12} />, count: omi.length },
     { key: "ingestion", label: "Ingestão & Vault", icon: <ShieldCheck size={13} className="text-[#22c55e]" /> },
+    { key: "archify", label: "Diagramas Archify", icon: <Workflow size={13} className="text-[#22c55e]" /> },
   ];
 
   const highlight = (text: string) => {
@@ -188,8 +191,21 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
         </div>
       )}
 
+      {/* TAB 6: ARCHIFY DIAGRAMS */}
+      {tab === "archify" && (
+        <div className="w-full">
+          <ArchifyDiagramWidget
+            prebuiltId="hermes-rag-sequence"
+            defaultTopic={archifyTopic || q || "Secuencia RAG Hermes 2.0 & Consulta de Memoria"}
+            defaultType="sequence"
+            title="Diagramas Archify — Nipëi Memory & RAG Sequence"
+            height="580px"
+          />
+        </div>
+      )}
+
       {/* TABS 3, 4, 5: SEARCH, RECENT, OMI */}
-      {tab !== "ingestion" && tab !== "graph" && (
+      {tab !== "ingestion" && tab !== "graph" && tab !== "archify" && (
         <div className="flex flex-col lg:flex-row gap-4 h-full min-h-0">
           {/* Left: search + list */}
           <div className="lg:w-[380px] flex flex-col min-h-0 shrink-0">
@@ -251,7 +267,18 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
               <>
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--panel-border)] bg-[rgba(0,0,0,0.25)]">
                   <div className="text-[11px] uppercase tracking-widest text-[var(--fg-dim)] font-mono truncate">{open.path}</div>
-                  <button onClick={() => setOpen(null)} className="text-[11px] text-[var(--fg-dimmer)] hover:text-[var(--fg)]">close ✕</button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setArchifyTopic(`Nota Vault: ${open.path}`);
+                        setTab("archify");
+                      }}
+                      className="px-2.5 py-1 bg-[#142614] border border-[#22c55e]/40 text-[#22c55e] hover:bg-[#1e381e] rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 transition"
+                    >
+                      <Workflow size={11} /> 📐 Ver Diagrama Archify
+                    </button>
+                    <button onClick={() => setOpen(null)} className="text-[11px] text-[var(--fg-dimmer)] hover:text-[var(--fg)]">close ✕</button>
+                  </div>
                 </div>
                 <pre className="scroll flex-1 min-h-0 overflow-auto p-4 text-[13px] leading-relaxed text-[var(--fg)] whitespace-pre-wrap font-mono">{open.content}</pre>
               </>

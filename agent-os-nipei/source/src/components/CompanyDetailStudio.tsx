@@ -30,14 +30,16 @@ import {
   Check,
   Clock,
   Sparkles,
+  Workflow,
 } from "lucide-react";
 import Link from "next/link";
+import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
 interface CompanyDetailStudioProps {
   slug: string;
 }
 
-type TabType = "overview" | "team" | "kanban" | "vault";
+type TabType = "overview" | "team" | "kanban" | "vault" | "archify";
 
 export default function CompanyDetailStudio({ slug }: CompanyDetailStudioProps) {
   const { companies, activeCompanyId, setActiveCompanyId, updateCompany } = useCompany();
@@ -276,6 +278,17 @@ export default function CompanyDetailStudio({ slug }: CompanyDetailStudioProps) 
           }`}
         >
           <Brain size={14} /> Memoria & Vault Live
+        </button>
+
+        <button
+          onClick={() => setActiveTab("archify")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold transition whitespace-nowrap ${
+            activeTab === "archify"
+              ? "bg-[#142614] text-[#22c55e] border border-[#22c55e]/40 shadow"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <Workflow size={14} /> 📐 Arquitectura & Diagramas
         </button>
       </div>
 
@@ -519,6 +532,19 @@ export default function CompanyDetailStudio({ slug }: CompanyDetailStudioProps) 
               {vaultContent}
             </pre>
           )}
+        </div>
+      )}
+
+      {/* Tab 5: Arquitectura & Diagramas Archify */}
+      {activeTab === "archify" && (
+        <div className="space-y-6">
+          <ArchifyDiagramWidget
+            prebuiltId={company.id === "ini-rau" ? "ini-rau-dataflow" : undefined}
+            defaultTopic={`Empresa ${company.name}: ${company.description}`}
+            defaultType={company.id === "ini-rau" ? "dataflow" : "architecture"}
+            title={`Diagramas & Arquitectura — ${company.name}`}
+            height="620px"
+          />
         </div>
       )}
 
