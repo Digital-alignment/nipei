@@ -2,7 +2,6 @@
  * Nipëi OS Multi-Company & Agency System Types
  */
 
-export type CompanyCategory = "client" | "product"; // Client (External) vs Product (Internal DA)
 export type CompanyStatus = "active" | "archived";
 
 export interface CompanyPerson {
@@ -19,9 +18,9 @@ export interface CompanySocialMedia {
 }
 
 export interface Company {
-  id: string; // Slug (e.g. 'ini-rau', 'muv-grafica', 'samakey')
+  id: string; // Slug (e.g. 'ini-rau', 'samakey')
   name: string;
-  category: CompanyCategory;
+  category: string; // Dynamic Category e.g. 'Fitoterapia', 'Retiros', 'Ecoturismo', 'SaaS'
   status: CompanyStatus;
   description: string;
   location?: string;

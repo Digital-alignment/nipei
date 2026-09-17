@@ -22,7 +22,7 @@ import {
 
 export default function CompanyOnboardingWizard() {
   const router = useRouter();
-  const { addCompany, setActiveCompanyId } = useCompany();
+  const { companies, addCompany, setActiveCompanyId } = useCompany();
 
   const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -30,7 +30,11 @@ export default function CompanyOnboardingWizard() {
 
   // Form State
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<"client" | "product">("client");
+  const existingCategories = Array.from(new Set(companies.map((c) => c.category).filter(Boolean)));
+  const [category, setCategory] = useState<string>(existingCategories[0] || "Fitoterapia & Medicina");
+  const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false);
+  const [customCategoryInput, setCustomCategoryInput] = useState("");
+
   const [location, setLocation] = useState("");
   const [accentColor, setAccentColor] = useState("#22c55e");
   const [websiteInput, setWebsiteInput] = useState("");
@@ -111,6 +115,14 @@ export default function CompanyOnboardingWizard() {
     setErrorMsg(null);
 
     try {
+      const finalCategory = isCustomCategory ? customCategoryInput.trim() : category;
+      if (!finalCategory) {
+        setErrorMsg("Por favor especifica una categoría válida.");
+        setIsSubmitting(false);
+        setStep(1);
+        return;
+      }
+
       const websites = websiteInput
         ? websiteInput.split(",").map((w) => w.trim()).filter(Boolean)
         : [];
@@ -119,7 +131,7 @@ export default function CompanyOnboardingWizard() {
 
       const newCompany = await addCompany({
         name: name.trim(),
-        category,
+        category: finalCategory,
         location: location.trim(),
         description: description.trim(),
         websites,
@@ -223,14 +235,45 @@ export default function CompanyOnboardingWizard() {
               <label className="text-xs font-mono font-bold text-slate-300 block">
                 Categoría
               </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full bg-[#050805] text-white border border-[#182818] px-4 py-2.5 rounded-xl text-xs font-mono focus:outline-none focus:border-[#22c55e]"
-              >
-                <option value="client">Empresa / Proyecto Ecosistema Nipëi</option>
-                <option value="product">Producto Propio / Módulo Nipëi</option>
-              </select>
+              {!isCustomCategory ? (
+                <div className="flex gap-2">
+                  <select
+                    value={category}
+                    onChange={(e) => {
+                      if (e.target.value === "__NEW__") {
+                        setIsCustomCategory(true);
+                      } else {
+                        setCategory(e.target.value);
+                      }
+                    }}
+                    className="w-full bg-[#050805] text-white border border-[#182818] px-4 py-2.5 rounded-xl text-xs font-mono focus:outline-none focus:border-[#22c55e]"
+                  >
+                    {existingCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                    <option value="__NEW__">➕ Crear Nueva Categoría...</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customCategoryInput}
+                    onChange={(e) => setCustomCategoryInput(e.target.value)}
+                    placeholder="Escribe el nombre de la nueva categoría (ej. Ecoturismo, SaaS)..."
+                    className="flex-1 bg-[#050805] text-white border border-[#22c55e] px-4 py-2.5 rounded-xl text-xs font-mono focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomCategory(false)}
+                    className="px-3 py-2 bg-[#050805] text-slate-400 hover:text-white border border-[#182818] rounded-xl text-xs font-mono"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

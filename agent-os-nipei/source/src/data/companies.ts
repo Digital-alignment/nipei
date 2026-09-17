@@ -4,7 +4,7 @@ export const INITIAL_COMPANIES: Company[] = [
   {
     id: "ini-rau",
     name: "Ini Rau",
-    category: "client",
+    category: "Fitoterapia & Medicina",
     status: "active",
     description: "Cosmética sagrada etnobotânica, fitoterapia e produtos medicinais rituais da Aldeia Mutum.",
     location: "Aldeia Mutum, Acre, Brasil",
@@ -31,7 +31,7 @@ export const INITIAL_COMPANIES: Company[] = [
   {
     id: "samakey",
     name: "Samakey Retiros",
-    category: "product",
+    category: "Retiros & Hospitalidad",
     status: "active",
     description: "Eco-resort e centro de retiros medicinais em Serra Grande (Ecossistema Nipëi).",
     location: "Serra Grande, Bahia, Brasil",

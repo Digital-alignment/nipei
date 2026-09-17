@@ -42,8 +42,8 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    const category = body.category || "client";
-    const vaultSubfolder = category === "client" ? "Clientes" : "Productos";
+    const category = body.category || "General";
+    const vaultSubfolder = "Clientes";
     const vaultRelativePath = `${vaultSubfolder}/${body.name}.md`;
 
     const newCompany: Company = {

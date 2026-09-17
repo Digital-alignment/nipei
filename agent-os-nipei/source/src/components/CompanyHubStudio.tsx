@@ -10,21 +10,30 @@ import {
   Archive,
   Target,
   CheckCircle2,
+  Tag,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function CompanyHubStudio() {
-  const { companies, activeCompanyId, setActiveCompanyId, archiveCompany, isLoading } = useCompany();
+  const { companies, activeCompanyId, setActiveCompanyId, archiveCompany } = useCompany();
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<"active" | "archived">("active");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Compute dynamic categories present in the companies dataset
+  const availableCategories = Array.from(
+    new Set(companies.map((c) => c.category).filter(Boolean))
+  );
+
   const filteredCompanies = companies.filter((c) => {
+    const matchesCategory = filterCategory === "all" || c.category === filterCategory;
     const matchesStatus = c.status === filterStatus;
     const matchesSearch =
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.category && c.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (c.location && c.location.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesStatus && matchesSearch;
+    return matchesCategory && matchesStatus && matchesSearch;
   });
 
   const activeCount = companies.filter((c) => c.status === "active").length;
@@ -56,18 +65,22 @@ export default function CompanyHubStudio() {
 
         <div>
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
-            Gestión de Empresas <span className="text-[#22c55e]">& Proyectos</span>
+            Gestión de Empresas <span className="text-[#22c55e]">& Categorías</span>
           </h1>
           <p className="text-xs md:text-sm text-[#8aa88a] mt-2 max-w-3xl leading-relaxed font-medium">
-            Supervisa las empresas y proyectos del ecosistema Nipëi. Alterna entre la vista global o enfócate en una empresa específica para filtrar todo el sistema operacional.
+            Supervisa las empresas y proyectos del ecosistema Nipëi. Filtra dinámicamente por categoría personalizada o enfócate en una empresa específica.
           </p>
         </div>
 
         {/* Counter Cards */}
-        <div className="grid grid-cols-2 gap-3 pt-2 max-w-md">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 max-w-lg">
           <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
             <span className="text-[10px] font-mono text-slate-400 block uppercase">Empresas Activas</span>
             <span className="text-xl font-mono font-black text-[#22c55e]">{activeCount}</span>
+          </div>
+          <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
+            <span className="text-[10px] font-mono text-slate-400 block uppercase">Categorías Registradas</span>
+            <span className="text-xl font-mono font-black text-cyan-400">{availableCategories.length}</span>
           </div>
           <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
             <span className="text-[10px] font-mono text-slate-400 block uppercase">Archivadas</span>
@@ -76,9 +89,36 @@ export default function CompanyHubStudio() {
         </div>
       </div>
 
-      {/* Control Toolbar & Filters */}
+      {/* Control Toolbar & Dynamic Category Filters */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0c140c] border border-[#182818] p-4 rounded-2xl">
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Dynamic Categories Filter Tabs */}
+          <div className="flex items-center gap-1 bg-[#050805] p-1 rounded-xl border border-[#182818] overflow-x-auto max-w-xl">
+            <button
+              onClick={() => setFilterCategory("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition whitespace-nowrap ${
+                filterCategory === "all"
+                  ? "bg-[#142614] text-[#22c55e] border border-[#22c55e]/40"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Todas Categorías
+            </button>
+            {availableCategories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition whitespace-nowrap ${
+                  filterCategory === cat
+                    ? "bg-[#142614] text-[#22c55e] border border-[#22c55e]/40"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
           {/* Status Filter */}
           <div className="flex items-center gap-1 bg-[#050805] p-1 rounded-xl border border-[#182818]">
             <button
@@ -111,7 +151,7 @@ export default function CompanyHubStudio() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar empresa por nombre o ubicación..."
+            placeholder="Buscar por nombre o categoría..."
             className="w-full bg-[#050805] text-white border border-[#182818] pl-9 pr-3 py-1.5 rounded-xl text-xs font-mono focus:outline-none focus:border-[#22c55e]"
           />
         </div>
@@ -123,7 +163,7 @@ export default function CompanyHubStudio() {
           <Building2 size={40} className="mx-auto text-slate-600" />
           <h3 className="text-lg font-bold text-white">No se encontraron empresas</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            No hay empresas que coincidan con la búsqueda o el estado seleccionado.
+            No hay empresas que coincidan con la categoría o búsqueda seleccionada.
           </p>
         </div>
       ) : (
@@ -150,8 +190,8 @@ export default function CompanyHubStudio() {
                         className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: c.accentColor }}
                       />
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                        Nipëi OS
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                        <Tag size={10} /> {c.category}
                       </span>
                     </div>
 
