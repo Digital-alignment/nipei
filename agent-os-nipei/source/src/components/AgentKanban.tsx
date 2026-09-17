@@ -10,7 +10,7 @@ const LSK = "nipei-os/agent-kanban/v1";
 const SEO_SITE = { id: "aimoneylab", name: "aimoneylabjuliangoldie.com", url: "https://aimoneylabjuliangoldie.com" };
 
 type Stage = "queued" | "building" | "reviewing" | "done" | "rejected";
-interface Card { id: string; title: string; brief: string; stage: Stage; bytes?: number; note?: string; liveUrl?: string; slug?: string }
+interface Card { id: string; title: string; brief: string; stage: Stage; companyId?: string; bytes?: number; note?: string; liveUrl?: string; slug?: string }
 interface BuildRec { id: string; title: string; brief: string; goal: string; model: string; bytes: number; createdAt: number }
 type Tab = "board" | "workspace";
 
@@ -30,7 +30,7 @@ const TEAM = [
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function AgentKanban() {
-  const { activeCompany } = useCompany();
+  const { activeCompanyId, activeCompany, companies } = useCompany();
   const [goal, setGoal] = useState("");
   const [cards, setCards] = useState<Card[]>([]);
   const [model, setModel] = useState<string | null>(null);
@@ -105,7 +105,16 @@ export default function AgentKanban() {
     try {
       const r = await fetch("/api/agent-kanban/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(seoMode ? { goal: g, engine: "hermes" } : { goal: g }) });
       const j = await r.json();
-      if (j.cards?.length) { setModel(j.model); setCards(j.cards.map((c: Card) => ({ ...c, stage: "queued" as Stage }))); }
+      if (j.cards?.length) {
+        setModel(j.model);
+        setCards(
+          j.cards.map((c: Card) => ({
+            ...c,
+            stage: "queued" as Stage,
+            companyId: activeCompanyId !== "all" ? activeCompanyId : undefined,
+          }))
+        );
+      }
       else setErr(j.error || "the planner returned nothing");
     } catch (e) { setErr(`planner unreachable: ${String(e).slice(0, 120)}`); }
     setActive(null); setPlanning(false);
@@ -162,8 +171,13 @@ export default function AgentKanban() {
 
   function clearBoard() { if (confirm("Clear the board?")) { setCards([]); setModel(null); setDeployMsg(null); setDeployUrl(null); try { localStorage.removeItem(LSK); } catch {} } }
 
-  const counts = (stages: Stage[]) => cards.filter((c) => stages.includes(c.stage)).length;
-  const queuedLeft = cards.some((c) => c.stage === "queued" || c.stage === "rejected");
+  const visibleCards = cards.filter((c) => {
+    if (activeCompanyId === "all") return true;
+    return !c.companyId || c.companyId === activeCompanyId;
+  });
+
+  const counts = (stages: Stage[]) => visibleCards.filter((c) => stages.includes(c.stage)).length;
+  const queuedLeft = visibleCards.some((c) => c.stage === "queued" || c.stage === "rejected");
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -261,12 +275,12 @@ export default function AgentKanban() {
               <span className="ml-auto text-[10.5px] text-[var(--cream-mute)]">{counts(col.stages)}</span>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto scroll p-2 space-y-2">
-              {cards.length === 0 && col.key === "queued" && !planning && (
+              {visibleCards.length === 0 && col.key === "queued" && !planning && (
                 <div className="text-[11px] text-[var(--cream-mute)] p-3 text-center">Give the team a goal above — the Planner fills this column with cards.</div>
               )}
               {planning && col.key === "queued" && <div className="text-[11px] text-[var(--cream-mute)] p-3 inline-flex items-center gap-2"><Loader2 size={12} className="animate-spin" style={{ color: "#38bdf8" }} /> planning…</div>}
               <AnimatePresence>
-                {cards.filter((c) => col.stages.includes(c.stage)).map((c) => (
+                {visibleCards.filter((c) => col.stages.includes(c.stage)).map((c) => (
                   <motion.div key={c.id} layout layoutId={c.id}
                     initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -274,6 +288,25 @@ export default function AgentKanban() {
                     style={{ background: "var(--bg-card)", borderColor: c.stage === "rejected" ? "rgba(196,96,126,0.5)" : c.stage === "done" ? "rgba(90,184,150,0.45)" : "var(--line-soft)" }}>
                     <div className="text-[12.5px] font-medium text-[var(--cream)] leading-snug">{c.title}</div>
                     <div className="text-[10.5px] text-[var(--cream-mute)] mt-1 line-clamp-2">{c.brief}</div>
+
+                    {c.companyId && (() => {
+                      const cardComp = companies.find((comp) => comp.id === c.companyId);
+                      if (!cardComp) return null;
+                      return (
+                        <div className="mt-1.5 flex items-center gap-1">
+                          <span
+                            className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1"
+                            style={{
+                              backgroundColor: `${cardComp.accentColor}20`,
+                              color: cardComp.accentColor,
+                              borderColor: `${cardComp.accentColor}50`,
+                            }}
+                          >
+                            <Building2 size={9} /> {cardComp.name}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {c.stage === "building" && <div className="mt-2 text-[10px] inline-flex items-center gap-1.5" style={{ color: "#d4a574" }}><Hammer size={10} className="animate-pulse" /> building…</div>}
                     {c.stage === "reviewing" && <div className="mt-2 text-[10px] inline-flex items-center gap-1.5" style={{ color: "#38bdf8" }}><ShieldCheck size={10} className="animate-pulse" /> reviewing…</div>}

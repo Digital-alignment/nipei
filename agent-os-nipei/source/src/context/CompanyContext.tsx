@@ -10,7 +10,10 @@ interface CompanyContextType {
   activeCompany: Company | null;
   setActiveCompanyId: (id: string) => void;
   addCompany: (data: Partial<Company>) => Promise<Company>;
+  updateCompany: (id: string, data: Partial<Company>) => Promise<Company>;
   archiveCompany: (id: string) => Promise<void>;
+  unarchiveCompany: (id: string) => Promise<void>;
+  deleteCompany: (id: string) => Promise<void>;
   refreshCompanies: () => Promise<void>;
   isLoading: boolean;
 }
@@ -73,14 +76,37 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     return result.company;
   };
 
-  const archiveCompany = async (id: string) => {
+  const updateCompany = async (id: string, data: Partial<Company>): Promise<Company> => {
     const res = await fetch("/api/companies", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status: "archived" }),
+      body: JSON.stringify({ id, ...data }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      throw new Error(result.error || "Failed to update company");
+    }
+    await refreshCompanies();
+    return result.company;
+  };
+
+  const archiveCompany = async (id: string) => {
+    await updateCompany(id, { status: "archived" });
+    if (activeCompanyId === id) {
+      setActiveCompanyId("all");
+    }
+  };
+
+  const unarchiveCompany = async (id: string) => {
+    await updateCompany(id, { status: "active" });
+  };
+
+  const deleteCompany = async (id: string) => {
+    const res = await fetch(`/api/companies?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
     });
     if (!res.ok) {
-      throw new Error("Failed to archive company");
+      throw new Error("Failed to delete company");
     }
     await refreshCompanies();
     if (activeCompanyId === id) {
@@ -98,7 +124,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         activeCompany,
         setActiveCompanyId,
         addCompany,
+        updateCompany,
         archiveCompany,
+        unarchiveCompany,
+        deleteCompany,
         refreshCompanies,
         isLoading,
       }}

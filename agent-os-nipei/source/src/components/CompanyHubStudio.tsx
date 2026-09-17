@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { useCompany } from "@/context/CompanyContext";
+import { Company } from "@/types/company";
+import CompanyEditModal from "./CompanyEditModal";
 import {
   Building2,
   Plus,
@@ -11,14 +13,27 @@ import {
   Target,
   CheckCircle2,
   Tag,
+  Pencil,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function CompanyHubStudio() {
-  const { companies, activeCompanyId, setActiveCompanyId, archiveCompany } = useCompany();
+  const {
+    companies,
+    activeCompanyId,
+    setActiveCompanyId,
+    archiveCompany,
+    unarchiveCompany,
+    deleteCompany,
+    updateCompany,
+  } = useCompany();
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<"active" | "archived">("active");
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Compute dynamic categories present in the companies dataset
   const availableCategories = Array.from(
@@ -258,7 +273,7 @@ export default function CompanyHubStudio() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="pt-4 border-t border-[#182818] flex items-center justify-between gap-2 mt-4">
+                <div className="pt-4 border-t border-[#182818] flex items-center justify-between gap-2 mt-4 flex-wrap">
                   <button
                     onClick={() => setActiveCompanyId(isFocused ? "all" : c.id)}
                     className={`flex-1 py-2 rounded-xl text-xs font-mono font-bold transition flex items-center justify-center gap-1.5 border ${
@@ -271,7 +286,20 @@ export default function CompanyHubStudio() {
                     {isFocused ? "Desenfocar (Ver Todas)" : "Focar nesta Empresa"}
                   </button>
 
-                  {c.status === "active" && (
+                  {/* Edit Button */}
+                  <button
+                    onClick={() => {
+                      setEditingCompany(c);
+                      setIsEditModalOpen(true);
+                    }}
+                    title="Editar Empresa"
+                    className="p-2 text-slate-400 hover:text-white hover:bg-[#142614] rounded-xl border border-[#182818] transition flex items-center gap-1 text-xs font-mono"
+                  >
+                    <Pencil size={13} />
+                  </button>
+
+                  {/* Archive / Unarchive Button */}
+                  {c.status === "active" ? (
                     <button
                       onClick={() => archiveCompany(c.id)}
                       title="Archivar Empresa"
@@ -279,6 +307,32 @@ export default function CompanyHubStudio() {
                     >
                       <Archive size={14} />
                     </button>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => unarchiveCompany(c.id)}
+                        title="Desarchivar Empresa"
+                        className="p-2 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl border border-amber-500/30 transition flex items-center gap-1 text-xs font-mono"
+                      >
+                        <RotateCcw size={13} /> Desarchivar
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `¿Estás seguro de eliminar permanentemente la empresa "${c.name}"? Esta acción no se puede deshacer.`
+                            )
+                          ) {
+                            deleteCompany(c.id);
+                          }
+                        }}
+                        title="Eliminar Definitivamente"
+                        className="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl border border-red-500/30 transition"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -286,6 +340,20 @@ export default function CompanyHubStudio() {
           })}
         </div>
       )}
+
+      {/* Edit Modal */}
+      <CompanyEditModal
+        company={editingCompany}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingCompany(null);
+        }}
+        onSave={async (id, updatedData) => {
+          await updateCompany(id, updatedData);
+        }}
+        availableCategories={availableCategories}
+      />
     </div>
   );
 }

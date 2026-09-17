@@ -23,6 +23,61 @@ async function saveCompaniesToDisk(companies: Company[]) {
   await fs.writeFile(COMPANIES_STORE_PATH, JSON.stringify(companies, null, 2), "utf-8");
 }
 
+async function syncVaultNote(company: Company) {
+  try {
+    const possibleVaultDirs = [
+      path.resolve(process.cwd(), "../../../nipei-vault"),
+      "C:\\Users\\ondig\\Code\\DA\\nipei-vault",
+    ];
+    const vaultBase = possibleVaultDirs.find((d) => existsSync.existsSync(d));
+
+    if (vaultBase) {
+      const fullVaultPath = path.join(vaultBase, company.vaultPath);
+      
+      const vaultNoteContent = `---
+name: "${company.name}"
+category: "${company.category}"
+status: "${company.status}"
+created: "${company.createdAt}"
+updated: "${company.updatedAt}"
+---
+<!-- agente: antigravity -->
+
+# ${company.name} — Business & Operational State
+
+## 📌 Contexto & Descripción
+${company.description || "Empresa en Nipëi OS."}
+
+- **Ubicación**: ${company.location || "N/A"}
+- **Categoría**: ${company.category}
+- **Sitios Web**: ${(company.websites || []).join(", ") || "N/A"}
+- **Redes Sociales**: ${JSON.stringify(company.socialMedia)}
+
+---
+
+## 🎯 Objetivos Estratégicos
+${(company.goals || []).map((g) => `- ${g}`).join("\n") || "- Sin objetivos definidos."}
+
+---
+
+## 👥 Personas Involucradas & Equipo
+${(company.peopleInvolved || []).map((p) => `- **${p.name}** (${p.role}) — \`${p.type}\``).join("\n") || "- Sin contactos asignados."}
+
+---
+
+## 🤖 Squads & Agentes Asignados
+- **Squads**: ${(company.assignedSquads || []).join(", ") || "N/A"}
+- **Agentes IA**: ${(company.assignedAgents || []).join(", ") || "N/A"}
+`;
+
+      await fs.mkdir(path.dirname(fullVaultPath), { recursive: true });
+      await fs.writeFile(fullVaultPath, vaultNoteContent, "utf-8");
+    }
+  } catch (vaultErr) {
+    console.error("Failed to sync Vault note:", vaultErr);
+  }
+}
+
 export async function GET() {
   const companies = await loadCompaniesFromDisk();
   return NextResponse.json({ success: true, companies });
@@ -74,60 +129,7 @@ export async function POST(request: Request) {
     }
 
     await saveCompaniesToDisk(companies);
-
-    // Auto-generate Vault Note in nipei-vault
-    try {
-      const possibleVaultDirs = [
-        path.resolve(process.cwd(), "../../../nipei-vault"),
-        "C:\\Users\\ondig\\Code\\DA\\nipei-vault",
-      ];
-      const vaultBase = possibleVaultDirs.find((d) => existsSync.existsSync(d));
-
-      if (vaultBase) {
-        const fullVaultPath = path.join(vaultBase, vaultSubfolder, `${body.name}.md`);
-        
-        const vaultNoteContent = `---
-name: "${newCompany.name}"
-type: "${newCompany.category}"
-status: "${newCompany.status}"
-created: "${newCompany.createdAt}"
-updated: "${newCompany.updatedAt}"
----
-<!-- agente: antigravity -->
-
-# ${newCompany.name} — Business & Operational State
-
-## 📌 Contexto & Descripción
-${newCompany.description || "Nueva empresa registrada en Nipëi OS."}
-
-- **Ubicación**: ${newCompany.location || "N/A"}
-- **Categoría**: ${newCompany.category === "client" ? "Empresa Cliente Externa" : "Producto Propio Digital Alignment"}
-- **Sitios Web**: ${(newCompany.websites || []).join(", ") || "N/A"}
-- **Redes Sociales**: ${JSON.stringify(newCompany.socialMedia)}
-
----
-
-## 🎯 Objetivos Estratégicos
-${(newCompany.goals || []).map((g) => `- ${g}`).join("\n") || "- Sin objetivos iniciales definidos."}
-
----
-
-## 👥 Personas Involucradas & Equipo
-${(newCompany.peopleInvolved || []).map((p) => `- **${p.name}** (${p.role}) — \`${p.type}\``).join("\n") || "- Sin contactos asignados."}
-
----
-
-## 🤖 Squads & Agentes Asignados
-- **Squads**: ${(newCompany.assignedSquads || []).join(", ") || "N/A"}
-- **Agentes IA**: ${(newCompany.assignedAgents || []).join(", ") || "N/A"}
-`;
-
-        await fs.mkdir(path.dirname(fullVaultPath), { recursive: true });
-        await fs.writeFile(fullVaultPath, vaultNoteContent, "utf-8");
-      }
-    } catch (vaultErr) {
-      console.error("Failed to auto-write Vault note:", vaultErr);
-    }
+    await syncVaultNote(newCompany);
 
     return NextResponse.json({ success: true, company: newCompany });
   } catch (error: any) {
@@ -148,16 +150,42 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
-    companies[index] = {
+    const updatedCompany: Company = {
       ...companies[index],
       ...updates,
       ...(status ? { status } : {}),
       updatedAt: new Date().toISOString(),
     };
 
+    companies[index] = updatedCompany;
     await saveCompaniesToDisk(companies);
-    return NextResponse.json({ success: true, company: companies[index] });
+    await syncVaultNote(updatedCompany);
+
+    return NextResponse.json({ success: true, company: updatedCompany });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Failed to update company" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Company ID is required" }, { status: 400 });
+    }
+
+    const companies = await loadCompaniesFromDisk();
+    const filtered = companies.filter((c) => c.id !== id);
+
+    if (filtered.length === companies.length) {
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    }
+
+    await saveCompaniesToDisk(filtered);
+    return NextResponse.json({ success: true, message: `Company ${id} deleted successfully.` });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || "Failed to delete company" }, { status: 500 });
   }
 }

@@ -75,5 +75,33 @@
     "accentColor": "#c084fc",
     "createdAt": "2026-08-15T00:00:00Z",
     "updatedAt": "2026-09-17T00:00:00Z"
+  },
+  {
+    "id": "nipeihu-app-elerning",
+    "name": "nipeihu app elerning",
+    "category": "product",
+    "status": "active",
+    "description": "app para ofrecer servicios de elerning, cursos, clases, sobre el conocimiento de la floresta, musica , cantos, basados en el conocimiento yawanawa",
+    "location": "online",
+    "websites": [],
+    "socialMedia": {},
+    "goals": [
+      "establecer cursos",
+      "establecer stack de desarollo"
+    ],
+    "peopleInvolved": [],
+    "assignedSquads": [
+      "Squad VI (Infraestrutura)",
+      "Squad I (Estratégia/CEO)"
+    ],
+    "assignedAgents": [
+      "hermes",
+      "venu",
+      "antigravity"
+    ],
+    "vaultPath": "Clientes/nipeihu app elerning.md",
+    "accentColor": "#64ce70",
+    "createdAt": "2026-09-17T03:55:59.571Z",
+    "updatedAt": "2026-09-17T03:55:59.571Z"
   }
 ]
