@@ -228,8 +228,8 @@ export default function CompanyOnboardingWizard() {
                 onChange={(e) => setCategory(e.target.value as any)}
                 className="w-full bg-[#050805] text-white border border-[#182818] px-4 py-2.5 rounded-xl text-xs font-mono focus:outline-none focus:border-[#22c55e]"
               >
-                <option value="client">Cliente Externo (Agencia DA)</option>
-                <option value="product">Producto Propio Digital Alignment</option>
+                <option value="client">Empresa / Proyecto Ecosistema Nipëi</option>
+                <option value="product">Producto Propio / Módulo Nipëi</option>
               </select>
             </div>
 

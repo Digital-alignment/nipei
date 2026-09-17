@@ -9,37 +9,25 @@ import {
   Globe,
   Archive,
   Target,
-  Users,
-  Bot,
-  ExternalLink,
-  ShieldCheck,
   CheckCircle2,
-  Layers,
-  Sparkles,
-  ArrowRight,
-  Filter,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function CompanyHubStudio() {
   const { companies, activeCompanyId, setActiveCompanyId, archiveCompany, isLoading } = useCompany();
-  const [filterCategory, setFilterCategory] = useState<"all" | "client" | "product">("all");
   const [filterStatus, setFilterStatus] = useState<"active" | "archived">("active");
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredCompanies = companies.filter((c) => {
-    const matchesCategory = filterCategory === "all" || c.category === filterCategory;
     const matchesStatus = c.status === filterStatus;
     const matchesSearch =
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.location && c.location.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesCategory && matchesStatus && matchesSearch;
+    return matchesStatus && matchesSearch;
   });
 
   const activeCount = companies.filter((c) => c.status === "active").length;
-  const clientCount = companies.filter((c) => c.category === "client" && c.status === "active").length;
-  const productCount = companies.filter((c) => c.category === "product" && c.status === "active").length;
   const archivedCount = companies.filter((c) => c.status === "archived").length;
 
   return (
@@ -50,10 +38,10 @@ export default function CompanyHubStudio() {
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 text-xs font-mono font-bold tracking-widest uppercase bg-[#142614] text-[#22c55e] border border-[#22c55e]/40 rounded-full flex items-center gap-2">
               <Building2 size={14} />
-              NIPËI OS — CENTRO DE GESTIÓN MULTI-EMPRESA
+              NIPËI OS — CENTRO DE GESTIÓN DE EMPRESAS
             </span>
             <span className="px-3 py-1 text-xs font-mono font-bold uppercase bg-[#050805] text-[#a7f3d0] border border-[#182818] rounded-full">
-              AGENCY PORTFOLIO HUB
+              ECOSYSTEM HUB
             </span>
           </div>
 
@@ -68,26 +56,18 @@ export default function CompanyHubStudio() {
 
         <div>
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
-            Gestión Multi-Empresa <span className="text-[#22c55e]">& Clientes</span>
+            Gestión de Empresas <span className="text-[#22c55e]">& Proyectos</span>
           </h1>
           <p className="text-xs md:text-sm text-[#8aa88a] mt-2 max-w-3xl leading-relaxed font-medium">
-            Supervisa el portafolio consolidado de Digital Alignment. Alterna entre la vista global o enfócate en una empresa específica para filtrar todo el sistema operacional.
+            Supervisa las empresas y proyectos del ecosistema Nipëi. Alterna entre la vista global o enfócate en una empresa específica para filtrar todo el sistema operacional.
           </p>
         </div>
 
-        {/* Portfolio Counter Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+        {/* Counter Cards */}
+        <div className="grid grid-cols-2 gap-3 pt-2 max-w-md">
           <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
             <span className="text-[10px] font-mono text-slate-400 block uppercase">Empresas Activas</span>
             <span className="text-xl font-mono font-black text-[#22c55e]">{activeCount}</span>
-          </div>
-          <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
-            <span className="text-[10px] font-mono text-slate-400 block uppercase">Clientes Externos</span>
-            <span className="text-xl font-mono font-black text-emerald-400">{clientCount}</span>
-          </div>
-          <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
-            <span className="text-[10px] font-mono text-slate-400 block uppercase">Productos Propios DA</span>
-            <span className="text-xl font-mono font-black text-purple-400">{productCount}</span>
           </div>
           <div className="bg-[#050805] border border-[#182818] p-3 rounded-2xl text-center">
             <span className="text-[10px] font-mono text-slate-400 block uppercase">Archivadas</span>
@@ -99,27 +79,6 @@ export default function CompanyHubStudio() {
       {/* Control Toolbar & Filters */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0c140c] border border-[#182818] p-4 rounded-2xl">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Category Filter */}
-          <div className="flex items-center gap-1 bg-[#050805] p-1 rounded-xl border border-[#182818]">
-            {[
-              { key: "all", label: "Todas" },
-              { key: "client", label: "Clientes Externos" },
-              { key: "product", label: "Productos DA" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setFilterCategory(tab.key as any)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition ${
-                  filterCategory === tab.key
-                    ? "bg-[#142614] text-[#22c55e] border border-[#22c55e]/40"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
           {/* Status Filter */}
           <div className="flex items-center gap-1 bg-[#050805] p-1 rounded-xl border border-[#182818]">
             <button
@@ -152,7 +111,7 @@ export default function CompanyHubStudio() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar empresa por nombre o ciudad..."
+            placeholder="Buscar empresa por nombre o ubicación..."
             className="w-full bg-[#050805] text-white border border-[#182818] pl-9 pr-3 py-1.5 rounded-xl text-xs font-mono focus:outline-none focus:border-[#22c55e]"
           />
         </div>
@@ -164,7 +123,7 @@ export default function CompanyHubStudio() {
           <Building2 size={40} className="mx-auto text-slate-600" />
           <h3 className="text-lg font-bold text-white">No se encontraron empresas</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            No hay empresas que coincidan con los filtros seleccionados o el término de búsqueda.
+            No hay empresas que coincidan con la búsqueda o el estado seleccionado.
           </p>
         </div>
       ) : (
@@ -192,7 +151,7 @@ export default function CompanyHubStudio() {
                         style={{ backgroundColor: c.accentColor }}
                       />
                       <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                        {c.category === "client" ? "Cliente Externo" : "Producto Propio DA"}
+                        Nipëi OS
                       </span>
                     </div>
 
