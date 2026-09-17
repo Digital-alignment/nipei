@@ -33,6 +33,7 @@ const NAV: NavItem[] = [
   { href: "/seo",            label: "SEO Content Studio",             icon: <TrendingUp size={16} />,                      accent: "#a3e635", dim: "rgba(163,230,53,0.16)", group: "active" },
   { href: "/memory",         label: "Nipëi Memory (Vault)",           icon: <Brain size={16} />,                           accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/organograma",    label: "Organograma",                    icon: <Network size={16} />,                         accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
+  { href: "/arquitectura",   label: "Arquitectura & Archify",         icon: <Workflow size={16} />,                        accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/empresas",       label: "Empresas",                       icon: <Building2 size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/infrastructure", label: "Servicios Conectados",           icon: <Server size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/brand",          label: "Nipëi Brand",                    icon: <Palette size={16} />,                         accent: "#e879f9", dim: "rgba(232,121,249,0.16)", group: "active" },
