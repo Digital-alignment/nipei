@@ -6,8 +6,10 @@ import { motion } from "framer-motion";
 import {
   Brain, ShieldCheck, Package, Users, DollarSign, CheckSquare, Sparkles,
   TrendingUp, AlertTriangle, ArrowUpRight, Crown, Scale, Layers, Activity,
-  Zap, Wrench, ShoppingBag, FileSpreadsheet, Bot, ChevronRight, CheckCircle2
+  Zap, Wrench, ShoppingBag, FileSpreadsheet, Bot, ChevronRight, CheckCircle2,
+  Building2, Target, Globe
 } from "lucide-react";
+import { useCompany } from "@/context/CompanyContext";
 import {
   INITIAL_INVENTORY, INITIAL_CUSTOMERS, INITIAL_DRE, INITIAL_TASKS,
   INITIAL_CERTIFICATIONS, INITIAL_PASSIVE_LOGS, SQUADS, type GlobalTask
@@ -20,6 +22,7 @@ import MedicalRiskMatrix from "./MedicalRiskMatrix";
 import SquadPerformanceRadar from "./SquadPerformanceRadar";
 
 export default function MasterDashboardView() {
+  const { activeCompany, setActiveCompanyId } = useCompany();
   const [tasks, setTasks] = useState<GlobalTask[]>(INITIAL_TASKS);
 
   // Compute Trinômio Ativo Metrics
@@ -50,6 +53,87 @@ export default function MasterDashboardView() {
 
   return (
     <div className="space-y-8">
+      {/* 🏢 Active Company Focus Banner */}
+      {activeCompany && (
+        <div
+          className="p-6 rounded-2xl border bg-[#0c140c] shadow-2xl relative overflow-hidden space-y-4"
+          style={{ borderColor: activeCompany.accentColor }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="p-2.5 rounded-xl border flex items-center justify-center font-bold text-[#050805]"
+                style={{ backgroundColor: activeCompany.accentColor, borderColor: activeCompany.accentColor }}
+              >
+                <Building2 size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#a7f3d0]">
+                    EMPRESA ENFOCADA (FOCUS MODE)
+                  </span>
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase"
+                    style={{ backgroundColor: `${activeCompany.accentColor}20`, color: activeCompany.accentColor }}
+                  >
+                    {activeCompany.category === "client" ? "Cliente Externo" : "Producto Propio DA"}
+                  </span>
+                </div>
+                <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                  {activeCompany.name}
+                  {activeCompany.location && (
+                    <span className="text-xs font-normal text-slate-400 font-mono">
+                      📍 {activeCompany.location}
+                    </span>
+                  )}
+                </h2>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveCompanyId("all")}
+              className="px-3 py-1.5 bg-[#050805] hover:bg-[#142614] text-slate-300 border border-[#182818] rounded-xl text-xs font-mono transition flex items-center gap-1.5"
+            >
+              <Globe size={13} /> Ver Vista Global (Todas)
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-300 max-w-3xl leading-relaxed">
+            {activeCompany.description}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[#182818] text-xs font-mono">
+            <div>
+              <span className="text-[#a7f3d0] font-bold block mb-1">🎯 Objetivos Estratégicos</span>
+              <ul className="space-y-1 text-slate-300">
+                {activeCompany.goals.map((g, idx) => (
+                  <li key={idx} className="flex items-start gap-1.5">
+                    <span className="text-[#22c55e]">•</span>
+                    <span>{g}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <span className="text-[#a7f3d0] font-bold block mb-1">🤖 Squads & Agentes Asignados</span>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {activeCompany.assignedSquads.map((s, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded bg-[#142614] text-[#22c55e] border border-[#22c55e]/30">
+                    {s}
+                  </span>
+                ))}
+                {activeCompany.assignedAgents.map((a, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded bg-[#1e1428] text-purple-300 border border-purple-500/30">
+                    @{a}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 0. Duplo Núcleo Master Header Banner */}
       <div className="p-6 rounded-xl border border-[#22c55e] bg-[#091409] relative overflow-hidden shadow-2xl">
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">

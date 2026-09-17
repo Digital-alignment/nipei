@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Search, FileText, Sparkles, Clock, Network, ShieldCheck, Database } from "lucide-react";
+import { Brain, Search, FileText, Sparkles, Clock, Network, ShieldCheck, Database, Building2 } from "lucide-react";
+import { useCompany } from "@/context/CompanyContext";
 import dynamic from "next/dynamic";
 import Panel from "./Panel";
 import IngestionAuditorView from "./IngestionAuditorView";
@@ -17,6 +18,7 @@ interface RecentNote { path: string; title: string; mtime: number; }
 export type MemoryTab = "ingestion" | "graph" | "recent" | "search" | "omi";
 
 export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: MemoryTab }) {
+  const { activeCompany } = useCompany();
   const [tab, setTab] = useState<MemoryTab>(initialTab);
   const [galaxyMode, setGalaxyMode] = useState(true); // cinematic Memory Galaxy is the default wow view
   const [q, setQ] = useState("");
@@ -105,6 +107,29 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
       }
       className="lg:col-span-3 min-h-[460px]"
     >
+      {/* Active Company Focus Banner */}
+      {activeCompany && (
+        <div
+          className="mb-4 p-3 rounded-xl border bg-[#050805] text-xs font-mono flex items-center justify-between gap-3"
+          style={{ borderColor: activeCompany.accentColor }}
+        >
+          <div className="flex items-center gap-2">
+            <Building2 size={16} style={{ color: activeCompany.accentColor }} />
+            <span>
+              <span className="text-slate-400">Filtrando memoria de empresa:</span>{" "}
+              <strong style={{ color: activeCompany.accentColor }}>{activeCompany.name}</strong>{" "}
+              <span className="text-[10px] text-slate-500">({activeCompany.vaultPath})</span>
+            </span>
+          </div>
+          <button
+            onClick={() => openNote(activeCompany.vaultPath)}
+            className="px-2.5 py-1 bg-[#142614] hover:bg-[#1f381f] text-[#22c55e] rounded-lg text-[11px] font-bold transition border border-[#22c55e]/40"
+          >
+            Abrir Nota Vault
+          </button>
+        </div>
+      )}
+
       {/* Top Tab Bar Navigation */}
       <div className="flex flex-wrap items-center gap-2 mb-4 p-2 bg-[#080d08] border border-[#182818] rounded-xl">
         {tabs.map((t) => (

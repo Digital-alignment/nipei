@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { WifiOff, Sparkles, Send, Loader2, Trash2, ExternalLink, Compass, Hammer, ShieldCheck, Play, LayoutDashboard, FolderOpen, RotateCw, Cloud, Globe, UploadCloud, Check } from "lucide-react";
+import { WifiOff, Sparkles, Send, Loader2, Trash2, ExternalLink, Compass, Hammer, ShieldCheck, Play, LayoutDashboard, FolderOpen, RotateCw, Cloud, Globe, UploadCloud, Check, Building2 } from "lucide-react";
+import { useCompany } from "@/context/CompanyContext";
 
 const LSK = "nipei-os/agent-kanban/v1";
 // Hermes cloud SEO mode publishes to one of your configured live funnel sites.
@@ -29,6 +30,7 @@ const TEAM = [
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function AgentKanban() {
+  const { activeCompany } = useCompany();
   const [goal, setGoal] = useState("");
   const [cards, setCards] = useState<Card[]>([]);
   const [model, setModel] = useState<string | null>(null);
@@ -169,8 +171,20 @@ export default function AgentKanban() {
       <div className="flex items-center gap-3 mb-3 shrink-0 flex-wrap">
         <div className="w-8 h-8 rounded-lg grid place-items-center text-[#0b1410]" style={{ background: "linear-gradient(135deg,#7dd3fc,#5ab896)" }}><Sparkles size={17} /></div>
         <div className="min-w-0">
-          <div className="text-[15px] font-semibold text-[var(--cream)] leading-none flex items-center gap-2">
+          <div className="text-[15px] font-semibold text-[var(--cream)] leading-none flex items-center gap-2 flex-wrap">
             Agent Kanban
+            {activeCompany && (
+              <span
+                className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border"
+                style={{
+                  backgroundColor: `${activeCompany.accentColor}20`,
+                  color: activeCompany.accentColor,
+                  borderColor: `${activeCompany.accentColor}60`,
+                }}
+              >
+                <Building2 size={10} /> {activeCompany.name}
+              </span>
+            )}
             {seoMode ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "#b9893f1e", color: "#d9b27d", border: "1px solid #b9893f55" }}><Cloud size={9} /> Hermes cloud team</span>
             ) : (
