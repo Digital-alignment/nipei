@@ -55,6 +55,8 @@ export function queryVaultGrounding(
     path.join(vaultRoot, "Master_Sources"),
     path.join(vaultRoot, "Ingested_Knowledge"),
     path.join(vaultRoot, "Generated_Content"),
+    "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment\\Clientes",
+    "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment\\Productos",
   ];
 
   const citations: VaultCitation[] = [];

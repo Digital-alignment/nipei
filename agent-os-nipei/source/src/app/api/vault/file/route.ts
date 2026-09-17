@@ -4,7 +4,10 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\DA\\nipei-vault";
+const VAULT_ROOTS = [
+  "C:\\Users\\ondig\\Code\\DA\\nipei-vault",
+  "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment",
+];
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,14 +18,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Parámetro path requerido" }, { status: 400 });
     }
 
-    // Security check: prevent path traversal outside NIPEI_VAULT_ROOT
-    const resolvedPath = path.resolve(NIPEI_VAULT_ROOT, relPath);
-    if (!resolvedPath.startsWith(path.resolve(NIPEI_VAULT_ROOT))) {
-      return NextResponse.json({ success: false, error: "Acceso a ruta no permitido" }, { status: 403 });
+    let resolvedPath: string | null = null;
+
+    // Security & existence check against all configured vault roots
+    for (const root of VAULT_ROOTS) {
+      const candidate = path.resolve(root, relPath);
+      if (candidate.startsWith(path.resolve(root)) && fs.existsSync(candidate)) {
+        resolvedPath = candidate;
+        break;
+      }
     }
 
-    if (!fs.existsSync(resolvedPath)) {
-      return NextResponse.json({ success: false, error: "El archivo no existe" }, { status: 404 });
+    if (!resolvedPath) {
+      return NextResponse.json({ success: false, error: `El archivo '${relPath}' no existe en ningún Vault configurado.` }, { status: 404 });
     }
 
     const stat = fs.statSync(resolvedPath);

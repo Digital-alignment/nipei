@@ -3,6 +3,7 @@ import path from "node:path";
 import { config } from "./config";
 
 export const VAULT_ROOT = config.vaultRoot ?? "";
+export const ADDITIONAL_VAULT_ROOT = "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment";
 export const OMI_PATH = VAULT_ROOT ? path.join(VAULT_ROOT, "Omi/Memories.md") : "";
 export const VAULT_AVAILABLE = Boolean(VAULT_ROOT);
 
@@ -31,7 +32,10 @@ export async function listNotes(maxDepth = 6): Promise<string[]> {
       }
     }
   }
-  await walk(VAULT_ROOT, 0);
+  if (VAULT_ROOT) await walk(VAULT_ROOT, 0);
+  if (ADDITIONAL_VAULT_ROOT && ADDITIONAL_VAULT_ROOT !== VAULT_ROOT) {
+    await walk(ADDITIONAL_VAULT_ROOT, 0);
+  }
   return out;
 }
 
