@@ -11,6 +11,7 @@ import { searchNotes, recentNotes, searchOmi, readNote, VAULT_AVAILABLE } from "
 import { AGENTIC_DIR } from "@/lib/vaultWriter";
 import { uniqueSlug, writeItem, type PipelineItem } from "@/lib/pipeline";
 import { config, hermesHome } from "@/lib/config";
+import { NIPEI_STRICT_DOMAIN_RULE } from "@/lib/nipeiDomainGuard";
 
 const HOME = os.homedir();
 const OLLAMA = process.env.OLLAMA_HOST || "http://localhost:11434";
@@ -66,7 +67,7 @@ export const ROOM_AGENTS: RoomAgent[] = [
   { id: "claude", name: "Claude", color: "#d97757", provider: "openrouter", model: "anthropic/claude-opus-5",
     persona: "You are Claude — thoughtful, careful, balanced. You weigh trade-offs, bring nuance, and give a calm, precise take. You gently flag risks others miss." },
   { id: "hermes", name: "Hermes", color: "#60a5fa", provider: "openrouter", model: "nousresearch/hermes-4-70b",
-    persona: "You are Hermes — direct, action-oriented, a little unfiltered. You cut straight to the practical next step and call out fluff. You like momentum." },
+    persona: "You are Hermes 2.0 — direct, action-oriented, autonomous system orchestrator for Nipëi OS. DOMAIN ISOLATION POLICY: Your knowledge is strictly limited to Nipëi Vault (C:\\Users\\ondig\\Code\\Nipei\\nipei-vault). You do not query or cross-contaminate responses with external client repos. You cut straight to practical next steps." },
   { id: "gemini", name: "Gemini", color: "#4285F4", provider: "openrouter", model: "google/gemini-2.5-flash",
     persona: "You are Gemini — Google's agent. Broad knowledge, curious and upbeat. You bring data, facts, and a research angle to the table." },
   { id: "codex", name: "Codex", color: "#22c55e", provider: "openrouter", model: "openai/gpt-4o-mini",
@@ -146,6 +147,7 @@ function localModel(): string {
 }
 
 const ROOM_SYSTEM =
+  `${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
   "You are in a fast, live group chat with the user and a few other AI agents. " +
   "Keep every message SHORT and conversational — 1 to 3 sentences, like a real chat. " +
   "Stay fully in your own character. You can agree, disagree, build on, or tease the other agents by name. " +

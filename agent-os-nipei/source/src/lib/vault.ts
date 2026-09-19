@@ -1,19 +1,23 @@
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { config } from "./config";
 
 export const VAULT_ROOT = config.vaultRoot ?? "";
-export const ADDITIONAL_VAULT_ROOT = "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment";
+export const ADDITIONAL_VAULT_ROOT = "";
 export const OMI_PATH = VAULT_ROOT ? path.join(VAULT_ROOT, "Omi/Memories.md") : "";
 export const VAULT_AVAILABLE = Boolean(VAULT_ROOT);
 
 const SKIP_DIRS = new Set([".obsidian", ".trash", "node_modules", ".git"]);
 
+import { isWithinNipeiDomain } from "./nipeiDomainGuard";
+
 export function safeJoin(rel: string): string | null {
   const abs = path.resolve(VAULT_ROOT, rel);
   if (!abs.startsWith(VAULT_ROOT)) return null;
+  if (!isWithinNipeiDomain(abs)) return null;
   return abs;
 }
+
 
 export async function listNotes(maxDepth = 6): Promise<string[]> {
   const out: string[] = [];
@@ -25,6 +29,7 @@ export async function listNotes(maxDepth = 6): Promise<string[]> {
     for (const it of items) {
       if (SKIP_DIRS.has(it.name)) continue;
       const full = path.join(dir, it.name);
+      if (!isWithinNipeiDomain(full)) continue;
       if (it.isDirectory()) {
         await walk(full, depth + 1);
       } else if (it.isFile() && /\.md$/i.test(it.name)) {
@@ -56,51 +61,14 @@ function previewAround(content: string, idx: number, span = 120): string {
   return p;
 }
 
+import { searchNotesIndexed, getCompanyNotesIndexed, recentNotesIndexed, updateInMemoryIndex } from "./vaultIndex";
+
 export async function searchNotes(q: string, limit = 40): Promise<NoteHit[]> {
-  if (!q.trim()) return [];
-  const needle = q.toLowerCase();
-  const files = await listNotes();
-  const hits: NoteHit[] = [];
-  for (const file of files) {
-    let content: string;
-    try { content = await readFile(file, "utf8"); }
-    catch { continue; }
-    const lower = content.toLowerCase();
-    const idx = lower.indexOf(needle);
-    if (idx === -1) continue;
-    let st;
-    try { st = await stat(file); } catch { continue; }
-    // crude scoring: title hit boosted
-    const rel = path.relative(VAULT_ROOT, file);
-    const title = path.basename(file, ".md");
-    let score = 1;
-    if (title.toLowerCase().includes(needle)) score += 5;
-    // bonus for early position
-    score += Math.max(0, 5 - Math.floor(idx / 500));
-    hits.push({
-      path: rel,
-      title,
-      preview: previewAround(content, idx),
-      score,
-      mtime: st.mtimeMs,
-    });
-  }
-  hits.sort((a, b) => b.score - a.score || b.mtime - a.mtime);
-  return hits.slice(0, limit);
+  return searchNotesIndexed(q, limit);
 }
 
 export async function recentNotes(limit = 12): Promise<{ path: string; title: string; mtime: number }[]> {
-  const files = await listNotes();
-  const stats = await Promise.all(files.map(async (f) => {
-    try { const s = await stat(f); return { f, m: s.mtimeMs }; }
-    catch { return { f, m: 0 }; }
-  }));
-  stats.sort((a, b) => b.m - a.m);
-  return stats.slice(0, limit).map(({ f, m }) => ({
-    path: path.relative(VAULT_ROOT, f),
-    title: path.basename(f, ".md"),
-    mtime: m,
-  }));
+  return recentNotesIndexed(limit);
 }
 
 // Notes created/edited on a specific day (YYYY-MM-DD) — the real "what happened".
@@ -131,6 +99,36 @@ export async function readNote(rel: string): Promise<{ path: string; content: st
     const [content, st] = await Promise.all([readFile(abs, "utf8"), stat(abs)]);
     return { path: rel, content, mtime: st.mtimeMs };
   } catch { return null; }
+}
+
+export async function writeNote(rel: string, content: string): Promise<{ success: boolean; mtime?: number; error?: string }> {
+  const abs = safeJoin(rel);
+  if (!abs) return { success: false, error: "Invalid path: outside vault root" };
+  if (!/\.md$/i.test(abs)) return { success: false, error: "Only markdown (.md) files can be edited" };
+  try {
+    await mkdir(path.dirname(abs), { recursive: true });
+    await writeFile(abs, content, "utf8");
+    const st = await stat(abs);
+
+    // Update in-memory index instantly (0ms delay)
+    updateInMemoryIndex(rel, content, st.mtimeMs);
+
+    return { success: true, mtime: st.mtimeMs };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Searches and scans nipei-vault for all notes linked to a specific company by slug, name, or path.
+ */
+export async function getCompanyNotes(
+  companySlug: string,
+  companyName: string,
+  limit = 50
+): Promise<NoteHit[]> {
+  return getCompanyNotesIndexed(companySlug, companyName, limit);
 }
 
 // Omi memories: parse bullet list from Memories.md

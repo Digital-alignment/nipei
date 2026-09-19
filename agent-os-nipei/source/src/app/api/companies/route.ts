@@ -27,7 +27,7 @@ async function syncVaultNote(company: Company) {
   try {
     const possibleVaultDirs = [
       path.resolve(process.cwd(), "../../../nipei-vault"),
-      "C:\\Users\\ondig\\Code\\DA\\nipei-vault",
+      "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault",
     ];
     const vaultBase = possibleVaultDirs.find((d) => existsSync.existsSync(d));
 

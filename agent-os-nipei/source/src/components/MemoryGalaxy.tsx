@@ -30,9 +30,9 @@ function rgbFor(group: string): [number, number, number] {
   return [Math.round(hk(hue + 1 / 3) * 255), Math.round(hk(hue) * 255), Math.round(hk(hue - 1 / 3) * 255)];
 }
 
-interface Props { onOpenNote: (relPath: string) => void; }
+interface Props { onOpenNote: (relPath: string) => void; companySlug?: string; }
 
-export default function MemoryGalaxy({ onOpenNote }: Props) {
+export default function MemoryGalaxy({ onOpenNote, companySlug }: Props) {
   const [raw, setRaw] = useState<{ nodes: RawNode[]; links: RawLink[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<GNode | null>(null);
@@ -48,12 +48,14 @@ export default function MemoryGalaxy({ onOpenNote }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/memory/graph")
+    const url = companySlug ? `/api/memory/graph?company=${encodeURIComponent(companySlug)}` : "/api/memory/graph";
+    fetch(url)
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then((j) => { if (!cancelled) setRaw(j); })
       .catch((e: Error) => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
-  }, []);
+  }, [companySlug]);
+
 
   // Seeded starfield (screen-space background stars) — built once.
   const starfield = useMemo(() => {

@@ -1,7 +1,7 @@
 # TEST_INFRA — Nipëi OS E2E Testing Infrastructure
 
 **Architecture**: 4-Tier Opaque-Box End-to-End Verification  
-**Target Repository**: `c:\Users\ondig\Code\DA\nipei control`  
+**Target Repository**: `c:\Users\ondig\Code\Nipei\nipei-control`  
 **Execution Environment**: Node.js v24.14.1 (ESM Native)  
 **Status**: ACTIVE & OPERATIONAL  
 
@@ -26,7 +26,7 @@ The Nipëi OS E2E Testing Infrastructure provides end-to-end requirement validat
 ## 2. Framework Architecture & File Layout
 
 ```
-c:\Users\ondig\Code\DA\nipei control\
+c:\Users\ondig\Code\Nipei\nipei-control\
 ├── tests\
 │   └── e2e\
 │       ├── runner.mjs                 # Master executable runner (exit code 0/1)
@@ -126,7 +126,7 @@ Each core feature has >=5 comprehensive automated test cases:
 ## 4. Execution & Verification
 
 ### Running the Test Suite
-From the repository root (`c:\Users\ondig\Code\DA\nipei control`):
+From the repository root (`c:\Users\ondig\Code\Nipei\nipei-control`):
 
 ```bash
 node tests/e2e/runner.mjs

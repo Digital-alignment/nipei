@@ -74,6 +74,7 @@ const TITLES: Record<string, PageMeta> = {
 
 import TopHeaderBar from "./TopHeaderBar";
 import CompanySelector from "./CompanySelector";
+import AgentVaultActivityWidget from "./AgentVaultActivityWidget";
 
 const SQUAD_HEADER_META: Record<SquadId, { numeral: string; label: string; title: string; sub: string }> = {
   super_user: {
@@ -157,16 +158,8 @@ export default function TopBar() {
           <CommandPalette />
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#1e381e] bg-[#050805] text-[11px] font-mono text-[#a7f3d0]">
-          <span className="inline-flex">
-            <span className="tick live" style={{ color: "var(--gold)" }} />
-            <span className="tick live" style={{ color: "var(--gold-soft)", animationDelay: ".15s" }} />
-            <span className="tick live" style={{ color: "var(--emerald)", animationDelay: ".3s" }} />
-            <span className="tick live" style={{ color: "var(--rust)", animationDelay: ".45s" }} />
-          </span>
-          <span className="uppercase tracking-widest font-bold text-[#4ade80]">
-            All systems operational
-          </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <AgentVaultActivityWidget />
         </div>
       </div>
 

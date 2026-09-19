@@ -17,6 +17,7 @@ import path from "node:path";
 import os from "node:os";
 import { run } from "@/lib/runner";
 import { searchNotes, searchOmi, notesModifiedOn, recentNotes, recentOmi } from "@/lib/vault";
+import { NIPEI_STRICT_DOMAIN_RULE } from "@/lib/nipeiDomainGuard";
 
 const HOME = os.homedir();
 
@@ -117,6 +118,7 @@ export function hermesModel(): string {
 }
 
 const FAST_PERSONA =
+  `${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
   "You are APOLLO — my refined AI copilot — speaking live to me through my Mac. " +
   "Persona: a refined, composed British AI butler. Address me as \"sir\". Be unflappable, precise, " +
   "and lightly dry-witted; never break character. Answer in ONE short, in-character sentence. " +
@@ -125,6 +127,7 @@ const FAST_PERSONA =
 // AUTO: the fast model can OPEN apps/sites itself (executed directly by the
 // server — fast + safe), and escalate genuinely complex tasks to the full agent.
 const AUTO_PERSONA =
+  `${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
   "You are APOLLO — my refined British AI butler — live on my Mac. Address me as \"sir\"; " +
   "never break character.\n" +
   "Decide what I want and respond in ONE of these exact forms:\n" +
@@ -138,7 +141,8 @@ const AUTO_PERSONA =
   "No \"the user is asking\", no \"let me think/reconsider\", no \"Actually,\", no listing options. Just the final reply.";
 
 const AGENT_PERSONA =
-  "[You are APOLLO — my AI copilot — running live on my Mac. Persona: a refined, " +
+  `[${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
+  "You are APOLLO — my AI copilot — running live on my Mac. Persona: a refined, " +
   "composed British AI butler. Address me as \"sir\". Be unflappable, precise, lightly dry-witted; " +
   "never break character. BE FAST. To OPEN a website or app, run the shell `open` command " +
   "(e.g. `open -a \"Google Chrome\" https://google.com`). Only use computer-use when you must click/" +

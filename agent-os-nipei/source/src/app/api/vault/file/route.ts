@@ -5,8 +5,7 @@ import path from "path";
 export const dynamic = "force-dynamic";
 
 const VAULT_ROOTS = [
-  "C:\\Users\\ondig\\Code\\DA\\nipei-vault",
-  "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment",
+  "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault",
 ];
 
 export async function GET(req: NextRequest) {

@@ -185,7 +185,7 @@ export function hermesHome(): string {
 
 export function defaultVault(): string | null {
   // Prioritize dedicated Nipëi Master Vault for Nipëi OS
-  const nipeiVault = "C:\\Users\\ondig\\Code\\DA\\nipei-vault";
+  const nipeiVault = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
   if (existsSync(nipeiVault)) return nipeiVault;
 
   const fromEnv = process.env.AGENTIC_OS_VAULT;
@@ -193,12 +193,6 @@ export function defaultVault(): string | null {
 
   const fromFile = fileCfg.vaultRoot;
   if (typeof fromFile === "string" && existsSync(fromFile)) return fromFile;
-
-  // Fallback to Digital Alignment Obsidian vault
-  const daVault = path.join(os.homedir(), "Desktop", "DA", "digitalalignment");
-  if (existsSync(daVault)) return daVault;
-  const daVaultWin = "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment";
-  if (existsSync(daVaultWin)) return daVaultWin;
 
   const guesses = [
     path.join(os.homedir(), "Documents", "Obsidian Vault"),

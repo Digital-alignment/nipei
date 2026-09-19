@@ -34,9 +34,9 @@ function colorFor(group: string): string {
   return `hsl(${h % 360}, 70%, 60%)`;
 }
 
-interface Props { onOpenNote: (relPath: string) => void; }
+interface Props { onOpenNote: (relPath: string) => void; companySlug?: string; }
 
-export default function VaultGraph3D({ onOpenNote }: Props) {
+export default function VaultGraph3D({ onOpenNote, companySlug }: Props) {
   const [raw, setRaw] = useState<{ nodes: RawNode[]; links: RawLink[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<GNode | null>(null);
@@ -60,12 +60,14 @@ export default function VaultGraph3D({ onOpenNote }: Props) {
   // Fetch graph data
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/memory/graph")
+    const url = companySlug ? `/api/memory/graph?company=${encodeURIComponent(companySlug)}` : "/api/memory/graph";
+    fetch(url)
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
       .then((j) => { if (!cancelled) setRaw(j); })
       .catch((e: Error) => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
-  }, []);
+  }, [companySlug]);
+
 
   // Build simulation nodes with random initial positions inside a sphere of radius 200.
   const sim = useMemo(() => {

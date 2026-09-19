@@ -6,7 +6,7 @@ import { extractAIDigest } from "@/lib/vaultDigest";
 
 export const dynamic = "force-dynamic";
 
-const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\DA\\nipei-vault";
+const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
 
 interface IngestPayload {
   title: string;

@@ -4,7 +4,7 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\DA\\nipei-vault";
+const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,7 +57,7 @@ agent: "auditor-ingesta"
 
 # 📊 Reporte Ejecutivo de Salud del Vault — Nipëi OS
 - **Fecha de Generación**: ${new Date().toLocaleString("es-ES")}
-- **Ruta del Vault**: \`C:\\Users\\ondig\\Code\\DA\\nipei-vault\`
+- **Ruta del Vault**: \`C:\\Users\\ondig\\Code\\Nipei\\nipei-vault\`
 - **Índice de Salud y Cobertura**: **${healthPercentage}% Cobertura**
 
 ---

@@ -314,7 +314,7 @@ export default function IngestionAuditorView() {
               <Database size={20} className="text-[#22c55e]" />
               <div className="text-xs">
                 <p className="text-[#668866]">Vault Activo:</p>
-                <p className="font-semibold text-white truncate max-w-[160px]" title="C:\Users\ondig\Code\DA\nipei-vault">
+                <p className="font-semibold text-white truncate max-w-[160px]" title="C:\Users\ondig\Code\Nipei\nipei-vault">
                   nipei-vault (Master)
                 </p>
               </div>
@@ -878,7 +878,7 @@ export default function IngestionAuditorView() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">Explorador Organizado del Vault</h3>
-                  <p className="text-xs text-[#88a888]">nipei-vault (C:\Users\ondig\Code\DA\nipei-vault)</p>
+                  <p className="text-xs text-[#88a888]">nipei-vault (C:\Users\ondig\Code\Nipei\nipei-vault)</p>
                 </div>
               </div>
               <button

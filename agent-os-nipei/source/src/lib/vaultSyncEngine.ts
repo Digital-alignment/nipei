@@ -248,10 +248,8 @@ export function resolveVaultRoot(overrideRoot?: string): string {
     return root;
   }
   const fallbackCandidates = [
-    "C:\\Users\\ondig\\Code\\DA\\nipei-vault",
+    "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault",
     process.env.AGENTIC_OS_VAULT,
-    path.join(os.homedir(), "Desktop", "DA", "digitalalignment"),
-    "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment",
     path.join(os.homedir(), "Documents", "Obsidian Vault"),
   ].filter(Boolean) as string[];
 
@@ -260,7 +258,7 @@ export function resolveVaultRoot(overrideRoot?: string): string {
   }
 
   // Return the dedicated Nipëi vault path
-  return "C:\\Users\\ondig\\Code\\DA\\nipei-vault";
+  return "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
 }
 
 /**

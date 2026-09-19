@@ -23,9 +23,23 @@ export interface HermesRAGResult {
   answerText: string;
 }
 
+import { NIPEI_STRICT_DOMAIN_RULE } from "./nipeiDomainGuard";
+
+/**
+ * System Prompt for Hermes 2.0 with strict domain isolation and zero-hallucination policy.
+ */
+export const HERMES_SYSTEM_PROMPT = `
+You are Hermes 2.0, the autonomous AI system orchestrator for Nipëi OS.
+
+${NIPEI_STRICT_DOMAIN_RULE}
+
+- If information is not present in Nipëi Vault, return a Zero-Hallucination response indicating a Knowledge Gap (Vacío de Ingesta).
+`;
+
+
 /**
  * Searches nipei-vault for notes relevant to the user query.
- * Scans Master_Sources, Ingested_Knowledge, and Generated_Content.
+ * Scans Master_Sources, Ingested_Knowledge, Squads, Omi, and Generated_Content.
  */
 export function queryVaultGrounding(
   userQuery: string,
@@ -51,12 +65,13 @@ export function queryVaultGrounding(
     .split(/[^a-z0-9]/)
     .filter((t) => t.length > 2);
 
+  // Strictly limited to Nipëi Vault directories (Domain Isolation)
   const searchDirs = [
     path.join(vaultRoot, "Master_Sources"),
     path.join(vaultRoot, "Ingested_Knowledge"),
+    path.join(vaultRoot, "Squads"),
+    path.join(vaultRoot, "Omi"),
     path.join(vaultRoot, "Generated_Content"),
-    "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment\\Clientes",
-    "C:\\Users\\ondig\\Desktop\\DA\\digitalalignment\\Productos",
   ];
 
   const citations: VaultCitation[] = [];

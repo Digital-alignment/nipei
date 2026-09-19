@@ -51,9 +51,19 @@ Visitors to the website.
 
 - **Capabilities:** Browse products where `is_visible = true` AND `squad_access` is generic/public.
 
+## 3. Strict AI Agent Domain & Boundary Isolation Rule
+
+**MANDATO PERMANENTE PARA TODOS LOS AGENTES DE IA (Hermes, Antigravity, Subagentes y Motores RAG):**
+1. **Límite de Dominio Exclusivo**: Todos los agentes de IA de Nipëi OS operan **únicamente** dentro de:
+   - `C:\Users\ondig\Code\Nipei\nipei-control` (Control Center UI & Backend)
+   - `C:\Users\ondig\Code\Nipei\nipei-vault` (Vault de Sistema & Base de Conocimiento)
+2. **Prohibición de Acceso a Clientes Externos**: Queda **estrictamente prohibido** leer, indexar, buscar o ejecutar comandos en carpetas o repositorios de empresas clientes externas (ej. `C:\Users\ondig\Code\DA\<repo>`).
+3. **Claves SSH & Aislamiento por Cliente**: Cada cliente utiliza exclusivamente su propia clave SSH dedicada (`~/.ssh/<slug>_vps`). Está prohibido usar `nipei_vps` o cruzar contextos fuera de Nipëi OS.
+
 ---
 
-## 2. Database Implementation
+## 4. Database Implementation
+
 
 ### User Roles Enum
 

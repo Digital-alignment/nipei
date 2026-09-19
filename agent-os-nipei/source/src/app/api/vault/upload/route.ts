@@ -5,7 +5,7 @@ import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
-const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\DA\\nipei-vault";
+const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
 
 export async function POST(req: NextRequest) {
   try {

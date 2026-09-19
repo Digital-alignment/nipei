@@ -4,16 +4,15 @@ import { buildVaultGraph } from "@/lib/vaultGraph";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Cache for 30s so re-tab-switches don't re-walk the entire vault.
-let cache: { at: number; data: Awaited<ReturnType<typeof buildVaultGraph>> } | null = null;
-const TTL = 30_000;
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const company = searchParams.get("company") || undefined;
 
-export async function GET() {
-  const now = Date.now();
-  if (cache && now - cache.at < TTL) {
-    return NextResponse.json(cache.data);
+    const data = await buildVaultGraph(company);
+    return NextResponse.json(data);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Failed to build graph";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-  const data = await buildVaultGraph();
-  cache = { at: now, data };
-  return NextResponse.json(data);
 }

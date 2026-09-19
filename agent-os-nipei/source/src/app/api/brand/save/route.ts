@@ -24,14 +24,14 @@ export async function POST(request: Request) {
     // 2. Vault Path
     const possibleVaultPaths = [
       path.resolve(cwd, "../../../nipei-vault/Master_Sources/Corporate_Squads/Nipei_Brand_System_Manual.md"),
-      "C:\\Users\\ondig\\Code\\DA\\nipei-vault\\Master_Sources\\Corporate_Squads\\Nipei_Brand_System_Manual.md",
+      "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault\\Master_Sources\\Corporate_Squads\\Nipei_Brand_System_Manual.md",
     ];
     const vaultPath = possibleVaultPaths.find((p) => existsSync.existsSync(p)) || possibleVaultPaths[0];
 
     // 3. Agent Skill Path
     const possibleSkillPaths = [
       path.resolve(cwd, "../../.agents/skills/nipei-brand/SKILL.md"),
-      "C:\\Users\\ondig\\Code\\DA\\nipei control\\.agents\\skills\\nipei-brand\\SKILL.md",
+      "C:\\Users\\ondig\\Code\\Nipei\\nipei-control\\.agents\\skills\\nipei-brand\\SKILL.md",
     ];
     const skillPath = possibleSkillPaths.find((p) => existsSync.existsSync(p)) || possibleSkillPaths[0];
 
