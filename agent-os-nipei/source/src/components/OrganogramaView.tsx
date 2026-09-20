@@ -188,6 +188,25 @@ export default function OrganogramaView() {
     }
   };
 
+  const handleBulkVaultSync = async () => {
+    try {
+      const res = await fetch("/api/vault/bulk-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squads: squadsList, members: membersList }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncMessage(
+          `🌐 Sincronización Masiva Completada: ${data.summary.squadsSynced} Squads y ${data.summary.membersSynced} Expedientes con enlaces [[wikilinks]] en Nipëi Vault para Grafo 3D.`
+        );
+        setTimeout(() => setSyncMessage(null), 5000);
+      }
+    } catch (err) {
+      console.error("Error en sincronización masiva de Vault:", err);
+    }
+  };
+
   const filteredSquads =
     selectedNucleus === "all"
       ? squadsList
@@ -254,7 +273,14 @@ export default function OrganogramaView() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleBulkVaultSync}
+              className="px-3.5 py-2 rounded-lg bg-[#050805] border border-[#22c55e] text-[#4ade80] text-xs font-mono font-bold hover:bg-[#142414] transition shadow flex items-center gap-1.5"
+              title="Sincronizar todo con enlaces [[wikilinks]] para el Grafo 3D de Obsidian"
+            >
+              <Network size={16} className="text-[#22c55e]" /> Grafo 3D Bulk Sync
+            </button>
             <button
               onClick={() => handleOpenAgentWizard()}
               className="px-3.5 py-2 rounded-lg bg-[#142414] border border-[#22c55e] text-[#22c55e] text-xs font-mono font-bold hover:bg-[#22c55e] hover:text-[#050805] transition shadow flex items-center gap-1.5"

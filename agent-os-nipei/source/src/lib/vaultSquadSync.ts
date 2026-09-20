@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { SquadMeta } from "./nipeiStore";
+import { SquadMeta, MemberProfile } from "./nipeiStore";
 
 const VAULT_PATH = process.env.NIPEI_VAULT_PATH || "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
 
@@ -11,7 +11,11 @@ export interface SquadRenameLog {
   changedBy: string;
 }
 
-export function syncSquadToVault(squad: SquadMeta, renameLog?: SquadRenameLog): boolean {
+export function syncSquadToVault(
+  squad: SquadMeta,
+  renameLog?: SquadRenameLog,
+  assignedMembers: MemberProfile[] = []
+): boolean {
   try {
     const squadsDir = path.join(VAULT_PATH, "Squads");
     if (!fs.existsSync(squadsDir)) {
@@ -19,16 +23,22 @@ export function syncSquadToVault(squad: SquadMeta, renameLog?: SquadRenameLog): 
     }
 
     const filePath = path.join(squadsDir, `${squad.id}.md`);
-    let existingContent = "";
     let existingHistory: SquadRenameLog[] = squad.renameHistory || [];
-
-    if (fs.existsSync(filePath)) {
-      existingContent = fs.readFileSync(filePath, "utf-8");
-    }
 
     if (renameLog) {
       existingHistory.push(renameLog);
     }
+
+    // Filter members assigned to this squad
+    const membersForSquad = assignedMembers.filter((m) =>
+      m.squadAssignments.some((sa) => sa.squadId === squad.id)
+    );
+
+    const aliasesYaml = [
+      `  - "${squad.name}"`,
+      `  - "${squad.code || squad.id}"`,
+      ...(squad.code ? [`  - "${squad.code}"`] : []),
+    ].join("\n");
 
     const yamlFrontmatter = [
       "---",
@@ -41,6 +51,13 @@ export function syncSquadToVault(squad: SquadMeta, renameLog?: SquadRenameLog): 
       `color_hex: "${squad.colorHex || "#22c55e"}"`,
       `veto_power: "${squad.vetoPower || "NONE"}"`,
       `status: "${squad.status || "ACTIVE"}"`,
+      `type: "squad"`,
+      "tags:",
+      "  - nipei-squad",
+      "  - organograma",
+      `  - nucleus-${squad.nucleus}`,
+      "aliases:",
+      aliasesYaml,
       `updated_at: "${new Date().toISOString()}"`,
       "rename_history:",
       ...existingHistory.map(
@@ -51,25 +68,33 @@ export function syncSquadToVault(squad: SquadMeta, renameLog?: SquadRenameLog): 
       "",
       `# ${squad.name}`,
       "",
-      `**Núcleo**: ${squad.nucleus.toUpperCase()} | **Módulo**: ${squad.module} | **Código**: ${squad.code || squad.id}`,
+      `**Núcleo**: [[Nucleos/${squad.nucleus}|${squad.nucleus.toUpperCase()}]] | **Módulo**: \`${squad.module}\` | **Código**: \`${squad.code || squad.id}\``,
       "",
-      "## Descrição Operacional",
+      "## 📝 Descrição Operacional",
       squad.description || "Sem descrição fornecida.",
       "",
-      "## Responsabilidades Principais",
+      "## 👥 Integrantes & Roles Asignados (Grafo 3D)",
+      ...(membersForSquad.length > 0
+        ? membersForSquad.map((m) => {
+            const assignment = m.squadAssignments.find((sa) => sa.squadId === squad.id);
+            return `- [[Miembros/${m.id}|${m.name}]] — *${assignment?.roleTitle || "Integrante"}* (${m.status === "APPROVED" ? "✅ Confirmado" : "⚠️ Pendiente"})`;
+          })
+        : ["- Sin integrantes asignados actualmente."]),
+      "",
+      "## 🎯 Responsabilidades Principais",
       ...(squad.responsibilities && squad.responsibilities.length > 0
         ? squad.responsibilities.map((r) => `- ${r}`)
         : ["- Pendente de atribuição"]),
       "",
-      "## Indicadores de Desempenho (KPIs)",
+      "## 📊 Indicadores de Desempenho (KPIs)",
       ...(squad.kpis && squad.kpis.length > 0 ? squad.kpis.map((k) => `- ${k}`) : ["- Em definição"]),
       "",
       "---",
-      `*Sincronizado automaticamente por Nipëi OS Core — ${new Date().toLocaleString()}*`,
+      `*Nota de Squad sincronizada con enlaces bidireccionales por Nipëi OS Core — ${new Date().toLocaleString()}*`,
     ].join("\n");
 
     fs.writeFileSync(filePath, yamlFrontmatter, "utf-8");
-    console.log(`[VaultSquadSync] Nota sincronizada con éxito: ${filePath}`);
+    console.log(`[VaultSquadSync] Nota de Squad con [[wikilinks]] sincronizada: ${filePath}`);
     return true;
   } catch (err) {
     console.error(`[VaultSquadSync] Error sincronizando Squad en Vault:`, err);
