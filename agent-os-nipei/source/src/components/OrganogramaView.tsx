@@ -1,184 +1,144 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Network, ShieldCheck, Crown, Users, Brain, Workflow, Building2,
-  Package, ShoppingBag, Wrench, FileSpreadsheet, ArrowUpRight, Sparkles,
-  ChevronDown, CheckCircle2, UserCheck, Bot, Heart, Compass
+  Package, ShoppingBag, Wrench, FileSpreadsheet, ArrowUpRight, Plus,
+  Edit3, ArrowUp, ArrowDown, CheckCircle2, ShieldAlert, Sparkles, Filter
 } from "lucide-react";
-import { SQUADS, type SquadId } from "@/lib/nipeiStore";
+import { SQUADS, INITIAL_SQUADS, type SquadMeta, type NucleusRole, type SquadId } from "@/lib/nipeiStore";
+import SquadEditDrawer from "./SquadEditDrawer";
 import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
-interface TeamMember {
-  name: string;
-  role: string;
-  type: "paje" | "human_lead" | "agent";
-  avatar: string;
-}
-
-interface SquadOrgData {
-  id: SquadId;
-  name: string;
-  nucleus: "Sagrado" | "Comercial";
-  lead: string;
-  pajeAdvisor?: string;
-  agents: string[];
-  members: TeamMember[];
-  responsibilities: string[];
-  kpis: string[];
-}
-
-const ORGANIGRAM_DATA: SquadOrgData[] = [
-  {
-    id: "squad_1_ceo",
-    name: "Squad I — Estratégia / CEO",
-    nucleus: "Comercial",
-    lead: "Ana Castro (CEO / Direção Executiva)",
-    agents: ["@antigravity", "@hermes"],
-    members: [
-      { name: "Ana Castro", role: "CEO & Líder de Estratégia", type: "human_lead", avatar: "👑" },
-      { name: "@antigravity", role: "AI Mastermind & Orquestrador", type: "agent", avatar: "🤖" },
-      { name: "@hermes", role: "AI Memória & Síntese de Projetos", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Definição do Roadmap de Produtos Nipëi OS",
-      "Priorização de OKRs e Alocação de Capital",
-      "Assistência de Agenda Executiva com IA",
-      "Supervisão da Arquitetura Duplo Núcleo",
-    ],
-    kpis: ["Execução de Meta: 94%", "Retorno sobre Investimento: 3.4x", "Tarefas Concluídas: 48/52"],
-  },
-  {
-    id: "squad_2_mutum",
-    name: "Squad II — Produção Mutum",
-    nucleus: "Sagrado",
-    lead: "Pajé Mutum & Mestres Extrativistas",
-    pajeAdvisor: "Pajé Mutum",
-    agents: ["@openclaw"],
-    members: [
-      { name: "Pajé Mutum", role: "Líder Espiritual & Mestre de Colheita", type: "paje", avatar: "🌿" },
-      { name: "Equipe Extrativista Mutum", role: "Mestres de Coleta Ritual", type: "human_lead", avatar: "👥" },
-      { name: "@openclaw", role: "AI Trazabilidade de Lotes & Insumos", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Extrativismo Sustentável de Resina e Ervas Rituais",
-      "Criação e Atualização de Fichas Técnicas",
-      "Trazabilidade por Código QR do Rio Tarauacá até o Lab",
-      "Controle de Qualidade das Matérias-Primas Âmbar",
-    ],
-    kpis: ["Alinhamento Ético: 100%", "Lotes Certificados: 18", "Pureza Matéria-Prima: 99.8%"],
-  },
-  {
-    id: "squad_3_retiros",
-    name: "Squad III — Retiros & Hospitalidade",
-    nucleus: "Comercial",
-    lead: "Coordenação de Hospedagem Serra Grande",
-    agents: ["@claude"],
-    members: [
-      { name: "Coord. Serra Grande", role: "Líder de Hospitalidade & Vivências", type: "human_lead", avatar: "🏡" },
-      { name: "Terapeutas Dietistas", role: "Acompanhamento de Imersão", type: "human_lead", avatar: "✨" },
-      { name: "@claude", role: "AI Concierge & Logística de Participantes", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Gestão de Vagas dos Retiros Samakey",
-      "Logística de Traslado e Hospedagem em Serra Grande",
-      "Preparo de Dietas Rituais Personalizadas",
-      "Acompanhamento Pós-Retiro dos Participantes",
-    ],
-    kpis: ["Satisfação Participantes: 98%", "Ocupação Retiros: 92%", "Check-in Seguro: 100%"],
-  },
-  {
-    id: "squad_4_vendas_mkt",
-    name: "Squad IV — Vendas & Marketing Tech",
-    nucleus: "Comercial",
-    lead: "Gestão E-Commerce Inî Rau & Growth",
-    agents: ["@glm"],
-    members: [
-      { name: "Líder E-Commerce", role: "Gestor da Botica Inî Rau", type: "human_lead", avatar: "🛒" },
-      { name: "Growth Specialist", role: "Tráfego & Funis de Conversão", type: "human_lead", avatar: "📈" },
-      { name: "@glm", role: "AI Automação de Vendas & Campanhas", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Operação da Loja Virtual Inî Rau (nipeihu.org)",
-      "Automação de Checkout e Baixa Automática no Estoque",
-      "Campanhas de Marketing de Impacto Social",
-      "Atendimento ao Cliente e Suporte de Pedidos",
-    ],
-    kpis: ["Pedidos Mensais: 145", "Taxa de Conversão: 4.2%", "Tempo Resposta SAC: 2m"],
-  },
-  {
-    id: "squad_5_adm_legal",
-    name: "Squad V — Adm / Legal / Financeiro",
-    nucleus: "Comercial",
-    lead: "Controladoria Executiva & Assessoria Jurídica",
-    agents: ["@claude"],
-    members: [
-      { name: "Controlador Financeiro", role: "Gestor de DRE & Centro de Custos", type: "human_lead", avatar: "📊" },
-      { name: "Advogado Societário", role: "Conformidade Legal & Contratos", type: "human_lead", avatar: "⚖️" },
-      { name: "@claude", role: "AI Auditor de DRE & NFe", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Consolidação Financeira em Tempo Real (DRE Nipëi OS)",
-      "Gestão de Contas a Pagar e Receber",
-      "Emissão de Notas Fiscais Eletrônicas",
-      "Contratos de Parceria e Proteção Jurídica do Instituto",
-    ],
-    kpis: ["DRE Atualizado: 100%", "Inadimplência: < 1.2%", "Repasse Mutum: R$ 17.200"],
-  },
-  {
-    id: "squad_6_infra",
-    name: "Squad VI — Infraestrutura & Manutenção",
-    nucleus: "Comercial",
-    lead: "Supervisão de Manutenção de Campo",
-    agents: ["@hermes"],
-    members: [
-      { name: "Supervisora Manutenção", role: "Gestora de Obras & Manutenção", type: "human_lead", avatar: "🛠️" },
-      { name: "Técnico de Campo", role: "Reparos & Inventário de Peças", type: "human_lead", avatar: "🔧" },
-      { name: "@hermes", role: "AI Despachante de Ordens de Serviço", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Ordens de Serviço de Manutenção Preventiva e Corretiva",
-      "Controle de Inventário de Peças de Reposição",
-      "Manutenção das Instalações da Aldeia Mutum e Serra Grande",
-      "Segurança e Abastecimento Energético Sol-Bateria",
-    ],
-    kpis: ["Tempo Médio Reparo: 4h", "Peças em Estoque: 84 Unid", "Zero Downtime"],
-  },
-  {
-    id: "squad_7_instituto",
-    name: "Squad VII — Instituto Nipëihu",
-    nucleus: "Sagrado",
-    lead: "Conselho Espiritual & Veto Gate Ético",
-    pajeAdvisor: "Pajé Mutum & Anciãos",
-    agents: ["@antigravity"],
-    members: [
-      { name: "Conselho de Pajés", role: "Guardiões do Conhecimento Ancestral", type: "paje", avatar: "🔥" },
-      { name: "Gestor de Doações", role: "Relações com Doadores Internacionais", type: "human_lead", avatar: "🤝" },
-      { name: "@antigravity", role: "AI Fiscal de Veto Gate & Certificação", type: "agent", avatar: "🤖" },
-    ],
-    responsibilities: [
-      "Emissão da Certificação Épica de Origem para Lotes",
-      "Exercício do Veto Gate Ético sobre Produtos Comerciais",
-      "Gestão de Doadores e Prestação de Contas Transparente",
-      "Preservação da Língua, Ritos e Cultura Huni Kuin/Mutum",
-    ],
-    kpis: ["Certificações Emitidas: 100%", "Doações Captadas: R$ 42.500", "Veto Gate Ativo"],
-  },
-];
-
 export default function OrganogramaView() {
-  const [selectedSquad, setSelectedSquad] = useState<SquadId | "all">("all");
+  const [squadsList, setSquadsList] = useState<SquadMeta[]>(INITIAL_SQUADS);
+  const [selectedNucleus, setSelectedNucleus] = useState<NucleusRole | "all">("all");
   const [showArchifyWorkflow, setShowArchifyWorkflow] = useState<boolean>(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [editingSquad, setEditingSquad] = useState<SquadMeta | null>(null);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  // Load from localStorage on mount if present
+  useEffect(() => {
+    const saved = localStorage.getItem("nipei_squads_store");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSquadsList(parsed);
+        }
+      } catch (e) {
+        console.error("Error parsing saved squads", e);
+      }
+    }
+  }, []);
+
+  const saveSquadsToStore = (newSquads: SquadMeta[]) => {
+    const sorted = [...newSquads].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    setSquadsList(sorted);
+    localStorage.setItem("nipei_squads_store", JSON.stringify(sorted));
+  };
+
+  const handleOpenAdd = () => {
+    setEditingSquad(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleOpenEdit = (sq: SquadMeta) => {
+    setEditingSquad(sq);
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveSquad = async (updatedSquad: SquadMeta) => {
+    const exists = squadsList.some((s) => s.id === updatedSquad.id);
+    let renameLog: any = undefined;
+
+    if (exists && editingSquad && editingSquad.name !== updatedSquad.name) {
+      renameLog = {
+        previousName: editingSquad.name,
+        newName: updatedSquad.name,
+        changedAt: new Date().toISOString(),
+        changedBy: "Ana Castro (CEO)",
+      };
+    }
+
+    let newList: SquadMeta[];
+    if (exists) {
+      newList = squadsList.map((s) => (s.id === updatedSquad.id ? updatedSquad : s));
+    } else {
+      newList = [...squadsList, updatedSquad];
+    }
+
+    saveSquadsToStore(newList);
+
+    // Sync to Nipëi Vault via API Route
+    try {
+      const res = await fetch("/api/squads/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ squad: updatedSquad, renameLog }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncMessage(`✅ Squad "${updatedSquad.name}" sincronizado con Nipëi Vault.`);
+        setTimeout(() => setSyncMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error("Error al sincronizar Squad con Vault:", err);
+    }
+  };
+
+  const handleDeleteSquad = (squadId: string) => {
+    const newList = squadsList.filter((s) => s.id !== squadId);
+    saveSquadsToStore(newList);
+    setIsDrawerOpen(false);
+    setSyncMessage(`🗑️ Squad archivado con éxito.`);
+    setTimeout(() => setSyncMessage(null), 3000);
+  };
+
+  const moveSquadOrder = (squadId: string, direction: "up" | "down") => {
+    const index = squadsList.findIndex((s) => s.id === squadId);
+    if (index < 0) return;
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === squadsList.length - 1) return;
+
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    const newList = [...squadsList];
+
+    // Swap sortOrder
+    const tempOrder = newList[index].sortOrder ?? index;
+    newList[index].sortOrder = newList[targetIndex].sortOrder ?? targetIndex;
+    newList[targetIndex].sortOrder = tempOrder;
+
+    // Swap position in array
+    const temp = newList[index];
+    newList[index] = newList[targetIndex];
+    newList[targetIndex] = temp;
+
+    saveSquadsToStore(newList);
+  };
 
   const filteredSquads =
-    selectedSquad === "all"
-      ? ORGANIGRAM_DATA
-      : ORGANIGRAM_DATA.filter((s) => s.id === selectedSquad);
+    selectedNucleus === "all"
+      ? squadsList
+      : squadsList.filter((s) => s.nucleus === selectedNucleus);
+
+  const maxOrder = squadsList.reduce((max, s) => Math.max(max, s.sortOrder || 0), 0);
 
   return (
     <div className="space-y-8 font-sans">
+      {/* Sync Alert Banner */}
+      {syncMessage && (
+        <div className="p-3 rounded-lg border border-[#22c55e] bg-[#0c1c0c] text-xs font-mono text-[#4ade80] flex items-center justify-between shadow-lg animate-in fade-in">
+          <span>{syncMessage}</span>
+          <button onClick={() => setSyncMessage(null)} className="text-[#a7f3d0] hover:text-white">
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="p-6 rounded-xl border border-[#22c55e] bg-[#091409] relative overflow-hidden shadow-2xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -188,38 +148,89 @@ export default function OrganogramaView() {
                 Estrutura Organizacional Nipëi OS
               </span>
               <span className="px-2.5 py-0.5 rounded bg-[#0f190f] border border-[#1e381e] text-[10px] font-mono text-[#a7f3d0]">
-                Duplo Núcleo: Sagrado & Comercial
+                4 Núcleos: Sagrado, Comercial, Transversal, Soporte
               </span>
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              Organograma Global & Hierarquia por Squad
+              Organograma Global & Gestão de Squads
             </h1>
             <p className="text-xs text-[#a7f3d0] max-w-2xl leading-relaxed font-mono">
-              Mapeamento completo de lideranças humanas (Pajés, Direção Executiva), agentes de Inteligência Artificial e responsabilidades operacionais dos 7 Squads.
+              Painel de administração dinámica de Squads com sincronização automática no Nipëi Vault e suporte a ordenação personalizada.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Network size={28} className="text-[#22c55e] animate-pulse" />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleOpenAdd}
+              className="px-4 py-2 rounded-lg bg-[#22c55e] text-[#050805] text-xs font-mono font-bold hover:bg-[#16a34a] transition shadow flex items-center gap-1.5"
+            >
+              <Plus size={16} /> Agregar Nuevo Squad
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Filter Switcher Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scroll">
-        <button
-          onClick={() => {
-            setSelectedSquad("all");
-            setShowArchifyWorkflow(false);
-          }}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition shrink-0 ${
-            selectedSquad === "all" && !showArchifyWorkflow
-              ? "bg-[#22c55e] text-[#050805] shadow"
-              : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
-          }`}
-        >
-          🌐 Organograma Global (Duplo Núcleo)
-        </button>
+      {/* Filter Switcher & Nucleus Tabs */}
+      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 scroll">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setSelectedNucleus("all");
+              setShowArchifyWorkflow(false);
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition shrink-0 ${
+              selectedNucleus === "all" && !showArchifyWorkflow
+                ? "bg-[#22c55e] text-[#050805] shadow"
+                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            }`}
+          >
+            🌐 Todos os Squads ({squadsList.length})
+          </button>
+
+          <button
+            onClick={() => setSelectedNucleus("sagrado")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+              selectedNucleus === "sagrado"
+                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            }`}
+          >
+            🌿 Sagrado
+          </button>
+
+          <button
+            onClick={() => setSelectedNucleus("comercial")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+              selectedNucleus === "comercial"
+                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            }`}
+          >
+            💼 Comercial
+          </button>
+
+          <button
+            onClick={() => setSelectedNucleus("transversal")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+              selectedNucleus === "transversal"
+                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            }`}
+          >
+            🔄 Transversal
+          </button>
+
+          <button
+            onClick={() => setSelectedNucleus("soporte")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+              selectedNucleus === "soporte"
+                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            }`}
+          >
+            🛠️ Soporte
+          </button>
+        </div>
 
         <button
           onClick={() => setShowArchifyWorkflow(!showArchifyWorkflow)}
@@ -232,23 +243,6 @@ export default function OrganogramaView() {
           <Workflow size={13} />
           <span>{showArchifyWorkflow ? "Ocultar Diagrama Workflow" : "📐 Diagrama Archify Workflow"}</span>
         </button>
-
-        {SQUADS.filter((s) => s.id !== "super_user").map((sq) => (
-          <button
-            key={sq.id}
-            onClick={() => {
-              setSelectedSquad(sq.id);
-              setShowArchifyWorkflow(false);
-            }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-              selectedSquad === sq.id && !showArchifyWorkflow
-                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
-                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
-            }`}
-          >
-            {sq.name.split("—")[0]}
-          </button>
-        ))}
       </div>
 
       {/* Archify Interactive Workflow View */}
@@ -258,149 +252,188 @@ export default function OrganogramaView() {
             prebuiltId="squads-operations-workflow"
             defaultTopic="Operaciones de Squads, Trazabilidad e Impacto"
             defaultType="workflow"
-            title="Diagrama Interactivo Archify — Workflow Operacional dos 7 Squads"
+            title="Diagrama Interactivo Archify — Workflow Operacional dos Squads"
             height="580px"
           />
         </div>
       )}
 
-      {/* 0. Duplo Núcleo High Level Structure Diagram */}
-      {selectedSquad === "all" && (
+      {/* 4 Nuclei Overview Banner */}
+      {selectedNucleus === "all" && !showArchifyWorkflow && (
         <div className="p-6 rounded-xl border border-[#1e381e] bg-[#0f190f] space-y-6 shadow-xl">
           <div className="text-center space-y-1">
             <div className="text-xs font-mono text-[#22c55e] font-bold uppercase tracking-widest">
-              Alta Direção & Arquitetura Duplo Núcleo
+              Alta Direção & Arquitetura de 4 Núcleos
             </div>
             <h2 className="text-lg font-bold text-white">Conselho de Governança Nipëi OS</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-            {/* Núcleo Sagrado Card */}
-            <div className="p-5 rounded-lg border border-[#22c55e] bg-[#0c1c0c] space-y-3 relative">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-[#4ade80] flex items-center gap-2">
-                  <ShieldCheck size={16} /> NÚCLEO SAGRADO (Instituto Nipëihu)
-                </span>
-                <span className="pill pill-ok text-[10px]">Veto Gate Ativo</span>
-              </div>
-              <div className="text-sm font-bold text-white">Conselho de Pajés & Anciãos Mutum</div>
-              <p className="text-xs text-[#a7f3d0] font-mono leading-relaxed">
-                Supervisão de ritos, preservação de dietas Samakey, sabedoria ancestral da floresta e emissão da Certificação Ética de Origem (Squad VII & Squad II).
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Sagrado */}
+            <div className="p-4 rounded-lg border border-[#22c55e] bg-[#0c1c0c] space-y-2">
+              <span className="text-xs font-mono font-bold text-[#4ade80] flex items-center gap-1.5">
+                <ShieldCheck size={14} /> SAGRADO
+              </span>
+              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
+                Ritos, sabedoria ancestral, extrativismo ético e Veto Gate Total do Instituto Mutum.
               </p>
-              <div className="pt-2 border-t border-[#1e381e] flex items-center justify-between text-xs font-mono text-[#4ade80]">
-                <span>Liderança: Pajé Mutum</span>
-                <span>Squads: II, VII</span>
-              </div>
             </div>
 
-            {/* Núcleo Comercial Card */}
-            <div className="p-5 rounded-lg border border-[#10b981] bg-[#091812] space-y-3 relative">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-[#34d399] flex items-center gap-2">
-                  <Building2 size={16} /> NÚCLEO OPERACIONAL / COMERCIAL
-                </span>
-                <span className="pill pill-ok text-[10px]">DRE Ativo</span>
-              </div>
-              <div className="text-sm font-bold text-white">Direção Executiva (CEO) & Gestão</div>
-              <p className="text-xs text-[#a7f3d0] font-mono leading-relaxed">
-                Operação da Botica Inî Rau, retiros Samakey em Serra Grande, gestão financeira, tecnologia, vendas e infraestrutura (Squads I, III, IV, V, VI).
+            {/* Comercial */}
+            <div className="p-4 rounded-lg border border-[#10b981] bg-[#091812] space-y-2">
+              <span className="text-xs font-mono font-bold text-[#34d399] flex items-center gap-1.5">
+                <Building2 size={14} /> COMERCIAL
+              </span>
+              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
+                Botica Inî Rau, retiros Samakey, e-commerce, crescimento e vendas.
               </p>
-              <div className="pt-2 border-t border-[#1e381e] flex items-center justify-between text-xs font-mono text-[#34d399]">
-                <span>Liderança: Ana Castro (CEO)</span>
-                <span>Squads: I, III, IV, V, VI</span>
-              </div>
+            </div>
+
+            {/* Transversal */}
+            <div className="p-4 rounded-lg border border-[#a855f7] bg-[#140c1c] space-y-2">
+              <span className="text-xs font-mono font-bold text-[#c084fc] flex items-center gap-1.5">
+                <Brain size={14} /> TRANSVERSAL
+              </span>
+              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
+                Estratégia CEO, governança global, finanças DRE e conformidade legal.
+              </p>
+            </div>
+
+            {/* Soporte */}
+            <div className="p-4 rounded-lg border border-[#f59e0b] bg-[#1c120c] space-y-2">
+              <span className="text-xs font-mono font-bold text-[#fbbf24] flex items-center gap-1.5">
+                <Wrench size={14} /> SOPORTE
+              </span>
+              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
+                Manutenção de campo, infraestrutura, inventário de peças e CI/CD.
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* 1. Squad Detailed Organigram Grid */}
+      {/* Squad Detailed Grid with Custom Ordering */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSquads.map((sq) => (
+        {filteredSquads.map((sq, idx) => (
           <div
             key={sq.id}
-            className="p-5 rounded-xl border border-[#1e381e] bg-[#0f190f] hover:border-[#22c55e] transition space-y-4 shadow-xl flex flex-col justify-between"
+            className="p-5 rounded-xl border border-[#1e381e] bg-[#0f190f] hover:border-[#22c55e] transition space-y-4 shadow-xl flex flex-col justify-between relative group"
           >
             <div className="space-y-4">
-              {/* Header Badge */}
+              {/* Header Badge & Actions */}
               <div className="flex items-center justify-between border-b border-[#1e381e] pb-3">
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-[#4ade80] uppercase tracking-wider">
-                    {sq.nucleus === "Sagrado" ? "🌿 Núcleo Sagrado" : "💼 Núcleo Comercial"}
-                  </span>
-                  <h3 className="text-sm font-bold text-white mt-0.5">{sq.name}</h3>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#050805] text-[#22c55e] border border-[#1e381e] font-bold">
+                      #{sq.sortOrder ?? idx + 1}
+                    </span>
+                    <span
+                      className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+                        sq.nucleus === "sagrado"
+                          ? "text-[#4ade80]"
+                          : sq.nucleus === "comercial"
+                          ? "text-[#34d399]"
+                          : sq.nucleus === "transversal"
+                          ? "text-[#c084fc]"
+                          : "text-[#fbbf24]"
+                      }`}
+                    >
+                      {sq.nucleus.toUpperCase()}
+                    </span>
+
+                    {sq.vetoPower === "FULL_VETO" && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-red-950/60 text-red-400 border border-red-800 font-bold">
+                        Veto Total
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-bold text-white">{sq.name}</h3>
                 </div>
-                <Link
-                  href={`/squads/${sq.id}`}
-                  className="p-1.5 rounded bg-[#050805] text-[#22c55e] hover:bg-[#142414] transition"
-                  title="Abrir Dashboard do Squad"
-                >
-                  <ArrowUpRight size={16} />
-                </Link>
+
+                <div className="flex items-center gap-1">
+                  {/* Order controls */}
+                  <button
+                    onClick={() => moveSquadOrder(sq.id, "up")}
+                    className="p-1 rounded bg-[#050805] text-[#a7f3d0] hover:text-[#22c55e] transition"
+                    title="Mover arriba"
+                  >
+                    <ArrowUp size={13} />
+                  </button>
+                  <button
+                    onClick={() => moveSquadOrder(sq.id, "down")}
+                    className="p-1 rounded bg-[#050805] text-[#a7f3d0] hover:text-[#22c55e] transition"
+                    title="Mover abajo"
+                  >
+                    <ArrowDown size={13} />
+                  </button>
+                  <button
+                    onClick={() => handleOpenEdit(sq)}
+                    className="p-1.5 rounded bg-[#142414] text-[#22c55e] hover:bg-[#22c55e] hover:text-[#050805] transition"
+                    title="Editar Squad"
+                  >
+                    <Edit3 size={13} />
+                  </button>
+                </div>
               </div>
 
-              {/* Leader & AI Agents */}
-              <div className="space-y-2 font-mono text-xs">
-                <div className="text-[10px] text-[#a7f3d0] uppercase font-bold">Membros & Agentes Atribuidos</div>
+              {/* Description */}
+              <p className="text-xs text-[#a7f3d0] font-mono leading-relaxed">
+                {sq.description}
+              </p>
 
-                <div className="space-y-1.5">
-                  {sq.members.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2 rounded bg-[#050805] border border-[#1e381e] flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{m.avatar}</span>
-                        <div>
-                          <div className="font-bold text-white">{m.name}</div>
-                          <div className="text-[10px] text-[#a7f3d0]">{m.role}</div>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ${
-                          m.type === "paje"
-                            ? "bg-[#1c120c] text-[#f59e0b] border border-[#f59e0b]"
-                            : m.type === "agent"
-                            ? "bg-[#140c1c] text-[#a855f7] border border-[#a855f7]"
-                            : "bg-[#0c1c0c] text-[#4ade80] border border-[#22c55e]"
-                        }`}
-                      >
-                        {m.type === "paje" ? "Pajé / Conselheiro" : m.type === "agent" ? "Agente IA" : "Líder Humano"}
-                      </span>
-                    </div>
-                  ))}
+              {/* Clean Slate Notice for Members */}
+              <div className="p-3 rounded bg-[#050805] border border-[#1e381e] space-y-1">
+                <div className="text-[10px] font-mono text-[#22c55e] uppercase font-bold flex items-center justify-between">
+                  <span>Integrantes & Roles (Fase 2)</span>
+                  <span className="text-[9px] text-[#a7f3d0]">Ficha limpia</span>
                 </div>
+                <p className="text-[11px] text-[#a7f3d0] font-mono italic">
+                  Lista limpia lista para asignar integrantes reales y sus roles en la Fase 2.
+                </p>
               </div>
 
               {/* Responsibilities */}
-              <div className="space-y-1.5 font-mono text-xs">
-                <div className="text-[10px] text-[#a7f3d0] uppercase font-bold">Responsabilidades Principais</div>
-                <ul className="space-y-1 text-[11px] text-[#a7f3d0]">
-                  {sq.responsibilities.map((r, i) => (
-                    <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-[#22c55e] font-bold">•</span>
-                      <span>{r}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {sq.responsibilities && sq.responsibilities.length > 0 && (
+                <div className="space-y-1.5 font-mono text-xs">
+                  <div className="text-[10px] text-[#a7f3d0] uppercase font-bold">Responsabilidades</div>
+                  <ul className="space-y-1 text-[11px] text-[#a7f3d0]">
+                    {sq.responsibilities.map((r, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-[#22c55e] font-bold">•</span>
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Squad KPIs Footer */}
-            <div className="pt-3 border-t border-[#142414] flex flex-wrap gap-1.5">
-              {sq.kpis.map((kpi, i) => (
-                <span
-                  key={i}
-                  className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#050805] text-[#4ade80] border border-[#1e381e]"
-                >
-                  {kpi}
-                </span>
-              ))}
-            </div>
+            {sq.kpis && sq.kpis.length > 0 && (
+              <div className="pt-3 border-t border-[#142414] flex flex-wrap gap-1.5">
+                {sq.kpis.map((kpi, i) => (
+                  <span
+                    key={i}
+                    className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#050805] text-[#4ade80] border border-[#1e381e]"
+                  >
+                    📊 {kpi}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
+
+      {/* Drawer Component */}
+      <SquadEditDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        squadToEdit={editingSquad}
+        onSave={handleSaveSquad}
+        onDelete={handleDeleteSquad}
+        maxSortOrder={maxOrder}
+      />
     </div>
   );
 }

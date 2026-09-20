@@ -1,4 +1,4 @@
-export type NucleusRole = "sagrado" | "comercial";
+export type NucleusRole = "sagrado" | "comercial" | "transversal" | "soporte";
 
 export type SquadId =
   | "squad_1_ceo"
@@ -8,27 +8,49 @@ export type SquadId =
   | "squad_5_adm_legal"
   | "squad_6_infra"
   | "squad_7_instituto"
-  | "super_user";
+  | "super_user"
+  | string;
+
+export interface SquadRenameHistory {
+  previousName: string;
+  newName: string;
+  changedAt: string;
+  changedBy: string;
+}
 
 export interface SquadMeta {
   id: SquadId;
+  code?: string;
   name: string;
   nucleus: NucleusRole;
   module: "Nipëi Flow" | "Nipëi People" | "Nipëi Brain" | "Cross-cutting";
   description: string;
   iconName: string;
+  colorHex?: string;
+  sortOrder?: number;
+  level?: number;
+  vetoPower?: "FULL_VETO" | "ETHICAL_REVIEW" | "NONE";
+  leadMemberId?: string;
+  coLeadMemberId?: string;
+  assignedAgentIds?: string[];
+  responsibilities?: string[];
+  kpis?: string[];
+  status?: "ACTIVE" | "ARCHIVED" | "DRAFT";
+  renameHistory?: SquadRenameHistory[];
 }
 
-export const SQUADS: SquadMeta[] = [
-  { id: "super_user", name: "Visão Consolidada (Super-Usuário)", nucleus: "sagrado", module: "Cross-cutting", description: "Acesso total consolidado a todos os Squads (ex: Ana Castro)", iconName: "Crown" },
-  { id: "squad_7_instituto", name: "Squad VII — Instituto & Donadores", nucleus: "sagrado", module: "Nipëi People", description: "Articulação Mutum, Donantes & Certificação de Origem Éica (Veto Comercial)", iconName: "ShieldCheck" },
-  { id: "squad_1_ceo", name: "Squad I — Estratégia / CEO", nucleus: "comercial", module: "Nipëi Brain", description: "Governança, IA de Priorização de Agenda & WhatsApp Bot Conversacional", iconName: "Brain" },
-  { id: "squad_2_mutum", name: "Squad II — Produção Mutum", nucleus: "comercial", module: "Nipëi Flow", description: "Bioeconomia, Trazabilidade Florestal, Fichas Técnicas & OCR/QR", iconName: "Package" },
-  { id: "squad_3_retiros", name: "Squad III — Logística Retiros & Hospitalidade", nucleus: "comercial", module: "Nipëi Flow", description: "Saída QR no celular, CRM Hóspedes & Portal do Participante", iconName: "Calendar" },
-  { id: "squad_4_vendas_mkt", name: "Squad IV — Vendas, Mkt & Infra Tech", nucleus: "comercial", module: "Cross-cutting", description: "Baixa automática por Pedido Pago via Ficha Técnica & LTV Analytics", iconName: "ShoppingBag" },
-  { id: "squad_5_adm_legal", name: "Squad V — Adm / Legal / Financeiro", nucleus: "comercial", module: "Nipëi Brain", description: "Fechamento Financeiro DRE por Centro de Custo & Arquivo Fiscal OCR", iconName: "FileSpreadsheet" },
-  { id: "squad_6_infra", name: "Squad VI — Infraestrutura & Manutenção", nucleus: "comercial", module: "Nipëi Flow", description: "Chamados de Reparo vinculados ao Estoque de Peças de Reposição", iconName: "Wrench" },
+export const INITIAL_SQUADS: SquadMeta[] = [
+  { id: "super_user", code: "SU-00", name: "Visão Consolidada (Super-Usuário)", nucleus: "sagrado", module: "Cross-cutting", description: "Acesso total consolidado a todos os Squads", iconName: "Crown", sortOrder: 0, vetoPower: "FULL_VETO", status: "ACTIVE" },
+  { id: "squad_7_instituto", code: "SQ-07", name: "Squad VII — Instituto & Donadores", nucleus: "sagrado", module: "Nipëi People", description: "Articulação Mutum, Donantes & Certificação de Origem Ética (Veto Comercial)", iconName: "ShieldCheck", sortOrder: 1, vetoPower: "FULL_VETO", status: "ACTIVE" },
+  { id: "squad_1_ceo", code: "SQ-01", name: "Squad I — Estratégia / CEO", nucleus: "comercial", module: "Nipëi Brain", description: "Governança, IA de Priorização de Agenda & WhatsApp Bot Conversacional", iconName: "Brain", sortOrder: 2, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_2_mutum", code: "SQ-02", name: "Squad II — Produção Mutum", nucleus: "sagrado", module: "Nipëi Flow", description: "Bioeconomia, Trazabilidade Florestal, Fichas Técnicas & OCR/QR", iconName: "Package", sortOrder: 3, vetoPower: "ETHICAL_REVIEW", status: "ACTIVE" },
+  { id: "squad_3_retiros", code: "SQ-03", name: "Squad III — Logística Retiros & Hospitalidade", nucleus: "comercial", module: "Nipëi Flow", description: "Saída QR no celular, CRM Hóspedes & Portal do Participante", iconName: "Calendar", sortOrder: 4, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_4_vendas_mkt", code: "SQ-04", name: "Squad IV — Vendas, Mkt & Infra Tech", nucleus: "comercial", module: "Cross-cutting", description: "Baixa automática por Pedido Pago via Ficha Técnica & LTV Analytics", iconName: "ShoppingBag", sortOrder: 5, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_5_adm_legal", code: "SQ-05", name: "Squad V — Adm / Legal / Financeiro", nucleus: "transversal", module: "Nipëi Brain", description: "Fechamento Financeiro DRE por Centro de Custo & Arquivo Fiscal OCR", iconName: "FileSpreadsheet", sortOrder: 6, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_6_infra", code: "SQ-06", name: "Squad VI — Infraestrutura & Manutenção", nucleus: "soporte", module: "Nipëi Flow", description: "Chamados de Reparo vinculados ao Estoque de Peças de Reposição", iconName: "Wrench", sortOrder: 7, vetoPower: "NONE", status: "ACTIVE" },
 ];
+
+export const SQUADS: SquadMeta[] = INITIAL_SQUADS;
 
 export interface FichaTecnica {
   productId: string;
