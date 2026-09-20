@@ -6,31 +6,55 @@ import { motion } from "framer-motion";
 import {
   Network, ShieldCheck, Crown, Users, Brain, Workflow, Building2,
   Package, ShoppingBag, Wrench, FileSpreadsheet, ArrowUpRight, Plus,
-  Edit3, ArrowUp, ArrowDown, CheckCircle2, ShieldAlert, Sparkles, Filter
+  Edit3, ArrowUp, ArrowDown, CheckCircle2, ShieldAlert, Sparkles, Filter,
+  AlertTriangle, Search, UserCheck
 } from "lucide-react";
-import { SQUADS, INITIAL_SQUADS, type SquadMeta, type NucleusRole, type SquadId } from "@/lib/nipeiStore";
+import {
+  SQUADS, INITIAL_SQUADS, INITIAL_MEMBERS, type SquadMeta, type NucleusRole,
+  type SquadId, type MemberProfile
+} from "@/lib/nipeiStore";
 import SquadEditDrawer from "./SquadEditDrawer";
+import MemberProfileModal from "./MemberProfileModal";
 import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
 export default function OrganogramaView() {
+  const [activeTab, setActiveTab] = useState<"squads" | "members">("squads");
   const [squadsList, setSquadsList] = useState<SquadMeta[]>(INITIAL_SQUADS);
+  const [membersList, setMembersList] = useState<MemberProfile[]>(INITIAL_MEMBERS);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleusRole | "all">("all");
+  const [memberFilterStatus, setMemberFilterStatus] = useState<"all" | "approved" | "pending" | "missing">("all");
+  const [memberSearchQuery, setMemberSearchQuery] = useState<string>("");
+
   const [showArchifyWorkflow, setShowArchifyWorkflow] = useState<boolean>(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [editingSquad, setEditingSquad] = useState<SquadMeta | null>(null);
+
+  const [selectedMemberModal, setSelectedMemberModal] = useState<MemberProfile | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-  // Load from localStorage on mount if present
+  // Load Squads & Members from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("nipei_squads_store");
-    if (saved) {
+    const savedSquads = localStorage.getItem("nipei_squads_store");
+    if (savedSquads) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedSquads);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSquadsList(parsed);
         }
       } catch (e) {
-        console.error("Error parsing saved squads", e);
+        console.error("Error loading saved squads", e);
+      }
+    }
+
+    const savedMembers = localStorage.getItem("nipei_members_store");
+    if (savedMembers) {
+      try {
+        const parsed = JSON.parse(savedMembers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembersList(parsed);
+        }
+      } catch (e) {
+        console.error("Error loading saved members", e);
       }
     }
   }, []);
@@ -41,12 +65,17 @@ export default function OrganogramaView() {
     localStorage.setItem("nipei_squads_store", JSON.stringify(sorted));
   };
 
-  const handleOpenAdd = () => {
+  const saveMembersToStore = (newMembers: MemberProfile[]) => {
+    setMembersList(newMembers);
+    localStorage.setItem("nipei_members_store", JSON.stringify(newMembers));
+  };
+
+  const handleOpenAddSquad = () => {
     setEditingSquad(null);
     setIsDrawerOpen(true);
   };
 
-  const handleOpenEdit = (sq: SquadMeta) => {
+  const handleOpenEditSquad = (sq: SquadMeta) => {
     setEditingSquad(sq);
     setIsDrawerOpen(true);
   };
@@ -120,12 +149,54 @@ export default function OrganogramaView() {
     saveSquadsToStore(newList);
   };
 
+  const handleSaveMember = async (updatedMember: MemberProfile) => {
+    const newList = membersList.map((m) => (m.id === updatedMember.id ? updatedMember : m));
+    saveMembersToStore(newList);
+    if (selectedMemberModal?.id === updatedMember.id) {
+      setSelectedMemberModal(updatedMember);
+    }
+
+    // Sync member dossier to Vault
+    try {
+      const res = await fetch("/api/members/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ member: updatedMember }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncMessage(`✅ Expediente de "${updatedMember.name}" sincronizado con Nipëi Vault.`);
+        setTimeout(() => setSyncMessage(null), 4000);
+      }
+    } catch (err) {
+      console.error("Error al sincronizar Miembro con Vault:", err);
+    }
+  };
+
   const filteredSquads =
     selectedNucleus === "all"
       ? squadsList
       : squadsList.filter((s) => s.nucleus === selectedNucleus);
 
+  const filteredMembers = membersList.filter((m) => {
+    if (memberFilterStatus === "approved" && m.status !== "APPROVED") return false;
+    if (memberFilterStatus === "pending" && m.status !== "PENDING_CONFIRMATION") return false;
+    if (memberFilterStatus === "missing" && !m.hasMissingInfo) return false;
+
+    if (memberSearchQuery.trim()) {
+      const q = memberSearchQuery.toLowerCase();
+      const matchName = m.name.toLowerCase().includes(q);
+      const matchNative = m.nativeName?.toLowerCase().includes(q);
+      const matchSquad = m.squadAssignments.some((s) => s.roleTitle.toLowerCase().includes(q) || s.squadId.toLowerCase().includes(q));
+      return matchName || matchNative || matchSquad;
+    }
+    return true;
+  });
+
   const maxOrder = squadsList.reduce((max, s) => Math.max(max, s.sortOrder || 0), 0);
+
+  const pendingMembersCount = membersList.filter((m) => m.status === "PENDING_CONFIRMATION").length;
+  const missingInfoCount = membersList.filter((m) => m.hasMissingInfo).length;
 
   return (
     <div className="space-y-8 font-sans">
@@ -148,20 +219,25 @@ export default function OrganogramaView() {
                 Estrutura Organizacional Nipëi OS
               </span>
               <span className="px-2.5 py-0.5 rounded bg-[#0f190f] border border-[#1e381e] text-[10px] font-mono text-[#a7f3d0]">
-                4 Núcleos: Sagrado, Comercial, Transversal, Soporte
+                10 Squads | 36 Integrantes Reais
               </span>
+              {pendingMembersCount > 0 && (
+                <span className="px-2.5 py-0.5 rounded bg-amber-950/80 border border-amber-600 text-[10px] font-mono font-bold text-amber-300 animate-pulse">
+                  ⚠️ {pendingMembersCount} Pendientes de Confirmación Manual
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              Organograma Global & Gestão de Squads
+              Organograma Global, Squads & Expedientes
             </h1>
             <p className="text-xs text-[#a7f3d0] max-w-2xl leading-relaxed font-mono">
-              Painel de administração dinámica de Squads com sincronização automática no Nipëi Vault e suporte a ordenação personalizada.
+              Gestão estratégica de Squads e diretório oficial de membros (humanos e agentes IA) com confirmação manual e sincronização automática com o Nipëi Vault.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
-              onClick={handleOpenAdd}
+              onClick={handleOpenAddSquad}
               className="px-4 py-2 rounded-lg bg-[#22c55e] text-[#050805] text-xs font-mono font-bold hover:bg-[#16a34a] transition shadow flex items-center gap-1.5"
             >
               <Plus size={16} /> Agregar Nuevo Squad
@@ -170,65 +246,32 @@ export default function OrganogramaView() {
         </div>
       </div>
 
-      {/* Filter Switcher & Nucleus Tabs */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 scroll">
-        <div className="flex items-center gap-2">
+      {/* Main Mode Navigation Tabs (Squads vs Members) */}
+      <div className="flex items-center justify-between gap-4 border-b border-[#1e381e] pb-3">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              setSelectedNucleus("all");
-              setShowArchifyWorkflow(false);
-            }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition shrink-0 ${
-              selectedNucleus === "all" && !showArchifyWorkflow
-                ? "bg-[#22c55e] text-[#050805] shadow"
-                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            onClick={() => setActiveTab("squads")}
+            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition flex items-center gap-2 border ${
+              activeTab === "squads"
+                ? "bg-[#22c55e] text-[#050805] border-[#22c55e] shadow-lg"
+                : "bg-[#091409] text-[#a7f3d0] border-[#1e381e] hover:bg-[#142414]"
             }`}
           >
-            🌐 Todos os Squads ({squadsList.length})
+            <Building2 size={16} /> Estructura de Squads ({squadsList.length})
           </button>
 
           <button
-            onClick={() => setSelectedNucleus("sagrado")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-              selectedNucleus === "sagrado"
-                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
-                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            onClick={() => setActiveTab("members")}
+            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition flex items-center gap-2 border relative ${
+              activeTab === "members"
+                ? "bg-[#22c55e] text-[#050805] border-[#22c55e] shadow-lg"
+                : "bg-[#091409] text-[#a7f3d0] border-[#1e381e] hover:bg-[#142414]"
             }`}
           >
-            🌿 Sagrado
-          </button>
-
-          <button
-            onClick={() => setSelectedNucleus("comercial")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-              selectedNucleus === "comercial"
-                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
-                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
-            }`}
-          >
-            💼 Comercial
-          </button>
-
-          <button
-            onClick={() => setSelectedNucleus("transversal")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-              selectedNucleus === "transversal"
-                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
-                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
-            }`}
-          >
-            🔄 Transversal
-          </button>
-
-          <button
-            onClick={() => setSelectedNucleus("soporte")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-              selectedNucleus === "soporte"
-                ? "bg-[#22c55e] text-[#050805] font-bold shadow"
-                : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
-            }`}
-          >
-            🛠️ Soporte
+            <Users size={16} /> Directorio de Integrantes ({membersList.length})
+            {pendingMembersCount > 0 && (
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping absolute -top-1 -right-1" />
+            )}
           </button>
         </div>
 
@@ -258,174 +301,344 @@ export default function OrganogramaView() {
         </div>
       )}
 
-      {/* 4 Nuclei Overview Banner */}
-      {selectedNucleus === "all" && !showArchifyWorkflow && (
-        <div className="p-6 rounded-xl border border-[#1e381e] bg-[#0f190f] space-y-6 shadow-xl">
-          <div className="text-center space-y-1">
-            <div className="text-xs font-mono text-[#22c55e] font-bold uppercase tracking-widest">
-              Alta Direção & Arquitetura de 4 Núcleos
-            </div>
-            <h2 className="text-lg font-bold text-white">Conselho de Governança Nipëi OS</h2>
+      {/* VIEW MODE 1: SQUADS TAB */}
+      {activeTab === "squads" && !showArchifyWorkflow && (
+        <div className="space-y-6">
+          {/* Nucleus Filters */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scroll">
+            <button
+              onClick={() => setSelectedNucleus("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition shrink-0 ${
+                selectedNucleus === "all"
+                  ? "bg-[#22c55e] text-[#050805] shadow"
+                  : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+              }`}
+            >
+              🌐 Todos ({squadsList.length})
+            </button>
+
+            <button
+              onClick={() => setSelectedNucleus("sagrado")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                selectedNucleus === "sagrado"
+                  ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                  : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+              }`}
+            >
+              🌿 Sagrado
+            </button>
+
+            <button
+              onClick={() => setSelectedNucleus("comercial")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                selectedNucleus === "comercial"
+                  ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                  : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+              }`}
+            >
+              💼 Comercial
+            </button>
+
+            <button
+              onClick={() => setSelectedNucleus("transversal")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                selectedNucleus === "transversal"
+                  ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                  : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+              }`}
+            >
+              🔄 Transversal
+            </button>
+
+            <button
+              onClick={() => setSelectedNucleus("soporte")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                selectedNucleus === "soporte"
+                  ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                  : "bg-[#091409] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+              }`}
+            >
+              🛠️ Soporte
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Sagrado */}
-            <div className="p-4 rounded-lg border border-[#22c55e] bg-[#0c1c0c] space-y-2">
-              <span className="text-xs font-mono font-bold text-[#4ade80] flex items-center gap-1.5">
-                <ShieldCheck size={14} /> SAGRADO
-              </span>
-              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
-                Ritos, sabedoria ancestral, extrativismo ético e Veto Gate Total do Instituto Mutum.
-              </p>
-            </div>
+          {/* Squad Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSquads.map((sq, idx) => {
+              // Find members assigned to this squad
+              const squadMembers = membersList.filter((m) =>
+                m.squadAssignments.some((sa) => sa.squadId === sq.id)
+              );
 
-            {/* Comercial */}
-            <div className="p-4 rounded-lg border border-[#10b981] bg-[#091812] space-y-2">
-              <span className="text-xs font-mono font-bold text-[#34d399] flex items-center gap-1.5">
-                <Building2 size={14} /> COMERCIAL
-              </span>
-              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
-                Botica Inî Rau, retiros Samakey, e-commerce, crescimento e vendas.
-              </p>
-            </div>
+              return (
+                <div
+                  key={sq.id}
+                  className="p-5 rounded-xl border border-[#1e381e] bg-[#0f190f] hover:border-[#22c55e] transition space-y-4 shadow-xl flex flex-col justify-between relative group"
+                >
+                  <div className="space-y-4">
+                    {/* Header Badge */}
+                    <div className="flex items-center justify-between border-b border-[#1e381e] pb-3">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#050805] text-[#22c55e] border border-[#1e381e] font-bold">
+                            #{sq.sortOrder ?? idx + 1}
+                          </span>
+                          <span
+                            className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
+                              sq.nucleus === "sagrado"
+                                ? "text-[#4ade80]"
+                                : sq.nucleus === "comercial"
+                                ? "text-[#34d399]"
+                                : sq.nucleus === "transversal"
+                                ? "text-[#c084fc]"
+                                : "text-[#fbbf24]"
+                            }`}
+                          >
+                            {sq.nucleus.toUpperCase()}
+                          </span>
 
-            {/* Transversal */}
-            <div className="p-4 rounded-lg border border-[#a855f7] bg-[#140c1c] space-y-2">
-              <span className="text-xs font-mono font-bold text-[#c084fc] flex items-center gap-1.5">
-                <Brain size={14} /> TRANSVERSAL
-              </span>
-              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
-                Estratégia CEO, governança global, finanças DRE e conformidade legal.
-              </p>
-            </div>
+                          {sq.vetoPower === "FULL_VETO" && (
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-red-950/60 text-red-400 border border-red-800 font-bold">
+                              Veto Total
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-sm font-bold text-white mt-1">{sq.name}</h3>
+                      </div>
 
-            {/* Soporte */}
-            <div className="p-4 rounded-lg border border-[#f59e0b] bg-[#1c120c] space-y-2">
-              <span className="text-xs font-mono font-bold text-[#fbbf24] flex items-center gap-1.5">
-                <Wrench size={14} /> SOPORTE
-              </span>
-              <p className="text-[11px] text-[#a7f3d0] font-mono leading-relaxed">
-                Manutenção de campo, infraestrutura, inventário de peças e CI/CD.
-              </p>
-            </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveSquadOrder(sq.id, "up")}
+                          className="p-1 rounded bg-[#050805] text-[#a7f3d0] hover:text-[#22c55e] transition"
+                          title="Mover arriba"
+                        >
+                          <ArrowUp size={13} />
+                        </button>
+                        <button
+                          onClick={() => moveSquadOrder(sq.id, "down")}
+                          className="p-1 rounded bg-[#050805] text-[#a7f3d0] hover:text-[#22c55e] transition"
+                          title="Mover abajo"
+                        >
+                          <ArrowDown size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEditSquad(sq)}
+                          className="p-1.5 rounded bg-[#142414] text-[#22c55e] hover:bg-[#22c55e] hover:text-[#050805] transition"
+                          title="Editar Squad"
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-[#a7f3d0] font-mono leading-relaxed">
+                      {sq.description}
+                    </p>
+
+                    {/* Assigned Real Members */}
+                    <div className="space-y-2">
+                      <div className="text-[10px] font-mono text-[#22c55e] uppercase font-bold flex items-center justify-between">
+                        <span>Integrantes Asignados ({squadMembers.length})</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {squadMembers.slice(0, 4).map((m) => {
+                          const assignment = m.squadAssignments.find((sa) => sa.squadId === sq.id);
+                          return (
+                            <button
+                              key={m.id}
+                              onClick={() => setSelectedMemberModal(m)}
+                              className="w-full text-left p-2 rounded bg-[#050805] border border-[#1e381e] hover:border-[#22c55e]/50 transition flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>{m.avatar}</span>
+                                <div>
+                                  <div className="font-bold text-white text-[11px]">{m.name}</div>
+                                  <div className="text-[10px] text-[#a7f3d0]">{assignment?.roleTitle}</div>
+                                </div>
+                              </div>
+                              <span
+                                className={`text-[8px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                                  m.status === "APPROVED"
+                                    ? "bg-[#0c1c0c] text-[#4ade80]"
+                                    : "bg-amber-950/60 text-amber-400"
+                                }`}
+                              >
+                                {m.status === "APPROVED" ? "OK" : "Pendiente"}
+                              </span>
+                            </button>
+                          );
+                        })}
+
+                        {squadMembers.length > 4 && (
+                          <div className="text-[10px] text-center font-mono text-[#a7f3d0]">
+                            + {squadMembers.length - 4} miembros más
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KPIs */}
+                  {sq.kpis && sq.kpis.length > 0 && (
+                    <div className="pt-3 border-t border-[#142414] flex flex-wrap gap-1.5">
+                      {sq.kpis.map((kpi, i) => (
+                        <span
+                          key={i}
+                          className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#050805] text-[#4ade80] border border-[#1e381e]"
+                        >
+                          📊 {kpi}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Squad Detailed Grid with Custom Ordering */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSquads.map((sq, idx) => (
-          <div
-            key={sq.id}
-            className="p-5 rounded-xl border border-[#1e381e] bg-[#0f190f] hover:border-[#22c55e] transition space-y-4 shadow-xl flex flex-col justify-between relative group"
-          >
-            <div className="space-y-4">
-              {/* Header Badge & Actions */}
-              <div className="flex items-center justify-between border-b border-[#1e381e] pb-3">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#050805] text-[#22c55e] border border-[#1e381e] font-bold">
-                      #{sq.sortOrder ?? idx + 1}
-                    </span>
-                    <span
-                      className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                        sq.nucleus === "sagrado"
-                          ? "text-[#4ade80]"
-                          : sq.nucleus === "comercial"
-                          ? "text-[#34d399]"
-                          : sq.nucleus === "transversal"
-                          ? "text-[#c084fc]"
-                          : "text-[#fbbf24]"
-                      }`}
-                    >
-                      {sq.nucleus.toUpperCase()}
-                    </span>
-
-                    {sq.vetoPower === "FULL_VETO" && (
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-red-950/60 text-red-400 border border-red-800 font-bold">
-                        Veto Total
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-sm font-bold text-white">{sq.name}</h3>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {/* Order controls */}
-                  <button
-                    onClick={() => moveSquadOrder(sq.id, "up")}
-                    className="p-1 rounded bg-[#050805] text-[#a7f3d0] hover:text-[#22c55e] transition"
-                    title="Mover arriba"
-                  >
-                    <ArrowUp size={13} />
-                  </button>
-                  <button
-                    onClick={() => moveSquadOrder(sq.id, "down")}
-                    className="p-1 rounded bg-[#050805] text-[#a7f3d0] hover:text-[#22c55e] transition"
-                    title="Mover abajo"
-                  >
-                    <ArrowDown size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleOpenEdit(sq)}
-                    className="p-1.5 rounded bg-[#142414] text-[#22c55e] hover:bg-[#22c55e] hover:text-[#050805] transition"
-                    title="Editar Squad"
-                  >
-                    <Edit3 size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-[#a7f3d0] font-mono leading-relaxed">
-                {sq.description}
-              </p>
-
-              {/* Clean Slate Notice for Members */}
-              <div className="p-3 rounded bg-[#050805] border border-[#1e381e] space-y-1">
-                <div className="text-[10px] font-mono text-[#22c55e] uppercase font-bold flex items-center justify-between">
-                  <span>Integrantes & Roles (Fase 2)</span>
-                  <span className="text-[9px] text-[#a7f3d0]">Ficha limpia</span>
-                </div>
-                <p className="text-[11px] text-[#a7f3d0] font-mono italic">
-                  Lista limpia lista para asignar integrantes reales y sus roles en la Fase 2.
-                </p>
-              </div>
-
-              {/* Responsibilities */}
-              {sq.responsibilities && sq.responsibilities.length > 0 && (
-                <div className="space-y-1.5 font-mono text-xs">
-                  <div className="text-[10px] text-[#a7f3d0] uppercase font-bold">Responsabilidades</div>
-                  <ul className="space-y-1 text-[11px] text-[#a7f3d0]">
-                    {sq.responsibilities.map((r, i) => (
-                      <li key={i} className="flex items-start gap-1.5">
-                        <span className="text-[#22c55e] font-bold">•</span>
-                        <span>{r}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+      {/* VIEW MODE 2: MEMBERS DIRECTORY TAB */}
+      {activeTab === "members" && !showArchifyWorkflow && (
+        <div className="space-y-6">
+          {/* Member Search & Filter Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border border-[#1e381e] bg-[#091409]">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-2.5 text-[#a7f3d0]" />
+              <input
+                type="text"
+                value={memberSearchQuery}
+                onChange={(e) => setMemberSearchQuery(e.target.value)}
+                placeholder="Buscar por nombre, linaje o squad..."
+                className="w-full pl-9 pr-4 py-2 rounded-lg bg-[#050805] border border-[#1e381e] text-white text-xs font-mono focus:border-[#22c55e] focus:outline-none"
+              />
             </div>
 
-            {/* Squad KPIs Footer */}
-            {sq.kpis && sq.kpis.length > 0 && (
-              <div className="pt-3 border-t border-[#142414] flex flex-wrap gap-1.5">
-                {sq.kpis.map((kpi, i) => (
-                  <span
-                    key={i}
-                    className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#050805] text-[#4ade80] border border-[#1e381e]"
-                  >
-                    📊 {kpi}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+            {/* Confirmation Filters */}
+            <div className="flex items-center gap-2 overflow-x-auto">
+              <button
+                onClick={() => setMemberFilterStatus("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                  memberFilterStatus === "all"
+                    ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                    : "bg-[#050805] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+                }`}
+              >
+                Todos ({membersList.length})
+              </button>
 
-      {/* Drawer Component */}
+              <button
+                onClick={() => setMemberFilterStatus("approved")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                  memberFilterStatus === "approved"
+                    ? "bg-[#22c55e] text-[#050805] font-bold shadow"
+                    : "bg-[#050805] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+                }`}
+              >
+                ✅ Confirmados ({membersList.filter((m) => m.status === "APPROVED").length})
+              </button>
+
+              <button
+                onClick={() => setMemberFilterStatus("pending")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                  memberFilterStatus === "pending"
+                    ? "bg-amber-600 text-white font-bold shadow"
+                    : "bg-[#050805] text-amber-400 border border-amber-600/60 hover:bg-amber-950/40"
+                }`}
+              >
+                ⚠️ Requer Confirmación ({pendingMembersCount})
+              </button>
+
+              <button
+                onClick={() => setMemberFilterStatus("missing")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                  memberFilterStatus === "missing"
+                    ? "bg-red-600 text-white font-bold shadow"
+                    : "bg-[#050805] text-red-400 border border-red-800/60 hover:bg-red-950/40"
+                }`}
+              >
+                🔍 Info Incompleta ({missingInfoCount})
+              </button>
+            </div>
+          </div>
+
+          {/* Member Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredMembers.map((m) => (
+              <div
+                key={m.id}
+                onClick={() => setSelectedMemberModal(m)}
+                className="p-5 rounded-xl border border-[#1e381e] bg-[#0f190f] hover:border-[#22c55e] transition space-y-4 shadow-xl cursor-pointer flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  {/* Top Badge */}
+                  <div className="flex items-center justify-between border-b border-[#1e381e] pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{m.avatar}</span>
+                      <div>
+                        <span className="text-[9px] font-mono text-[#4ade80] font-bold uppercase">
+                          {m.type.replace("human_", "").toUpperCase()}
+                        </span>
+                        <h4 className="text-sm font-bold text-white leading-snug">{m.name}</h4>
+                        {m.nativeName && <div className="text-[10px] text-[#22c55e] font-mono">({m.nativeName})</div>}
+                      </div>
+                    </div>
+
+                    <span
+                      className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                        m.status === "APPROVED"
+                          ? "bg-[#0c1c0c] text-[#4ade80] border border-[#22c55e]"
+                          : "bg-amber-950/80 text-amber-300 border border-amber-600"
+                      }`}
+                    >
+                      {m.status === "APPROVED" ? "Confirmado" : "Pendiente"}
+                    </span>
+                  </div>
+
+                  {/* Missing Info Flag */}
+                  {m.hasMissingInfo && (
+                    <div className="p-2 rounded bg-amber-950/40 border border-amber-600/60 text-[10px] font-mono text-amber-300 flex items-center gap-1.5">
+                      <AlertTriangle size={13} className="shrink-0" />
+                      <span>{m.missingInfoDetails}</span>
+                    </div>
+                  )}
+
+                  {/* Lineage / Saberes snippet */}
+                  <p className="text-[11px] text-[#a7f3d0] font-mono line-clamp-2 leading-relaxed">
+                    {m.specialityOrLineage}
+                  </p>
+
+                  {/* Squad Assignments */}
+                  <div className="space-y-1">
+                    <div className="text-[9px] font-mono text-[#22c55e] uppercase font-bold">Squads Asignados</div>
+                    <div className="flex flex-wrap gap-1">
+                      {m.squadAssignments.map((sa, i) => (
+                        <span
+                          key={i}
+                          className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#050805] text-[#a7f3d0] border border-[#1e381e]"
+                        >
+                          {sa.squadId}: {sa.roleTitle}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Action */}
+                <div className="pt-3 border-t border-[#142414] flex items-center justify-between text-[10px] font-mono text-[#4ade80]">
+                  <span>Ver Expediente Completo</span>
+                  <ArrowUpRight size={14} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Drawers & Modals */}
       <SquadEditDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -433,6 +646,13 @@ export default function OrganogramaView() {
         onSave={handleSaveSquad}
         onDelete={handleDeleteSquad}
         maxSortOrder={maxOrder}
+      />
+
+      <MemberProfileModal
+        isOpen={!!selectedMemberModal}
+        onClose={() => setSelectedMemberModal(null)}
+        member={selectedMemberModal}
+        onSaveMember={handleSaveMember}
       />
     </div>
   );

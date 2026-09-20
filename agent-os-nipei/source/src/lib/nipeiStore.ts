@@ -18,6 +18,54 @@ export interface SquadRenameHistory {
   changedBy: string;
 }
 
+export interface MemberSquadAssignment {
+  squadId: string;
+  roleTitle: string;
+  confirmationStatus: "APPROVED" | "PENDING_CONFIRMATION" | "REJECTED";
+  isPrimary?: boolean;
+}
+
+export interface MemberCompanyAssignment {
+  companyId: string;
+  companyName: string;
+  positionTitle: string;
+}
+
+export type MemberType =
+  | "human_paje_cacique"
+  | "human_executive"
+  | "human_staff"
+  | "ai_agent"
+  | "external_collaborator";
+
+export type ContractType =
+  | "Pro-labore"
+  | "Fijo"
+  | "Variable"
+  | "Caché"
+  | "Comisión"
+  | "Voluntario"
+  | "Joint Venture"
+  | "Híbrido";
+
+export interface MemberProfile {
+  id: string;
+  name: string;
+  nativeName?: string;
+  avatar: string;
+  type: MemberType;
+  contractType?: ContractType;
+  status: "APPROVED" | "PENDING_CONFIRMATION" | "REJECTED";
+  hasMissingInfo: boolean;
+  missingInfoDetails?: string;
+  specialityOrLineage?: string;
+  globalRole: "SUPER_USER" | "SQUAD_LEADER" | "OPERATOR" | "READ_ONLY" | "VETO_APPROVER";
+  companyAssignments: MemberCompanyAssignment[];
+  squadAssignments: MemberSquadAssignment[];
+  responsibilities: string[];
+  vaultPath?: string;
+}
+
 export interface SquadMeta {
   id: SquadId;
   code?: string;
@@ -51,6 +99,581 @@ export const INITIAL_SQUADS: SquadMeta[] = [
 ];
 
 export const SQUADS: SquadMeta[] = INITIAL_SQUADS;
+
+export const INITIAL_MEMBERS: MemberProfile[] = [
+  {
+    id: "cacique_mariazinha",
+    name: "Mariazinha Luísa Naiweni Yawanawá",
+    nativeName: "Naiweni",
+    avatar: "👑",
+    type: "human_paje_cacique",
+    contractType: "Pro-labore",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Primera mujer Cacique en la historia Yawanawá. Guardiana Espiritual Principal del Santuario Nipëihu. Experta en plantas medicinales de la Amazonía y Plano de Vida Yawanawá.",
+    globalRole: "VETO_APPROVER",
+    companyAssignments: [
+      { companyId: "instituto_nipeihu", companyName: "Instituto Nipëihu", positionTitle: "Directora Espiritual" },
+      { companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Cacique & Guardiana Principal" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_7_instituto", roleTitle: "Directora Espiritual & Veto Gate", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_2_mutum", roleTitle: "Supervisora Espiritual de Recolección", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: [
+      "Sostener el contenedor de seguridad energético para ceremonias de curación profunda (Vekuxi)",
+      "Supervisión espiritual del BioLab y custodia etnobotánica",
+      "Validación de productos de bioeconomía e investigaciones científicas"
+    ]
+  },
+  {
+    id: "kenewma_yawanawa",
+    name: "Kenewma Yawanawá",
+    avatar: "✨",
+    type: "human_paje_cacique",
+    contractType: "Caché",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Hija de los Caciques Biraci Nixiwaka y Mariazinha. Primera joven y tercera mujer en completar la Dieta del Muka. Artista plástica y maestra de cantos sagrados (Saitis).",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [
+      { companyId: "samakey", companyName: "Retiros Samakey", positionTitle: "Curadora Ceremonial" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_3_retiros", roleTitle: "Curadora Ceremonial & Alma del Retiro", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_7_instituto", roleTitle: "Portadora de Saitis & Integración", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: [
+      "Dirección de ceremonias de UNI y procesos de dieta espiritual Muka",
+      "Curaduría artística y talleres de cantos sagrados (Saitis)",
+      "Consultas de integración espiritual 1 a 1"
+    ]
+  },
+  {
+    id: "jordao_pekuti",
+    name: "Jordão Pekûti de Melo e Souza",
+    nativeName: "Pekûti",
+    avatar: "🌿",
+    type: "human_executive",
+    contractType: "Pro-labore",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Último alumno iniciado del Pajé Tatá. Guardián de las historias milenarias (Shenipahu). Más de una década en diálogo intercultural y proyectos indígenas.",
+    globalRole: "SUPER_USER",
+    companyAssignments: [
+      { companyId: "nipei_os", companyName: "Nipëi OS Global", positionTitle: "CEO & Cofundador" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_1_ceo", roleTitle: "CEO & Líder Estratégico", confirmationStatus: "APPROVED", isPrimary: true }
+    ],
+    responsibilities: [
+      "Visión macro y gestión de líderes de todas las Squads",
+      "Relaciones institucionales globales y estatutos",
+      "Conducción de sesiones de integración 1 a 1 y estudio de oraciones (Ruawakî)"
+    ]
+  },
+  {
+    id: "paulo_roberto",
+    name: "Paulo Roberto",
+    avatar: "👔",
+    type: "human_executive",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Gobernación interna y gestión operativa ejecutiva.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [
+      { companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Director Adjunto" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_1_ceo", roleTitle: "Director Adjunto / Gobernador Interno", confirmationStatus: "APPROVED", isPrimary: true }
+    ],
+    responsibilities: [
+      "Asistencia a la dirección general y rendición de cuentas interna",
+      "Filtro de decisiones críticas para proteger al CEO del trabajo cotidiano"
+    ]
+  },
+  {
+    id: "rodrigo_andrade",
+    name: "Rodrigo Andrade",
+    avatar: "⚖️",
+    type: "human_executive",
+    contractType: "Híbrido",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Abogado societario y gestor financiero especializado en estructuras legales e impuestos.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [
+      { companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Head of Admin & Legal" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_5_adm_legal", roleTitle: "Jefe Administrativo y Jurídico", confirmationStatus: "APPROVED", isPrimary: true }
+    ],
+    responsibilities: [
+      "Control de tesorería (Base 1), flujo de caja y categorización de costos",
+      "Gestión de Cisão Patrimonial (CPF a CNPJ) y contratos privados"
+    ]
+  },
+  {
+    id: "tio_alberto",
+    name: "Tio Alberto",
+    avatar: "🪵",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Coordinación forestal en Aldeia Mutum (Acre).",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Gerente de Operaciones Acre" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Gerente de Operaciones Mutum", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Coordinador central en la selva (Acre), cosechas y emergencias forestales"]
+  },
+  {
+    id: "chucu_xinan",
+    name: "Chucu & Xinan",
+    avatar: "🧪",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Destiladores Maestros de aceites esenciales Copaíba, Breu y Supá.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Destiladores Maestros" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Alquimistas Técnicos / Destiladores", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Extracción de aceites esenciales e hidrolatos con maquinaria de precisión"]
+  },
+  {
+    id: "shinan_tech",
+    name: "Shinan",
+    avatar: "⚗️",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Destilación técnica y laboratorio de transformación biológica.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Destilador Técnico" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Destilador Técnico", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Apoyo técnico en laboratorio de transformación en Acre"]
+  },
+  {
+    id: "tio_jorge",
+    name: "Tio Jorge",
+    avatar: "🌱",
+    type: "human_paje_cacique",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Consultor etnobotánico ancestral y custodio de tabúes rituais.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "instituto_nipeihu", companyName: "Instituto Nipëihu", positionTitle: "Consultor Ancestral" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Consultor Ancestral & Botánico", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Garantizar cumplimiento de rezos, ciclos lunares y crecientes del río en recolección"]
+  },
+  {
+    id: "samu_qa",
+    name: "Samu",
+    avatar: "🔬",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Control de calidad de laboratorio estéril e inventario.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Gerente QA Laboratorio" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Gerente de QA y Laboratorio", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Esterilización de vidriería, higiene y embotellado estéril"]
+  },
+  {
+    id: "iza_bete_recoleccion",
+    name: "Izá, Bete y Equipo Recolección",
+    avatar: "🧺",
+    type: "human_staff",
+    contractType: "Variable",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Recolección sostenible de biomasa en selva primaria.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Recolectores Forestales" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Recolectores Forestales Rotativos", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Recolección de biomasa primaria pagada por kg"]
+  },
+  {
+    id: "carla_farmaceutica",
+    name: "Carla",
+    avatar: "💊",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Farmacéutica responsable de formulaciones Inî Rau en BioLab Bahía.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Farmacéutica Responsable" }],
+    squadAssignments: [{ squadId: "squad_10_biofarmacia", roleTitle: "Resp. Biofarmacia y Calidad", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Formulación, estandarización y esterilización de aceites y tinturas en Bahía"]
+  },
+  {
+    id: "fani_fanny",
+    name: "Fani (Fanny)",
+    avatar: "📦",
+    type: "human_staff",
+    contractType: "Híbrido",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Distribución física de botica y CRM/Hospitalidad en retiros.",
+    globalRole: "OPERATOR",
+    companyAssignments: [
+      { companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Logística Embalaje" },
+      { companyId: "samakey", companyName: "Samakey", positionTitle: "Guardiã da Experiência" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_10_biofarmacia", roleTitle: "Especialista en Empaquetado & Etiquetado", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_3_retiros", roleTitle: "Hospitalidad & CRM (Guardiã Experiência)", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: ["Embalaje profesional, etiquetado, CRM anamnesis y recepción de huéspedes"]
+  },
+  {
+    id: "bruna_retiros",
+    name: "Bruna",
+    avatar: "🗓️",
+    type: "human_executive",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Gerente de retiros, Maestrina do Tempo y agenda global.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [{ companyId: "samakey", companyName: "Samakey Retiros", positionTitle: "Gerente de Agenda" }],
+    squadAssignments: [{ squadId: "squad_3_retiros", roleTitle: "Gerente de Retiros & Agenda", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Gestión de Agenda Global (Base 2), coordinadores externos y auditoría SLA 7 días"]
+  },
+  {
+    id: "shaina_sheina",
+    name: "Shaina / Sheina",
+    avatar: "🌍",
+    type: "human_staff",
+    contractType: "Comisión",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Traducción internacional y ventas directas en círculos de sanación EE.UU.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "samakey", companyName: "Samakey Global", positionTitle: "Embajadora Internacional" }],
+    squadAssignments: [
+      { squadId: "squad_3_retiros", roleTitle: "Contacto Internacional & Traducción", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_9_internacional", roleTitle: "Agente de Reventa EE.UU.", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: ["Atención a grupos extranjeros, traducción ceremonial y ventas Inî Rau EE.UU."]
+  },
+  {
+    id: "tuxi_shanupana",
+    name: "Tuxi & Shanupãnã",
+    avatar: "🔥",
+    type: "human_staff",
+    contractType: "Variable",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Preparación de la Shuhu sagrada y soporte ceremonial.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "samakey", companyName: "Samakey", positionTitle: "Guardianes de Shuhu" }],
+    squadAssignments: [{ squadId: "squad_3_retiros", roleTitle: "Guardianes de Soporte & Logística Física", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Preparación de Shuhu, transporte de equipaje, leña y fuegos ceremoniales"]
+  },
+  {
+    id: "vini_ops",
+    name: "Vini",
+    avatar: "🛠️",
+    type: "human_executive",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Gerente de Operaciones y mantenimiento preventivo ('El Amortiguador').",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS Bahía", positionTitle: "Gerente de Operaciones" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Gerente de Operações (Amortiguador)", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Coordinación de obras civiles, mantenimiento preventivo y órdenes Base 2"]
+  },
+  {
+    id: "melo_sebastiao",
+    name: "Melo (Sebastião)",
+    avatar: "🧱",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Conocimiento tácito de redes hidráulicas y eléctricas subterráneas.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS Bahía", positionTitle: "Líder Infraestructura" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Líder de Infraestrutura / Memoria Biológica", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Mantenimiento pesado de redes subterráneas y transición a Consultor Técnico"]
+  },
+  {
+    id: "nomashahu_tactico",
+    name: "Nomashahu",
+    avatar: "👁️",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Coordinador táctico de almacén e inventario de rapé sagrado.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Coordinador Táctico" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Subgerente / Ojo Táctico", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Control de almacén, logística inmediata e inventario de rapé sagrado"]
+  },
+  {
+    id: "iury_civil",
+    name: "Iury",
+    avatar: "🔨",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Carpintería, pintura y reparaciones estructurales civiles.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Guardián Mantenimiento Civil" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Guardián de Mantenimiento Civil", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Reparaciones estructurales, pintura y mantenimiento de activos"]
+  },
+  {
+    id: "jailton_sistemas",
+    name: "Jailton",
+    avatar: "⚡",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Operación de generadores, bombas de agua y tableros eléctricos.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Guardián Sistemas Críticos" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Guardián de Sistemas Críticos (Energía/Agua)", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Operación de generadores solares, bombas de agua y tuberías"]
+  },
+  {
+    id: "gerson_fuego",
+    name: "Gerson",
+    avatar: "🪵",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Logística de leña para cocinas y fuegos ceremoniales.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Guardián Fuego & Recursos" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Guardián de Logística de Recursos", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Suministro de leña ceremonial, jardinería y carga pesada"]
+  },
+  {
+    id: "rafaela_zeladoria",
+    name: "Rafaela",
+    avatar: "🧹",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Preparación de habitaciones nivel hotelero e higiene Shuhu.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "samakey", companyName: "Samakey", positionTitle: "Líder Zeladoria" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Líder de Limpeza e Zeladoria", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Higiene, acondicionamiento de habitaciones nivel hotelero y Shuhu"]
+  },
+  {
+    id: "maico_mantenimiento",
+    name: "Maico",
+    avatar: "🔧",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Auxiliar de sistemas hidráulicos y eléctricos.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Apoyo Mantenimiento" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Apoyo de Mantenimiento", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Auxiliar en sistemas hidráulicos, eléctricos e infraestructura"]
+  },
+  {
+    id: "jenny_cacau_voluntarias",
+    name: "Jenny & Cacau",
+    avatar: "🤝",
+    type: "external_collaborator",
+    contractType: "Voluntario",
+    status: "PENDING_CONFIRMATION",
+    hasMissingInfo: true,
+    missingInfoDetails: "Confirmación manual pendiente para verificar disponibilidad activa en próximo evento.",
+    specialityOrLineage: "Apoyo en jornadas de trabajo intenso (mutirões).",
+    globalRole: "READ_ONLY",
+    companyAssignments: [{ companyId: "samakey", companyName: "Samakey", positionTitle: "Voluntarias Soporte" }],
+    squadAssignments: [{ squadId: "squad_6_infra", roleTitle: "Soporte Táctico Móvil / Voluntarias", confirmationStatus: "PENDING_CONFIRMATION", isPrimary: true }],
+    responsibilities: ["Apoyo en mutirões y picos de demanda durante eventos"]
+  },
+  {
+    id: "rafael_sales_ai",
+    name: "Rafael",
+    avatar: "📈",
+    type: "human_executive",
+    contractType: "Variable",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Especialista en tráfico pagado, embudos de conversión e IA de ventas.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Head of Sales & AI" }],
+    squadAssignments: [{ squadId: "squad_4_vendas_mkt", roleTitle: "Head of Sales & AI", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Operaciones de ingresos, tráfico pagado e integración de IA de ventas"]
+  },
+  {
+    id: "ashuan_web",
+    name: "Ashuan",
+    avatar: "💻",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Diseño de e-commerce Inî Rau y narrativa visual de producto.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Especialista Web" }],
+    squadAssignments: [{ squadId: "squad_4_vendas_mkt", roleTitle: "Especialista em Web e Conteúdo", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Presencia digital, diseño e-commerce y narrativa de productos"]
+  },
+  {
+    id: "runuina_ax_developer",
+    name: "Runuina-ax",
+    avatar: "⚙️",
+    type: "human_staff",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Arquitectura Supabase, RLS security y desarrollo Core Nipëi OS.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Lead Developer" }],
+    squadAssignments: [{ squadId: "squad_4_vendas_mkt", roleTitle: "Desenvolvedor Principal & Tech Infra", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Construcción del sistema operativo Nipëi OS y arquitectura Supabase"]
+  },
+  {
+    id: "julia_audiovisual",
+    name: "Julia",
+    avatar: "📹",
+    type: "human_staff",
+    contractType: "Híbrido",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Producción audiovisual de marketing y documentación etnobotánica.",
+    globalRole: "OPERATOR",
+    companyAssignments: [
+      { companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Productora Audiovisual" },
+      { companyId: "instituto_nipeihu", companyName: "Instituto Nipëihu", positionTitle: "Memoria Visual" }
+    ],
+    squadAssignments: [
+      { squadId: "squad_4_vendas_mkt", roleTitle: "Productora Audiovisual & Marketing", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_7_instituto", roleTitle: "Documentación Botánica & Memoria", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: ["Contenido audiovisual para marketing y archivo documental del Instituto"]
+  },
+  {
+    id: "diego_instituto",
+    name: "Diego",
+    avatar: "📜",
+    type: "human_executive",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Gestión de proyectos de subvención (Base 5) y Jardim Escola.",
+    globalRole: "SQUAD_LEADER",
+    companyAssignments: [{ companyId: "instituto_nipeihu", companyName: "Instituto Nipëihu", positionTitle: "Gerente Institucional" }],
+    squadAssignments: [{ squadId: "squad_7_instituto", roleTitle: "Gerente Institucional (Operador do Sagrado)", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Dirección ejecutiva del instituto sin fines de lucro y Jardim Escola"]
+  },
+  {
+    id: "ana_tini_grant_writer",
+    name: "Ana Tini",
+    avatar: "📝",
+    type: "external_collaborator",
+    contractType: "Variable",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Redacción técnica de propuestas de subvención, ODS y métricas SROI.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "instituto_nipeihu", companyName: "Instituto Nipëihu", positionTitle: "Grant Writer" }],
+    squadAssignments: [{ squadId: "squad_8_fundraising", roleTitle: "Especialista em Captação & Grant Writer", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Rastreo de convocatorias públicas/privadas y informes de impacto SROI"]
+  },
+  {
+    id: "lynn_schauwecker",
+    name: "Lynn Schauwecker",
+    avatar: "🕊️",
+    type: "external_collaborator",
+    contractType: "Joint Venture",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Coproducción del evento Sacred Bridge en Menla (NY) con Tibet House US.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi Global", positionTitle: "Directora Alianzas Internacionales" }],
+    squadAssignments: [{ squadId: "squad_9_internacional", roleTitle: "Directora de Alianzas Internacionales", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Coproducción ejecutiva de Sacred Bridge en Menla/NY e invitados VIP"]
+  },
+  {
+    id: "angelique_txiva",
+    name: "Angelique (Txivã)",
+    avatar: "🇺🇸",
+    type: "external_collaborator",
+    contractType: "Comisión",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Ventas de retiros de alto valor en USD y almacenamiento de mercancías EE.UU.",
+    globalRole: "OPERATOR",
+    companyAssignments: [{ companyId: "samakey", companyName: "Samakey USA", positionTitle: "Agente Comercial USA" }],
+    squadAssignments: [{ squadId: "squad_9_internacional", roleTitle: "Agente Comercial Internacional & Logística USA", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Ventas de retiros en USD y gestión de stock exportado a EE.UU."]
+  },
+  {
+    id: "ana_castro_human_api",
+    name: "Ana Castro (Txiní)",
+    nativeName: "Txiní",
+    avatar: "🧬",
+    type: "human_executive",
+    contractType: "Variable",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Puente entre las necesidades de Acre (Squad II), Bahía (Squad VII) y subvenciones (Squad VIII). 'Human API' / 'A Sinapse'.",
+    globalRole: "SUPER_USER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS Global", positionTitle: "Enlace Institucional Global" }],
+    squadAssignments: [
+      { squadId: "squad_1_ceo", roleTitle: "Sinapse & Enlace Institucional", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_7_instituto", roleTitle: "Investigadora Principal Etnobotánica", confirmationStatus: "APPROVED" },
+      { squadId: "squad_8_fundraising", roleTitle: "Traductora de Proyectos Forestales", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: ["Traducir necesidades operativas de Acre al lenguaje científico y administrativo"]
+  },
+  {
+    id: "sr_elias_consultor",
+    name: "Sr. Elias",
+    avatar: "🧔‍♂️",
+    type: "external_collaborator",
+    contractType: "Variable",
+    status: "PENDING_CONFIRMATION",
+    hasMissingInfo: true,
+    missingInfoDetails: "Pendiente confirmar horas acordadas de consultoría técnica para duplicación de destilación.",
+    specialityOrLineage: "Asesoría operativa para estructurar separación de cosecha y destilación.",
+    globalRole: "READ_ONLY",
+    companyAssignments: [{ companyId: "botica_ini_rau", companyName: "Botica Inî Rau", positionTitle: "Asesor Técnico Producción" }],
+    squadAssignments: [{ squadId: "squad_2_mutum", roleTitle: "Asesor Técnico de Producción", confirmationStatus: "PENDING_CONFIRMATION", isPrimary: true }],
+    responsibilities: ["Asesoramiento operativo para triplicar rendimiento de aceites esenciales"]
+  },
+  {
+    id: "agente_antigravity",
+    name: "@antigravity",
+    avatar: "🤖",
+    type: "ai_agent",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "AI Mastermind, Orquestador del Sistema y Auditor de Veto Gate Ético.",
+    globalRole: "SUPER_USER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS Core", positionTitle: "AI Mastermind" }],
+    squadAssignments: [
+      { squadId: "squad_1_ceo", roleTitle: "AI Mastermind & Orquestrador", confirmationStatus: "APPROVED", isPrimary: true },
+      { squadId: "squad_7_instituto", roleTitle: "AI Fiscal de Veto Gate & Certificação", confirmationStatus: "APPROVED" }
+    ],
+    responsibilities: ["Ejecución de tareas automatizadas, orquestación y auditoría de Veto Gate"]
+  }
+];
 
 export interface FichaTecnica {
   productId: string;
