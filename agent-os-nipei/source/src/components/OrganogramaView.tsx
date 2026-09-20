@@ -7,7 +7,7 @@ import {
   Network, ShieldCheck, Crown, Users, Brain, Workflow, Building2,
   Package, ShoppingBag, Wrench, FileSpreadsheet, ArrowUpRight, Plus,
   Edit3, ArrowUp, ArrowDown, CheckCircle2, ShieldAlert, Sparkles, Filter,
-  AlertTriangle, Search, UserCheck
+  AlertTriangle, Search, UserCheck, Bot, Lock
 } from "lucide-react";
 import {
   SQUADS, INITIAL_SQUADS, INITIAL_MEMBERS, type SquadMeta, type NucleusRole,
@@ -15,6 +15,7 @@ import {
 } from "@/lib/nipeiStore";
 import SquadEditDrawer from "./SquadEditDrawer";
 import MemberProfileModal from "./MemberProfileModal";
+import AgentProvisioningWizard from "./AgentProvisioningWizard";
 import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
 export default function OrganogramaView() {
@@ -22,12 +23,14 @@ export default function OrganogramaView() {
   const [squadsList, setSquadsList] = useState<SquadMeta[]>(INITIAL_SQUADS);
   const [membersList, setMembersList] = useState<MemberProfile[]>(INITIAL_MEMBERS);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleusRole | "all">("all");
-  const [memberFilterStatus, setMemberFilterStatus] = useState<"all" | "approved" | "pending" | "missing">("all");
+  const [memberFilterStatus, setMemberFilterStatus] = useState<"all" | "approved" | "pending" | "missing" | "agents">("all");
   const [memberSearchQuery, setMemberSearchQuery] = useState<string>("");
 
   const [showArchifyWorkflow, setShowArchifyWorkflow] = useState<boolean>(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isAgentWizardOpen, setIsAgentWizardOpen] = useState<boolean>(false);
   const [editingSquad, setEditingSquad] = useState<SquadMeta | null>(null);
+  const [targetSquadForAgent, setTargetSquadForAgent] = useState<string | undefined>(undefined);
 
   const [selectedMemberModal, setSelectedMemberModal] = useState<MemberProfile | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -78,6 +81,11 @@ export default function OrganogramaView() {
   const handleOpenEditSquad = (sq: SquadMeta) => {
     setEditingSquad(sq);
     setIsDrawerOpen(true);
+  };
+
+  const handleOpenAgentWizard = (squadId?: string) => {
+    setTargetSquadForAgent(squadId);
+    setIsAgentWizardOpen(true);
   };
 
   const handleSaveSquad = async (updatedSquad: SquadMeta) => {
@@ -150,7 +158,14 @@ export default function OrganogramaView() {
   };
 
   const handleSaveMember = async (updatedMember: MemberProfile) => {
-    const newList = membersList.map((m) => (m.id === updatedMember.id ? updatedMember : m));
+    const exists = membersList.some((m) => m.id === updatedMember.id);
+    let newList: MemberProfile[];
+    if (exists) {
+      newList = membersList.map((m) => (m.id === updatedMember.id ? updatedMember : m));
+    } else {
+      newList = [...membersList, updatedMember];
+    }
+
     saveMembersToStore(newList);
     if (selectedMemberModal?.id === updatedMember.id) {
       setSelectedMemberModal(updatedMember);
@@ -182,12 +197,15 @@ export default function OrganogramaView() {
     if (memberFilterStatus === "approved" && m.status !== "APPROVED") return false;
     if (memberFilterStatus === "pending" && m.status !== "PENDING_CONFIRMATION") return false;
     if (memberFilterStatus === "missing" && !m.hasMissingInfo) return false;
+    if (memberFilterStatus === "agents" && m.type !== "ai_agent") return false;
 
     if (memberSearchQuery.trim()) {
       const q = memberSearchQuery.toLowerCase();
       const matchName = m.name.toLowerCase().includes(q);
       const matchNative = m.nativeName?.toLowerCase().includes(q);
-      const matchSquad = m.squadAssignments.some((s) => s.roleTitle.toLowerCase().includes(q) || s.squadId.toLowerCase().includes(q));
+      const matchSquad = m.squadAssignments.some(
+        (s) => s.roleTitle.toLowerCase().includes(q) || s.squadId.toLowerCase().includes(q)
+      );
       return matchName || matchNative || matchSquad;
     }
     return true;
@@ -197,6 +215,7 @@ export default function OrganogramaView() {
 
   const pendingMembersCount = membersList.filter((m) => m.status === "PENDING_CONFIRMATION").length;
   const missingInfoCount = membersList.filter((m) => m.hasMissingInfo).length;
+  const agentsCount = membersList.filter((m) => m.type === "ai_agent").length;
 
   return (
     <div className="space-y-8 font-sans">
@@ -219,23 +238,29 @@ export default function OrganogramaView() {
                 Estrutura Organizacional Nipëi OS
               </span>
               <span className="px-2.5 py-0.5 rounded bg-[#0f190f] border border-[#1e381e] text-[10px] font-mono text-[#a7f3d0]">
-                10 Squads | 36 Integrantes Reais
+                {squadsList.length} Squads | {membersList.length} Integrantes
               </span>
               {pendingMembersCount > 0 && (
                 <span className="px-2.5 py-0.5 rounded bg-amber-950/80 border border-amber-600 text-[10px] font-mono font-bold text-amber-300 animate-pulse">
-                  ⚠️ {pendingMembersCount} Pendientes de Confirmación Manual
+                  ⚠️ {pendingMembersCount} Pendientes de Confirmación
                 </span>
               )}
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              Organograma Global, Squads & Expedientes
+              Organograma Global, Squads & Agentes IA
             </h1>
             <p className="text-xs text-[#a7f3d0] max-w-2xl leading-relaxed font-mono">
-              Gestão estratégica de Squads e diretório oficial de membros (humanos e agentes IA) com confirmação manual e sincronização automática com o Nipëi Vault.
+              Painel de administração de Squads, directorio de integrantes reais e motor de provisionamento de Agentes IA com Firewall de Sensibilidade.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleOpenAgentWizard()}
+              className="px-3.5 py-2 rounded-lg bg-[#142414] border border-[#22c55e] text-[#22c55e] text-xs font-mono font-bold hover:bg-[#22c55e] hover:text-[#050805] transition shadow flex items-center gap-1.5"
+            >
+              <Bot size={16} /> Provisionar Agente IA
+            </button>
             <button
               onClick={handleOpenAddSquad}
               className="px-4 py-2 rounded-lg bg-[#22c55e] text-[#050805] text-xs font-mono font-bold hover:bg-[#16a34a] transition shadow flex items-center gap-1.5"
@@ -440,6 +465,12 @@ export default function OrganogramaView() {
                     <div className="space-y-2">
                       <div className="text-[10px] font-mono text-[#22c55e] uppercase font-bold flex items-center justify-between">
                         <span>Integrantes Asignados ({squadMembers.length})</span>
+                        <button
+                          onClick={() => handleOpenAgentWizard(sq.id)}
+                          className="text-[9px] text-[#22c55e] hover:underline flex items-center gap-1"
+                        >
+                          <Bot size={11} /> + Agente IA
+                        </button>
                       </div>
 
                       <div className="space-y-1.5">
@@ -454,7 +485,14 @@ export default function OrganogramaView() {
                               <div className="flex items-center gap-2">
                                 <span>{m.avatar}</span>
                                 <div>
-                                  <div className="font-bold text-white text-[11px]">{m.name}</div>
+                                  <div className="font-bold text-white text-[11px] flex items-center gap-1">
+                                    {m.name}
+                                    {m.type === "ai_agent" && (
+                                      <span className="text-[8px] px-1 bg-purple-950 text-purple-300 rounded font-mono">
+                                        IA
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-[10px] text-[#a7f3d0]">{assignment?.roleTitle}</div>
                                 </div>
                               </div>
@@ -531,6 +569,17 @@ export default function OrganogramaView() {
               </button>
 
               <button
+                onClick={() => setMemberFilterStatus("agents")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
+                  memberFilterStatus === "agents"
+                    ? "bg-purple-600 text-white font-bold shadow"
+                    : "bg-[#050805] text-purple-400 border border-purple-800/60 hover:bg-purple-950/40"
+                }`}
+              >
+                🤖 Agentes IA ({agentsCount})
+              </button>
+
+              <button
                 onClick={() => setMemberFilterStatus("approved")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
                   memberFilterStatus === "approved"
@@ -551,17 +600,6 @@ export default function OrganogramaView() {
               >
                 ⚠️ Requer Confirmación ({pendingMembersCount})
               </button>
-
-              <button
-                onClick={() => setMemberFilterStatus("missing")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition shrink-0 ${
-                  memberFilterStatus === "missing"
-                    ? "bg-red-600 text-white font-bold shadow"
-                    : "bg-[#050805] text-red-400 border border-red-800/60 hover:bg-red-950/40"
-                }`}
-              >
-                🔍 Info Incompleta ({missingInfoCount})
-              </button>
             </div>
           </div>
 
@@ -579,8 +617,9 @@ export default function OrganogramaView() {
                     <div className="flex items-center gap-2">
                       <span className="text-2xl">{m.avatar}</span>
                       <div>
-                        <span className="text-[9px] font-mono text-[#4ade80] font-bold uppercase">
+                        <span className="text-[9px] font-mono text-[#4ade80] font-bold uppercase flex items-center gap-1">
                           {m.type.replace("human_", "").toUpperCase()}
+                          {m.type === "ai_agent" && <Bot size={11} className="text-purple-400" />}
                         </span>
                         <h4 className="text-sm font-bold text-white leading-snug">{m.name}</h4>
                         {m.nativeName && <div className="text-[10px] text-[#22c55e] font-mono">({m.nativeName})</div>}
@@ -597,6 +636,18 @@ export default function OrganogramaView() {
                       {m.status === "APPROVED" ? "Confirmado" : "Pendiente"}
                     </span>
                   </div>
+
+                  {/* Firewall Restricted Topics Badge for AI Agents */}
+                  {m.type === "ai_agent" && m.aiAgentConfig?.restrictedTopics && (
+                    <div className="p-2 rounded bg-purple-950/30 border border-purple-800/50 text-[10px] font-mono text-purple-300 space-y-1">
+                      <div className="flex items-center gap-1 font-bold">
+                        <Lock size={11} /> Firewall de Sensibilidad ({m.aiAgentConfig.restrictedTopics.length} Temas)
+                      </div>
+                      <div className="text-[9px] text-purple-200/80 line-clamp-1">
+                        Restringidos: {m.aiAgentConfig.restrictedTopics.join(", ")}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Missing Info Flag */}
                   {m.hasMissingInfo && (
@@ -653,6 +704,14 @@ export default function OrganogramaView() {
         onClose={() => setSelectedMemberModal(null)}
         member={selectedMemberModal}
         onSaveMember={handleSaveMember}
+      />
+
+      <AgentProvisioningWizard
+        isOpen={isAgentWizardOpen}
+        onClose={() => setIsAgentWizardOpen(false)}
+        squadsList={squadsList}
+        targetSquadId={targetSquadForAgent}
+        onSaveAgent={handleSaveMember}
       />
     </div>
   );

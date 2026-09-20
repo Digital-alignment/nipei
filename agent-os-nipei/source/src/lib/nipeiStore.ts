@@ -48,6 +48,18 @@ export type ContractType =
   | "Joint Venture"
   | "Híbrido";
 
+export interface AIAgentConfig {
+  handle: string; // Ej: "@vaultkeeper"
+  name: string;
+  squadId: string;
+  systemPrompt: string;
+  capabilities: string[];
+  allowedVaultPaths: string[];
+  restrictedTopics: string[]; // Firewall de Sensibilidade (Blacklist de palavras/contextos proibidos)
+  actionPolicy: "DENY_WITH_REASON" | "REDACT_SENSITIVE_DATA" | "ESCALATE_TO_SAGRADO";
+  createdType: "EXISTING_REUSED" | "NEW_CUSTOM_PROVISIONED";
+}
+
 export interface MemberProfile {
   id: string;
   name: string;
@@ -64,6 +76,7 @@ export interface MemberProfile {
   squadAssignments: MemberSquadAssignment[];
   responsibilities: string[];
   vaultPath?: string;
+  aiAgentConfig?: AIAgentConfig;
 }
 
 export interface SquadMeta {
@@ -89,13 +102,17 @@ export interface SquadMeta {
 
 export const INITIAL_SQUADS: SquadMeta[] = [
   { id: "super_user", code: "SU-00", name: "Visão Consolidada (Super-Usuário)", nucleus: "sagrado", module: "Cross-cutting", description: "Acesso total consolidado a todos os Squads", iconName: "Crown", sortOrder: 0, vetoPower: "FULL_VETO", status: "ACTIVE" },
-  { id: "squad_7_instituto", code: "SQ-07", name: "Squad VII — Instituto & Donadores", nucleus: "sagrado", module: "Nipëi People", description: "Articulação Mutum, Donantes & Certificação de Origem Ética (Veto Comercial)", iconName: "ShieldCheck", sortOrder: 1, vetoPower: "FULL_VETO", status: "ACTIVE" },
-  { id: "squad_1_ceo", code: "SQ-01", name: "Squad I — Estratégia / CEO", nucleus: "comercial", module: "Nipëi Brain", description: "Governança, IA de Priorização de Agenda & WhatsApp Bot Conversacional", iconName: "Brain", sortOrder: 2, vetoPower: "NONE", status: "ACTIVE" },
-  { id: "squad_2_mutum", code: "SQ-02", name: "Squad II — Produção Mutum", nucleus: "sagrado", module: "Nipëi Flow", description: "Bioeconomia, Trazabilidade Florestal, Fichas Técnicas & OCR/QR", iconName: "Package", sortOrder: 3, vetoPower: "ETHICAL_REVIEW", status: "ACTIVE" },
-  { id: "squad_3_retiros", code: "SQ-03", name: "Squad III — Logística Retiros & Hospitalidade", nucleus: "comercial", module: "Nipëi Flow", description: "Saída QR no celular, CRM Hóspedes & Portal do Participante", iconName: "Calendar", sortOrder: 4, vetoPower: "NONE", status: "ACTIVE" },
-  { id: "squad_4_vendas_mkt", code: "SQ-04", name: "Squad IV — Vendas, Mkt & Infra Tech", nucleus: "comercial", module: "Cross-cutting", description: "Baixa automática por Pedido Pago via Ficha Técnica & LTV Analytics", iconName: "ShoppingBag", sortOrder: 5, vetoPower: "NONE", status: "ACTIVE" },
-  { id: "squad_5_adm_legal", code: "SQ-05", name: "Squad V — Adm / Legal / Financeiro", nucleus: "transversal", module: "Nipëi Brain", description: "Fechamento Financeiro DRE por Centro de Custo & Arquivo Fiscal OCR", iconName: "FileSpreadsheet", sortOrder: 6, vetoPower: "NONE", status: "ACTIVE" },
-  { id: "squad_6_infra", code: "SQ-06", name: "Squad VI — Infraestrutura & Manutenção", nucleus: "soporte", module: "Nipëi Flow", description: "Chamados de Reparo vinculados ao Estoque de Peças de Reposição", iconName: "Wrench", sortOrder: 7, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_1_ceo", code: "SQ-01", name: "Squad I — Liderança e Estratégia", nucleus: "transversal", module: "Nipëi Brain", description: "Governança macro, OKRs, estatutos, obras e relaciones institucionais globais", iconName: "Brain", sortOrder: 1, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_2_mutum", code: "SQ-02", name: "Squad II — Produção & Mutum (Acre)", nucleus: "sagrado", module: "Nipëi Flow", description: "Base forestal de Acre, extracción biomasa, destilación aceites e hidrolatos", iconName: "Package", sortOrder: 2, vetoPower: "ETHICAL_REVIEW", status: "ACTIVE" },
+  { id: "squad_3_retiros", code: "SQ-03", name: "Squad III — Logística de Eventos e Hospitalidade", nucleus: "comercial", module: "Nipëi Flow", description: "Retiros Samakey Bahía, cerimonias UNI/Muka, CRM hóspedes e hospedagem", iconName: "Calendar", sortOrder: 3, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_4_vendas_mkt", code: "SQ-04", name: "Squad IV — Vendas, Tecnologia e Infra Digital", nucleus: "comercial", module: "Cross-cutting", description: "Nipëi OS, e-commerce Inî Rau, funis de conversão, Supabase e tráfego pago", iconName: "ShoppingBag", sortOrder: 4, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_5_adm_legal", code: "SQ-05", name: "Squad V — Administrativo e Jurídico", nucleus: "transversal", module: "Nipëi Brain", description: "Tesouraria, DRE por Centro de Custos, Cisão Patrimonial e contratos", iconName: "FileSpreadsheet", sortOrder: 5, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_6_infra", code: "SQ-06", name: "Squad VI — Operações e Manutenção (Bahía)", nucleus: "soporte", module: "Nipëi Flow", description: "Infraestrutura física do Santuário Bahía, redes hidráulicas, energia e leña", iconName: "Wrench", sortOrder: 6, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_7_instituto", code: "SQ-07", name: "Squad VII — Instituto NIPEI (Núcleo Sagrado)", nucleus: "sagrado", module: "Nipëi People", description: "Preservação etnobotânica, Jardim Escola, Veto Gate Éico e memoria audiovisual", iconName: "ShieldCheck", sortOrder: 7, vetoPower: "FULL_VETO", status: "ACTIVE" },
+  { id: "squad_8_fundraising", code: "SQ-08", name: "Squad VIII — Captação e Editais", nucleus: "transversal", module: "Nipëi Brain", description: "Fundraising internacional, editais públicos e privados, ODS e relatórios SROI", iconName: "Sparkles", sortOrder: 8, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_9_internacional", code: "SQ-09", name: "Squad IX — Internacional e Expansão Global", nucleus: "comercial", module: "Cross-cutting", description: "Sacred Bridge Menla/NY, ventas USD, Tibet House US e alianças globais", iconName: "Network", sortOrder: 9, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_10_biofarmacia", code: "SQ-10", name: "Squad X — Biofarmácia e Distribuição", nucleus: "comercial", module: "Nipëi Flow", description: "BioLab Bahía, formulación de productos Inî Rau, empaquetado e distribución física", iconName: "Building2", sortOrder: 10, vetoPower: "NONE", status: "ACTIVE" },
+  { id: "squad_vb_knowledge", code: "SQ-VB", name: "Squad VB — Governança & Audit de Conhecimento", nucleus: "transversal", module: "Nipëi Brain", description: "Auditoria do Nipëi Vault, busca de informações em falta, organização de galerias e curadoria máxima do conhecimento", iconName: "Brain", sortOrder: 11, vetoPower: "ETHICAL_REVIEW", status: "ACTIVE" },
 ];
 
 export const SQUADS: SquadMeta[] = INITIAL_SQUADS;
@@ -672,6 +689,49 @@ export const INITIAL_MEMBERS: MemberProfile[] = [
       { squadId: "squad_7_instituto", roleTitle: "AI Fiscal de Veto Gate & Certificação", confirmationStatus: "APPROVED" }
     ],
     responsibilities: ["Ejecución de tareas automatizadas, orquestación y auditoría de Veto Gate"]
+  },
+  {
+    id: "agente_vaultkeeper",
+    name: "@vaultkeeper",
+    avatar: "🧠",
+    type: "ai_agent",
+    contractType: "Fijo",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Agente Exclusivo de Governança de Conhecimento. Especialista en auditoría del Vault, indexación de galerías, detección de información faltante y fornecedor de respuestas exactas.",
+    globalRole: "SUPER_USER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS Brain", positionTitle: "Vault Auditor & Knowledge Master" }],
+    squadAssignments: [
+      { squadId: "squad_vb_knowledge", roleTitle: "Auditor Principal do Nipëi Vault", confirmationStatus: "APPROVED", isPrimary: true }
+    ],
+    responsibilities: [
+      "Auditar continuamente el contenido de Nipëi Vault y galerías",
+      "Identificar vacíos de conocimiento y activar protocolos para conseguirlos o crearlos",
+      "Fornecer información exacta conociendo todas las carpetas y plataformas del sistema",
+      "Aplicar Firewall de Sensibilidad (Filtrar o enmascarar temas prohibidos/sensibles)"
+    ],
+    aiAgentConfig: {
+      handle: "@vaultkeeper",
+      name: "VaultKeeper — Master Auditor de Conhecimento",
+      squadId: "squad_vb_knowledge",
+      systemPrompt: "Eres el guardián absoluto del conocimiento en Nipëi OS. Tu misión es conocer cada carpeta del Vault, detectar vacíos de información, resolver consultas exactas y mantener el cortafuegos de privacidad activo.",
+      capabilities: [
+        "Auditoría Semántica en Tiempo Real",
+        "Detección de Vacíos de Información",
+        "Curaduría de Galerías y Archivos Multimedia",
+        "Sincronización Multicanal con Plataformas",
+        "Firewall de Sensibilidad & Filtrado de Privacidad"
+      ],
+      allowedVaultPaths: ["Ingested_Knowledge/*", "Squads/*", "Projects/*", "Especificaciones/*", "Clientes/*"],
+      restrictedTopics: [
+        "Contraseñas SSH y llaves de VPS privadas",
+        "Anamnesis médica detallada de pacientes (Datos protegidos LGPD)",
+        "Tarjetas de crédito o cuentas bancarias personales",
+        "Fórmulas secretas de laboratorio sin patente registrada"
+      ],
+      actionPolicy: "REDACT_SENSITIVE_DATA",
+      createdType: "NEW_CUSTOM_PROVISIONED"
+    }
   }
 ];
 
