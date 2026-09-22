@@ -1,12 +1,11 @@
 {
-  "name": "medicinas-da-floresta---jungle-vibe-catalog",
+  "name": "nipei-control",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "npm --prefix agent-os-nipei/source run dev -- -p 3333",
+    "build": "npm --prefix agent-os-nipei/source run build",
+    "start": "npm --prefix agent-os-nipei/source run start -- -p 3333"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.90.1",
