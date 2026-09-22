@@ -8,7 +8,7 @@ import {
   MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard,
   Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal,
   Check, SquareTerminal, ShieldCheck, Route, Scissors, FlaskConical, Wand2, Kanban, Server,
-  PanelLeftClose, PanelLeftOpen, Sun, Upload, ChevronDown, ChevronRight, Sparkles, Layers
+  PanelLeftClose, PanelLeftOpen, Sun, Upload, ChevronDown, ChevronRight, Sparkles, Layers, UserCheck
 } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import AgentAvatar from "./AgentAvatar";
@@ -24,6 +24,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   // 🟢 1. Active Modules & Main Agents (Always Visible)
+  { href: "/mi-portal",      label: "Meu Portal (Habits & Ivy)", icon: <UserCheck size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.25)",  group: "active" },
   { href: "/venu",           label: "Venu",                           icon: <Sun size={16} />,                             accent: "#22d3ee", dim: "rgba(34,211,238,0.16)", group: "active" },
   { href: "/",               label: "Mission Control",                icon: <LayoutGrid size={16} />,                      accent: "#22c55e", dim: "rgba(34,197,94,0.16)",  group: "active" },
   { href: "/agent-kanban",   label: "Multi-Squad Kanban",             icon: <Kanban size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
