@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import TopBar from "@/components/TopBar";
 import {
   TrendingUp,
   FileText,
@@ -193,15 +191,9 @@ export default function ProductivityPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#050c06] text-white">
-      <Sidebar />
-
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <TopBar />
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#162e18] pb-4">
+    <div className="space-y-6 text-white font-sans">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#162e18] pb-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">
@@ -411,8 +403,6 @@ export default function ProductivityPage() {
               )}
             </div>
           </div>
-        </main>
-      </div>
 
       {/* New File Modal */}
       {showNewModal && (
