@@ -25,6 +25,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   // 🟢 1. Active Modules & Main Agents (Always Visible)
   { href: "/mi-portal",      label: "Meu Portal (Habits & Ivy)", icon: <UserCheck size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.25)",  group: "active" },
+  { href: "/productivity",   label: "Productivity",                   icon: <TrendingUp size={16} />,                      accent: "#10b981", dim: "rgba(16,185,129,0.25)",  group: "active" },
   { href: "/venu",           label: "Venu",                           icon: <Sun size={16} />,                             accent: "#22d3ee", dim: "rgba(34,211,238,0.16)", group: "active" },
   { href: "/",               label: "Mission Control",                icon: <LayoutGrid size={16} />,                      accent: "#22c55e", dim: "rgba(34,197,94,0.16)",  group: "active" },
   { href: "/agent-kanban",   label: "Multi-Squad Kanban",             icon: <Kanban size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },

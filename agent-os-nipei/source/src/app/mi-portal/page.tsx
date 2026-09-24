@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, Calendar as CalendarIcon } from "lucide-react";
 import { INITIAL_MEMBERS, MemberProfile } from "@/lib/nipeiStore";
 import PortalHeader from "@/components/portal/PortalHeader";
+import RadialMenuButton from "@/components/portal/RadialMenuButton";
 
 export default function MiPortalPage() {
   const [members, setMembers] = useState<MemberProfile[]>(INITIAL_MEMBERS);
@@ -81,7 +82,7 @@ export default function MiPortalPage() {
 
           {/* Big Digital Clock */}
           <div className="font-mono font-black text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-white via-emerald-100 to-emerald-400/80 tracking-tighter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] py-2 select-none">
-            {timeStr || "19:02:09"}
+            {timeStr || "19:24:58"}
           </div>
 
           {/* Full Formatted Date */}
@@ -155,10 +156,15 @@ export default function MiPortalPage() {
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. FOOTER DISCRETO
+          3. BOTÓN Y MENÚ RADIAL AISLADO CIRCULAR ESTILO HUD / APP (6 ÍCONOS)
+         ───────────────────────────────────────────────────────────── */}
+      <RadialMenuButton menuTitle="NIPËI MENU" />
+
+      {/* ─────────────────────────────────────────────────────────────
+          4. FOOTER DISCRETO
          ───────────────────────────────────────────────────────────── */}
       <footer className="w-full py-3 border-t border-[#122414] text-center text-[11px] text-slate-500 font-mono">
-        Nipëi OS • Portal Header Aislado v1.0
+        Nipëi OS • Radial HUD Menu Button UI v1.0
       </footer>
     </div>
   );
