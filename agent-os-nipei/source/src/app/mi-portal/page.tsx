@@ -24,6 +24,8 @@ import InicioTimeline from "@/components/portal/InicioTimeline";
 import CreateOrbModal from "@/components/portal/CreateOrbModal";
 import DateNavigator from "@/components/portal/DateNavigator";
 import GlobalActivityMatrix from "@/components/portal/GlobalActivityMatrix";
+import TimeBudgetWidget from "@/components/portal/TimeBudgetWidget";
+import TimeConfigModal, { TimeConfigSettings } from "@/components/portal/TimeConfigModal";
 
 // ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH MANDATORY SYSTEM ORBS & CUSTOM ORBS)
 const ALL_ORBS: OrbData[] = [
@@ -411,6 +413,16 @@ export default function MiPortalPage() {
   // Date Navigation State
   const [selectedDate, setSelectedDate] = useState<string>("2026-09-24");
 
+  // Time Capacity Budget Settings State
+  const [isTimeModalOpen, setIsTimeModalOpen] = useState<boolean>(false);
+  const [timeSettings, setTimeSettings] = useState<TimeConfigSettings>({
+    wakeTime: "07:00",
+    sleepTime: "23:00",
+    maxWorkHours: 8,
+    maxPersonalHours: 6,
+    bufferHours: 2,
+  });
+
   // Clock State
   const [timeStr, setTimeStr] = useState<string>("");
   const [dateStr, setDateStr] = useState<string>("");
@@ -526,6 +538,13 @@ export default function MiPortalPage() {
         
         {/* GLOBAL DATE NAVIGATOR (MULTI-DAY SELECTION & HISTORY CAROUSEL) */}
         <DateNavigator selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+
+        {/* TIME BUDGET & OVERLOAD CAPACITY CONTROL WIDGET */}
+        <TimeBudgetWidget
+          orbs={orbs}
+          settings={timeSettings}
+          onOpenConfig={() => setIsTimeModalOpen(true)}
+        />
 
         {/* TOP SELECTOR TOGGLE HEADER */}
         <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#080b12]/95 border border-white/15 rounded-2xl p-4 sm:p-5 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
@@ -758,6 +777,13 @@ export default function MiPortalPage() {
         onClose={() => setIsCreateModalOpen(false)}
         onCreateOrb={handleCreateOrb}
         defaultScope={activeScope === "empresa" ? "empresa" : "personal"}
+      />
+
+      <TimeConfigModal
+        isOpen={isTimeModalOpen}
+        onClose={() => setIsTimeModalOpen(false)}
+        settings={timeSettings}
+        onSaveSettings={setTimeSettings}
       />
 
       {/* ─────────────────────────────────────────────────────────────

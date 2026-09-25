@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles, Lock, Flame, Check } from "lucide-react";
+import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles, Lock, Flame, Check, AlertTriangle } from "lucide-react";
 
 export interface FlowStepItem {
   id: string;
@@ -60,25 +60,46 @@ function getOrbMiniHistory(orbId: string) {
   });
 }
 
+// Time budget helper for individual orb
+function getOrbTimeframeMinutes(timeframe: string): number {
+  if (!timeframe.includes(" - ")) return 90;
+  const [start, end] = timeframe.split(" - ");
+  const [sH, sM] = start.split(":").map(Number);
+  const [eH, eM] = end.split(":").map(Number);
+  if (isNaN(sH) || isNaN(eH)) return 90;
+  let startMin = sH * 60 + (sM || 0);
+  let endMin = eH * 60 + (eM || 0);
+  if (endMin <= startMin) endMin += 24 * 60;
+  return endMin - startMin;
+}
+
 export default function OrbItem({ orb, onClick }: OrbItemProps) {
   const isCompleted = orb.status === "concluido";
   const isInProgress = orb.status === "en_curso";
   const miniHistory = getOrbMiniHistory(orb.id);
   const orbStreak = (orb.id.length * 3) % 12 + 4;
 
+  // Time budget calculation for this specific Orb
+  const timeframeMin = getOrbTimeframeMinutes(orb.timeframe);
+  const tasksEstMin = orb.flowSteps.length * 35; // 35 min per task average
+  const isTimeOverloaded = tasksEstMin > timeframeMin;
+  const overloadDiffMin = tasksEstMin - timeframeMin;
+
   return (
     <div
       onClick={() => onClick(orb)}
-      className="group relative cursor-pointer select-none flex flex-col items-center justify-between p-5 rounded-3xl backdrop-blur-xl bg-[#090b10]/80 border transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-2xl overflow-hidden min-h-[300px]"
+      className={`group relative cursor-pointer select-none flex flex-col items-center justify-between p-5 rounded-3xl backdrop-blur-xl bg-[#090b10]/80 border transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-2xl overflow-hidden min-h-[310px] ${
+        isTimeOverloaded ? "border-rose-500/60 shadow-[0_0_20px_rgba(244,63,94,0.2)]" : ""
+      }`}
       style={{
-        borderColor: orb.colorTheme.border,
-        boxShadow: `0 10px 30px -10px ${orb.colorTheme.glow}`,
+        borderColor: isTimeOverloaded ? undefined : orb.colorTheme.border,
+        boxShadow: isTimeOverloaded ? undefined : `0 10px 30px -10px ${orb.colorTheme.glow}`,
       }}
     >
       {/* Background Radial Glow Effect */}
       <div
         className="absolute -top-12 -left-12 w-40 h-40 rounded-full blur-3xl opacity-30 group-hover:opacity-60 transition-opacity pointer-events-none"
-        style={{ backgroundColor: orb.colorTheme.primary }}
+        style={{ backgroundColor: isTimeOverloaded ? "#f43f5e" : orb.colorTheme.primary }}
       />
 
       {/* Mandatory Lock Icon if protected */}
@@ -91,8 +112,18 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
         </div>
       )}
 
+      {/* Overload Alert Badge on Top Left */}
+      {isTimeOverloaded && (
+        <div className="absolute top-3 left-3 z-20">
+          <span className="px-2 py-0.5 rounded-full bg-rose-950/90 border border-rose-500/60 text-rose-300 text-[9px] font-mono font-bold flex items-center gap-1 animate-pulse shadow-lg">
+            <AlertTriangle size={10} />
+            <span>+{overloadDiffMin}m EXCEDIDO</span>
+          </span>
+        </div>
+      )}
+
       {/* Top Bar: Timeframe & Status Badge */}
-      <div className="w-full flex items-center justify-between z-10 text-[11px] font-mono pr-4">
+      <div className={`w-full flex items-center justify-between z-10 text-[11px] font-mono pr-4 ${isTimeOverloaded ? "mt-4" : ""}`}>
         <span className="px-2.5 py-1 rounded-full bg-black/60 border border-white/10 text-slate-300 flex items-center gap-1.5">
           <Clock size={11} className="text-slate-400" />
           <span>{orb.timeframe}</span>
@@ -127,8 +158,12 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
             isInProgress ? "animate-pulse" : ""
           }`}
           style={{
-            background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.4), ${orb.colorTheme.primary} 60%, rgba(0,0,0,0.9))`,
-            boxShadow: `0 0 40px ${orb.colorTheme.glow}, inset 0 0 20px rgba(255,255,255,0.3)`,
+            background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.4), ${
+              isTimeOverloaded ? "#f43f5e" : orb.colorTheme.primary
+            } 60%, rgba(0,0,0,0.9))`,
+            boxShadow: `0 0 40px ${
+              isTimeOverloaded ? "rgba(244,63,94,0.4)" : orb.colorTheme.glow
+            }, inset 0 0 20px rgba(255,255,255,0.3)`,
           }}
         >
           {/* Internal Liquid Sheen Ring */}
@@ -156,7 +191,7 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
               cx="64"
               cy="64"
               r="58"
-              stroke={orb.colorTheme.primary}
+              stroke={isTimeOverloaded ? "#f43f5e" : orb.colorTheme.primary}
               strokeWidth="4"
               fill="transparent"
               strokeDasharray="364"
