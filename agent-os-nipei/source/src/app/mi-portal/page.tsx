@@ -13,6 +13,7 @@ import {
   Bot,
   Home,
   Layers,
+  Plus,
 } from "lucide-react";
 import { INITIAL_MEMBERS, MemberProfile } from "@/lib/nipeiStore";
 import PortalHeader from "@/components/portal/PortalHeader";
@@ -20,8 +21,9 @@ import RadialMenuButton from "@/components/portal/RadialMenuButton";
 import OrbItem, { OrbData } from "@/components/portal/OrbItem";
 import OrbDetailModal from "@/components/portal/OrbDetailModal";
 import InicioTimeline from "@/components/portal/InicioTimeline";
+import CreateOrbModal from "@/components/portal/CreateOrbModal";
 
-// ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH EDITABLE TASKS)
+// ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH MANDATORY SYSTEM ORBS & CUSTOM ORBS)
 const ALL_ORBS: OrbData[] = [
   // ─── 1. PERSONAL - FLUJO DIARIO ──────────────────────────────────────────
   {
@@ -52,6 +54,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "p1_3", step: "Conexión con valores fundamentales (¿Por qué hago lo que hago?)", completed: true, methodologyTag: "Hexaflex / ACT" },
     ],
     notes: "Hoy me desperté con excelente energía. Rutina matinal cumplida sin apuros.",
+    isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
   },
   {
     id: "p_enfoque",
@@ -86,6 +89,7 @@ const ALL_ORBS: OrbData[] = [
       target: 120,
       unit: "min",
     },
+    isMandatory: false,
   },
   {
     id: "p_pausa",
@@ -113,6 +117,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "p3_1", step: "Desconexión total de pantallas durante el almuerzo", completed: true, methodologyTag: "Estoicismo" },
       { id: "p3_2", step: "Evaluación de dicotomía del control (lo que está en mi poder)", completed: true, methodologyTag: "Estoicismo" },
     ],
+    isMandatory: false,
   },
   {
     id: "p_hobbies",
@@ -140,6 +145,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "p4_1", step: "Caminata al aire libre / ejercicio suave", completed: false, methodologyTag: "Cronobiología" },
       { id: "p4_2", step: "Escuchar música / tocar instrumento acústico", completed: false, methodologyTag: "Recarga" },
     ],
+    isMandatory: false,
   },
   {
     id: "p_cierre",
@@ -167,6 +173,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "p5_1", step: "Ritual de apagado de dispositivos", completed: false, methodologyTag: "Ritual Apagado" },
       { id: "p5_2", step: "Presencia plena en el hogar y naturaleza", completed: false, methodologyTag: "ACT / Hexaflex" },
     ],
+    isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
   },
 
   // ─── 2. PERSONAL - ÁREAS DE VIDA ──────────────────────────────────────────
@@ -197,6 +204,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "ps2", step: "Hidratación constante (3L de agua diario)", completed: true, methodologyTag: "Bio-Opt" },
       { id: "ps3", step: "Cena ligera 3h antes de dormir", completed: false, methodologyTag: "Cronobiología" },
     ],
+    isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
   },
   {
     id: "p_desarrollo",
@@ -224,6 +232,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "pd1", step: "Lectura de 30 páginas de filosofía / tecnología", completed: true, methodologyTag: "Lectura" },
       { id: "pd2", step: "Sintetizar 1 nota de aprendizaje en nipei-vault", completed: true, methodologyTag: "PARA" },
     ],
+    isMandatory: false,
   },
 
   // ─── 3. EMPRESA - FLUJO DIARIO ───────────────────────────────────────────
@@ -253,6 +262,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "em1", step: "Revisión de propósito de la empresa y squad active", completed: true, methodologyTag: "Autoliderazgo" },
       { id: "em2", step: "Preparación de energía para el bloque de desarrollo", completed: true, methodologyTag: "IE" },
     ],
+    isMandatory: false,
   },
   {
     id: "e_ejecucion",
@@ -287,6 +297,7 @@ const ALL_ORBS: OrbData[] = [
       target: 5,
       unit: "deploys",
     },
+    isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
   },
   {
     id: "e_triaje",
@@ -316,6 +327,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "et3", step: "Decisión Eisenhower: ¿Hacer ahora o delegar a subagente?", completed: true, methodologyTag: "Eisenhower" },
       { id: "et4", step: "Almacenamiento directo de docs/scripts en el Vault", completed: true, methodologyTag: "PARA" },
     ],
+    isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
   },
   {
     id: "e_soltaoverbo",
@@ -343,6 +355,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "sv1", step: "Auditoría estricta de tipografía y regla minúsculas", completed: true, methodologyTag: "Design UI" },
       { id: "sv2", step: "Sincronización de nota viva en Clientes/Solta o Verbo.md", completed: true, methodologyTag: "Vault" },
     ],
+    isMandatory: false,
   },
   {
     id: "e_squad_gov",
@@ -370,6 +383,7 @@ const ALL_ORBS: OrbData[] = [
       { id: "sg1", step: "Auditoría de 12 notas de metodología 0.1", completed: true, methodologyTag: "Audit" },
       { id: "sg2", step: "Verificación de firmas <!-- agente: vaultkeeper -->", completed: true, methodologyTag: "Vault Contract" },
     ],
+    isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
   },
 ];
 
@@ -388,6 +402,9 @@ export default function MiPortalPage() {
 
   // Modal State for inspecting inside an Orb
   const [selectedOrb, setSelectedOrb] = useState<OrbData | null>(null);
+
+  // Modal State for creating a new Orb
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
   // Clock State
   const [timeStr, setTimeStr] = useState<string>("");
@@ -432,12 +449,25 @@ export default function MiPortalPage() {
 
   const currentMember = members.find((m) => m.id === selectedMemberId) || members[0];
 
-  // Handler: Update Orb from Modal (edit tasks, add tasks, delete tasks, notes, lead measure)
+  // Handler: Update Orb from Modal
   const handleUpdateOrb = (updatedOrb: OrbData) => {
     setOrbs((prevOrbs) =>
       prevOrbs.map((o) => (o.id === updatedOrb.id ? updatedOrb : o))
     );
     setSelectedOrb(updatedOrb);
+  };
+
+  // Handler: Create new Orb
+  const handleCreateOrb = (newOrb: OrbData) => {
+    setOrbs((prevOrbs) => [newOrb, ...prevOrbs]);
+    // Switch scope & subCategory to match new Orb
+    setActiveScope(newOrb.scope);
+    setActiveSubCategory(newOrb.subCategory);
+  };
+
+  // Handler: Delete Orb (Only for Non-mandatory Orbs)
+  const handleDeleteOrb = (orbId: string) => {
+    setOrbs((prevOrbs) => prevOrbs.filter((o) => o.id !== orbId));
   };
 
   // Handler: Toggle step directly from Inicio Timeline by OrbId & StepId
@@ -489,7 +519,7 @@ export default function MiPortalPage() {
          ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 space-y-8">
         
-        {/* TOP SELECTOR TOGGLE HEADER (DESIGN MEJORADO CON GLASSMORPHISM ELEVADO) */}
+        {/* TOP SELECTOR TOGGLE HEADER */}
         <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#080b12]/95 border border-white/15 rounded-2xl p-4 sm:p-5 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-900/80 to-cyan-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-md">
@@ -505,43 +535,54 @@ export default function MiPortalPage() {
             </div>
           </div>
 
-          {/* FUTURISTIC 3-TAB PILL SWITCHER */}
-          <div className="flex items-center p-1.5 bg-[#030509]/90 border border-white/15 rounded-2xl shadow-inner">
+          <div className="flex items-center gap-3">
+            {/* BUTTON TO OPEN CREATE ORB MODAL */}
             <button
-              onClick={() => handleScopeChange("inicio")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
-                activeScope === "inicio"
-                  ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/50"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-1.5 border border-emerald-400/40"
             >
-              <Home size={15} />
-              <span>Inicio</span>
+              <Plus size={15} />
+              <span>Crear Orbe</span>
             </button>
 
-            <button
-              onClick={() => handleScopeChange("personal")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
-                activeScope === "personal"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <User size={15} />
-              <span>Personal</span>
-            </button>
+            {/* FUTURISTIC 3-TAB PILL SWITCHER */}
+            <div className="flex items-center p-1.5 bg-[#030509]/90 border border-white/15 rounded-2xl shadow-inner">
+              <button
+                onClick={() => handleScopeChange("inicio")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
+                  activeScope === "inicio"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/50"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Home size={15} />
+                <span>Inicio</span>
+              </button>
 
-            <button
-              onClick={() => handleScopeChange("empresa")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
-                activeScope === "empresa"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-purple-400/50"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              <Building2 size={15} />
-              <span>Empresa</span>
-            </button>
+              <button
+                onClick={() => handleScopeChange("personal")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
+                  activeScope === "personal"
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <User size={15} />
+                <span>Personal</span>
+              </button>
+
+              <button
+                onClick={() => handleScopeChange("empresa")}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
+                  activeScope === "empresa"
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-purple-400/50"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Building2 size={15} />
+                <span>Empresa</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -685,12 +726,20 @@ export default function MiPortalPage() {
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. MODAL DE INSPECCIÓN INTERNA DEL ORBE ("VER DENTRO")
+          3. MODALES: DETALLE / EDICIÓN & CREACIÓN DE ORBE CON IA
          ───────────────────────────────────────────────────────────── */}
       <OrbDetailModal
         orb={selectedOrb}
         onClose={() => setSelectedOrb(null)}
         onUpdateOrb={handleUpdateOrb}
+        onDeleteOrb={handleDeleteOrb}
+      />
+
+      <CreateOrbModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreateOrb={handleCreateOrb}
+        defaultScope={activeScope === "empresa" ? "empresa" : "personal"}
       />
 
       {/* ─────────────────────────────────────────────────────────────
@@ -702,7 +751,7 @@ export default function MiPortalPage() {
           5. FOOTER DISCRETO
          ───────────────────────────────────────────────────────────── */}
       <footer className="w-full py-3 border-t border-white/5 text-center text-[11px] text-slate-500 font-mono">
-        Nipëi OS • Pestaña Inicio & Cronograma Paso a Paso de Orbes v3.1
+        Nipëi OS • Creación & Edición de Orbes Asistida por IA v3.2
       </footer>
     </div>
   );

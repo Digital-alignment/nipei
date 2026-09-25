@@ -16,6 +16,8 @@ import {
   Target,
   FileText,
   Send,
+  Lock,
+  Edit3,
 } from "lucide-react";
 import { OrbData, FlowStepItem } from "./OrbItem";
 
@@ -23,16 +25,29 @@ interface OrbDetailModalProps {
   orb: OrbData | null;
   onClose: () => void;
   onUpdateOrb: (updatedOrb: OrbData) => void;
+  onDeleteOrb?: (orbId: string) => void;
 }
 
-export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailModalProps) {
+export default function OrbDetailModal({
+  orb,
+  onClose,
+  onUpdateOrb,
+  onDeleteOrb,
+}: OrbDetailModalProps) {
   if (!orb) return null;
+
+  // Edit Orb details state (Title, Subtitle, Description, Timeframe)
+  const [isEditingOrb, setIsEditingOrb] = useState<boolean>(false);
+  const [orbTitle, setOrbTitle] = useState<string>(orb.title);
+  const [orbSubtitle, setOrbSubtitle] = useState<string>(orb.subtitle);
+  const [orbTimeframe, setOrbTimeframe] = useState<string>(orb.timeframe);
+  const [orbDescription, setOrbDescription] = useState<string>(orb.description);
 
   // New task form state
   const [newTaskText, setNewTaskText] = useState<string>("");
   const [newTaskTag, setNewTaskTag] = useState<string>("Ivy Lee");
 
-  // Editing state
+  // Editing task state
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<string>("");
 
@@ -41,10 +56,16 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
   const [agentResponse, setAgentResponse] = useState<string | null>(null);
 
   // Recalculate percent and status based on steps
-  const updateOrbSteps = (newSteps: FlowStepItem[], updatedLeadMeasure?: OrbData["leadMeasure"], updatedNotes?: string) => {
+  const updateOrbSteps = (
+    newSteps: FlowStepItem[],
+    updatedLeadMeasure?: OrbData["leadMeasure"],
+    updatedNotes?: string
+  ) => {
     const completedCount = newSteps.filter((s) => s.completed).length;
-    const newPercent = newSteps.length > 0 ? Math.round((completedCount / newSteps.length) * 100) : 0;
-    const newStatus = newPercent === 100 ? "concluido" : newPercent > 0 ? "en_curso" : "pendiente";
+    const newPercent =
+      newSteps.length > 0 ? Math.round((completedCount / newSteps.length) * 100) : 0;
+    const newStatus =
+      newPercent === 100 ? "concluido" : newPercent > 0 ? "en_curso" : "pendiente";
 
     const updatedOrb: OrbData = {
       ...orb,
@@ -56,6 +77,23 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
     };
 
     onUpdateOrb(updatedOrb);
+  };
+
+  // Save Orb Header Info edits (Only allowed for NON-mandatory Orbs)
+  const handleSaveOrbInfo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (orb.isMandatory) return; // Protected
+
+    const updatedOrb: OrbData = {
+      ...orb,
+      title: orbTitle.trim() || orb.title,
+      subtitle: orbSubtitle.trim() || orb.subtitle,
+      timeframe: orbTimeframe.trim() || orb.timeframe,
+      description: orbDescription.trim() || orb.description,
+    };
+
+    onUpdateOrb(updatedOrb);
+    setIsEditingOrb(false);
   };
 
   // Handler: Toggle step completed
@@ -108,7 +146,10 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
   // Handler: Adjust Lead Measure counter
   const handleAdjustLeadMeasure = (delta: number) => {
     if (!orb.leadMeasure) return;
-    const newCurrent = Math.max(0, Math.min(orb.leadMeasure.target, orb.leadMeasure.current + delta));
+    const newCurrent = Math.max(
+      0,
+      Math.min(orb.leadMeasure.target, orb.leadMeasure.current + delta)
+    );
     const updatedLead = { ...orb.leadMeasure, current: newCurrent };
     updateOrbSteps(orb.flowSteps, updatedLead);
   };
@@ -124,7 +165,7 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
     if (!agentPrompt.trim()) return;
 
     setAgentResponse(
-      `🤖 Instrucción enviada a ${orb.activeAgents[0] || "@vaultkeeper"}: "${agentPrompt}". El agente ha sincronizado las notas en el Vault.`
+      `🤖 Instrucción enviada a ${orb.activeAgents[0] || "@vaultkeeper"}: "${agentPrompt}". El agente ha sincronizado el progreso.`
     );
     setAgentPrompt("");
   };
@@ -138,7 +179,7 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
           boxShadow: `0 20px 60px -15px ${orb.colorTheme.glow}`,
         }}
       >
-        {/* Ambient Background Aura */}
+        {/* Background Ambient Aura */}
         <div
           className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
           style={{ backgroundColor: orb.colorTheme.primary }}
@@ -159,7 +200,7 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white/10 text-slate-300">
                   {orb.phaseCategory}
                 </span>
@@ -167,6 +208,18 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
                   <Clock size={11} />
                   {orb.timeframe}
                 </span>
+
+                {/* Protection / Mandatory Badge */}
+                {orb.isMandatory ? (
+                  <span className="text-[10px] font-mono font-bold text-amber-300 px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 flex items-center gap-1">
+                    <Lock size={10} />
+                    <span>OBLIGATORIO DEL SISTEMA</span>
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono font-bold text-cyan-300 px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40">
+                    PERSONALIZADO (EDITABLE)
+                  </span>
+                )}
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight mt-0.5">
                 {orb.title}
@@ -174,35 +227,125 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition border border-white/10"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Edit / Delete Orb buttons for NON-mandatory Orbs */}
+            {!orb.isMandatory && !isEditingOrb && (
+              <>
+                <button
+                  onClick={() => setIsEditingOrb(true)}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 transition border border-white/10"
+                  title="Editar datos principales del Orbe"
+                >
+                  <Edit3 size={15} />
+                </button>
+
+                {onDeleteOrb && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Eliminar el Orbe "${orb.title}"?`)) {
+                        onDeleteOrb(orb.id);
+                        onClose();
+                      }
+                    }}
+                    className="p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 transition border border-rose-500/30"
+                    title="Eliminar Orbe"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
+              </>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition border border-white/10"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto py-5 space-y-6 relative z-10 pr-1">
-          {/* Description & Status Banner */}
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start justify-between gap-4">
-            <div>
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                Objetivo & Enfoque Metodológico
+          {/* Inline Edit Form for Non-Mandatory Orbs */}
+          {isEditingOrb && !orb.isMandatory ? (
+            <form onSubmit={handleSaveOrbInfo} className="p-4 rounded-2xl bg-black/60 border border-cyan-500/40 space-y-3">
+              <h4 className="text-xs font-bold text-cyan-300 uppercase tracking-wider">
+                Editar Datos Principales del Orbe
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {orb.description}
-              </p>
+              <div>
+                <label className="text-[10px] font-mono text-slate-400 uppercase">Título</label>
+                <input
+                  type="text"
+                  value={orbTitle}
+                  onChange={(e) => setOrbTitle(e.target.value)}
+                  className="w-full bg-black border border-white/20 text-xs text-white rounded-lg px-3 py-1.5"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-mono text-slate-400 uppercase">Subtítulo</label>
+                <input
+                  type="text"
+                  value={orbSubtitle}
+                  onChange={(e) => setOrbSubtitle(e.target.value)}
+                  className="w-full bg-black border border-white/20 text-xs text-white rounded-lg px-3 py-1.5"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-mono text-slate-400 uppercase">Franja Horaria / Horario</label>
+                <input
+                  type="text"
+                  value={orbTimeframe}
+                  onChange={(e) => setOrbTimeframe(e.target.value)}
+                  className="w-full bg-black border border-white/20 text-xs text-white rounded-lg px-3 py-1.5 font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-mono text-slate-400 uppercase">Descripción</label>
+                <textarea
+                  rows={2}
+                  value={orbDescription}
+                  onChange={(e) => setOrbDescription(e.target.value)}
+                  className="w-full bg-black border border-white/20 text-xs text-white rounded-lg p-2 font-mono"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingOrb(false)}
+                  className="px-3 py-1 rounded bg-white/10 text-xs text-slate-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1 rounded bg-cyan-600 text-white font-bold text-xs"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          ) : (
+            /* Description & Status Banner */
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Objetivo & Enfoque Metodológico
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {orb.description}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="text-xs font-mono font-bold text-white block">
+                  {orb.progressPercent}% Concluido
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                  Estado: {orb.status.replace("_", " ")}
+                </span>
+              </div>
             </div>
-            <div className="shrink-0 text-right">
-              <span className="text-xs font-mono font-bold text-white block">
-                {orb.progressPercent}% Concluido
-              </span>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">
-                Estado: {orb.status.replace("_", " ")}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Active Methodologies Badges */}
           <div>
@@ -264,7 +407,7 @@ export default function OrbDetailModal({ orb, onClose, onUpdateOrb }: OrbDetailM
                 Tareas & Pasos del Orbe ({orb.flowSteps.length})
               </h4>
               <span className="text-[11px] font-mono text-slate-400">
-                Puedes agregar o editar tareas
+                Puedes agregar o editar tareas en cualquier Orbe
               </span>
             </div>
 

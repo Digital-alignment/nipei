@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles, Lock } from "lucide-react";
 
 export interface FlowStepItem {
   id: string;
@@ -17,7 +17,7 @@ export interface OrbData {
   timeframe: string;
   phaseCategory: string;
   scope: "personal" | "empresa";
-  subCategory: string;
+  subCategory: string; // "flujo_diario" | "areas_vida" | "hobbies_filosofia" | "clientes_da" | "productos_propios" | "squads_infra"
   status: "concluido" | "en_curso" | "pendiente";
   progressPercent: number;
   methodologies: string[];
@@ -40,6 +40,7 @@ export interface OrbData {
     unit: string;
   };
   notes?: string;
+  isMandatory?: boolean; // Protected system Orbs
 }
 
 interface OrbItemProps {
@@ -67,8 +68,18 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
         style={{ backgroundColor: orb.colorTheme.primary }}
       />
 
+      {/* Mandatory Lock Icon if protected */}
+      {orb.isMandatory && (
+        <div
+          className="absolute top-3 right-3 text-slate-400 opacity-60 group-hover:opacity-100 transition"
+          title="Orbe Obligatorio Protegido por el Sistema"
+        >
+          <Lock size={13} />
+        </div>
+      )}
+
       {/* Top Bar: Timeframe & Status Badge */}
-      <div className="w-full flex items-center justify-between z-10 text-[11px] font-mono">
+      <div className="w-full flex items-center justify-between z-10 text-[11px] font-mono pr-4">
         <span className="px-2.5 py-1 rounded-full bg-black/60 border border-white/10 text-slate-300 flex items-center gap-1.5">
           <Clock size={11} className="text-slate-400" />
           <span>{orb.timeframe}</span>
@@ -146,8 +157,8 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
 
       {/* Bottom Info: Title & Subtitle */}
       <div className="w-full text-center z-10 space-y-1">
-        <h3 className="text-sm font-bold text-white tracking-tight group-hover:text-emerald-300 transition-colors">
-          {orb.title}
+        <h3 className="text-sm font-bold text-white tracking-tight group-hover:text-emerald-300 transition-colors flex items-center justify-center gap-1.5">
+          <span>{orb.title}</span>
         </h3>
         <p className="text-xs text-slate-400 line-clamp-1">{orb.subtitle}</p>
 
