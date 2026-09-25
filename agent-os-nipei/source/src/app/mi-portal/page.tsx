@@ -22,6 +22,8 @@ import OrbItem, { OrbData } from "@/components/portal/OrbItem";
 import OrbDetailModal from "@/components/portal/OrbDetailModal";
 import InicioTimeline from "@/components/portal/InicioTimeline";
 import CreateOrbModal from "@/components/portal/CreateOrbModal";
+import DateNavigator from "@/components/portal/DateNavigator";
+import GlobalActivityMatrix from "@/components/portal/GlobalActivityMatrix";
 
 // ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH MANDATORY SYSTEM ORBS & CUSTOM ORBS)
 const ALL_ORBS: OrbData[] = [
@@ -406,6 +408,9 @@ export default function MiPortalPage() {
   // Modal State for creating a new Orb
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
+  // Date Navigation State
+  const [selectedDate, setSelectedDate] = useState<string>("2026-09-24");
+
   // Clock State
   const [timeStr, setTimeStr] = useState<string>("");
   const [dateStr, setDateStr] = useState<string>("");
@@ -519,6 +524,9 @@ export default function MiPortalPage() {
          ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 space-y-8">
         
+        {/* GLOBAL DATE NAVIGATOR (MULTI-DAY SELECTION & HISTORY CAROUSEL) */}
+        <DateNavigator selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+
         {/* TOP SELECTOR TOGGLE HEADER */}
         <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#080b12]/95 border border-white/15 rounded-2xl p-4 sm:p-5 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
           <div className="flex items-center gap-3.5">
@@ -586,13 +594,23 @@ export default function MiPortalPage() {
           </div>
         </section>
 
-        {/* CONDITIONALLY RENDER: INICIO TIMELINE VS ORBS CONSTELLATION */}
+        {/* CONDITIONALLY RENDER: INICIO TIMELINE & GLOBAL MATRIX VS ORBS CONSTELLATION */}
         {activeScope === "inicio" ? (
-          <InicioTimeline
-            orbs={orbs}
-            onToggleStep={handleToggleStepById}
-            timeStr={timeStr}
-          />
+          <div className="space-y-8 animate-fade-in">
+            {/* GLOBAL ACTIVITY MATRIX (METRICS, ORBS BREAKDOWN & 30D HEATMAP) */}
+            <GlobalActivityMatrix
+              orbs={orbs}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+
+            {/* PRESENT TIMELINE */}
+            <InicioTimeline
+              orbs={orbs}
+              onToggleStep={handleToggleStepById}
+              timeStr={timeStr}
+            />
+          </div>
         ) : (
           <>
             {/* HERO SECTION: RELOJ DIGITAL GRANDE & RESUMEN DE FASE ACTIVA */}

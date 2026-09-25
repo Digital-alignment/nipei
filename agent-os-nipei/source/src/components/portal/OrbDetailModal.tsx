@@ -18,6 +18,11 @@ import {
   Send,
   Lock,
   Edit3,
+  Flame,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Activity,
 } from "lucide-react";
 import { OrbData, FlowStepItem } from "./OrbItem";
 
@@ -26,6 +31,17 @@ interface OrbDetailModalProps {
   onClose: () => void;
   onUpdateOrb: (updatedOrb: OrbData) => void;
   onDeleteOrb?: (orbId: string) => void;
+}
+
+// Generate simple mock weekly activity history for detail modal
+function getOrbDetailHistory(orbId: string) {
+  let seed = 0;
+  for (let i = 0; i < orbId.length; i++) seed += orbId.charCodeAt(i);
+  const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  return dayNames.map((day, idx) => {
+    const completed = idx === 6 ? false : (seed * (idx + 1) * 23) % 100 > 30;
+    return { day, completed, percent: completed ? 100 : 0 };
+  });
 }
 
 export default function OrbDetailModal({
@@ -54,6 +70,12 @@ export default function OrbDetailModal({
   // Agent chat quick prompt state
   const [agentPrompt, setAgentPrompt] = useState<string>("");
   const [agentResponse, setAgentResponse] = useState<string | null>(null);
+
+  // Date selection inside modal
+  const [modalDate, setModalDate] = useState<string>("2026-09-24");
+
+  const orbHistory = getOrbDetailHistory(orb.id);
+  const orbStreak = (orb.id.length * 3) % 12 + 4;
 
   // Recalculate percent and status based on steps
   const updateOrbSteps = (
@@ -346,6 +368,49 @@ export default function OrbDetailModal({
               </div>
             </div>
           )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              CONTROL DE ACTIVIDAD DEL USUARIO & RACHA (INSPIRED BY REF IMAGES)
+             ───────────────────────────────────────────────────────────── */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0d1424] to-[#0a0f1d] border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Flame size={16} className="text-orange-400 animate-bounce" />
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Control de Actividad & Racha del Orbe
+                </h4>
+              </div>
+
+              <span className="px-2.5 py-0.5 rounded-full bg-orange-950/80 border border-orange-500/40 text-orange-300 font-mono text-[10px] font-bold">
+                RACHA: 🔥 {orbStreak} DÍAS SEGUIDOS
+              </span>
+            </div>
+
+            {/* Weekly 7-day pill grid (L M X J V S D) */}
+            <div className="grid grid-cols-7 gap-2 pt-1">
+              {orbHistory.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`p-2 rounded-xl border flex flex-col items-center justify-center transition-all ${
+                    item.completed
+                      ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                      : idx === 6
+                      ? "bg-cyan-950/60 border-cyan-400/50 text-cyan-300"
+                      : "bg-black/40 border-slate-800 text-slate-500"
+                  }`}
+                >
+                  <span className="text-[9px] font-mono uppercase">{item.day}</span>
+                  <div className="mt-1">
+                    {item.completed ? (
+                      <Check size={14} className="text-emerald-400" strokeWidth={3} />
+                    ) : (
+                      <span className="text-[10px] font-mono">--</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Active Methodologies Badges */}
           <div>

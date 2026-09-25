@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles, Lock } from "lucide-react";
+import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles, Lock, Flame, Check } from "lucide-react";
 
 export interface FlowStepItem {
   id: string;
@@ -49,14 +49,27 @@ interface OrbItemProps {
   index: number;
 }
 
+// Generate simple mock 7-day completion history for orb card
+function getOrbMiniHistory(orbId: string) {
+  let seed = 0;
+  for (let i = 0; i < orbId.length; i++) seed += orbId.charCodeAt(i);
+  const dayLabels = ["L", "M", "X", "J", "V", "S", "D"];
+  return dayLabels.map((day, idx) => {
+    const isCompleted = idx === 6 ? false : (seed * (idx + 1) * 19) % 100 > 30;
+    return { day, isCompleted };
+  });
+}
+
 export default function OrbItem({ orb, onClick }: OrbItemProps) {
   const isCompleted = orb.status === "concluido";
   const isInProgress = orb.status === "en_curso";
+  const miniHistory = getOrbMiniHistory(orb.id);
+  const orbStreak = (orb.id.length * 3) % 12 + 4;
 
   return (
     <div
       onClick={() => onClick(orb)}
-      className="group relative cursor-pointer select-none flex flex-col items-center justify-between p-5 rounded-3xl backdrop-blur-xl bg-[#090b10]/80 border transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-2xl overflow-hidden min-h-[260px]"
+      className="group relative cursor-pointer select-none flex flex-col items-center justify-between p-5 rounded-3xl backdrop-blur-xl bg-[#090b10]/80 border transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-2xl overflow-hidden min-h-[300px]"
       style={{
         borderColor: orb.colorTheme.border,
         boxShadow: `0 10px 30px -10px ${orb.colorTheme.glow}`,
@@ -89,7 +102,7 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
         {isCompleted && (
           <span className="px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 font-bold flex items-center gap-1">
             <CheckCircle2 size={12} className="text-emerald-400" />
-            <span>CONCLUÍDO (100%)</span>
+            <span>CONCLUÍDO</span>
           </span>
         )}
         {isInProgress && (
@@ -107,7 +120,7 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
       </div>
 
       {/* CENTRAL 3D GLOWING SPHERE / ORB UI */}
-      <div className="relative my-4 flex flex-col items-center justify-center">
+      <div className="relative my-3 flex flex-col items-center justify-center">
         {/* Outer Pulsing Aura Ring */}
         <div
           className={`w-28 h-28 rounded-full flex items-center justify-center relative transition-transform duration-500 group-hover:scale-110 ${
@@ -163,7 +176,7 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
         <p className="text-xs text-slate-400 line-clamp-1">{orb.subtitle}</p>
 
         {/* Methodologies Badges */}
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-1.5">
+        <div className="pt-1.5 flex flex-wrap items-center justify-center gap-1.5">
           {orb.methodologies.map((m, idx) => (
             <span
               key={idx}
@@ -175,8 +188,41 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
         </div>
       </div>
 
+      {/* ─────────────────────────────────────────────────────────────
+          MINI WEEKLY USER ACTIVITY STRIP & STREAK (IMAGE 2, 3 & 4)
+         ───────────────────────────────────────────────────────────── */}
+      <div className="w-full mt-3 pt-2.5 border-t border-white/10 z-10 flex items-center justify-between gap-2">
+        {/* Streak Flame Badge */}
+        <span
+          className="px-2 py-0.5 rounded-full bg-orange-950/80 border border-orange-500/40 text-orange-300 font-mono text-[10px] font-bold flex items-center gap-1 shrink-0"
+          title="Racha de constancia en este Orbe"
+        >
+          <Flame size={11} className="text-orange-400 fill-orange-400" />
+          <span>{orbStreak}d</span>
+        </span>
+
+        {/* 7-Day Dot Matrix Pill Strip (L M X J V S D) */}
+        <div className="flex items-center gap-1">
+          {miniHistory.map((item, idx) => (
+            <div
+              key={idx}
+              className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-mono font-bold transition-all ${
+                item.isCompleted
+                  ? "bg-emerald-500 text-black shadow-[0_0_6px_rgba(16,185,129,0.5)]"
+                  : idx === 6
+                  ? "bg-cyan-950 text-cyan-300 border border-cyan-400/50"
+                  : "bg-slate-800/80 text-slate-500 border border-slate-700/50"
+              }`}
+              title={`Día ${item.day}: ${item.isCompleted ? "Completado" : "Pendiente"}`}
+            >
+              {item.isCompleted ? <Check size={10} strokeWidth={3} /> : item.day}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Hover CTA Hint */}
-      <div className="w-full mt-3 pt-2 border-t border-white/10 text-[10px] font-mono text-center text-slate-400 group-hover:text-white transition flex items-center justify-center gap-1">
+      <div className="w-full mt-2 text-[10px] font-mono text-center text-slate-400 group-hover:text-white transition flex items-center justify-center gap-1">
         <span>Click para ver dentro del Orbe</span>
         <span>→</span>
       </div>
