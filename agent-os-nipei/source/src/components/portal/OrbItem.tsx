@@ -3,6 +3,13 @@
 import React from "react";
 import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles } from "lucide-react";
 
+export interface FlowStepItem {
+  id: string;
+  step: string;
+  completed: boolean;
+  methodologyTag: string;
+}
+
 export interface OrbData {
   id: string;
   title: string;
@@ -10,7 +17,7 @@ export interface OrbData {
   timeframe: string;
   phaseCategory: string;
   scope: "personal" | "empresa";
-  subCategory: string; // "flujo_diario" | "areas_vida" | "hobbies_filosofia" | "clientes_da" | "productos_propios" | "squads_infra"
+  subCategory: string;
   status: "concluido" | "en_curso" | "pendiente";
   progressPercent: number;
   methodologies: string[];
@@ -25,11 +32,14 @@ export interface OrbData {
   };
   iconName: string;
   description: string;
-  flowSteps: {
-    step: string;
-    completed: boolean;
-    methodologyTag: string;
-  }[];
+  flowSteps: FlowStepItem[];
+  leadMeasure?: {
+    label: string;
+    current: number;
+    target: number;
+    unit: string;
+  };
+  notes?: string;
 }
 
 interface OrbItemProps {

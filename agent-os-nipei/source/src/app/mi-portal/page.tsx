@@ -6,7 +6,6 @@ import {
   User,
   Building2,
   Sparkles,
-  Layers,
   HeartPulse,
   BookOpen,
   Users,
@@ -24,7 +23,7 @@ import RadialMenuButton from "@/components/portal/RadialMenuButton";
 import OrbItem, { OrbData } from "@/components/portal/OrbItem";
 import OrbDetailModal from "@/components/portal/OrbDetailModal";
 
-// ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION)
+// ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH EDITABLE TASKS)
 const ALL_ORBS: OrbData[] = [
   // ─── 1. PERSONAL - FLUJO DIARIO ──────────────────────────────────────────
   {
@@ -50,10 +49,11 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Sun",
     description: "Franja de recuperación biológica personal. Reservar energía y conectar con valores fundamentales antes de encender pantallas.",
     flowSteps: [
-      { step: "Rutina biológica matinal (Desayuno & Movimiento)", completed: true, methodologyTag: "Cronobiología" },
-      { step: "Identificación de estado de ánimo & autoconciencia", completed: true, methodologyTag: "Autoliderazgo" },
-      { step: "Conexión con valores fundamentales (¿Por qué hago lo que hago?)", completed: true, methodologyTag: "Hexaflex / ACT" },
+      { id: "p1_1", step: "Rutina biológica matinal (Desayuno & Movimiento)", completed: true, methodologyTag: "Cronobiología" },
+      { id: "p1_2", step: "Identificación de estado de ánimo & autoconciencia", completed: true, methodologyTag: "Autoliderazgo" },
+      { id: "p1_3", step: "Conexión con valores fundamentales (¿Por qué hago lo que hago?)", completed: true, methodologyTag: "Hexaflex / ACT" },
     ],
+    notes: "Hoy me desperté con excelente energía. Rutina matinal cumplida sin apuros.",
   },
   {
     id: "p_enfoque",
@@ -78,10 +78,16 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Brain",
     description: "Bloque de 90 a 120 minutos de foco ininterrumpido dedicado a metas personales (lectura, idiomas, salud o arte).",
     flowSteps: [
-      { step: "Selección de Top 3 objetivos de desarrollo personal", completed: true, methodologyTag: "Ivy Lee" },
-      { step: "Bloque de 90 min de estudio sin notificaciones", completed: true, methodologyTag: "Deep Work" },
-      { step: "Registro de avances en cuaderno personal", completed: false, methodologyTag: "Kaizen" },
+      { id: "p2_1", step: "Selección de Top 3 objetivos de desarrollo personal", completed: true, methodologyTag: "Ivy Lee" },
+      { id: "p2_2", step: "Bloque de 90 min de estudio sin notificaciones", completed: true, methodologyTag: "Deep Work" },
+      { id: "p2_3", step: "Registro de avances en cuaderno personal", completed: false, methodologyTag: "Kaizen" },
     ],
+    leadMeasure: {
+      label: "Minutos de Foco Profundo Registrados",
+      current: 90,
+      target: 120,
+      unit: "min",
+    },
   },
   {
     id: "p_pausa",
@@ -106,8 +112,8 @@ const ALL_ORBS: OrbData[] = [
     iconName: "ShieldAlert",
     description: "Desconexión deliberada de pantallas. Pausa estoica para evaluar el nivel de estrés y mantener equilibrio interno.",
     flowSteps: [
-      { step: "Desconexión total de pantallas durante el almuerzo", completed: true, methodologyTag: "Estoicismo" },
-      { step: "Evaluación de dicotomía del control (lo que está en mi poder)", completed: true, methodologyTag: "Estoicismo" },
+      { id: "p3_1", step: "Desconexión total de pantallas durante el almuerzo", completed: true, methodologyTag: "Estoicismo" },
+      { id: "p3_2", step: "Evaluación de dicotomía del control (lo que está en mi poder)", completed: true, methodologyTag: "Estoicismo" },
     ],
   },
   {
@@ -133,8 +139,8 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Sun",
     description: "Horas de menor energía biológica ideales para recargar baterías: salir a la naturaleza o tocar música.",
     flowSteps: [
-      { step: "Caminata al aire libre / ejercicio suave", completed: false, methodologyTag: "Cronobiología" },
-      { step: "Escuchar música / tocar instrumento acústico", completed: false, methodologyTag: "Recarga" },
+      { id: "p4_1", step: "Caminata al aire libre / ejercicio suave", completed: false, methodologyTag: "Cronobiología" },
+      { id: "p4_2", step: "Escuchar música / tocar instrumento acústico", completed: false, methodologyTag: "Recarga" },
     ],
   },
   {
@@ -160,8 +166,8 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Moon",
     description: "Dejar el trabajo atrás por completo. Estar 100% presente en la vida personal, noche de fogata y descanso.",
     flowSteps: [
-      { step: "Ritual de apagado de dispositivos", completed: false, methodologyTag: "Ritual Apagado" },
-      { step: "Presencia plena en el hogar y naturaleza", completed: false, methodologyTag: "ACT / Hexaflex" },
+      { id: "p5_1", step: "Ritual de apagado de dispositivos", completed: false, methodologyTag: "Ritual Apagado" },
+      { id: "p5_2", step: "Presencia plena en el hogar y naturaleza", completed: false, methodologyTag: "ACT / Hexaflex" },
     ],
   },
 
@@ -189,9 +195,9 @@ const ALL_ORBS: OrbData[] = [
     iconName: "HeartPulse",
     description: "Mantenimiento continuo de la energía física y corporal: rutina de ejercicios, hidratación y sueño reparador.",
     flowSteps: [
-      { step: "Entrenamiento físico o movilidad (45 min)", completed: true, methodologyTag: "Salud" },
-      { step: "Hidratación constante (3L de agua diario)", completed: true, methodologyTag: "Bio-Opt" },
-      { step: "Cena ligera 3h antes de dormir", completed: false, methodologyTag: "Cronobiología" },
+      { id: "ps1", step: "Entrenamiento físico o movilidad (45 min)", completed: true, methodologyTag: "Salud" },
+      { id: "ps2", step: "Hidratación constante (3L de agua diario)", completed: true, methodologyTag: "Bio-Opt" },
+      { id: "ps3", step: "Cena ligera 3h antes de dormir", completed: false, methodologyTag: "Cronobiología" },
     ],
   },
   {
@@ -217,122 +223,12 @@ const ALL_ORBS: OrbData[] = [
     iconName: "BookOpen",
     description: "Nutrición mental continua mediante la lectura activa y la toma de notas conceptuales en el Vault.",
     flowSteps: [
-      { step: "Lectura de 30 páginas de filosofía / tecnología", completed: true, methodologyTag: "Lectura" },
-      { step: "Sintetizar 1 nota de aprendizaje en nipei-vault", completed: true, methodologyTag: "PARA" },
-    ],
-  },
-  {
-    id: "p_vinculos",
-    title: "Vínculos & Familia",
-    subtitle: "Tiempo de calidad presencial sin notificaciones ni pantallas",
-    timeframe: "Área de Vida",
-    phaseCategory: "Área de Vida",
-    scope: "personal",
-    subCategory: "areas_vida",
-    status: "en_curso",
-    progressPercent: 50,
-    methodologies: ["ACT / Hexaflex", "Presencia Plena"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#ec4899",
-      border: "rgba(236, 72, 153, 0.4)",
-      glow: "rgba(236, 72, 153, 0.25)",
-      gradient: "from-pink-500/20 via-rose-950/40 to-black",
-      badgeBg: "bg-pink-950/80",
-      badgeText: "text-pink-300",
-    },
-    iconName: "Users",
-    description: "Cultivo consciente de las relaciones personales y familiares con foco de atención 100% libre de distracciones tecnológicas.",
-    flowSteps: [
-      { step: "Cena en familia sin teléfono en la mesa", completed: true, methodologyTag: "Presencia" },
-      { step: "Conversación de calidad & tiempo libre compartido", completed: false, methodologyTag: "Vínculos" },
-    ],
-  },
-  {
-    id: "p_finanzas_p",
-    title: "Salud Financiera Personal",
-    subtitle: "Presupuesto personal, patrimonio & control de gastos",
-    timeframe: "Área de Vida",
-    phaseCategory: "Área de Vida",
-    scope: "personal",
-    subCategory: "areas_vida",
-    status: "concluido",
-    progressPercent: 100,
-    methodologies: ["Control Financiero", "Kaizen"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#8b5cf6",
-      border: "rgba(139, 92, 246, 0.4)",
-      glow: "rgba(139, 92, 246, 0.25)",
-      gradient: "from-violet-500/20 via-purple-950/40 to-black",
-      badgeBg: "bg-violet-950/80",
-      badgeText: "text-violet-300",
-    },
-    iconName: "Wallet",
-    description: "Revisión sistemática de finanzas personales, reservas de emergencia y proyecciones de inversión.",
-    flowSteps: [
-      { step: "Registro semanal de egresos personales", completed: true, methodologyTag: "Finanzas" },
-      { step: "Revisión de meta de ahorro mensual", completed: true, methodologyTag: "Control" },
+      { id: "pd1", step: "Lectura de 30 páginas de filosofía / tecnología", completed: true, methodologyTag: "Lectura" },
+      { id: "pd2", step: "Sintetizar 1 nota de aprendizaje en nipei-vault", completed: true, methodologyTag: "PARA" },
     ],
   },
 
-  // ─── 3. PERSONAL - HOBBIES & FILOSOFÍA ─────────────────────────────────────
-  {
-    id: "p_musica_arte",
-    title: "Expresión Creativa & Música Acústica",
-    subtitle: "Práctica de instrumento musical & fogata al aire libre",
-    timeframe: "Filosofía",
-    phaseCategory: "Hobbies & Arte",
-    scope: "personal",
-    subCategory: "hobbies_filosofia",
-    status: "pendiente",
-    progressPercent: 0,
-    methodologies: ["Recarga Creativa", "Flow State"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#f59e0b",
-      border: "rgba(245, 158, 11, 0.4)",
-      glow: "rgba(245, 158, 11, 0.25)",
-      gradient: "from-amber-500/20 via-orange-950/40 to-black",
-      badgeBg: "bg-amber-950/80",
-      badgeText: "text-amber-300",
-    },
-    iconName: "Music",
-    description: "Espacio para la expresión del alma a través de la música acústica, instrumentos y fuego en la naturaleza.",
-    flowSteps: [
-      { step: "Sesión de guitarra / música acústica (45 min)", completed: false, methodologyTag: "Arte" },
-      { step: "Encedido de fogata y relajación", completed: false, methodologyTag: "Naturaleza" },
-    ],
-  },
-  {
-    id: "p_estoico_journal",
-    title: "Práctica Estoica & Journaling",
-    subtitle: "Diario de autorregulación & Dicotomía del Control",
-    timeframe: "Filosofía",
-    phaseCategory: "Hobbies & Arte",
-    scope: "personal",
-    subCategory: "hobbies_filosofia",
-    status: "concluido",
-    progressPercent: 100,
-    methodologies: ["Estoicismo Aplicado", "Journaling"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#06b6d4",
-      border: "rgba(6, 182, 212, 0.4)",
-      glow: "rgba(6, 182, 212, 0.25)",
-      gradient: "from-cyan-500/20 via-blue-950/40 to-black",
-      badgeBg: "bg-cyan-950/80",
-      badgeText: "text-cyan-300",
-    },
-    iconName: "Compass",
-    description: "Bitácora nocturna para evaluar las acciones del día bajo la ética estoica y soltar las preocupaciones externas.",
-    flowSteps: [
-      { step: "Revisión nocturna en diario personal", completed: true, methodologyTag: "Journaling" },
-      { step: "Reflexión estoica de agradecimiento y aprendizaje", completed: true, methodologyTag: "Estoicismo" },
-    ],
-  },
-
-  // ─── 4. EMPRESA - FLUJO DIARIO ───────────────────────────────────────────
+  // ─── 3. EMPRESA - FLUJO DIARIO ───────────────────────────────────────────
   {
     id: "e_matinal",
     title: "Al Despertar: Claridad & Alineación de Equipo",
@@ -356,8 +252,8 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Sun",
     description: "Preparación mental antes de tocar el código o revisar métricas corporativas.",
     flowSteps: [
-      { step: "Revisión de propósito de la empresa y squad active", completed: true, methodologyTag: "Autoliderazgo" },
-      { step: "Preparación de energía para el bloque de desarrollo", completed: true, methodologyTag: "IE" },
+      { id: "em1", step: "Revisión de propósito de la empresa y squad active", completed: true, methodologyTag: "Autoliderazgo" },
+      { id: "em2", step: "Preparación de energía para el bloque de desarrollo", completed: true, methodologyTag: "IE" },
     ],
   },
   {
@@ -383,10 +279,16 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Target",
     description: "Foco total en la Tarea #1 (Lead Measure del WIG): estructurar arquitectura de DB en Supabase o despliegue crítico en Vercel.",
     flowSteps: [
-      { step: "Sin correo ni mensajería al sentarse al escritorio", completed: true, methodologyTag: "Ivy Lee" },
-      { step: "Ejecución directa de la Tarea #1 conectada al WIG", completed: true, methodologyTag: "4DX" },
-      { step: "Bloque de 90-120 min de Deep Work sin interrupciones", completed: false, methodologyTag: "Deep Work" },
+      { id: "ee1", step: "Sin correo ni mensajería al sentarse al escritorio", completed: true, methodologyTag: "Ivy Lee" },
+      { id: "ee2", step: "Ejecución directa de la Tarea #1 conectada al WIG", completed: true, methodologyTag: "4DX" },
+      { id: "ee3", step: "Bloque de 90-120 min de Deep Work sin interrupciones", completed: false, methodologyTag: "Deep Work" },
     ],
+    leadMeasure: {
+      label: "Despliegues de Funcionalidad WIG Completados",
+      current: 4,
+      target: 5,
+      unit: "deploys",
+    },
   },
   {
     id: "e_triaje",
@@ -411,121 +313,10 @@ const ALL_ORBS: OrbData[] = [
     iconName: "ShieldAlert",
     description: "Revisión de canales post-foco. Alerta procesada con serenidad estoica, clasificada por triaje y guardada en el Vault.",
     flowSteps: [
-      { step: "Pausa estoica: separar lo que controlo de lo que no", completed: true, methodologyTag: "Estoicismo" },
-      { step: "Clasificación de severidad (Nivel 5 vs Nivel 1)", completed: true, methodologyTag: "Triaje" },
-      { step: "Decisión Eisenhower: ¿Hacer ahora o delegar a subagente?", completed: true, methodologyTag: "Eisenhower" },
-      { step: "Almacenamiento directo de docs/scripts en el Vault", completed: true, methodologyTag: "PARA" },
-    ],
-  },
-  {
-    id: "e_cadencia",
-    title: "Gestión Tarde: Cadencia 4DX & Créditos APIs",
-    subtitle: "Standup 15m, revisión tableros WIG & presupuesto OpenRouter",
-    timeframe: "14:00 - 17:00",
-    phaseCategory: "Gestión Tarde",
-    scope: "empresa",
-    subCategory: "flujo_diario",
-    status: "en_curso",
-    progressPercent: 40,
-    methodologies: ["Cronobiología Hora Valle", "Cadencia 4DX", "Agile Standup"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#8b5cf6",
-      border: "rgba(139, 92, 246, 0.4)",
-      glow: "rgba(139, 92, 246, 0.25)",
-      gradient: "from-violet-500/20 via-purple-950/40 to-black",
-      badgeBg: "bg-violet-950/80",
-      badgeText: "text-violet-300",
-    },
-    iconName: "Clock",
-    description: "Hora valle biológica destinada a reuniones de 15 min de prestacion de cuentas de WIG y control de costos de APIs de IA.",
-    flowSteps: [
-      { step: "Reunión de 15 min de revisión de tablero WIG", completed: true, methodologyTag: "4DX" },
-      { step: "Auditoría de consumo de créditos OpenRouter & infra", completed: false, methodologyTag: "Operación" },
-    ],
-  },
-  {
-    id: "e_cierre",
-    title: "Cierre Operativo: Kaizen PDCA & Apagado",
-    subtitle: "1% Mejora, 6 tareas Ivy Lee para mañana & 'Sistema Apagado'",
-    timeframe: "17:00 - 17:30",
-    phaseCategory: "Cierre & Desconexión",
-    scope: "empresa",
-    subCategory: "flujo_diario",
-    status: "pendiente",
-    progressPercent: 0,
-    methodologies: ["Kaizen / PDCA", "Ivy Lee Mañana", "Ritual Apagado"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#10b981",
-      border: "rgba(16, 185, 129, 0.4)",
-      glow: "rgba(16, 185, 129, 0.25)",
-      gradient: "from-emerald-500/20 via-teal-950/40 to-black",
-      badgeBg: "bg-emerald-950/80",
-      badgeText: "text-emerald-300",
-    },
-    iconName: "CheckCircle2",
-    description: "Evaluación de fricciones del día (Kaizen 1%), programación de 6 tareas de mañana y apagado del sistema.",
-    flowSteps: [
-      { step: "Evaluación de fricción del día (Plan de 1% mejora)", completed: false, methodologyTag: "Kaizen PDCA" },
-      { step: "Escritura de las 6 tareas Ivy Lee del día siguiente", completed: false, methodologyTag: "Ivy Lee" },
-      { step: "Ritual de apagado: 'Sistema apagado'", completed: false, methodologyTag: "Ritual Apagado" },
-    ],
-  },
-
-  // ─── 5. EMPRESA - CLIENTES EXTERNOS DA ───────────────────────────────────
-  {
-    id: "e_muv",
-    title: "Cliente: MUV Gráfica",
-    subtitle: "Mantenimiento web, VPS muv_vps & notas en Vault Clientes/",
-    timeframe: "Cliente DA",
-    phaseCategory: "Cliente DA",
-    scope: "empresa",
-    subCategory: "clientes_da",
-    status: "en_curso",
-    progressPercent: 85,
-    methodologies: ["Aislamiento VPS", "Vault Contract"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#f59e0b",
-      border: "rgba(245, 158, 11, 0.4)",
-      glow: "rgba(245, 158, 11, 0.25)",
-      gradient: "from-amber-500/20 via-orange-950/40 to-black",
-      badgeBg: "bg-amber-950/80",
-      badgeText: "text-amber-300",
-    },
-    iconName: "Briefcase",
-    description: "Mantenimiento y desarrollo para cliente MUV Gráfica en C:\\Users\\ondig\\Code\\DA\\muv-site con clave SSH muv_vps.",
-    flowSteps: [
-      { step: "Verificación de estabilidad en VPS dedicado (muv_vps)", completed: true, methodologyTag: "Infra" },
-      { step: "Actualización de nota viva en Clientes/MUV Gráfica.md", completed: true, methodologyTag: "Vault" },
-    ],
-  },
-  {
-    id: "e_oca_yary",
-    title: "Cliente: Oca Yary",
-    subtitle: "E-commerce, desarrollo de catálogo & notas en Clientes/",
-    timeframe: "Cliente DA",
-    phaseCategory: "Cliente DA",
-    scope: "empresa",
-    subCategory: "clientes_da",
-    status: "concluido",
-    progressPercent: 100,
-    methodologies: ["E-commerce", "Vault Sync"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#10b981",
-      border: "rgba(16, 185, 129, 0.4)",
-      glow: "rgba(16, 185, 129, 0.25)",
-      gradient: "from-emerald-500/20 via-teal-950/40 to-black",
-      badgeBg: "bg-emerald-950/80",
-      badgeText: "text-emerald-300",
-    },
-    iconName: "Briefcase",
-    description: "E-commerce y sitio corporativo Oca Yary registrado en C:\\Users\\ondig\\Code\\DA\\oca-yary.",
-    flowSteps: [
-      { step: "Despliegue de actualización de catálogo", completed: true, methodologyTag: "Deploy" },
-      { step: "Sincronización con Command Center", completed: true, methodologyTag: "Vault" },
+      { id: "et1", step: "Pausa estoica: separar lo que controlo de lo que no", completed: true, methodologyTag: "Estoicismo" },
+      { id: "et2", step: "Clasificación de severidad (Nivel 5 vs Nivel 1)", completed: true, methodologyTag: "Triaje" },
+      { id: "et3", step: "Decisión Eisenhower: ¿Hacer ahora o delegar a subagente?", completed: true, methodologyTag: "Eisenhower" },
+      { id: "et4", step: "Almacenamiento directo de docs/scripts en el Vault", completed: true, methodologyTag: "PARA" },
     ],
   },
   {
@@ -551,68 +342,10 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Briefcase",
     description: "Plataforma de alumnos para Solta o Verbo auditada bajo la skill solta-o-verbo-design-auditor y VPS soltaoverbo_vps.",
     flowSteps: [
-      { step: "Auditoría estricta de tipografía y regla minúsculas", completed: true, methodologyTag: "Design UI" },
-      { step: "Sincronización de nota viva en Clientes/Solta o Verbo.md", completed: true, methodologyTag: "Vault" },
+      { id: "sv1", step: "Auditoría estricta de tipografía y regla minúsculas", completed: true, methodologyTag: "Design UI" },
+      { id: "sv2", step: "Sincronización de nota viva en Clientes/Solta o Verbo.md", completed: true, methodologyTag: "Vault" },
     ],
   },
-
-  // ─── 6. EMPRESA - PRODUCTOS PROPIOS ──────────────────────────────────────
-  {
-    id: "e_event_master",
-    title: "Producto: Event Master",
-    subtitle: "Plataforma propia de gestión de eventos & notas Productos/",
-    timeframe: "Producto DA",
-    phaseCategory: "Producto Propio",
-    scope: "empresa",
-    subCategory: "productos_propios",
-    status: "en_curso",
-    progressPercent: 70,
-    methodologies: ["SaaS Architecture", "Vault Contract"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#06b6d4",
-      border: "rgba(6, 182, 212, 0.4)",
-      glow: "rgba(6, 182, 212, 0.25)",
-      gradient: "from-cyan-500/20 via-blue-950/40 to-black",
-      badgeBg: "bg-cyan-950/80",
-      badgeText: "text-cyan-300",
-    },
-    iconName: "Ticket",
-    description: "Producto propio de Digital Alignment para ticketing y control de eventos. Nota viva en Productos/Event Master.md.",
-    flowSteps: [
-      { step: "Refactorización de módulos de pago", completed: true, methodologyTag: "SaaS" },
-      { step: "Verificación de roadmap en Productos/Event Master.md", completed: false, methodologyTag: "Vault" },
-    ],
-  },
-  {
-    id: "e_rifa_basica",
-    title: "Producto: Rifa Básica",
-    subtitle: "Plataforma SaaS propia de rifas & notas en Productos/",
-    timeframe: "Producto DA",
-    phaseCategory: "Producto Propio",
-    scope: "empresa",
-    subCategory: "productos_propios",
-    status: "concluido",
-    progressPercent: 100,
-    methodologies: ["SaaS Architecture", "Vault Contract"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#8b5cf6",
-      border: "rgba(139, 92, 246, 0.4)",
-      glow: "rgba(139, 92, 246, 0.25)",
-      gradient: "from-violet-500/20 via-purple-950/40 to-black",
-      badgeBg: "bg-violet-950/80",
-      badgeText: "text-violet-300",
-    },
-    iconName: "Ticket",
-    description: "Producto propio SaaS de rifas de Digital Alignment. Registrado en Productos/Rifa Básica.md.",
-    flowSteps: [
-      { step: "Pruebas de pasarela de pago completadas", completed: true, methodologyTag: "QA" },
-      { step: "Actualización de frontmatter YAML en Vault", completed: true, methodologyTag: "Vault" },
-    ],
-  },
-
-  // ─── 7. EMPRESA - SQUADS & INFRAESTRUCTURA ───────────────────────────────
   {
     id: "e_squad_gov",
     title: "Squad Governance & Audit (@vaultkeeper)",
@@ -636,35 +369,8 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Bot",
     description: "Squad VB Governança & Audit de Conhecimento garantizando la integridad de notas v0.1 y contratos de frontmatter.",
     flowSteps: [
-      { step: "Auditoría de 12 notas de metodología 0.1", completed: true, methodologyTag: "Audit" },
-      { step: "Verificación de firmas <!-- agente: vaultkeeper -->", completed: true, methodologyTag: "Vault Contract" },
-    ],
-  },
-  {
-    id: "e_api_budget",
-    title: "Finanzas & Presupuesto APIs (OpenRouter/Infra)",
-    subtitle: "Monitoreo de saldo de IA, Vercel, Supabase & VPS",
-    timeframe: "Infra",
-    phaseCategory: "Squads & Infra",
-    scope: "empresa",
-    subCategory: "squads_infra",
-    status: "en_curso",
-    progressPercent: 80,
-    methodologies: ["Control de Costos", "FinOps"],
-    activeAgents: ["@vaultkeeper"],
-    colorTheme: {
-      primary: "#3b82f6",
-      border: "rgba(59, 130, 246, 0.4)",
-      glow: "rgba(59, 130, 246, 0.25)",
-      gradient: "from-blue-500/20 via-indigo-950/40 to-black",
-      badgeBg: "bg-blue-950/80",
-      badgeText: "text-blue-300",
-    },
-    iconName: "Coins",
-    description: "Control continuo de consumo de tokens y créditos en OpenRouter, Supabase DB y VPS dedicados.",
-    flowSteps: [
-      { step: "Auditoría de créditos en OpenRouter", completed: true, methodologyTag: "FinOps" },
-      { step: "Revisión de consumo de ancho de banda en Vercel", completed: true, methodologyTag: "Infra" },
+      { id: "sg1", step: "Auditoría de 12 notas de metodología 0.1", completed: true, methodologyTag: "Audit" },
+      { id: "sg2", step: "Verificación de firmas <!-- agente: vaultkeeper -->", completed: true, methodologyTag: "Vault Contract" },
     ],
   },
 ];
@@ -721,7 +427,6 @@ export default function MiPortalPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Reset activeSubCategory to "flujo_diario" when switching activeScope
   const handleScopeChange = (newScope: "personal" | "empresa") => {
     setActiveScope(newScope);
     setActiveSubCategory("flujo_diario");
@@ -729,32 +434,12 @@ export default function MiPortalPage() {
 
   const currentMember = members.find((m) => m.id === selectedMemberId) || members[0];
 
-  // Toggle step inside Orb Modal
-  const handleToggleStep = (orbId: string, stepIndex: number) => {
+  // Handler: Update Orb from Modal (edit tasks, add tasks, delete tasks, notes, lead measure)
+  const handleUpdateOrb = (updatedOrb: OrbData) => {
     setOrbs((prevOrbs) =>
-      prevOrbs.map((o) => {
-        if (o.id !== orbId) return o;
-        const updatedSteps = [...o.flowSteps];
-        updatedSteps[stepIndex] = {
-          ...updatedSteps[stepIndex],
-          completed: !updatedSteps[stepIndex].completed,
-        };
-        const completedCount = updatedSteps.filter((s) => s.completed).length;
-        const newPercent = Math.round((completedCount / updatedSteps.length) * 100);
-        const newStatus =
-          newPercent === 100 ? "concluido" : newPercent > 0 ? "en_curso" : "pendiente";
-
-        const updatedOrb: OrbData = {
-          ...o,
-          flowSteps: updatedSteps,
-          progressPercent: newPercent,
-          status: newStatus,
-        };
-
-        if (selectedOrb?.id === orbId) setSelectedOrb(updatedOrb);
-        return updatedOrb;
-      })
+      prevOrbs.map((o) => (o.id === updatedOrb.id ? updatedOrb : o))
     );
+    setSelectedOrb(updatedOrb);
   };
 
   // Filter Orbs by current Scope AND SubCategory
@@ -863,7 +548,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <Sparkles size={14} />
-                  <span>✨ Flujo Diario (5 Orbes)</span>
+                  <span>✨ Flujo Diario</span>
                 </button>
 
                 <button
@@ -875,7 +560,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <HeartPulse size={14} />
-                  <span>🏋️ Áreas de Vida (4 Orbes)</span>
+                  <span>🏋️ Áreas de Vida</span>
                 </button>
 
                 <button
@@ -887,7 +572,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <Music size={14} />
-                  <span>🎵 Hobbies & Filosofía (2 Orbes)</span>
+                  <span>🎵 Hobbies & Filosofía</span>
                 </button>
               </>
             ) : (
@@ -901,7 +586,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <Sparkles size={14} />
-                  <span>✨ Flujo Diario (5 Orbes)</span>
+                  <span>✨ Flujo Diario</span>
                 </button>
 
                 <button
@@ -913,7 +598,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <Briefcase size={14} />
-                  <span>🏢 Clientes Externos DA (3 Orbes)</span>
+                  <span>🏢 Clientes Externos DA</span>
                 </button>
 
                 <button
@@ -925,7 +610,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <Ticket size={14} />
-                  <span>🚀 Productos Propios (2 Orbes)</span>
+                  <span>🚀 Productos Propios</span>
                 </button>
 
                 <button
@@ -937,7 +622,7 @@ export default function MiPortalPage() {
                   }`}
                 >
                   <Bot size={14} />
-                  <span>🤖 Squads & Infra (2 Orbes)</span>
+                  <span>🤖 Squads & Infra</span>
                 </button>
               </>
             )}
@@ -958,7 +643,7 @@ export default function MiPortalPage() {
       <OrbDetailModal
         orb={selectedOrb}
         onClose={() => setSelectedOrb(null)}
-        onToggleStep={handleToggleStep}
+        onUpdateOrb={handleUpdateOrb}
       />
 
       {/* ─────────────────────────────────────────────────────────────
@@ -970,7 +655,7 @@ export default function MiPortalPage() {
           5. FOOTER DISCRETO
          ───────────────────────────────────────────────────────────── */}
       <footer className="w-full py-3 border-t border-white/5 text-center text-[11px] text-slate-500 font-mono">
-        Nipëi OS • Esferas de Objetivos (Personal / Empresa) & HUD Orbs UI v2.1
+        Nipëi OS • Esferas de Objetivos & Gestión Dinámica de Orbes v2.2
       </footer>
     </div>
   );
