@@ -12,6 +12,7 @@ import {
   Ticket,
   Bot,
   Home,
+  Layers,
 } from "lucide-react";
 import { INITIAL_MEMBERS, MemberProfile } from "@/lib/nipeiStore";
 import PortalHeader from "@/components/portal/PortalHeader";
@@ -488,15 +489,15 @@ export default function MiPortalPage() {
          ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 space-y-8">
         
-        {/* TOP SELECTOR TOGGLE: INICIO VS PERSONAL VS EMPRESA */}
-        <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#0a0d14]/90 border border-white/10 rounded-2xl p-4 backdrop-blur-xl shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-              <Sparkles size={20} />
+        {/* TOP SELECTOR TOGGLE HEADER (DESIGN MEJORADO CON GLASSMORPHISM ELEVADO) */}
+        <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#080b12]/95 border border-white/15 rounded-2xl p-4 sm:p-5 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-900/80 to-cyan-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-md">
+              <Layers size={22} />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white tracking-tight">
-                Portal de Productividad & Mapeo de Objetivos
+              <h2 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+                <span>Portal de Productividad & Mapeo de Objetivos</span>
               </h2>
               <p className="text-xs text-slate-400">
                 Selecciona la vista de cronograma o esferas para sincronizar con Mission Control
@@ -504,13 +505,13 @@ export default function MiPortalPage() {
             </div>
           </div>
 
-          {/* GLOWING PILL SWITCH: INICIO VS PERSONAL VS EMPRESA */}
-          <div className="flex items-center p-1 bg-black/60 border border-white/10 rounded-xl">
+          {/* FUTURISTIC 3-TAB PILL SWITCHER */}
+          <div className="flex items-center p-1.5 bg-[#030509]/90 border border-white/15 rounded-2xl shadow-inner">
             <button
               onClick={() => handleScopeChange("inicio")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
                 activeScope === "inicio"
-                  ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-cyan-400/40"
+                  ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/50"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -520,9 +521,9 @@ export default function MiPortalPage() {
 
             <button
               onClick={() => handleScopeChange("personal")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
                 activeScope === "personal"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] border border-emerald-400/40"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -532,9 +533,9 @@ export default function MiPortalPage() {
 
             <button
               onClick={() => handleScopeChange("empresa")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
                 activeScope === "empresa"
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.3)] border border-purple-400/40"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-purple-400/50"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -701,7 +702,7 @@ export default function MiPortalPage() {
           5. FOOTER DISCRETO
          ───────────────────────────────────────────────────────────── */}
       <footer className="w-full py-3 border-t border-white/5 text-center text-[11px] text-slate-500 font-mono">
-        Nipëi OS • Pestaña Inicio & Cronograma Paso a Paso de Orbes v3.0
+        Nipëi OS • Pestaña Inicio & Cronograma Paso a Paso de Orbes v3.1
       </footer>
     </div>
   );
