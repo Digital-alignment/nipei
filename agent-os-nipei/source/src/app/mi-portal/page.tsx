@@ -7,21 +7,18 @@ import {
   Building2,
   Sparkles,
   HeartPulse,
-  BookOpen,
-  Users,
-  Wallet,
   Music,
-  Compass,
   Briefcase,
   Ticket,
   Bot,
-  Coins,
+  Home,
 } from "lucide-react";
 import { INITIAL_MEMBERS, MemberProfile } from "@/lib/nipeiStore";
 import PortalHeader from "@/components/portal/PortalHeader";
 import RadialMenuButton from "@/components/portal/RadialMenuButton";
 import OrbItem, { OrbData } from "@/components/portal/OrbItem";
 import OrbDetailModal from "@/components/portal/OrbDetailModal";
+import InicioTimeline from "@/components/portal/InicioTimeline";
 
 // ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH EDITABLE TASKS)
 const ALL_ORBS: OrbData[] = [
@@ -379,8 +376,8 @@ export default function MiPortalPage() {
   const [members, setMembers] = useState<MemberProfile[]>(INITIAL_MEMBERS);
   const [selectedMemberId, setSelectedMemberId] = useState<string>("cacique_mariazinha");
 
-  // Active Scope State: "personal" | "empresa"
-  const [activeScope, setActiveScope] = useState<"personal" | "empresa">("personal");
+  // Active Scope State: "inicio" | "personal" | "empresa"
+  const [activeScope, setActiveScope] = useState<"inicio" | "personal" | "empresa">("inicio");
 
   // Active Sub-Category State
   const [activeSubCategory, setActiveSubCategory] = useState<string>("flujo_diario");
@@ -427,7 +424,7 @@ export default function MiPortalPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleScopeChange = (newScope: "personal" | "empresa") => {
+  const handleScopeChange = (newScope: "inicio" | "personal" | "empresa") => {
     setActiveScope(newScope);
     setActiveSubCategory("flujo_diario");
   };
@@ -442,7 +439,33 @@ export default function MiPortalPage() {
     setSelectedOrb(updatedOrb);
   };
 
-  // Filter Orbs by current Scope AND SubCategory
+  // Handler: Toggle step directly from Inicio Timeline by OrbId & StepId
+  const handleToggleStepById = (orbId: string, stepId: string) => {
+    setOrbs((prevOrbs) =>
+      prevOrbs.map((o) => {
+        if (o.id !== orbId) return o;
+        const updatedSteps = o.flowSteps.map((s) =>
+          s.id === stepId ? { ...s, completed: !s.completed } : s
+        );
+        const completedCount = updatedSteps.filter((s) => s.completed).length;
+        const newPercent =
+          updatedSteps.length > 0
+            ? Math.round((completedCount / updatedSteps.length) * 100)
+            : 0;
+        const newStatus =
+          newPercent === 100 ? "concluido" : newPercent > 0 ? "en_curso" : "pendiente";
+
+        return {
+          ...o,
+          flowSteps: updatedSteps,
+          progressPercent: newPercent,
+          status: newStatus,
+        };
+      })
+    );
+  };
+
+  // Filter Orbs by current Scope AND SubCategory (for Personal / Empresa)
   const filteredOrbs = orbs.filter(
     (o) => o.scope === activeScope && o.subCategory === activeSubCategory
   );
@@ -461,11 +484,11 @@ export default function MiPortalPage() {
       />
 
       {/* ─────────────────────────────────────────────────────────────
-          2. CONTENIDO PRINCIPAL: ORBS HUD & MAPPING DIARIO
+          2. CONTENIDO PRINCIPAL: INICIO TIMELINE OR ORBS CONSTELLATION
          ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 space-y-8">
         
-        {/* TOP SELECTOR TOGGLE: PERSONAL VS EMPRESA */}
+        {/* TOP SELECTOR TOGGLE: INICIO VS PERSONAL VS EMPRESA */}
         <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#0a0d14]/90 border border-white/10 rounded-2xl p-4 backdrop-blur-xl shadow-xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
@@ -473,19 +496,31 @@ export default function MiPortalPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-white tracking-tight">
-                Esferas de Objetivos & Metodologías
+                Portal de Productividad & Mapeo de Objetivos
               </h2>
               <p className="text-xs text-slate-400">
-                Selecciona la dimensión de trabajo para sincronizar con Mission Control
+                Selecciona la vista de cronograma o esferas para sincronizar con Mission Control
               </p>
             </div>
           </div>
 
-          {/* GLOWING PILL SWITCH: PERSONAL VS EMPRESA */}
+          {/* GLOWING PILL SWITCH: INICIO VS PERSONAL VS EMPRESA */}
           <div className="flex items-center p-1 bg-black/60 border border-white/10 rounded-xl">
             <button
+              onClick={() => handleScopeChange("inicio")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+                activeScope === "inicio"
+                  ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-cyan-400/40"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Home size={15} />
+              <span>Inicio</span>
+            </button>
+
+            <button
               onClick={() => handleScopeChange("personal")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
                 activeScope === "personal"
                   ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] border border-emerald-400/40"
                   : "text-slate-400 hover:text-white"
@@ -497,9 +532,9 @@ export default function MiPortalPage() {
 
             <button
               onClick={() => handleScopeChange("empresa")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-300 ${
                 activeScope === "empresa"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] border border-blue-400/40"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.3)] border border-purple-400/40"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -509,132 +544,143 @@ export default function MiPortalPage() {
           </div>
         </section>
 
-        {/* HERO SECTION: RELOJ DIGITAL GRANDE & RESUMEN DE FASE ACTIVA */}
-        <section className="bg-gradient-to-b from-[#0b131a] via-[#070b10] to-[#040608] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center flex flex-col items-center justify-center">
-          {/* Ambient Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        {/* CONDITIONALLY RENDER: INICIO TIMELINE VS ORBS CONSTELLATION */}
+        {activeScope === "inicio" ? (
+          <InicioTimeline
+            orbs={orbs}
+            onToggleStep={handleToggleStepById}
+            timeStr={timeStr}
+          />
+        ) : (
+          <>
+            {/* HERO SECTION: RELOJ DIGITAL GRANDE & RESUMEN DE FASE ACTIVA */}
+            <section className="bg-gradient-to-b from-[#0b131a] via-[#070b10] to-[#040608] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center flex flex-col items-center justify-center">
+              {/* Ambient Glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Phase Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold mb-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span>
-              ESFERA {activeScope.toUpperCase()} • {completedOrbsCount} DE {filteredOrbs.length} ORBES CONCLUÍDOS
-            </span>
-          </div>
+              {/* Phase Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono font-semibold mb-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+                <span>
+                  ESFERA {activeScope.toUpperCase()} • {completedOrbsCount} DE {filteredOrbs.length} ORBES CONCLUÍDOS
+                </span>
+              </div>
 
-          {/* Clock Display */}
-          <div className="font-mono font-black text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-100 to-cyan-400/80 tracking-tighter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] py-2 select-none">
-            {timeStr || "19:24:58"}
-          </div>
+              {/* Clock Display */}
+              <div className="font-mono font-black text-6xl sm:text-7xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-100 to-cyan-400/80 tracking-tighter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] py-2 select-none">
+                {timeStr || "19:24:58"}
+              </div>
 
-          {/* Date & Flow Subtitle */}
-          <div className="text-sm sm:text-base md:text-lg font-medium text-cyan-300/90 capitalize tracking-wide mt-1 flex items-center gap-2">
-            <CalendarIcon size={18} className="text-cyan-400" />
-            <span>{dateStr || "Jueves, 24 de Septiembre de 2026"}</span>
-          </div>
-        </section>
+              {/* Date & Flow Subtitle */}
+              <div className="text-sm sm:text-base md:text-lg font-medium text-cyan-300/90 capitalize tracking-wide mt-1 flex items-center gap-2">
+                <CalendarIcon size={18} className="text-cyan-400" />
+                <span>{dateStr || "Jueves, 24 de Septiembre de 2026"}</span>
+              </div>
+            </section>
 
-        {/* SUB-CATEGORY CHIPS BAR FOR PERSONAL / EMPRESA */}
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
-            {activeScope === "personal" ? (
-              <>
-                <button
-                  onClick={() => setActiveSubCategory("flujo_diario")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "flujo_diario"
-                      ? "bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <Sparkles size={14} />
-                  <span>✨ Flujo Diario</span>
-                </button>
+            {/* SUB-CATEGORY CHIPS BAR FOR PERSONAL / EMPRESA */}
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+                {activeScope === "personal" ? (
+                  <>
+                    <button
+                      onClick={() => setActiveSubCategory("flujo_diario")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "flujo_diario"
+                          ? "bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <Sparkles size={14} />
+                      <span>✨ Flujo Diario</span>
+                    </button>
 
-                <button
-                  onClick={() => setActiveSubCategory("areas_vida")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "areas_vida"
-                      ? "bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <HeartPulse size={14} />
-                  <span>🏋️ Áreas de Vida</span>
-                </button>
+                    <button
+                      onClick={() => setActiveSubCategory("areas_vida")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "areas_vida"
+                          ? "bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <HeartPulse size={14} />
+                      <span>🏋️ Áreas de Vida</span>
+                    </button>
 
-                <button
-                  onClick={() => setActiveSubCategory("hobbies_filosofia")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "hobbies_filosofia"
-                      ? "bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <Music size={14} />
-                  <span>🎵 Hobbies & Filosofía</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setActiveSubCategory("flujo_diario")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "flujo_diario"
-                      ? "bg-blue-950/90 text-blue-300 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <Sparkles size={14} />
-                  <span>✨ Flujo Diario</span>
-                </button>
+                    <button
+                      onClick={() => setActiveSubCategory("hobbies_filosofia")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "hobbies_filosofia"
+                          ? "bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <Music size={14} />
+                      <span>🎵 Hobbies & Filosofía</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setActiveSubCategory("flujo_diario")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "flujo_diario"
+                          ? "bg-purple-950/90 text-purple-300 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <Sparkles size={14} />
+                      <span>✨ Flujo Diario</span>
+                    </button>
 
-                <button
-                  onClick={() => setActiveSubCategory("clientes_da")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "clientes_da"
-                      ? "bg-blue-950/90 text-blue-300 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <Briefcase size={14} />
-                  <span>🏢 Clientes Externos DA</span>
-                </button>
+                    <button
+                      onClick={() => setActiveSubCategory("clientes_da")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "clientes_da"
+                          ? "bg-purple-950/90 text-purple-300 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <Briefcase size={14} />
+                      <span>🏢 Clientes Externos DA</span>
+                    </button>
 
-                <button
-                  onClick={() => setActiveSubCategory("productos_propios")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "productos_propios"
-                      ? "bg-blue-950/90 text-blue-300 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <Ticket size={14} />
-                  <span>🚀 Productos Propios</span>
-                </button>
+                    <button
+                      onClick={() => setActiveSubCategory("productos_propios")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "productos_propios"
+                          ? "bg-purple-950/90 text-purple-300 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <Ticket size={14} />
+                      <span>🚀 Productos Propios</span>
+                    </button>
 
-                <button
-                  onClick={() => setActiveSubCategory("squads_infra")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
-                    activeSubCategory === "squads_infra"
-                      ? "bg-blue-950/90 text-blue-300 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-                      : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                  }`}
-                >
-                  <Bot size={14} />
-                  <span>🤖 Squads & Infra</span>
-                </button>
-              </>
-            )}
-          </div>
+                    <button
+                      onClick={() => setActiveSubCategory("squads_infra")}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold font-mono transition ${
+                        activeSubCategory === "squads_infra"
+                          ? "bg-purple-950/90 text-purple-300 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      <Bot size={14} />
+                      <span>🤖 Squads & Infra</span>
+                    </button>
+                  </>
+                )}
+              </div>
 
-          {/* GRID OF GLOWING 3D ORBS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredOrbs.map((orb, index) => (
-              <OrbItem key={orb.id} orb={orb} onClick={setSelectedOrb} index={index} />
-            ))}
-          </div>
-        </section>
+              {/* GRID OF GLOWING 3D ORBS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredOrbs.map((orb, index) => (
+                  <OrbItem key={orb.id} orb={orb} onClick={setSelectedOrb} index={index} />
+                ))}
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -655,7 +701,7 @@ export default function MiPortalPage() {
           5. FOOTER DISCRETO
          ───────────────────────────────────────────────────────────── */}
       <footer className="w-full py-3 border-t border-white/5 text-center text-[11px] text-slate-500 font-mono">
-        Nipëi OS • Esferas de Objetivos & Gestión Dinámica de Orbes v2.2
+        Nipëi OS • Pestaña Inicio & Cronograma Paso a Paso de Orbes v3.0
       </footer>
     </div>
   );
