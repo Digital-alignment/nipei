@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Clock, PlayCircle, ShieldAlert, Sparkles, Layers } from "lucide-react";
+import { CheckCircle2, Clock, PlayCircle, Layers, Sparkles } from "lucide-react";
 
 export interface OrbData {
   id: string;
   title: string;
   subtitle: string;
   timeframe: string;
-  phaseCategory: "Al Despertar" | "Ejecución Estratégica" | "Triaje & Imprevistos" | "Gestión Tarde" | "Cierre & Desconexión";
+  phaseCategory: string;
   scope: "personal" | "empresa";
+  subCategory: string; // "flujo_diario" | "areas_vida" | "hobbies_filosofia" | "clientes_da" | "productos_propios" | "squads_infra"
   status: "concluido" | "en_curso" | "pendiente";
   progressPercent: number;
   methodologies: string[];
@@ -50,7 +51,7 @@ export default function OrbItem({ orb, onClick }: OrbItemProps) {
         boxShadow: `0 10px 30px -10px ${orb.colorTheme.glow}`,
       }}
     >
-      {/* Background Radial Glow Effect (Inspired by Pulse/NeuroAstro reference) */}
+      {/* Background Radial Glow Effect */}
       <div
         className="absolute -top-12 -left-12 w-40 h-40 rounded-full blur-3xl opacity-30 group-hover:opacity-60 transition-opacity pointer-events-none"
         style={{ backgroundColor: orb.colorTheme.primary }}
