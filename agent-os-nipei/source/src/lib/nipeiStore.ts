@@ -119,6 +119,68 @@ export const SQUADS: SquadMeta[] = INITIAL_SQUADS;
 
 export const INITIAL_MEMBERS: MemberProfile[] = [
   {
+    id: "ashuan_dev",
+    name: "Ashuan",
+    nativeName: "Dev Master",
+    avatar: "⚡",
+    type: "human_executive",
+    contractType: "Pro-labore",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Lead Developer & Architect de Nipëi OS. Permisos Totales de Desarrollo, Veto Approver y Acceso Root.",
+    globalRole: "VETO_APPROVER",
+    companyAssignments: [
+      { companyId: "nipei_os", companyName: "Nipëi OS Global", positionTitle: "Lead Architect & Lead Dev" }
+    ],
+    squadAssignments: [
+      { squadId: "super_user", roleTitle: "Root Architect & Lead Developer", confirmationStatus: "APPROVED", isPrimary: true }
+    ],
+    responsibilities: [
+      "Permisos Totales de Desarrollo & Gobernanza Root",
+      "Arquitectura de Software, Squads de IA y Mission Control",
+      "Aprobación de Veto y Despliegues de Producción"
+    ]
+  },
+  {
+    id: "ai_antigravity",
+    name: "Agent @antigravity",
+    avatar: "🛸",
+    type: "ai_agent",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Agente Inteligente Agentic Coding & Desarrollo Autónomo.",
+    globalRole: "VETO_APPROVER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Agentic Developer" }],
+    squadAssignments: [{ squadId: "super_user", roleTitle: "Full-Stack Agentic Coder", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Edición total de código, UI y refactorización del sistema"]
+  },
+  {
+    id: "ai_vaultkeeper",
+    name: "Agent @vaultkeeper",
+    avatar: "🤖",
+    type: "ai_agent",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Agente Inteligente de RAG, Ingestión y Gobernanza de Conocimiento en Vault.",
+    globalRole: "VETO_APPROVER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "RAG & Vault Steward" }],
+    squadAssignments: [{ squadId: "squad_vb_knowledge", roleTitle: "Vault Auditor & RAG Steward", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Auditoría continua del Vault de Conocimiento", "Búsqueda RAG y resolución de dudas metodológicas"]
+  },
+  {
+    id: "ai_hermes",
+    name: "Agent @hermes",
+    avatar: "💬",
+    type: "ai_agent",
+    status: "APPROVED",
+    hasMissingInfo: false,
+    specialityOrLineage: "Agente de Comunicación Multicanal, Llamadas y Orquestación de Tareas.",
+    globalRole: "SUPER_USER",
+    companyAssignments: [{ companyId: "nipei_os", companyName: "Nipëi OS", positionTitle: "Communication Dispatcher" }],
+    squadAssignments: [{ squadId: "squad_4_vendas_mkt", roleTitle: "Comunicación & WhatsApp Dispatcher", confirmationStatus: "APPROVED", isPrimary: true }],
+    responsibilities: ["Orquestación multicanal y despacho de alertas"]
+  },
+  {
     id: "cacique_mariazinha",
     name: "Mariazinha Luísa Naiweni Yawanawá",
     nativeName: "Naiweni",

@@ -393,7 +393,7 @@ const ALL_ORBS: OrbData[] = [
 
 export default function MiPortalPage() {
   const [members, setMembers] = useState<MemberProfile[]>(INITIAL_MEMBERS);
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("cacique_mariazinha");
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("ashuan_dev");
 
   // Active Scope State: "inicio" | "personal" | "empresa"
   const [activeScope, setActiveScope] = useState<"inicio" | "personal" | "empresa">("inicio");
@@ -429,6 +429,10 @@ export default function MiPortalPage() {
 
   useEffect(() => {
     try {
+      const savedMemberId = localStorage.getItem("nipei_selected_member_id");
+      if (savedMemberId) {
+        setSelectedMemberId(savedMemberId);
+      }
       const savedMembers = localStorage.getItem("nipei_members_store");
       if (savedMembers) setMembers(JSON.parse(savedMembers));
     } catch {
@@ -519,6 +523,19 @@ export default function MiPortalPage() {
   );
   const completedOrbsCount = filteredOrbs.filter((o) => o.status === "concluido").length;
 
+  const handleSelectMemberId = (id: string) => {
+    setSelectedMemberId(id);
+    try {
+      localStorage.setItem("nipei_selected_member_id", id);
+      const found = members.find((m) => m.id === id);
+      if (found) {
+        localStorage.setItem("nipei_current_user", JSON.stringify(found));
+      }
+    } catch {
+      /* fallback */
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-[#050608] text-white flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* ─────────────────────────────────────────────────────────────
@@ -528,7 +545,7 @@ export default function MiPortalPage() {
         currentMember={currentMember}
         members={members}
         selectedMemberId={selectedMemberId}
-        onSelectMember={setSelectedMemberId}
+        onSelectMember={handleSelectMemberId}
       />
 
       {/* ─────────────────────────────────────────────────────────────

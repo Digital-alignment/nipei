@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, ChevronDown, ArrowRight, User } from "lucide-react";
+import { Shield, ChevronDown, ArrowRight, User, LogIn } from "lucide-react";
 import { MemberProfile } from "@/lib/nipeiStore";
 
 interface PortalHeaderProps {
@@ -106,7 +106,7 @@ export default function PortalHeader({
 
         <div className="flex items-center gap-2">
           <h1 className="text-xs font-bold text-white tracking-tight truncate max-w-[220px] sm:max-w-[320px]">
-            {currentMember?.name || "Mariazinha Luísa Yawanawá"}
+            {currentMember?.name || "Ashuan"}
           </h1>
 
           {currentMember?.nativeName && (
@@ -126,7 +126,7 @@ export default function PortalHeader({
       </div>
 
       {/* CENTRO COMPACTO: Selector Desplegable de Perfil */}
-      <div className="hidden sm:flex items-center">
+      <div className="hidden sm:flex items-center gap-2">
         <div className="relative">
           <select
             value={selectedMemberId}
@@ -146,8 +146,17 @@ export default function PortalHeader({
         </div>
       </div>
 
-      {/* LADO DERECHO COMPACTO: Botón a Interfaz Completa */}
+      {/* LADO DERECHO COMPACTO: Cambiar Usuario / Login & Interfaz Completa */}
       <div className="flex items-center gap-2">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white font-mono text-xs border border-slate-700/60 hover:border-slate-500 bg-black/40 transition"
+          title="Ir a Login / Cambiar de Perfil o Agente"
+        >
+          <LogIn size={13} className="text-emerald-400" />
+          <span className="hidden sm:inline">Cambiar Usuario</span>
+        </Link>
+
         <Link
           href="/"
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white font-bold text-xs shadow-md transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-white/20 bg-gradient-to-r ${roleTheme.buttonBg}`}
