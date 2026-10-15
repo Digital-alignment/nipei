@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import OrganogramaView from "@/components/OrganogramaView";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function OrganogramaPage() {
-  return <OrganogramaView />;
+  return (
+    <Suspense fallback={<div className="p-8 text-zinc-500">Carregando organograma...</div>}>
+      <OrganogramaView />
+    </Suspense>
+  );
 }

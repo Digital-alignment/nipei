@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutGrid, Brain, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow,
@@ -156,11 +156,21 @@ const LS_COLLAPSED = "agentos.sidebar.collapsed";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [currentQuery, setCurrentQuery] = useState("");
   const [mounted, setMounted] = useState(false);
   const [order, setOrder] = useState<string[]>(DEFAULT_ORDER);
   const [hidden, setHidden] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
+
+  // Sync query params on mount and pathname change without useSearchParams
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentQuery(window.location.search);
+      const handleLocationChange = () => setCurrentQuery(window.location.search);
+      window.addEventListener("popstate", handleLocationChange);
+      return () => window.removeEventListener("popstate", handleLocationChange);
+    }
+  }, [pathname]);
 
   // Accordion states
   const [isBrainOpen, setIsBrainOpen] = useState(true);
@@ -304,17 +314,19 @@ export default function Sidebar() {
                         let isSubActive = false;
 
                         if (subQuery) {
-                          const paramPair = subQuery.split("=");
-                          const currentParamVal = searchParams.get(paramPair[0]);
-                          isSubActive = pathname === subPath && currentParamVal === paramPair[1];
+                          isSubActive = pathname === subPath && currentQuery.includes(subQuery);
                         } else {
-                          isSubActive = pathname === subPath;
+                          isSubActive = pathname === subPath && (item.href === "/organograma" ? !currentQuery.includes("tab=") : true);
                         }
 
                         return (
                           <Link
                             key={sub.href}
                             href={sub.href}
+                            onClick={() => {
+                              if (subQuery) setCurrentQuery(`?${subQuery}`);
+                              else if (item.href === "/organograma") setCurrentQuery("");
+                            }}
                             title={sub.label}
                             className={`flex items-center gap-2.5 py-1.5 px-2.5 rounded-lg text-xs transition ${
                               isSubActive
