@@ -170,6 +170,63 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
     throw new Error(lastErr || "Couldn't open the realtime audio link.");
   }
 
+  const recRef = useRef<any>(null);
+  const isNativeRef = useRef(false);
+
+  const processUserSpeech = useCallback(async (speechText: string) => {
+    if (!speechText.trim()) return;
+    pushUser(speechText);
+    setSpeaking(true);
+
+    try {
+      // 1. Query Hermes 2.0 RAG & Brain
+      const res = await fetch("/api/memory/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: speechText, squadId: "squad_1_ceo" }),
+      });
+      const data = await res.json();
+      let replyText = data.answerText || "No response received.";
+      // Clean markdown symbols for natural TTS speech
+      replyText = replyText.replace(/[*_#`~]/g, "").replace(/\[.*?\]\(.*?\)/g, "").trim();
+
+      // Check tool triggers in speech
+      const lower = speechText.toLowerCase();
+      if (lower.includes("open") || lower.includes("pull up") || lower.includes("launch")) {
+        const targetMatch = speechText.match(/(?:open|pull up|launch)\s+(.+)/i);
+        if (targetMatch && targetMatch[1]) {
+          const target = targetMatch[1].trim();
+          fetch("/api/hermes/realtime/open", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target }),
+          }).catch(() => {});
+        }
+      } else if (lower.includes("build") || lower.includes("make a") || lower.includes("create")) {
+        runBuild(speechText);
+      }
+
+      asstDelta(replyText);
+
+      // 2. Synthesize Audio via ElevenLabs HD Voice
+      const ttsRes = await fetch("/api/hermes/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: replyText, provider: "elevenlabs" }),
+      });
+      const ttsData = await ttsRes.json();
+
+      if (ttsData.audio && audioRef.current) {
+        audioRef.current.src = ttsData.audio;
+        await audioRef.current.play().catch(() => {});
+      }
+    } catch (e) {
+      console.error("Native voice error:", e);
+    } finally {
+      setSpeaking(false);
+    }
+  }, []);
+
   const connectRef = useRef<() => void>(() => {});
   const connect = useCallback(async () => {
     if (status === "connecting" || status === "live") return;
@@ -178,14 +235,40 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
       const tok = await fetch("/api/hermes/realtime/session", {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ voice }),
       }).then((r) => r.json());
+
+      // If OpenAI key is missing, seamlessly activate Hermes Native Realtime Voice Engine (ElevenLabs HD Voice + WebSpeech VAD)
+      if (tok.mode === "hermes_native") {
+        isNativeRef.current = true;
+        setStatus("live");
+
+        const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRec) {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = false;
+          rec.lang = "es-ES";
+          rec.onresult = (ev: any) => {
+            const lastResult = ev.results[ev.results.length - 1];
+            if (lastResult.isFinal) {
+              const text = lastResult[0].transcript.trim();
+              if (text) void processUserSpeech(text);
+            }
+          };
+          rec.onerror = (e: any) => console.log("Speech recognition info:", e);
+          rec.start();
+          recRef.current = rec;
+        }
+        return;
+      }
+
       if (!tok?.value) throw new Error(tok?.error || "couldn't start a realtime session");
 
+      isNativeRef.current = false;
       const pc = new RTCPeerConnection(); pcRef.current = pc;
       pc.ontrack = (e) => { if (audioRef.current) { audioRef.current.srcObject = e.streams[0]; audioRef.current.play().catch(() => {}); } };
       pc.onconnectionstatechange = () => {
         const cs = pc.connectionState;
         if (cs === "failed" || cs === "closed") setStatus((s) => (s === "live" ? "idle" : s));
-        // A real network drop (laptop sleep, wifi blip) — not an intentional close — self-heals back to realtime.
         if (cs === "failed" && startedRef.current && !document.hidden) { cleanup(); setTimeout(() => { if (!document.hidden) void connectRef.current(); }, 800); }
       };
 
@@ -199,24 +282,21 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
       const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
       const answer = await sdpExchange(tok.model || "gpt-realtime", tok.value, offer.sdp || "");
       await pc.setRemoteDescription({ type: "answer", sdp: answer });
-      // dc.onopen flips to "live"
     } catch (e) {
       setErr(String((e as Error)?.message || e)); setStatus("error"); cleanup();
     }
-  }, [status, voice]);
+  }, [status, voice, processUserSpeech]);
 
   function cleanup() {
+    try { recRef.current?.stop(); } catch {}
     try { dcRef.current?.close(); } catch {}
     try { streamRef.current?.getTracks().forEach((t) => t.stop()); } catch {}
     try { pcRef.current?.getSenders().forEach((s) => s.track?.stop()); pcRef.current?.close(); } catch {}
-    dcRef.current = null; pcRef.current = null; streamRef.current = null; curAsstRef.current = null;
+    recRef.current = null; dcRef.current = null; pcRef.current = null; streamRef.current = null; curAsstRef.current = null;
   }
   const disconnect = useCallback(() => { cleanup(); setStatus("idle"); setSpeaking(false); setBuilding(false); }, []);
   useEffect(() => () => cleanup(), []);
 
-  // Stop the mic the instant the page is hidden (switched browser tab or app) — an
-  // always-on realtime mic should never keep listening once you've looked away.
-  // Keep connectRef pointing at the latest connect() so the drop/visibility handlers never go stale.
   useEffect(() => { connectRef.current = connect; }, [connect]);
 
   useEffect(() => {
@@ -225,12 +305,9 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [disconnect]);
 
-  // Auto-connect the moment the panel opens — no button needed (Realtime is the default).
   const startedRef = useRef(false);
   useEffect(() => { if (!startedRef.current) { startedRef.current = true; void connect(); } }, [connect]);
 
-  // If the page loaded without a user gesture, the browser may block Apollo's audio.
-  // Silently retry play on the first interaction anywhere — invisible, no button.
   useEffect(() => {
     const unlock = () => { audioRef.current?.play().catch(() => {}); };
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -239,9 +316,16 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
   }, []);
 
   function sendText() {
-    const text = input.trim(); const dc = dcRef.current;
-    if (!text || !dc || dc.readyState !== "open") return;
-    pushUser(text); setInput("");
+    const text = input.trim();
+    if (!text) return;
+    setInput("");
+    if (isNativeRef.current) {
+      void processUserSpeech(text);
+      return;
+    }
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open") return;
+    pushUser(text);
     dc.send(JSON.stringify({ type: "conversation.item.create", item: { type: "message", role: "user", content: [{ type: "input_text", text }] } }));
     dc.send(JSON.stringify({ type: "response.create" }));
   }

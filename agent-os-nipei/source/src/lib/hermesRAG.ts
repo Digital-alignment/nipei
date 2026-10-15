@@ -70,6 +70,11 @@ export function queryVaultGrounding(
     path.join(vaultRoot, "Master_Sources"),
     path.join(vaultRoot, "Ingested_Knowledge"),
     path.join(vaultRoot, "Squads"),
+    path.join(vaultRoot, "Conhecimento_Geral"),
+    path.join(vaultRoot, "Clientes"),
+    path.join(vaultRoot, "Miembros"),
+    path.join(vaultRoot, "Nipei OS"),
+    path.join(vaultRoot, "Productivity"),
     path.join(vaultRoot, "Omi"),
     path.join(vaultRoot, "Generated_Content"),
   ];

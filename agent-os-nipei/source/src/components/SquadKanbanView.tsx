@@ -47,11 +47,7 @@ export default function SquadKanbanView() {
         const res = await fetch("/api/agent-kanban");
         const json = await res.json();
         if (json.success && Array.isArray(json.tasks) && json.tasks.length > 0) {
-          setTasks((prev) => {
-            const existingIds = new Set(prev.map((t) => t.id));
-            const newVaultTasks = json.tasks.filter((t: GlobalTask) => !existingIds.has(t.id));
-            return [...newVaultTasks, ...prev];
-          });
+          setTasks(json.tasks);
         }
       } catch (err) {
         console.error("Error loading vault kanban tasks:", err);
@@ -173,7 +169,7 @@ export default function SquadKanbanView() {
             fetch("/api/agent-kanban", {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ vaultPath: t.vaultPath, status: targetCol })
+              body: JSON.stringify({ vaultPath: t.vaultPath, status: targetCol, column: targetCol })
             }).catch(console.error);
           }
           return updated;
@@ -458,7 +454,7 @@ export default function SquadKanbanView() {
         }
       >
         {COLUMNS.map((col) => {
-          const colTasks = filteredTasks.filter((t) => t.columnStatus === col.id);
+          const colTasks = filteredTasks.filter((t) => (t.columnStatus || (t as any).column) === col.id);
 
           return (
             <div

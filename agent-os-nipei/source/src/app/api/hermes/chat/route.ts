@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { getOrCreateSession, appendMessageToSession } from "@/lib/hermesMemory";
+import { processHermesTaskCommand } from "@/lib/hermesTaskManager";
 import fs from "fs";
 import path from "path";
 import { defaultVault } from "@/lib/config";
@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     // 1. Ensure persistent session exists
     const session = getOrCreateSession(sessionId, userIdentifier);
 
-    // 2. Query RAG Grounding in nipei-vault
-    const ragResult = queryVaultGrounding(prompt, targetSquad);
+    // 2. Execute command via Hermes Task Manager (checks code security, task mutations, or queries RAG)
+    const taskResult = await processHermesTaskCommand(prompt, userIdentifier, targetSquad);
 
     // 3. Save User message to persistent session memory
     appendMessageToSession(sessionId, {
@@ -43,16 +43,16 @@ export async function POST(req: NextRequest) {
     // 4. Save Assistant response to persistent session memory
     const updatedSession = appendMessageToSession(sessionId, {
       role: "assistant",
-      content: ragResult.answerText,
-      vaultCitations: ragResult.citations.map((c) => c.path),
-      groundingScore: ragResult.groundingScore,
+      content: taskResult.message,
+      vaultCitations: taskResult.ragResult?.citations.map((c) => c.path),
+      groundingScore: taskResult.ragResult?.groundingScore,
     });
 
     // 5. If Zero-Hallucination policy detected missing info, auto-create Audit Task in Todo_Audit_Lists
     let missingInfoTaskCreated = false;
     let createdTaskPath = "";
 
-    if (ragResult.missingInformation) {
+    if (taskResult.type === "VAULT_QUERY" && taskResult.ragResult?.missingInformation) {
       try {
         const vaultRoot = defaultVault();
         if (vaultRoot) {
@@ -97,11 +97,12 @@ Por favor ingestar el documento maestro o nota explicativa usando el **Asistente
     return NextResponse.json({
       success: true,
       sessionId,
-      answer: ragResult.answerText,
-      groundingScore: ragResult.groundingScore,
-      isGrounded: ragResult.isGrounded,
-      citations: ragResult.citations,
-      missingInformation: ragResult.missingInformation,
+      answer: taskResult.message,
+      taskActionResult: taskResult,
+      groundingScore: taskResult.ragResult?.groundingScore ?? 1.0,
+      isGrounded: taskResult.ragResult?.isGrounded ?? true,
+      citations: taskResult.ragResult?.citations ?? [],
+      missingInformation: taskResult.ragResult?.missingInformation ?? false,
       missingInfoTaskCreated,
       createdTaskPath,
       session: updatedSession,

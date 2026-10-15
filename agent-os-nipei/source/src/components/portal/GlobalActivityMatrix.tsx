@@ -14,6 +14,8 @@ import {
   Sparkles,
   BarChart2,
   Filter,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { OrbData } from "./OrbItem";
 
@@ -92,20 +94,20 @@ export default function GlobalActivityMatrix({
          ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <ActivityIcon size={20} className="text-emerald-400" />
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2 font-google-sans">
+            <ActivityIcon size={20} className="text-emerald-400 shrink-0" />
             <span>Matriz de Actividad & Consistencia Global</span>
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 font-google-sans">
             Seguimiento longitudinal de la ejecución de Orbes en Personal y Empresa
           </p>
         </div>
 
         {/* View Mode Pill Switcher */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/60 border border-slate-800">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/60 border border-slate-800 shrink-0">
           <button
             onClick={() => setViewMode("semana")}
-            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-space-mono transition-all ${
               viewMode === "semana"
                 ? "bg-emerald-500 text-black font-bold shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                 : "text-slate-400 hover:text-white"
@@ -115,7 +117,7 @@ export default function GlobalActivityMatrix({
           </button>
           <button
             onClick={() => setViewMode("mes")}
-            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-space-mono transition-all ${
               viewMode === "mes"
                 ? "bg-emerald-500 text-black font-bold shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                 : "text-slate-400 hover:text-white"
@@ -125,7 +127,7 @@ export default function GlobalActivityMatrix({
           </button>
           <button
             onClick={() => setViewMode("heatmap")}
-            className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+            className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-space-mono transition-all ${
               viewMode === "heatmap"
                 ? "bg-emerald-500 text-black font-bold shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                 : "text-slate-400 hover:text-white"
@@ -136,36 +138,36 @@ export default function GlobalActivityMatrix({
         </div>
       </div>
 
-      {/* 4 TOP STAT CARDS (IMAGE 4 TOP BAR) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+      {/* 4 TOP STAT CARDS (2x2 GRID IN SIDEBAR TO PREVENT SQUISHING) */}
+      <div className="grid grid-cols-2 gap-3">
         {/* Card 1: Streak */}
-        <div className="p-4 rounded-2xl bg-[#090e17]/80 border border-orange-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0a0f16]/90 border border-orange-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group flex flex-col justify-between">
           <div className="absolute -top-6 -right-6 w-20 h-20 bg-orange-500/10 rounded-full blur-xl group-hover:bg-orange-500/20 transition pointer-events-none" />
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>RACHA ACTIVA</span>
-            <Flame size={15} className="text-orange-400 animate-bounce" />
+          <div className="flex items-center justify-between text-xs text-slate-400 font-space-mono">
+            <span className="text-[10px] sm:text-xs">RACHA ACTIVA</span>
+            <Flame size={15} className="text-orange-400 animate-bounce shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-white font-mono tracking-tight">
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-black text-white font-alata tracking-tight">
               {streakDays}
             </span>
-            <span className="text-xs font-semibold text-orange-400 uppercase">Días seguidos</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-orange-400 uppercase font-google-sans">Días seguidos</span>
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Mejor racha histórica: 21d</p>
+          <p className="mt-1 text-[10px] text-slate-400 font-google-sans">Mejor racha: 21d</p>
         </div>
 
         {/* Card 2: Consistencia Mensual */}
-        <div className="p-4 rounded-2xl bg-[#090e17]/80 border border-emerald-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0a0f16]/90 border border-emerald-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group flex flex-col justify-between">
           <div className="absolute -top-6 -right-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition pointer-events-none" />
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>CONSISTENCIA</span>
-            <Award size={15} className="text-emerald-400" />
+          <div className="flex items-center justify-between text-xs text-slate-400 font-space-mono">
+            <span className="text-[10px] sm:text-xs">CONSISTENCIA</span>
+            <Award size={15} className="text-emerald-400 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-white font-mono tracking-tight">
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-black text-white font-alata tracking-tight">
               {monthlyConsistency}%
             </span>
-            <span className="text-xs font-semibold text-emerald-400">Cumplimiento</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-emerald-400 font-google-sans">Meta 30D</span>
           </div>
           <div className="mt-2 w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
             <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${monthlyConsistency}%` }} />
@@ -173,17 +175,17 @@ export default function GlobalActivityMatrix({
         </div>
 
         {/* Card 3: Orbes Completados Hoy */}
-        <div className="p-4 rounded-2xl bg-[#090e17]/80 border border-cyan-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0a0f16]/90 border border-cyan-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group flex flex-col justify-between">
           <div className="absolute -top-6 -right-6 w-20 h-20 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition pointer-events-none" />
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>HOY (PRESENTE)</span>
-            <CheckCircle2 size={15} className="text-cyan-400" />
+          <div className="flex items-center justify-between text-xs text-slate-400 font-space-mono">
+            <span className="text-[10px] sm:text-xs">HOY (PRESENTE)</span>
+            <CheckCircle2 size={15} className="text-cyan-400 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-white font-mono tracking-tight">
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-black text-white font-alata tracking-tight">
               {completedOrbsCount}/{totalOrbsCount}
             </span>
-            <span className="text-xs font-semibold text-cyan-400">Orbes ({todayPercent}%)</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-cyan-400 font-alata">Orbes ({todayPercent}%)</span>
           </div>
           <div className="mt-2 w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
             <div className="h-full bg-cyan-400 rounded-full" style={{ width: `${todayPercent}%` }} />
@@ -191,42 +193,42 @@ export default function GlobalActivityMatrix({
         </div>
 
         {/* Card 4: Tiempo de Foco */}
-        <div className="p-4 rounded-2xl bg-[#090e17]/80 border border-purple-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group">
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0a0f16]/90 border border-purple-500/30 backdrop-blur-xl shadow-lg relative overflow-hidden group flex flex-col justify-between">
           <div className="absolute -top-6 -right-6 w-20 h-20 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition pointer-events-none" />
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>DEEP WORK</span>
-            <Clock size={15} className="text-purple-400" />
+          <div className="flex items-center justify-between text-xs text-slate-400 font-space-mono">
+            <span className="text-[10px] sm:text-xs">DEEP WORK</span>
+            <Clock size={15} className="text-purple-400 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-white font-mono tracking-tight">
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-black text-white font-alata tracking-tight">
               18.5
             </span>
-            <span className="text-xs font-semibold text-purple-400">hrs esta semana</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-purple-400 font-google-sans">hrs / semana</span>
           </div>
-          <p className="mt-1 text-[10px] text-slate-400">Objetivo semanal: 20 hrs</p>
+          <p className="mt-1 text-[10px] text-slate-400 font-google-sans">Meta: 20 hrs</p>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
           2. SCOPE FILTER & BREAKDOWN TABLE (IMAGE 3 & 4 HABIT ROWS)
          ───────────────────────────────────────────────────────────── */}
-      <div className="p-6 rounded-3xl bg-[#070b12]/90 border border-slate-800/80 backdrop-blur-xl shadow-2xl space-y-5">
+      <div className="p-4 sm:p-6 rounded-3xl bg-[#070b12]/90 border border-slate-800/80 backdrop-blur-xl shadow-2xl space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <Grid size={16} className="text-emerald-400" />
-            <h3 className="text-sm font-bold text-white tracking-tight">
+            <Grid size={16} className="text-emerald-400 shrink-0" />
+            <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight font-google-sans">
               Desglose de Orbes & Registro Semanal
             </h3>
           </div>
 
           {/* Scope Filter Buttons */}
-          <div className="flex items-center gap-1.5 text-xs font-mono">
-            <span className="text-slate-500 flex items-center gap-1 mr-1">
-              <Filter size={12} /> Ámbito:
+          <div className="flex items-center gap-1.5 text-xs font-space-mono">
+            <span className="text-slate-500 flex items-center gap-1 mr-1 text-[10px]">
+              <Filter size={11} /> Ámbito:
             </span>
             <button
               onClick={() => setScopeFilter("todos")}
-              className={`px-2.5 py-0.5 rounded-full transition ${
+              className={`px-2 py-0.5 rounded-full transition text-[10px] ${
                 scopeFilter === "todos"
                   ? "bg-slate-700 text-white font-bold"
                   : "bg-black/40 text-slate-400 hover:text-slate-200"
@@ -236,7 +238,7 @@ export default function GlobalActivityMatrix({
             </button>
             <button
               onClick={() => setScopeFilter("personal")}
-              className={`px-2.5 py-0.5 rounded-full transition ${
+              className={`px-2 py-0.5 rounded-full transition text-[10px] ${
                 scopeFilter === "personal"
                   ? "bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-bold"
                   : "bg-black/40 text-slate-400 hover:text-slate-200"
@@ -246,7 +248,7 @@ export default function GlobalActivityMatrix({
             </button>
             <button
               onClick={() => setScopeFilter("empresa")}
-              className={`px-2.5 py-0.5 rounded-full transition ${
+              className={`px-2 py-0.5 rounded-full transition text-[10px] ${
                 scopeFilter === "empresa"
                   ? "bg-blue-950 text-blue-300 border border-blue-500/50 font-bold"
                   : "bg-black/40 text-slate-400 hover:text-slate-200"
@@ -257,52 +259,76 @@ export default function GlobalActivityMatrix({
           </div>
         </div>
 
-        {/* ORB ROWS (INSPIRED BY IMAGE 3 & 4) */}
+        {/* ORB ROWS */}
         <div className="space-y-3">
           {filteredOrbs.map((orb) => {
             const history = generateOrbHistory(orb.id, 7);
-            const orbStreak = (orb.id.length * 3) % 12 + 4; // Mock realistic streak per orb
+            const orbStreak = (orb.id.length * 3) % 12 + 4;
 
             return (
               <div
                 key={orb.id}
-                className="p-3.5 rounded-2xl bg-black/40 border border-slate-800/80 hover:border-slate-700 transition flex flex-col md:flex-row md:items-center justify-between gap-4 group"
+                className="p-3.5 rounded-2xl bg-black/40 border border-slate-800/80 hover:border-slate-700 transition flex flex-col gap-3 group"
               >
-                {/* Left: Orb Title & Scope */}
-                <div className="flex items-center gap-3 min-w-[240px]">
-                  {/* Glowing Color Orb Avatar */}
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-md"
-                    style={{
-                      backgroundColor: `${orb.colorTheme.primary}20`,
-                      borderColor: orb.colorTheme.border,
-                      boxShadow: `0 0 12px ${orb.colorTheme.glow}`,
-                    }}
-                  >
-                    <Sparkles size={14} style={{ color: orb.colorTheme.primary }} />
+                {/* Top Row: Orb Title, Scope Badge & Streak/Progress */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 border shadow-md"
+                      style={{
+                        backgroundColor: `${orb.colorTheme.primary}20`,
+                        borderColor: orb.colorTheme.border,
+                        boxShadow: `0 0 10px ${orb.colorTheme.glow}`,
+                      }}
+                    >
+                      <Sparkles size={12} style={{ color: orb.colorTheme.primary }} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors font-google-sans truncate">
+                        {orb.title}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-space-mono text-slate-400">
+                        <span
+                          className={`px-1.5 py-0.2 rounded border ${
+                            orb.scope === "personal"
+                              ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/30"
+                              : "bg-blue-950/60 text-blue-300 border-blue-500/30"
+                          }`}
+                        >
+                          {orb.scope.toUpperCase()}
+                        </span>
+                        <span className="truncate">• {orb.timeframe}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-2">
-                      <span>{orb.title}</span>
-                    </h4>
-                    <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-slate-400">
-                      <span
-                        className={`px-1.5 py-0.2 rounded border ${
-                          orb.scope === "personal"
-                            ? "bg-emerald-950/60 text-emerald-300 border-emerald-500/30"
-                            : "bg-blue-950/60 text-blue-300 border-blue-500/30"
-                        }`}
-                      >
-                        {orb.scope.toUpperCase()}
+                  {/* Right: Streak & Progress Bar */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="px-2 py-0.5 rounded-full bg-orange-950/80 border border-orange-500/40 text-orange-300 font-space-mono text-[10px] font-bold flex items-center gap-1">
+                      <Flame size={11} className="text-orange-400 fill-orange-400" />
+                      <span className="font-alata">{orbStreak}d</span>
+                    </span>
+
+                    <div className="w-12 sm:w-14 flex flex-col items-end">
+                      <span className="text-[10px] font-alata font-bold text-slate-200">
+                        {orb.progressPercent}%
                       </span>
-                      <span>• {orb.timeframe}</span>
+                      <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden mt-0.5">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${orb.progressPercent}%`,
+                            backgroundColor: orb.colorTheme.primary,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Center: 7-Day Matrix Strip (L M X J V S D) */}
-                <div className="flex items-center gap-2 justify-between md:justify-center flex-1">
+                {/* Bottom Row: 7-Day Matrix Strip (L M X J V S D) */}
+                <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-white/5 w-full">
                   {history.map((h, i) => {
                     const isSelectedDate = h.dateStr === selectedDate;
                     const isToday = i === 6;
@@ -314,19 +340,18 @@ export default function GlobalActivityMatrix({
                         title={`${h.dayName} ${h.dayNum}: ${
                           h.completed ? "Concluido (100%)" : "Incompleto"
                         }`}
-                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all ${
+                        className={`flex flex-col items-center gap-0.5 p-1 rounded-xl border transition-all flex-1 ${
                           isSelectedDate
                             ? "border-emerald-400 bg-emerald-500/20 scale-105"
                             : "border-slate-800/80 bg-black/40 hover:border-slate-600"
                         }`}
                       >
-                        <span className="text-[9px] font-mono text-slate-400 uppercase">
+                        <span className="text-[8px] font-space-mono text-slate-400 uppercase">
                           {h.dayName}
                         </span>
 
-                        {/* Dot indicator */}
                         <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all ${
+                          className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-alata font-bold transition-all ${
                             h.completed
                               ? "bg-emerald-500 text-black shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                               : isToday
@@ -335,7 +360,7 @@ export default function GlobalActivityMatrix({
                           }`}
                         >
                           {h.completed ? (
-                            <Check size={12} strokeWidth={3} />
+                            <Check size={11} strokeWidth={3} />
                           ) : (
                             <span>{h.dayNum}</span>
                           )}
@@ -343,31 +368,6 @@ export default function GlobalActivityMatrix({
                       </button>
                     );
                   })}
-                </div>
-
-                {/* Right: Streak & Progress Bar */}
-                <div className="flex items-center justify-end gap-3 min-w-[140px] text-right">
-                  {/* Streak Flame Badge */}
-                  <span className="px-2.5 py-1 rounded-full bg-orange-950/80 border border-orange-500/40 text-orange-300 font-mono text-[10px] font-bold flex items-center gap-1">
-                    <Flame size={12} className="text-orange-400 fill-orange-400" />
-                    <span>{orbStreak}d</span>
-                  </span>
-
-                  {/* Progress percent */}
-                  <div className="w-16 flex flex-col items-end">
-                    <span className="text-[11px] font-mono font-bold text-slate-200">
-                      {orb.progressPercent}%
-                    </span>
-                    <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden mt-1">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${orb.progressPercent}%`,
-                          backgroundColor: orb.colorTheme.primary,
-                        }}
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
             );

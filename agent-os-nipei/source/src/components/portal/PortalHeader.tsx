@@ -2,8 +2,25 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, ChevronDown, ArrowRight, User, LogIn, Sparkles } from "lucide-react";
+import {
+  Shield,
+  ChevronDown,
+  ArrowRight,
+  User,
+  LogIn,
+  Sparkles,
+  Brain,
+  Upload,
+  Network,
+  Building2,
+  Kanban,
+  Sun,
+  MessagesSquare,
+  Layers,
+} from "lucide-react";
 import { MemberProfile } from "@/lib/nipeiStore";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface PortalHeaderProps {
   currentMember: MemberProfile;
@@ -89,6 +106,7 @@ export default function PortalHeader({
   onSelectMember,
 }: PortalHeaderProps) {
   const roleTheme = getRoleColorTheme(currentMember?.globalRole);
+  const { t } = useLanguage();
 
   return (
     <header
@@ -133,6 +151,72 @@ export default function PortalHeader({
         </div>
       </div>
 
+      {/* ─── CENTRO COMPACTO: Módulos Core MVP (Memoria, Ingesta, Organograma, Empresas, Kanban, Venu, Hermes) ─── */}
+      <div className="hidden xl:flex items-center gap-1.5 shrink-0 font-mono text-[11px]">
+        <Link
+          href="/memory"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Memória Nipëi Vault"
+        >
+          <Brain size={12} className="text-emerald-400" />
+          <span>Memória</span>
+        </Link>
+
+        <Link
+          href="/ingestion"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Ingestão de Conhecimento"
+        >
+          <Upload size={12} className="text-emerald-400" />
+          <span>Ingestão</span>
+        </Link>
+
+        <Link
+          href="/organograma"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Organograma Global"
+        >
+          <Network size={12} className="text-cyan-400" />
+          <span>Organograma</span>
+        </Link>
+
+        <Link
+          href="/empresas"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-purple-500/50 hover:bg-purple-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Empresas & Unidades"
+        >
+          <Building2 size={12} className="text-purple-400" />
+          <span>Empresas</span>
+        </Link>
+
+        <Link
+          href="/kanban"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-amber-500/50 hover:bg-amber-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Kanban Tasks"
+        >
+          <Kanban size={12} className="text-amber-400" />
+          <span>Kanban</span>
+        </Link>
+
+        <Link
+          href="/venu"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Venu (Agente de Voz & Agenda)"
+        >
+          <Sun size={12} className="text-cyan-400" />
+          <span>Venu</span>
+        </Link>
+
+        <Link
+          href="/hermes"
+          className="px-2 py-1 rounded-lg bg-black/40 border border-slate-800 hover:border-blue-500/50 hover:bg-blue-950/30 text-slate-300 hover:text-white transition flex items-center gap-1"
+          title="Hermes 2.0 (Gestão de Tarefas)"
+        >
+          <MessagesSquare size={12} className="text-blue-400" />
+          <span>Hermes</span>
+        </Link>
+      </div>
+
       {/* ─── CENTRO COMPACTO: Selector Desplegable de Perfil (Medium+ screens) ─── */}
       <div className="hidden md:flex items-center shrink-0">
         <div className="relative">
@@ -141,11 +225,18 @@ export default function PortalHeader({
             onChange={(e) => onSelectMember(e.target.value)}
             className="bg-black/60 border border-slate-700/60 text-[10px] sm:text-[11px] text-slate-200 rounded-lg px-2 py-1 pr-6 appearance-none focus:outline-none focus:border-emerald-500 cursor-pointer font-mono font-medium hover:border-slate-500 transition"
           >
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name} ({m.globalRole})
-              </option>
-            ))}
+            {members
+              .filter(
+                (m) =>
+                  m.globalRole === "SUPER_USER" ||
+                  m.globalRole === "VETO_APPROVER" ||
+                  m.squadAssignments?.some((s) => s.squadId === "squad_1_ceo")
+              )
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name} ({m.globalRole})
+                </option>
+              ))}
           </select>
           <ChevronDown
             size={11}
@@ -154,8 +245,11 @@ export default function PortalHeader({
         </div>
       </div>
 
-      {/* ─── LADO DERECHO COMPACTO: Cambiar Usuario & Interfaz Completa ─── */}
+      {/* ─── LADO DERECHO COMPACTO: Idioma + Cambiar Usuario + Interfaz Completa ─── */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Selector de Idioma (ES / EN / PT) */}
+        <LanguageSwitcher />
+
         {/* Cambiar Usuario / Login Button */}
         <Link
           href="/login"
@@ -163,7 +257,7 @@ export default function PortalHeader({
           title="Ir a Login / Cambiar de Perfil o Agente de IA"
         >
           <LogIn size={12} className="text-emerald-400 shrink-0" />
-          <span className="hidden xs:inline">Login</span>
+          <span className="hidden xs:inline">{t.login}</span>
         </Link>
 
         {/* Interfaz Completa Button */}
@@ -171,7 +265,7 @@ export default function PortalHeader({
           href="/"
           className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg text-white font-bold text-[10px] sm:text-xs shadow-md transition-all transform hover:scale-[1.02] active:scale-[0.98] border border-white/20 bg-gradient-to-r ${roleTheme.buttonBg}`}
         >
-          <span className="hidden xs:inline">Interfaz Completa</span>
+          <span className="hidden xs:inline">{t.fullInterface}</span>
           <span className="inline xs:hidden">Nipëi Control</span>
           <ArrowRight size={12} className="shrink-0" />
         </Link>

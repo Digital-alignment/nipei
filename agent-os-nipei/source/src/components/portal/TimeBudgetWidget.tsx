@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
-import { Clock, ShieldAlert, CheckCircle2, AlertTriangle, Sliders, Zap, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { Clock, ShieldAlert, CheckCircle2, AlertTriangle, Sliders, Zap, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { OrbData } from "./OrbItem";
 import { TimeConfigSettings } from "./TimeConfigModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface TimeBudgetWidgetProps {
   orbs: OrbData[];
@@ -24,9 +25,9 @@ export function getOrbTimeframeMinutes(timeframe: string): number {
   return endMin - startMin;
 }
 
-// Estimate total minutes of tasks inside an orb (default 30 min per step if unassigned)
+// Estimate total minutes of tasks inside an orb (default 35 min per step)
 export function getOrbTasksMinutes(orb: OrbData): number {
-  return orb.flowSteps.length * 35; // Average 35 minutes per task step
+  return orb.flowSteps.length * 35;
 }
 
 export default function TimeBudgetWidget({
@@ -34,6 +35,9 @@ export default function TimeBudgetWidget({
   settings,
   onOpenConfig,
 }: TimeBudgetWidgetProps) {
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const { t } = useLanguage();
+
   // Calculate total waking minutes from settings
   const [wH, wM] = settings.wakeTime.split(":").map(Number);
   const [sH, sM] = settings.sleepTime.split(":").map(Number);
@@ -53,8 +57,6 @@ export default function TimeBudgetWidget({
   const bufferMin = totalWakingMin - totalAllocatedMin;
 
   const isDayOverloaded = totalAllocatedMin > totalWakingMin;
-  const isEmpresaOverloaded = empresaMinAllocated > settings.maxWorkHours * 60;
-  const isPersonalOverloaded = personalMinAllocated > settings.maxPersonalHours * 60;
 
   // Find individual Orbs where task duration exceeds timeframe duration
   const overloadedOrbs = orbs.filter((o) => {
@@ -64,126 +66,147 @@ export default function TimeBudgetWidget({
   });
 
   return (
-    <div className="w-full bg-[#080d17]/95 border border-slate-800 rounded-3xl p-5 backdrop-blur-xl shadow-2xl space-y-4">
+    <div className="w-full bg-[#0a0f18]/80 border border-white/10 rounded-3xl p-4 sm:p-5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] space-y-4 transition-all duration-300 relative overflow-hidden">
+      {/* Subtle Background Glow */}
+      <div
+        className={`absolute -top-24 -left-24 w-60 h-60 rounded-full blur-3xl opacity-15 pointer-events-none transition-colors duration-500 ${
+          isDayOverloaded ? "bg-rose-500" : "bg-cyan-500"
+        }`}
+      />
+
       {/* Top Bar Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3 relative z-10">
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center border shadow-md ${
+            className={`w-9 h-9 rounded-2xl flex items-center justify-center border transition-colors shrink-0 ${
               isDayOverloaded
-                ? "bg-rose-950/80 border-rose-500/50 text-rose-300 animate-pulse"
-                : "bg-cyan-950/80 border-cyan-500/40 text-cyan-300"
+                ? "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                : "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
             }`}
           >
             <Clock size={18} />
           </div>
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-2">
-              <span>Control de Capacidad & Presupuesto de Tiempo</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold text-white tracking-tight font-google-sans">
+                {t.capacityTitle}
+              </h3>
               {isDayOverloaded ? (
-                <span className="px-2 py-0.5 rounded-full bg-rose-950/90 text-rose-300 border border-rose-500/50 text-[10px] font-mono font-bold animate-pulse flex items-center gap-1">
-                  <ShieldAlert size={10} /> 🔴 SOBRECARGA (+{Math.abs(bufferMin)} min)
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[10px] font-space-mono font-medium flex items-center gap-1.5 shrink-0">
+                  <ShieldAlert size={11} className="text-rose-400" />
+                  <span>+<span className="font-alata">{Math.abs(bufferMin)}m</span> {t.overloaded}</span>
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 text-[10px] font-mono font-bold flex items-center gap-1">
-                  <CheckCircle2 size={10} /> 🟢 EQUILIBRADO (+{bufferMin} min libres)
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-space-mono font-medium flex items-center gap-1.5 shrink-0">
+                  <CheckCircle2 size={11} className="text-emerald-400" />
+                  <span>+<span className="font-alata">{bufferMin}m</span> {t.available}</span>
                 </span>
               )}
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Despierto: {settings.wakeTime} hs a {settings.sleepTime} hs ({Math.round(totalWakingMin / 60)}h total)
-            </p>
+            </div>
           </div>
         </div>
 
-        {/* Config Button */}
-        <button
-          onClick={onOpenConfig}
-          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white font-mono text-xs transition flex items-center gap-1.5"
-        >
-          <Sliders size={13} />
-          <span>Ajustar Tiempo</span>
-        </button>
-      </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Config Button */}
+          <button
+            onClick={onOpenConfig}
+            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-google-sans text-xs font-medium transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title={t.configureSchedule}
+          >
+            <Sliders size={13} className="text-slate-400" />
+            <span className="hidden sm:inline">{t.configureSchedule}</span>
+          </button>
 
-      {/* Visual Capacity Bar Meter */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-mono">
-          <span className="text-slate-400 flex items-center gap-2">
-            <span>Asignado: <strong className="text-white">{Math.round(totalAllocatedMin / 60)}h {totalAllocatedMin % 60}m</strong></span>
-            <span>/</span>
-            <span>Disponible: <strong className="text-white">{Math.round(totalWakingMin / 60)}h</strong></span>
-          </span>
-          <span className={`font-bold ${isDayOverloaded ? "text-rose-400" : "text-emerald-400"}`}>
-            {Math.round((totalAllocatedMin / totalWakingMin) * 100)}% Capacidad Usada
-          </span>
-        </div>
-
-        {/* Multi-Segment Capacity Bar */}
-        <div className="w-full h-3 rounded-full bg-slate-900 border border-slate-800 overflow-hidden flex">
-          {/* Empresa Segment */}
-          <div
-            className="h-full bg-purple-500 transition-all duration-500"
-            style={{ width: `${Math.min(100, (empresaMinAllocated / totalWakingMin) * 100)}%` }}
-            title={`Empresa: ${Math.round(empresaMinAllocated / 60)}h`}
-          />
-          {/* Personal Segment */}
-          <div
-            className="h-full bg-emerald-500 transition-all duration-500"
-            style={{ width: `${Math.min(100, (personalMinAllocated / totalWakingMin) * 100)}%` }}
-            title={`Personal: ${Math.round(personalMinAllocated / 60)}h`}
-          />
-          {/* Remaining / Buffer Segment */}
-          {!isDayOverloaded && (
-            <div
-              className="h-full bg-slate-800 opacity-60 transition-all duration-500"
-              style={{ width: `${Math.max(0, (bufferMin / totalWakingMin) * 100)}%` }}
-              title={`Buffer libre: ${Math.round(bufferMin / 60)}h`}
-            />
-          )}
-        </div>
-
-        {/* Scope Breakdown Legend */}
-        <div className="flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400 pt-1">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-              <span>Empresa: <strong>{Math.round(empresaMinAllocated / 60)}h</strong> {isEmpresaOverloaded && "⚠️ Max excedido"}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span>Personal: <strong>{Math.round(personalMinAllocated / 60)}h</strong> {isPersonalOverloaded && "⚠️ Max excedido"}</span>
-            </span>
-          </div>
-
-          <span className="text-slate-500">
-            {isDayOverloaded
-              ? `🔴 Faltan ${Math.abs(bufferMin)} min en el día`
-              : `🟢 Quedan ${bufferMin} min para imprevistos / descanso`}
-          </span>
+          {/* Collapse Button */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-1.5 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition border border-white/10"
+            title={isCollapsed ? "Expandir Presupuesto" : "Colapsar Presupuesto"}
+          >
+            {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </button>
         </div>
       </div>
 
-      {/* Overloaded Orbs Alert List (If any Orb has task overflow) */}
-      {overloadedOrbs.length > 0 && (
-        <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-500/30 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-rose-300">
-            <AlertTriangle size={14} />
-            <span>Atención: {overloadedOrbs.length} Orbe(s) superan su ventana de tiempo</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {overloadedOrbs.map((o) => {
-              const diff = getOrbTasksMinutes(o) - getOrbTimeframeMinutes(o.timeframe);
-              return (
-                <span
-                  key={o.id}
-                  className="px-2.5 py-1 rounded-lg bg-rose-950/80 border border-rose-500/40 text-rose-300 text-[10px] font-mono font-bold"
-                >
-                  ⚠️ {o.title}: +{diff} min acumulados
+      {/* Expanded Body Content */}
+      {!isCollapsed && (
+        <div className="space-y-4 pt-1 animate-fade-in relative z-10">
+          {/* Visual Capacity Bar Meter */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between text-xs font-google-sans">
+              <span className="text-slate-400 flex items-center gap-1.5 flex-wrap">
+                <span>Asignado: <strong className="text-white font-alata font-normal">{Math.round(totalAllocatedMin / 60)}h {totalAllocatedMin % 60}m</strong></span>
+                <span className="text-slate-600">•</span>
+                <span>Disponible: <strong className="text-slate-300 font-alata font-normal">{Math.round(totalWakingMin / 60)}h</strong></span>
+              </span>
+              <span className={`font-alata font-semibold text-xs sm:text-sm ${isDayOverloaded ? "text-rose-400" : "text-emerald-400"}`}>
+                {Math.round((totalAllocatedMin / totalWakingMin) * 100)}% Capacidad Usada
+              </span>
+            </div>
+
+            {/* Multi-Segment Capacity Bar */}
+            <div className="w-full h-2.5 rounded-full bg-slate-900/90 border border-white/5 overflow-hidden flex p-0.5">
+              <div
+                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-l-full transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                style={{ width: `${Math.min(100, (empresaMinAllocated / totalWakingMin) * 100)}%` }}
+                title={`Empresa: ${Math.round(empresaMinAllocated / 60)}h`}
+              />
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                style={{ width: `${Math.min(100, (personalMinAllocated / totalWakingMin) * 100)}%` }}
+                title={`Personal: ${Math.round(personalMinAllocated / 60)}h`}
+              />
+              {!isDayOverloaded && (
+                <div
+                  className="h-full bg-slate-800/40 rounded-r-full transition-all duration-500"
+                  style={{ width: `${Math.max(0, (bufferMin / totalWakingMin) * 100)}%` }}
+                  title={`Buffer libre: ${Math.round(bufferMin / 60)}h`}
+                />
+              )}
+            </div>
+
+            {/* Scope Breakdown Legend */}
+            <div className="flex flex-wrap items-center justify-between text-xs font-google-sans text-slate-400">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.6)]" />
+                  <span>Empresa: <strong className="text-white font-alata font-normal">{Math.round(empresaMinAllocated / 60)}h</strong></span>
                 </span>
-              );
-            })}
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
+                  <span>Personal: <strong className="text-white font-alata font-normal">{Math.round(personalMinAllocated / 60)}h</strong></span>
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Overloaded Orbs Alert Drawer */}
+          {overloadedOrbs.length > 0 && (
+            <div className="p-3.5 rounded-2xl bg-[#160a10]/70 border border-rose-500/20 text-xs space-y-2.5 shadow-sm">
+              <div className="font-medium text-rose-300 flex items-center justify-between font-google-sans">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                  <span>Atención: <strong className="font-alata text-white">{overloadedOrbs.length}</strong> Orbes superan su ventana de tiempo</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {overloadedOrbs.map((o) => {
+                  const tfMin = getOrbTimeframeMinutes(o.timeframe);
+                  const tkMin = getOrbTasksMinutes(o);
+                  const diff = tkMin - tfMin;
+                  return (
+                    <span
+                      key={o.id}
+                      className="px-3 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 text-xs font-google-sans flex items-center gap-1.5"
+                    >
+                      <span className="text-slate-300">{o.title}</span>
+                      <span className="text-rose-400 font-alata">+{diff}m</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

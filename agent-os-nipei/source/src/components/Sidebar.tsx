@@ -23,22 +23,18 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  // 🟢 1. Active Modules & Main Agents (Always Visible)
+  // 🟢 1. Active Modules & Main Agents (MVP Core)
   { href: "/mi-portal",      label: "Meu Portal (Habits & Ivy)", icon: <UserCheck size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.25)",  group: "active" },
-  { href: "/productivity",   label: "Productivity",                   icon: <TrendingUp size={16} />,                      accent: "#10b981", dim: "rgba(16,185,129,0.25)",  group: "active" },
-  { href: "/venu",           label: "Venu",                           icon: <Sun size={16} />,                             accent: "#22d3ee", dim: "rgba(34,211,238,0.16)", group: "active" },
-  { href: "/",               label: "Mission Control",                icon: <LayoutGrid size={16} />,                      accent: "#22c55e", dim: "rgba(34,197,94,0.16)",  group: "active" },
-  { href: "/agent-kanban",   label: "Multi-Squad Kanban",             icon: <Kanban size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
+  { href: "/memory",         label: "Memória Nipëi (Vault)",          icon: <Brain size={16} />,                           accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
   { href: "/ingestion",      label: "Ingestão de Conhecimento",       icon: <Upload size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/hermes",         label: "Hermes 2.0",                     icon: <AgentAvatar agent="hermes" size={22} />,      accent: "#60a5fa", dim: "rgba(96,165,250,0.16)", group: "active" },
+  { href: "/organograma",    label: "Organograma Global",             icon: <Network size={16} />,                         accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
+  { href: "/empresas",       label: "Empresas & Unidades",            icon: <Building2 size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
+  { href: "/kanban",         label: "Kanban Tasks (Squads)",          icon: <Kanban size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
+  { href: "/venu",           label: "Venu (Voz & Agenda)",            icon: <Sun size={16} />,                             accent: "#22d3ee", dim: "rgba(34,211,238,0.16)", group: "active" },
+  { href: "/hermes",         label: "Hermes 2.0 (Gestão)",            icon: <AgentAvatar agent="hermes" size={22} />,      accent: "#60a5fa", dim: "rgba(96,165,250,0.16)", group: "active" },
+  { href: "/",               label: "Mission Control",                icon: <LayoutGrid size={16} />,                      accent: "#22c55e", dim: "rgba(34,197,94,0.16)",  group: "active" },
   { href: "/antigravity",    label: "Antigravity",                    icon: <AgentAvatar agent="antigravity" size={22} />, accent: "#7c3aed", dim: "rgba(124,58,237,0.16)", group: "active" },
-  { href: "/seo",            label: "SEO Content Studio",             icon: <TrendingUp size={16} />,                      accent: "#a3e635", dim: "rgba(163,230,53,0.16)", group: "active" },
-  { href: "/memory",         label: "Nipëi Memory (Vault)",           icon: <Brain size={16} />,                           accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/organograma",    label: "Organograma",                    icon: <Network size={16} />,                         accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/arquitectura",   label: "Arquitectura & Archify",         icon: <Workflow size={16} />,                        accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/empresas",       label: "Empresas",                       icon: <Building2 size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/infrastructure", label: "Servicios Conectados",           icon: <Server size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/brand",          label: "Nipëi Brand",                    icon: <Palette size={16} />,                         accent: "#e879f9", dim: "rgba(232,121,249,0.16)", group: "active" },
+  { href: "/productivity",   label: "Produtividade & Desempenho",     icon: <TrendingUp size={16} />,                      accent: "#10b981", dim: "rgba(16,185,129,0.25)",  group: "active" },
 
   // 🔮 2. Specialized Future Agents (Collapsible)
   { href: "/claude",         label: "Claude",                         icon: <AgentAvatar agent="claude" size={22} />,      accent: "#d97757", dim: "rgba(217,119,87,0.16)", group: "agents_future" },
@@ -78,7 +74,6 @@ const NAV: NavItem[] = [
   { href: "/apps",           label: "App Lab",                        icon: <FlaskConical size={16} />,                    accent: "#a3e635", dim: "rgba(163,230,53,0.16)", group: "tools_future" },
   { href: "/thumbnails",     label: "Thumbnails",                     icon: <ImageIcon size={16} />,                       accent: "#fb7185", dim: "rgba(251,113,133,0.16)", group: "tools_future" },
   { href: "/notebook",       label: "Notebook",                       icon: <NotebookText size={16} />,                    accent: "#fde047", dim: "rgba(253,224,71,0.16)", group: "tools_future" },
-  { href: "/kanban",         label: "Kanban",                         icon: <Columns3 size={16} />,                        accent: "#14b8a6", dim: "rgba(20,184,166,0.16)", group: "tools_future" },
 ];
 
 const DEFAULT_ORDER = NAV.map((n) => n.href);
@@ -132,10 +127,9 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`hidden md:flex flex-col shrink-0 h-screen overflow-hidden py-6 border-r border-[var(--line-soft)] transition-all duration-300 ${
+      className={`hidden md:flex flex-col shrink-0 h-screen overflow-hidden py-6 border-r border-white/10 bg-[#07080b] transition-all duration-300 ${
         collapsed ? "w-[68px]" : "w-[244px]"
       }`}
-      style={{ background: "var(--bg-mid)" }}
     >
       {/* Sidebar Header & Collapse Toggle */}
       <div className="flex items-center justify-between px-4 mb-6 shrink-0">
@@ -221,7 +215,7 @@ export default function Sidebar() {
               <div className="my-2 border-t border-[#1e381e] mx-3" />
             )}
 
-            {(isAgentsOpen || collapsed) && (
+            {isAgentsOpen && (
               <div className="mt-1 space-y-0.5">
                 {agentsFutureItems.map((item) => {
                   const active = pathname.startsWith(item.href);
@@ -267,7 +261,7 @@ export default function Sidebar() {
               <div className="my-2 border-t border-[#1e381e] mx-3" />
             )}
 
-            {(isFutureToolsOpen || collapsed) && (
+            {isFutureToolsOpen && (
               <div className="mt-1 space-y-0.5">
                 {toolsFutureItems.map((item) => {
                   const active = pathname.startsWith(item.href);

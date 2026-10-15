@@ -90,7 +90,13 @@ const VOICE_PROVIDER = (process.env.APOLLO_VOICE_PROVIDER === "xai" ? "xai" : "o
 export async function POST(req: Request) {
   const provider = VOICE_PROVIDERS[VOICE_PROVIDER];
   const key = provider.key();
-  if (!key) return NextResponse.json({ error: provider.missingKeyMsg }, { status: 400 });
+  if (!key) {
+    return NextResponse.json({
+      mode: "hermes_native",
+      provider: "elevenlabs",
+      message: "Direct WebRTC key missing; using Hermes Native Realtime Voice Engine (ElevenLabs HD Voice + Speech Recognition)",
+    });
+  }
   const body = await req.json().catch(() => ({}));
   // cedar/marin are the new-generation natural voices; cedar suits the butler. ash kept for continuity.
   const voice = /^(alloy|ash|ballad|coral|echo|sage|shimmer|verse|marin|cedar)$/.test(body?.voice) ? body.voice : "cedar";

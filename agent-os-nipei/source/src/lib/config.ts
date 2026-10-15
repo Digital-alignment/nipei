@@ -184,17 +184,23 @@ export function hermesHome(): string {
 }
 
 export function defaultVault(): string | null {
-  // Prioritize dedicated Nipëi Master Vault for Nipëi OS
+  // 1. Environment variables (highest priority for online/VPS/Docker deployment)
+  const fromEnv = process.env.VAULT_PATH || process.env.AGENTIC_OS_VAULT;
+  if (fromEnv && existsSync(fromEnv)) return fromEnv;
+
+  // 2. Relative vault folder in project root (e.g. ../../nipei-vault or /var/www/nipei-vault)
+  const relativeVault = path.resolve(process.cwd(), "..", "..", "nipei-vault");
+  if (existsSync(relativeVault)) return relativeVault;
+
+  // 3. Dedicated Nipëi Master Vault for local Windows workstation
   const nipeiVault = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
   if (existsSync(nipeiVault)) return nipeiVault;
-
-  const fromEnv = process.env.AGENTIC_OS_VAULT;
-  if (fromEnv && existsSync(fromEnv)) return fromEnv;
 
   const fromFile = fileCfg.vaultRoot;
   if (typeof fromFile === "string" && existsSync(fromFile)) return fromFile;
 
   const guesses = [
+    path.join(os.homedir(), "nipei-vault"),
     path.join(os.homedir(), "Documents", "Obsidian Vault"),
     path.join(os.homedir(), "Obsidian"),
     path.join(os.homedir(), "Obsidian Vault"),

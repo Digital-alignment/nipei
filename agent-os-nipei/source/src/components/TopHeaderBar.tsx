@@ -68,14 +68,15 @@ export default function TopHeaderBar() {
             </div>
 
             {[
-              { href: "/", label: "Mission Control (Master Global)", icon: <Crown size={14} className="text-[#22c55e]" /> },
-              { href: "/organograma", label: "Organograma Global & Squads", icon: <Network size={14} className="text-[#4ade80]" /> },
-              { href: "/flow", label: "Nipëi Flow (Supply & Insumos)", icon: <Workflow size={14} className="text-[#22c55e]" /> },
-              { href: "/people", label: "Nipëi People (CRM 360 & Anamnese)", icon: <Brain size={14} className="text-[#4ade80]" /> },
-              { href: "/brain", label: "Nipëi Brain (DRE & Governança)", icon: <ShieldCheck size={14} className="text-[#10b981]" /> },
-              { href: "/agent-kanban", label: "Multi-Squad Kanban Board", icon: <Kanban size={14} className="text-[#22c55e]" /> },
-              { href: "/room", label: "AI Agent Mastermind", icon: <MessagesSquare size={14} className="text-[#a855f7]" /> },
-              { href: "/paperclip", label: "Paperclip Vault Inbox", icon: <MessageSquare size={14} className="text-[#d4a574]" /> },
+              { href: "/mi-portal", label: "Meu Portal (Habits & Orbs)", icon: <Crown size={14} className="text-[#22c55e]" /> },
+              { href: "/memory", label: "Memória Nipëi (Vault)", icon: <Brain size={14} className="text-[#22c55e]" /> },
+              { href: "/ingestion", label: "Ingestão de Conhecimento", icon: <Sparkles size={14} className="text-[#4ade80]" /> },
+              { href: "/organograma", label: "Organograma & Squads", icon: <Network size={14} className="text-[#4ade80]" /> },
+              { href: "/empresas", label: "Empresas & Unidades", icon: <Layers size={14} className="text-[#10b981]" /> },
+              { href: "/kanban", label: "Kanban Tasks (Squads)", icon: <Kanban size={14} className="text-[#22c55e]" /> },
+              { href: "/venu", label: "Venu (Voz & Agenda)", icon: <Zap size={14} className="text-[#22d3ee]" /> },
+              { href: "/hermes", label: "Hermes 2.0 (Gestão de Tarefas)", icon: <MessagesSquare size={14} className="text-[#60a5fa]" /> },
+              { href: "/", label: "Mission Control (Master Global)", icon: <ShieldCheck size={14} className="text-[#a855f7]" /> },
             ].map((item) => (
               <Link
                 key={item.href}

@@ -49,7 +49,9 @@ const TITLES: Record<string, PageMeta> = {
   "/notebook":    { numeral: "XII.",  label: "Self · Notebook",    title: "Notebook",                sub: "Your NotebookLM notebooks, audio overviews and chats — all in one place, synced to Obsidian." },
   "/kanban":      { numeral: "XIII.", label: "Self · Kanban",      title: "Kanban",                  sub: "Hermes Agent multi-agent board. Drop a prompt into triage, watch the orchestrator decompose + assign." },
   "/journal":     { numeral: "XIV.",  label: "Self · Journal",     title: "Journal",                 sub: "Daily entries with voice or text. One markdown file per day." },
-  "/memory":      { numeral: "XV.",   label: "Vault · Memory",      title: "Nipëi Memory (Vault & Ingestão)",   sub: "Central de Conhecimento, 60 notas ingestadas no Vault Master, auditoria de vacíos & Omi memories." },
+  "/memory":      { numeral: "XV.",   label: "Vault · Memory",      title: "Nipëi Memory (Vault & Ingestão)",   sub: "Central de Conhecimento, 1.088 notas ativas no Vault Master, auditoria de vacíos & Omi memories." },
+  "/empresas":    { numeral: "IV·a.", label: "Gestão · Empresas",       title: "Empresas & Unidades Nipëi", sub: "Centro de gestão das 5 empresas oficiais, metas estratégicas, categorias e projetos vinculados." },
+  "/venu":        { numeral: "VI.",   label: "Voz & Agenda · Venu",     title: "Venu / Apollo",           sub: "Assistente executivo com geometria sagrada, síntese de voz, briefings diários e eventos." },
   "/guide":       { numeral: "XVI.",  label: "Build · Your Own",   title: "Build Your Own",          sub: "Step-by-step guide. Anyone can follow it. Share with your community." },
   // Routes added after the original map — without an entry here the page silently
   // inherits Mission Control's header, which is what a phone shows first.
@@ -150,7 +152,7 @@ export default function TopBar() {
   return (
     <div className="w-full mb-6 md:mb-8 space-y-6">
       {/* Row 1: Executive Utility & Command Bar */}
-      <div className="w-full p-2.5 rounded-xl border border-[#1e381e] bg-[#0c140c] shadow-lg flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full p-2.5 rounded-2xl border border-white/10 bg-[#0a0f18]/80 backdrop-blur-xl shadow-2xl flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <CompanySelector />
           <TopHeaderBar />

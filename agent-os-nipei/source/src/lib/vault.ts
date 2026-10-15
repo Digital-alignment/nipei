@@ -7,7 +7,7 @@ export const ADDITIONAL_VAULT_ROOT = "";
 export const OMI_PATH = VAULT_ROOT ? path.join(VAULT_ROOT, "Omi/Memories.md") : "";
 export const VAULT_AVAILABLE = Boolean(VAULT_ROOT);
 
-const SKIP_DIRS = new Set([".obsidian", ".trash", "node_modules", ".git"]);
+const SKIP_DIRS = new Set([".obsidian", ".trash", "node_modules", ".git", "Archive_Deprecados", "Ingestion_Inbox"]);
 
 import { isWithinNipeiDomain } from "./nipeiDomainGuard";
 

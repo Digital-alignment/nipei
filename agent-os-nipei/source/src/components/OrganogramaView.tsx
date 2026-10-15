@@ -60,6 +60,19 @@ export default function OrganogramaView() {
         console.error("Error loading saved members", e);
       }
     }
+
+    // Fetch live member profiles directly from /api/vault/members
+    fetch("/api/vault/members")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.members) && data.members.length > 0) {
+          setMembersList(data.members);
+          localStorage.setItem("nipei_members_store", JSON.stringify(data.members));
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching live vault members:", err);
+      });
   }, []);
 
   const saveSquadsToStore = (newSquads: SquadMeta[]) => {

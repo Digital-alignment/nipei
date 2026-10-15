@@ -1,7 +1,6 @@
 /**
- * NIPËI OS BRAND SYSTEM TOKENS & DESIGN SYSTEM RULES
- * Strictly Solid Colors (ZERO GRADIENTS POLICY)
- * Auto-generated and synced via Nipëi Brand Studio (/brand)
+ * NIPËI OS BRAND SYSTEM TOKENS & DESIGN SYSTEM CONTRACTS
+ * Source of Truth for Nipëi OS UI Design System
  */
 
 export interface ColorToken {
@@ -22,134 +21,107 @@ export interface TypographyToken {
 }
 
 export const NIPEI_BRAND_RULES = {
-  zeroGradients: true, // STRICT: No linear/radial gradients anywhere in UI
-  solidPanelsOnly: true, // Solid #050805, #0c140c, #142614
-  sharpCrispBorders: "1px solid #182818",
-  noEmojiInHeaders: true, // Use Lucide React icons instead of emojis in corporate headers
-  groundingRequired: true, // 100% Zero-Hallucination policy, grounded in nipei-vault
+  mainBodyBg: "#2B2C30",
+  bentoCardBg: "#0a0f16",
+  heroCardBg: "#070705",
+  personalScope: {
+    primary: "#706c61",
+    glow: "#8D897C",
+    rgbaGlow: "rgba(141, 137, 124, 0.4)",
+  },
+  empresaScope: {
+    primary: "#B49B43",
+    glow: "#c2ac5b",
+    rgbaGlow: "rgba(194, 172, 91, 0.4)",
+  },
+  typography: {
+    alata: "'Alata', sans-serif", // Horarios, porcentajes, badges y métricas
+    googleSans: "'Google Sans', sans-serif", // Títulos, descripciones y botones
+    spaceMono: "'Space Mono', monospace", // Elementos, badges, agentes y códigos
+  },
+  sharpCrispBorders: "1px solid rgba(255, 255, 255, 0.12)",
+  noEmojiInHeaders: true,
 };
 
 export const COLOR_TOKENS: ColorToken[] = [
   {
-    "name": "Obsidiana Fondo Base",
-    "hex": "#050805",
-    "rgb": "5, 8, 5",
-    "usage": "Fondo principal de pantalla y cuerpo del sistema",
-    "category": "brand"
+    name: "Main Body Background (Nivel 0)",
+    hex: "#2B2C30",
+    rgb: "43, 44, 48",
+    usage: "Fondo principal de pantalla de Nipëi OS",
+    category: "brand",
   },
   {
-    "name": "Obsidiana Panel Elevado",
-    "hex": "#0c140c",
-    "rgb": "12, 20, 12",
-    "usage": "Fondo sólido para tarjetas, modales y barras laterales",
-    "category": "brand"
+    name: "Bento Cards Background (Nivel 1)",
+    hex: "#0a0f16",
+    rgb: "10, 15, 22",
+    usage: "Fondo sólido para Bento Cards y contenedores modulares",
+    category: "brand",
   },
   {
-    "name": "Borde Sutil Nipëi",
-    "hex": "#182818",
-    "rgb": "24, 40, 24",
-    "usage": "Líneas divisoras y bordes de tarjetas sin gradientes",
-    "category": "brand"
+    name: "Hero Cards Background (Nivel 2)",
+    hex: "#070705",
+    rgb: "7, 7, 5",
+    usage: "Fondo profundo para Hero Cards y actividad destacada",
+    category: "brand",
   },
   {
-    "name": "Verde Esmeralda Nipëi",
-    "hex": "#22c55e",
-    "rgb": "34, 197, 94",
-    "usage": "Acento primario, estado activo, botones principales e indicadores de salud",
-    "category": "brand"
+    name: "Ámbito Personal Primary",
+    hex: "#706c61",
+    rgb: "112, 108, 97",
+    usage: "Acento principal para flujo y orbes personales",
+    category: "semantic",
   },
   {
-    "name": "Verde Botánico Mutum (Squad II)",
-    "hex": "#10b981",
-    "rgb": "16, 185, 129",
-    "usage": "Fitoterapia, Inî Rau, catálogo de plantas y producción Mutum",
-    "category": "squad"
+    name: "Ámbito Personal Glow",
+    hex: "#8D897C",
+    rgb: "141, 137, 124",
+    usage: "Resplandor y bordes de cristal para ámbito personal",
+    category: "semantic",
   },
   {
-    "name": "Púrpura Retiros / Venu (Squad III)",
-    "hex": "#a855f7",
-    "rgb": "168, 85, 247",
-    "usage": "Retiros Samakey, Venu, facilitación y sabiduría ancestral",
-    "category": "squad"
+    name: "Ámbito Empresa Primary",
+    hex: "#B49B43",
+    rgb: "180, 155, 67",
+    usage: "Acento principal para flujo y orbes corporativos",
+    category: "semantic",
   },
   {
-    "name": "Azul Ventas & Mkt (Squad IV)",
-    "hex": "#3b82f6",
-    "rgb": "59, 130, 246",
-    "usage": "Comercio ético, lotes y campañas comerciales",
-    "category": "squad"
+    name: "Ámbito Empresa Glow",
+    hex: "#c2ac5b",
+    rgb: "194, 172, 91",
+    usage: "Resplandor y bordes dorados para ámbito empresa",
+    category: "semantic",
   },
-  {
-    "name": "Cian Gobernanza (Squad V)",
-    "hex": "#00CCFF",
-    "rgb": "0, 204, 255",
-    "usage": "Adm, Legal, DRE contable y centro de costos",
-    "category": "squad"
-  },
-  {
-    "name": "Ámbar Infraestructura (Squad VI)",
-    "hex": "#f5a623",
-    "rgb": "245, 166, 35",
-    "usage": "Servicios conectados, APIs, Ollama local y servidores",
-    "category": "squad"
-  },
-  {
-    "name": "Rosa Instituto Mutum (Squad VII)",
-    "hex": "#ec4899",
-    "rgb": "236, 72, 153",
-    "usage": "Donantes, proyectos comunitarios e impacto social",
-    "category": "squad"
-  },
-  {
-    "name": "Alerta Error / Veto",
-    "hex": "#ef4444",
-    "rgb": "239, 68, 68",
-    "usage": "Fallos de RAG, errores de compilación o vetos comerciales",
-    "category": "semantic"
-  },
-  {
-    "name": "Advertencia / Take-Over",
-    "hex": "#f59e0b",
-    "rgb": "245, 158, 11",
-    "usage": "Intervención humana activa o vacíos de conocimiento pendientes",
-    "category": "semantic"
-  }
 ];
 
 export const TYPOGRAPHY_TOKENS: TypographyToken[] = [
   {
-    "role": "Títulos Principales (H1, H2)",
-    "fontFamily": "Outfit, sans-serif",
-    "fontSize": "24px - 36px",
-    "fontWeight": "800 / 900 (Black)",
-    "letterSpacing": "-0.02em (Tight)",
-    "usage": "Encabezados de vistas principales, badges de marca y títulos de sección"
+    role: "Horarios, Porcentajes & Métricas Clave",
+    fontFamily: "'Alata', sans-serif",
+    fontSize: "12px - 28px",
+    fontWeight: "400",
+    letterSpacing: "0em",
+    usage: "Obligatorio para horarios (08:30 - 11:30), porcentajes (80% CONCLUÍDO) y contadores KPI",
   },
   {
-    "role": "Subtítulos & Secciones (H3, H4)",
-    "fontFamily": "Outfit, sans-serif",
-    "fontSize": "16px - 20px",
-    "fontWeight": "700 (Bold)",
-    "letterSpacing": "0em",
-    "usage": "Títulos de tarjetas, paneles y modales"
+    role: "Títulos Principales & Botones",
+    fontFamily: "'Google Sans', sans-serif",
+    fontSize: "14px - 32px",
+    fontWeight: "400 - 700",
+    letterSpacing: "-0.01em",
+    usage: "Encabezados de sección, títulos de tarjetas, descripciones y botones",
   },
   {
-    "role": "Cuerpo de Texto & Interfaz",
-    "fontFamily": "Manrope, sans-serif",
-    "fontSize": "13px - 14px",
-    "fontWeight": "400 / 600 (Normal / Semibold)",
-    "letterSpacing": "0em",
-    "usage": "Párrafos explicativos, etiquetas de formularios y descripciones"
+    role: "Badges, Agentes & Código",
+    fontFamily: "'Space Mono', monospace",
+    fontSize: "10px - 13px",
+    fontWeight: "400 / 700",
+    letterSpacing: "0em",
+    usage: "Badges de estado, tags de agentes IA (@vaultkeeper), metodologías y rutas",
   },
-  {
-    "role": "Datos, Código & Checksums",
-    "fontFamily": "JetBrains Mono, monospace",
-    "fontSize": "11px - 12px",
-    "fontWeight": "500 / 700 (Medium / Bold)",
-    "letterSpacing": "0em",
-    "usage": "Hashes SHA-256, rutas del Vault, logs de auditoría y comandos"
-  }
 ];
+
 
 export const TONE_OF_VOICE_RULES = [
   "1. Cero Alucinaciones: Toda afirmación técnica o medicinal debe estar sustentada en nipei-vault.",

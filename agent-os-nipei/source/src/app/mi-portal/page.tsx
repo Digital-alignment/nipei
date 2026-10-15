@@ -26,6 +26,7 @@ import DateNavigator from "@/components/portal/DateNavigator";
 import GlobalActivityMatrix from "@/components/portal/GlobalActivityMatrix";
 import TimeBudgetWidget from "@/components/portal/TimeBudgetWidget";
 import TimeConfigModal, { TimeConfigSettings } from "@/components/portal/TimeConfigModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 // ALL ORBS DATASET (PERSONAL & EMPRESA FULL EXPANSION WITH MANDATORY SYSTEM ORBS & CUSTOM ORBS)
 const ALL_ORBS: OrbData[] = [
@@ -384,7 +385,7 @@ const ALL_ORBS: OrbData[] = [
     iconName: "Bot",
     description: "Squad VB Governança & Audit de Conhecimento garantizando la integridad de notas v0.1 y contratos de frontmatter.",
     flowSteps: [
-      { id: "sg1", step: "Auditoría de 12 notas de metodología 0.1", completed: true, methodologyTag: "Audit" },
+      { id: "sg1", step: "Auditoria de 753 notas no Vault Master (Nipëi Memory v2.0)", completed: true, methodologyTag: "Audit" },
       { id: "sg2", step: "Verificación de firmas <!-- agente: vaultkeeper -->", completed: true, methodologyTag: "Vault Contract" },
     ],
     isMandatory: true, // PROTECTED MANDATORY SYSTEM ORB
@@ -392,8 +393,9 @@ const ALL_ORBS: OrbData[] = [
 ];
 
 export default function MiPortalPage() {
+  const { t } = useLanguage();
   const [members, setMembers] = useState<MemberProfile[]>(INITIAL_MEMBERS);
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("ashuan_dev");
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("ashuan_web");
 
   // Active Scope State: "inicio" | "personal" | "empresa"
   const [activeScope, setActiveScope] = useState<"inicio" | "personal" | "empresa">("inicio");
@@ -551,80 +553,84 @@ export default function MiPortalPage() {
       {/* ─────────────────────────────────────────────────────────────
           2. CONTENIDO PRINCIPAL: INICIO TIMELINE OR ORBS CONSTELLATION
          ───────────────────────────────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-6 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-5 space-y-5">
         
-        {/* GLOBAL DATE NAVIGATOR (MULTI-DAY SELECTION & HISTORY CAROUSEL) */}
-        <DateNavigator selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        {/* 🍱 BENTO ROW 1: TIME CAPACITY & DATE NAVIGATOR (2-COLUMNS) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          <div className="lg:col-span-7 flex flex-col justify-stretch">
+            <TimeBudgetWidget
+              orbs={orbs}
+              settings={timeSettings}
+              onOpenConfig={() => setIsTimeModalOpen(true)}
+            />
+          </div>
+          <div className="lg:col-span-5 flex flex-col justify-stretch">
+            <DateNavigator selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          </div>
+        </div>
 
-        {/* TIME BUDGET & OVERLOAD CAPACITY CONTROL WIDGET */}
-        <TimeBudgetWidget
-          orbs={orbs}
-          settings={timeSettings}
-          onOpenConfig={() => setIsTimeModalOpen(true)}
-        />
-
-        {/* TOP SELECTOR TOGGLE HEADER */}
-        <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#080b12]/95 border border-white/15 rounded-2xl p-4 sm:p-5 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-900/80 to-cyan-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-md">
-              <Layers size={22} />
+        {/* 🍱 BENTO ROW 2: SCOPE BAR & CREATION */}
+        <section className="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#0a0f18]/80 border border-white/10 rounded-3xl p-4 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative overflow-hidden">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-emerald-900/80 to-cyan-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-md shrink-0">
+              <Layers size={18} className="sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-extrabold text-white tracking-tight flex items-center gap-2 font-google-sans truncate">
                 <span>Portal de Productividad & Mapeo de Objetivos</span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] text-slate-400 font-google-sans truncate">
                 Selecciona la vista de cronograma o esferas para sincronizar con Mission Control
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-center md:justify-end gap-2.5 w-full md:w-auto">
             {/* BUTTON TO OPEN CREATE ORB MODAL */}
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-1.5 border border-emerald-400/40"
+              className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-black font-bold text-xs shadow-[0_0_20px_rgba(16,185,129,0.3)] transition flex items-center justify-center gap-1.5 font-google-sans shrink-0 cursor-pointer"
             >
-              <Plus size={15} />
-              <span>Crear Orbe</span>
+              <Plus size={14} strokeWidth={2.5} />
+              <span>{t.createOrb}</span>
             </button>
 
             {/* FUTURISTIC 3-TAB PILL SWITCHER */}
-            <div className="flex items-center p-1.5 bg-[#030509]/90 border border-white/15 rounded-2xl shadow-inner">
+            <div className="flex items-center p-1 bg-white/5 border border-white/10 rounded-2xl shadow-inner max-w-full overflow-x-auto">
               <button
                 onClick={() => handleScopeChange("inicio")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold font-space-mono transition-all duration-300 cursor-pointer ${
                   activeScope === "inicio"
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/50"
+                    ? "bg-white/15 text-white shadow-sm border border-white/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <Home size={15} />
-                <span>Inicio</span>
+                <Home size={13} />
+                <span>{t.inicio}</span>
               </button>
 
               <button
                 onClick={() => handleScopeChange("personal")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold font-space-mono transition-all duration-300 cursor-pointer ${
                   activeScope === "personal"
-                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/50"
+                    ? "bg-emerald-500/20 text-emerald-300 shadow-sm border border-emerald-500/40"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <User size={15} />
-                <span>Personal</span>
+                <User size={13} />
+                <span>{t.personal}</span>
               </button>
 
               <button
                 onClick={() => handleScopeChange("empresa")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold font-space-mono transition-all duration-300 cursor-pointer ${
                   activeScope === "empresa"
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-purple-400/50"
+                    ? "bg-purple-500/20 text-purple-300 shadow-sm border border-purple-500/40"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                <Building2 size={15} />
-                <span>Empresa</span>
+                <Building2 size={13} />
+                <span>{t.empresa}</span>
               </button>
             </div>
           </div>
@@ -632,20 +638,27 @@ export default function MiPortalPage() {
 
         {/* CONDITIONALLY RENDER: INICIO TIMELINE & GLOBAL MATRIX VS ORBS CONSTELLATION */}
         {activeScope === "inicio" ? (
-          <div className="space-y-8 animate-fade-in">
-            {/* GLOBAL ACTIVITY MATRIX (METRICS, ORBS BREAKDOWN & 30D HEATMAP) */}
-            <GlobalActivityMatrix
-              orbs={orbs}
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-            />
+          <div className="animate-fade-in">
+            {/* 🍱 BENTO ROW 3: MATRIX & TIMELINE SIDE BY SIDE */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* LEFT COLUMN: GLOBAL ACTIVITY MATRIX (5 COLS) */}
+              <div className="lg:col-span-5 space-y-5">
+                <GlobalActivityMatrix
+                  orbs={orbs}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                />
+              </div>
 
-            {/* PRESENT TIMELINE */}
-            <InicioTimeline
-              orbs={orbs}
-              onToggleStep={handleToggleStepById}
-              timeStr={timeStr}
-            />
+              {/* RIGHT COLUMN: PRESENT TIMELINE & HERO CARD (7 COLS) */}
+              <div className="lg:col-span-7 space-y-5">
+                <InicioTimeline
+                  orbs={orbs}
+                  onToggleStep={handleToggleStepById}
+                  timeStr={timeStr}
+                />
+              </div>
+            </div>
           </div>
         ) : (
           <>

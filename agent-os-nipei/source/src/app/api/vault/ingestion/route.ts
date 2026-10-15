@@ -364,3 +364,33 @@ ${missingInfoItems.map((item) => `- [ ] ${item}`).join("\n")}
     return NextResponse.json({ success: false, error: err?.message || "Error al procesar ingesta" }, { status: 500 });
   }
 }
+
+export async function GET() {
+  try {
+    const knowledgeDir = path.join(NIPEI_VAULT_ROOT, "Ingested_Knowledge");
+    const todoDir = path.join(NIPEI_VAULT_ROOT, "Todo_Audit_Lists");
+
+    const knowledgeFiles = fs.existsSync(knowledgeDir)
+      ? fs.readdirSync(knowledgeDir).filter((f) => f.endsWith(".md"))
+      : [];
+
+    const todoFiles = fs.existsSync(todoDir)
+      ? fs.readdirSync(todoDir).filter((f) => f.endsWith(".md"))
+      : [];
+
+    return NextResponse.json({
+      success: true,
+      vaultPath: NIPEI_VAULT_ROOT,
+      knowledgeCount: knowledgeFiles.length,
+      knowledgeFiles,
+      todoCount: todoFiles.length,
+      todoFiles,
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, error: err?.message || "Error al obtener estadísticas del vault" },
+      { status: 500 }
+    );
+  }
+}
+

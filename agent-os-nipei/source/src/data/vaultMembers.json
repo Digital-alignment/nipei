@@ -1,0 +1,2021 @@
+[
+  {
+    "id": "adair",
+    "name": "Adair",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/adair.md"
+  },
+  {
+    "id": "agente_antigravity",
+    "name": "@antigravity",
+    "nativeName": "",
+    "avatar": "🤖",
+    "type": "ai_agent",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SUPER_USER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "AI Mastermind & Orquestrador",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_vb_knowledge",
+        "roleTitle": "Auditor de Conhecimento",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/agente_antigravity.md"
+  },
+  {
+    "id": "agente_vaultkeeper",
+    "name": "@vaultkeeper",
+    "nativeName": "",
+    "avatar": "🤖",
+    "type": "ai_agent",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SUPER_USER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "Guardião de Integridade do Vault",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_vb_knowledge",
+        "roleTitle": "Auditor de Integridade",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/agente_vaultkeeper.md"
+  },
+  {
+    "id": "alise_loja",
+    "name": "Alise (Loja)",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/alise_loja.md"
+  },
+  {
+    "id": "ana_castro_human_api",
+    "name": "Ana Castro (Txiní)",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SUPER_USER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "Sinapse & Enlace Institucional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_7_instituto",
+        "roleTitle": "Pesquisadora Principal Etnobotânica",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/ana_castro_human_api.md"
+  },
+  {
+    "id": "angelique_txiva",
+    "name": "Angelique",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Coordenação Internacional de Retiros Gestão",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Gestão"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Gestão",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Gestão"
+    ],
+    "vaultPath": "Miembros/angelique_txiva.md"
+  },
+  {
+    "id": "ashuan_web",
+    "name": "Ashuan (Dev Master)",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SUPER_USER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "Dev Master & Liderança Tech",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_4_vendas_mkt",
+        "roleTitle": "Especialista Web & E-commerce",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/ashuan_web.md"
+  },
+  {
+    "id": "bruna_retiros",
+    "name": "Bruna",
+    "nativeName": "",
+    "avatar": "🌿",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Coordenadora de Retiros Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/bruna_retiros.md"
+  },
+  {
+    "id": "cacau",
+    "name": "Cacau",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Bioprodutos - Biolab Bahia Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/cacau.md"
+  },
+  {
+    "id": "cacique_mariazinha",
+    "name": "Mariazinha",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Cacique e Diretora Geral - Aldeia Mutum Gestão",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Gestão"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Gestão",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Gestão"
+    ],
+    "vaultPath": "Miembros/cacique_mariazinha.md"
+  },
+  {
+    "id": "camargo",
+    "name": "Camargo",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Engenheiro e Arquiteto Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/camargo.md"
+  },
+  {
+    "id": "carla_farmaceutica",
+    "name": "Carla",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/carla_farmaceutica.md"
+  },
+  {
+    "id": "chucu_xinan",
+    "name": "Chucu & Xinan",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/chucu_xinan.md"
+  },
+  {
+    "id": "diego_instituto",
+    "name": "Diego",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Instituto Nipei Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/diego_instituto.md"
+  },
+  {
+    "id": "ecio",
+    "name": "Écio",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Carpinteiro Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/ecio.md"
+  },
+  {
+    "id": "edu",
+    "name": "Edu",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/edu.md"
+  },
+  {
+    "id": "fani_fanny",
+    "name": "Fani (Fanny)",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Híbrido",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/fani_fanny.md"
+  },
+  {
+    "id": "gerson_fuego",
+    "name": "Gerso",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/gerson_fuego.md"
+  },
+  {
+    "id": "giovanna",
+    "name": "Giovanna",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/giovanna.md"
+  },
+  {
+    "id": "husahu",
+    "name": "Husahu",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/husahu.md"
+  },
+  {
+    "id": "hushahu",
+    "name": "Hushahu",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/hushahu.md"
+  },
+  {
+    "id": "iury_civil",
+    "name": "Iury",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/iury_civil.md"
+  },
+  {
+    "id": "iza_bete_recoleccion",
+    "name": "Izá, Bete y Equipo Recolección",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Variable",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/iza_bete_recoleccion.md"
+  },
+  {
+    "id": "jailton_sistemas",
+    "name": "Jailton",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/jailton_sistemas.md"
+  },
+  {
+    "id": "jeni",
+    "name": "Jeni",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Bioprodutos e Arte Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/jeni.md"
+  },
+  {
+    "id": "jenny_cacau_voluntarias",
+    "name": "Iury",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "Confirmación manual pendiente para verificar disponibilidad activa en próximo evento.",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/jenny_cacau_voluntarias.md"
+  },
+  {
+    "id": "jordao_pekuti",
+    "name": "Jordão",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Diretor / Fundador Gestão",
+    "globalRole": "SUPER_USER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Gestão"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "CEO & Fundador",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_2_mutum",
+        "roleTitle": "Líder Espiritual & Articulação Mutum",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Gestão"
+    ],
+    "vaultPath": "Miembros/jordao_pekuti.md"
+  },
+  {
+    "id": "julia_audiovisual",
+    "name": "Julia",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Híbrido",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/julia_audiovisual.md"
+  },
+  {
+    "id": "kenewma_yawanawa",
+    "name": "Kenewma",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Produtora de Conteúdo Outro",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/kenewma_yawanawa.md"
+  },
+  {
+    "id": "kex",
+    "name": "Kexnia",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/kex.md"
+  },
+  {
+    "id": "lucia",
+    "name": "Lucia",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/lucia.md"
+  },
+  {
+    "id": "lynn_schauwecker",
+    "name": "Lynn",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Diretora Internacional Gestão",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Gestão"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Gestão",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Gestão"
+    ],
+    "vaultPath": "Miembros/lynn_schauwecker.md"
+  },
+  {
+    "id": "madrinha",
+    "name": "Madrinha",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/madrinha.md"
+  },
+  {
+    "id": "maico_mantenimiento",
+    "name": "Maico",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/maico_mantenimiento.md"
+  },
+  {
+    "id": "melo_sebastiao",
+    "name": "Melo (Sebastião)",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/melo_sebastiao.md"
+  },
+  {
+    "id": "muka",
+    "name": "Muka",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/muka.md"
+  },
+  {
+    "id": "nai",
+    "name": "Nai",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/nai.md"
+  },
+  {
+    "id": "nomashahu_tactico",
+    "name": "Nomashahu (Rafaela)",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/nomashahu_tactico.md"
+  },
+  {
+    "id": "nonata",
+    "name": "Nonata",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/nonata.md"
+  },
+  {
+    "id": "paulo_roberto",
+    "name": "Paulo Roberto",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/paulo_roberto.md"
+  },
+  {
+    "id": "ppr",
+    "name": "PPR",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Diretor Geral Gestão",
+    "globalRole": "SUPER_USER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Gestão"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "Diretor Geral",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_5_adm_legal",
+        "roleTitle": "Diretoria Institucional",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Gestão"
+    ],
+    "vaultPath": "Miembros/ppr.md"
+  },
+  {
+    "id": "rafa",
+    "name": "Rafa",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/rafa.md"
+  },
+  {
+    "id": "rafael_sales_ai",
+    "name": "Rafael",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Marketing Digital Marketing",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Marketing"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Marketing",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Marketing"
+    ],
+    "vaultPath": "Miembros/rafael_sales_ai.md"
+  },
+  {
+    "id": "rivaldo",
+    "name": "Rivaldo",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Pedreiro Outro",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Outro"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Outro",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Outro"
+    ],
+    "vaultPath": "Miembros/rivaldo.md"
+  },
+  {
+    "id": "rodrigo_andrade",
+    "name": "Rodrigo",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Legal, Financeiro e Compliance Gestão",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Gestão"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_1_ceo",
+        "roleTitle": "Diretoria Executiva / Estratégia",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      },
+      {
+        "squadId": "squad_5_adm_legal",
+        "roleTitle": "Head Legal, Financeiro & Compliance",
+        "confirmationStatus": "APPROVED"
+      }
+    ],
+    "responsibilities": [
+      "Gestão"
+    ],
+    "vaultPath": "Miembros/rodrigo_andrade.md"
+  },
+  {
+    "id": "samu_qa",
+    "name": "Samu",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/samu_qa.md"
+  },
+  {
+    "id": "shaina_sheina",
+    "name": "Shaina / Sheina",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Comisión",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/shaina_sheina.md"
+  },
+  {
+    "id": "shatxi",
+    "name": "Shatxi",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/shatxi.md"
+  },
+  {
+    "id": "shinan_tech",
+    "name": "Shinan",
+    "nativeName": "",
+    "avatar": "💻",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/shinan_tech.md"
+  },
+  {
+    "id": "silvana",
+    "name": "Silvana",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/silvana.md"
+  },
+  {
+    "id": "sr_elias_consultor",
+    "name": "Sr. Elias",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "external_collaborator",
+    "contractType": "Variable",
+    "status": "APPROVED",
+    "hasMissingInfo": true,
+    "missingInfoDetails": "Pendiente confirmar horas acordadas de consultoría técnica para duplicación de destilación.",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "READ_ONLY",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/sr_elias_consultor.md"
+  },
+  {
+    "id": "tio_alberto",
+    "name": "Tio Alberto",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/tio_alberto.md"
+  },
+  {
+    "id": "tio_jorge",
+    "name": "Tio Jorge",
+    "nativeName": "",
+    "avatar": "👑",
+    "type": "human_paje_cacique",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/tio_jorge.md"
+  },
+  {
+    "id": "tuxi_shanupana",
+    "name": "Tuxi & Shanupãnã",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Variable",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/tuxi_shanupana.md"
+  },
+  {
+    "id": "txaquinha",
+    "name": "Txaquinha",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/txaquinha.md"
+  },
+  {
+    "id": "txaty",
+    "name": "Txaty",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/txaty.md"
+  },
+  {
+    "id": "txiva",
+    "name": "Txiva",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/txiva.md"
+  },
+  {
+    "id": "valkiza",
+    "name": "Valkiza",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/valkiza.md"
+  },
+  {
+    "id": "vava",
+    "name": "Vava",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/vava.md"
+  },
+  {
+    "id": "vimi",
+    "name": "Vimi",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/vimi.md"
+  },
+  {
+    "id": "vini_ops",
+    "name": "Vini",
+    "nativeName": "",
+    "avatar": "⚡",
+    "type": "human_executive",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "SQUAD_LEADER",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/vini_ops.md"
+  },
+  {
+    "id": "yawa",
+    "name": "Yawa",
+    "nativeName": "",
+    "avatar": "👤",
+    "type": "human_staff",
+    "contractType": "Fijo",
+    "status": "APPROVED",
+    "hasMissingInfo": false,
+    "missingInfoDetails": "",
+    "specialityOrLineage": "Integrante do ecossistema Nipëi OS",
+    "globalRole": "OPERATOR",
+    "companyAssignments": [
+      {
+        "companyId": "nipei_os",
+        "companyName": "Nipëi OS",
+        "positionTitle": "Integrante"
+      }
+    ],
+    "squadAssignments": [
+      {
+        "squadId": "squad_general",
+        "roleTitle": "Operacional",
+        "confirmationStatus": "APPROVED",
+        "isPrimary": true
+      }
+    ],
+    "responsibilities": [
+      "Atividades gerais no ecossistema"
+    ],
+    "vaultPath": "Miembros/yawa.md"
+  }
+]

@@ -71,10 +71,10 @@ export default function TimeConfigModal({
               <Clock size={20} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
+              <h3 className="text-base font-bold text-white tracking-tight font-google-sans">
                 Ajustes Rígidos de Tiempo & Capacidad Diario
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 font-google-sans">
                 Define el presupuesto de horas disponibles para evitar sobrecargas
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function TimeConfigModal({
           {/* Wake & Sleep Times */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
+              <label className="text-xs font-google-sans text-slate-300 flex items-center gap-1.5">
                 <Sun size={14} className="text-amber-400" />
                 <span>Hora de Despertar</span>
               </label>
@@ -100,12 +100,12 @@ export default function TimeConfigModal({
                 type="time"
                 value={wakeTime}
                 onChange={(e) => setWakeTime(e.target.value)}
-                className="w-full bg-black/60 border border-slate-700 text-white font-mono text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400"
+                className="w-full bg-black/60 border border-slate-700 text-white font-alata text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
+              <label className="text-xs font-google-sans text-slate-300 flex items-center gap-1.5">
                 <Moon size={14} className="text-indigo-400" />
                 <span>Hora de Dormir</span>
               </label>
@@ -113,26 +113,26 @@ export default function TimeConfigModal({
                 type="time"
                 value={sleepTime}
                 onChange={(e) => setSleepTime(e.target.value)}
-                className="w-full bg-black/60 border border-slate-700 text-white font-mono text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400"
+                className="w-full bg-black/60 border border-slate-700 text-white font-alata text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400"
               />
             </div>
           </div>
 
           {/* Total Waking Hours Summary */}
-          <div className="p-3 rounded-2xl bg-black/40 border border-slate-800 flex items-center justify-between text-xs font-mono">
+          <div className="p-3 rounded-2xl bg-black/40 border border-slate-800 flex items-center justify-between text-xs font-google-sans">
             <span className="text-slate-400">Tiempo Despierto Disponible:</span>
-            <span className="text-white font-bold text-sm">{totalWakingHours} Horas ({totalWakingHours * 60} min)</span>
+            <span className="text-white font-bold text-sm font-alata">{totalWakingHours} Horas ({totalWakingHours * 60} min)</span>
           </div>
 
           {/* Max Allocation Sliders */}
           <div className="space-y-4 pt-1">
             {/* Work Hours Budget */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-mono">
+              <div className="flex justify-between text-xs font-google-sans">
                 <span className="text-purple-300 flex items-center gap-1">
                   <Briefcase size={12} /> Max Horas Empresa / Trabajo:
                 </span>
-                <span className="font-bold text-white">{maxWorkHours} hrs</span>
+                <span className="font-bold text-white font-alata">{maxWorkHours} hrs</span>
               </div>
               <input
                 type="range"
@@ -147,11 +147,11 @@ export default function TimeConfigModal({
 
             {/* Personal Hours Budget */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-mono">
+              <div className="flex justify-between text-xs font-google-sans">
                 <span className="text-emerald-300 flex items-center gap-1">
                   <User size={12} /> Max Horas Desarrollo Personal:
                 </span>
-                <span className="font-bold text-white">{maxPersonalHours} hrs</span>
+                <span className="font-bold text-white font-alata">{maxPersonalHours} hrs</span>
               </div>
               <input
                 type="range"
@@ -166,11 +166,11 @@ export default function TimeConfigModal({
 
             {/* Buffer / Rest Hours */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-mono">
+              <div className="flex justify-between text-xs font-google-sans">
                 <span className="text-amber-300 flex items-center gap-1">
                   <Clock size={12} /> Margen de Descanso & Imprevistos:
                 </span>
-                <span className="font-bold text-white">{bufferHours} hrs</span>
+                <span className="font-bold text-white font-alata">{bufferHours} hrs</span>
               </div>
               <input
                 type="range"
@@ -186,20 +186,20 @@ export default function TimeConfigModal({
 
           {/* Over-allocation warning */}
           {isOverAllocated && (
-            <div className="p-3 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-mono flex items-center gap-2 animate-pulse">
+            <div className="p-3 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-google-sans flex items-center gap-2 animate-pulse">
               <ShieldAlert size={16} className="shrink-0" />
               <span>
-                ¡ALERTA! El presupuesto ({totalAllocatedHours}h) supera tus horas despierto disponibles ({totalWakingHours}h).
+                ¡ALERTA! El presupuesto (<span className="font-alata">{totalAllocatedHours}h</span>) supera tus horas despierto disponibles (<span className="font-alata">{totalWakingHours}h</span>).
               </span>
             </div>
           )}
 
           {/* Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-2 font-google-sans">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-300 font-mono transition"
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-300 transition"
             >
               Cancelar
             </button>

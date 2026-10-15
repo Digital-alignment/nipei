@@ -1,61 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Alata&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────
-   Nipei OS — Solid Dark & Dark Green Matrix Command Center System
-   Strictly Solid Colors, No Gradients.
+   Nipei OS — Official Design System (Alata, Google Sans, Space Mono)
+   Main Body: #2B2C30 | Bento Cards: #0a0f16 | Hero Cards: #070705
+   Personal: #706c61 / #8D897C | Empresa: #B49B43 / #c2ac5b
    ───────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Solid Matrix Dark & Dark-Green Palette */
-  --bg-deep:    #050805;
-  --bg-mid:     #0a110a;
-  --bg-card:    #0f190f;
-  --bg-elev:    #162416;
+  /* Solid Nipei OS Level 0-3 Palette (Matte Black Base) */
+  --bg-deep:    #050608;
+  --bg-bento:   #0a0f18;
+  --bg-hero:    #070705;
 
-  --cream:      #e2f7e2;
-  --cream-soft: #a7f3d0;
-  --cream-dim:  #4ade80;
-  --cream-mute: #166534;
+  /* Scope Personal & Empresa */
+  --personal-primary: #706c61;
+  --personal-glow: #8D897C;
+  --empresa-primary:  #B49B43;
+  --empresa-glow:  #c2ac5b;
 
-  --gold:       #22c55e;
-  --gold-soft:  #4ade80;
-  --gold-deep:  #15803d;
+  --cream:      #f3f4f6;
+  --cream-soft: #e5e7eb;
+  --cream-dim:  #d1d5db;
 
-  --emerald:    #22c55e;
-  --emerald-dim:#16a34a;
-  --plum:       #ef4444;
-  --rust:       #f59e0b;
+  --shadow-1: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.75);
 
-  --line:       #1e381e;
-  --line-soft:  #142414;
-  --line-deep:  #0a140a;
-
-  --shadow-1: 0 4px 14px rgba(0, 0, 0, 0.85);
-  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.95);
-
-  /* Backwards-compat aliases */
   --bg: var(--bg-deep);
-  --bg-2: var(--bg-mid);
-  --panel: #0f190f;
-  --panel-border: var(--line-soft);
-  --panel-border-hot: var(--line);
+  --bg-2: var(--bg-bento);
+  --panel: var(--bg-bento);
+  --panel-border: rgba(255, 255, 255, 0.12);
   --fg: var(--cream);
-  --fg-dim: var(--cream-soft);
-  --fg-dimmer: var(--cream-dim);
 
-  --accent-cyan: #22c55e;
-  --accent-violet: #4ade80;
-  --accent-pink: #ef4444;
-  --accent-lime: #22c55e;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-
-  --claude: #f59e0b;
-  --openclaw: #ef4444;
-  --hermes: #4ade80;
-
-  --grid: rgba(34, 197, 94, 0.04);
   --glow: 0 0 0 0;
+}
+
+.font-alata {
+  font-family: 'Alata', sans-serif;
+  font-weight: 400;
+}
+
+.font-google-sans {
+  font-family: 'Google Sans', sans-serif;
+}
+
+.font-space-mono {
+  font-family: 'Space Mono', monospace;
+}
+
+.alata-regular {
+  font-family: "Alata", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.space-mono-regular {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.space-mono-bold {
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.space-mono-regular-italic {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.space-mono-bold-italic {
+  font-family: "Space Mono", monospace;
+  font-weight: 700;
+  font-style: italic;
 }
 
 @theme inline {
@@ -68,7 +88,7 @@
 * { box-sizing: border-box; }
 
 html, body {
-  background: var(--bg-deep);
+  background: #050608;
   color: var(--cream);
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-weight: 400;
@@ -78,7 +98,7 @@ html, body {
 }
 
 body {
-  background: var(--bg-deep);
+  background: #050608;
   min-height: 100vh;
   position: relative;
 }

@@ -44,7 +44,7 @@
   },
   {
     "id": "samakey",
-    "name": "Samakey Retiros",
+    "name": "Santuario Nipeihu",
     "category": "Retiros & Hospitalidad",
     "status": "active",
     "description": "Eco-resort e centro de retiros medicinais em Serra Grande (Ecossistema Nipëi).",
@@ -72,9 +72,9 @@
       "hermes"
     ],
     "vaultPath": "Productos/Samakey.md",
-    "accentColor": "#c084fc",
+    "accentColor": "#22c55e",
     "createdAt": "2026-08-15T00:00:00Z",
-    "updatedAt": "2026-09-17T00:00:00Z"
+    "updatedAt": "2026-10-01T16:23:43.720Z"
   },
   {
     "id": "nipeihu-app-elerning",
@@ -103,5 +103,56 @@
     "accentColor": "#64ce70",
     "createdAt": "2026-09-17T03:55:59.571Z",
     "updatedAt": "2026-09-17T03:55:59.571Z"
+  },
+  {
+    "id": "associacao-protecao-da-floresta",
+    "name": "ASSOCIACAO PROTECAO DA FLORESTA",
+    "category": "Fitoterapia & Medicina",
+    "status": "active",
+    "description": "Controle , distribucao, desenvolmento de projectos socios ambientales, bioma amazonico, cultral brasileiro, tradiciaoes dos povos originarios, medicinas das floresta, trabalho espiritual, bioeconomia, umbrella de proyectos . criando um ponte entre , aumentado alcance y promovendo pra o resto do mundo",
+    "location": "LARGO DO BARRADAS, NITEROI.  24.110-160",
+    "websites": [
+      "https://protecaodafloresta.org/"
+    ],
+    "socialMedia": {},
+    "goals": [],
+    "peopleInvolved": [],
+    "assignedSquads": [
+      "Squad I (Estratégia/CEO)"
+    ],
+    "assignedAgents": [
+      "hermes",
+      "venu",
+      "antigravity",
+      "claude",
+      "openclaw",
+      "codex"
+    ],
+    "vaultPath": "Clientes/ASSOCIACAO PROTECAO DA FLORESTA.md",
+    "accentColor": "#22c55e",
+    "createdAt": "2026-10-01T16:29:02.283Z",
+    "updatedAt": "2026-10-01T16:29:02.283Z"
+  },
+  {
+    "id": "aldeia-mutum",
+    "name": "Aldeia Mutum",
+    "category": "Retiros & Hospitalidad",
+    "status": "active",
+    "description": "Escolha plantas medicinais\n\nCentro de retiro de tratamentos\n\nBioLab",
+    "location": "",
+    "websites": [],
+    "socialMedia": {},
+    "goals": [],
+    "peopleInvolved": [],
+    "assignedSquads": [
+      "Squad I (Estratégia/CEO)"
+    ],
+    "assignedAgents": [
+      "hermes"
+    ],
+    "vaultPath": "Clientes/Aldeia Mutum.md",
+    "accentColor": "#22c55e",
+    "createdAt": "2026-10-01T16:29:37.749Z",
+    "updatedAt": "2026-10-01T16:37:45.127Z"
   }
 ]

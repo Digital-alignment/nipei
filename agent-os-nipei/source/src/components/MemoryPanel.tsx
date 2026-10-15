@@ -28,6 +28,7 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
   const [notes, setNotes] = useState<NoteHit[]>([]);
   const [omi, setOmi] = useState<string[]>([]);
   const [recent, setRecent] = useState<RecentNote[]>([]);
+  const [totalNotes, setTotalNotes] = useState<number>(1088);
   const [open, setOpen] = useState<{ path: string; content: string } | null>(null);
   const [searching, setSearching] = useState(false);
   const [archifyTopic, setArchifyTopic] = useState<string>("Secuencia RAG Hermes 2.0");
@@ -74,15 +75,19 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
 
   const squadFilters = [
     { id: "all", label: "Todos", match: "" },
-    { id: "squad_01", label: "Squad 01 (CEO)", match: "squad_01" },
-    { id: "squad_02", label: "Squad 02 (Ops)", match: "squad_02" },
-    { id: "squad_03", label: "Squad 03 (Mkt)", match: "squad_03" },
-    { id: "squad_04", label: "Squad 04 (Fin)", match: "squad_04" },
-    { id: "squad_05", label: "Squad 05 (Tech)", match: "squad_05" },
-    { id: "squad_06", label: "Squad 06 (Ventas)", match: "squad_06" },
-    { id: "squad_07", label: "Squad 07 (Inst)", match: "squad_07" },
-    { id: "master", label: "Master Sources", match: "master_sources" },
-    { id: "audit", label: "Auditorías", match: "todo_audit_lists" },
+    { id: "squad_1", label: "Squad 1 (CEO / Liderança)", match: "squad_1" },
+    { id: "squad_2", label: "Squad 2 (Mutum / Produção)", match: "squad_2" },
+    { id: "squad_3", label: "Squad 3 (Retiros & Eventos)", match: "squad_3" },
+    { id: "squad_4", label: "Squad 4 (Vendas & Mkt)", match: "squad_4" },
+    { id: "squad_5", label: "Squad 5 (Adm & Legal)", match: "squad_5" },
+    { id: "squad_6", label: "Squad 6 (Infra & Manut)", match: "squad_6" },
+    { id: "squad_7", label: "Squad 7 (Instituto)", match: "squad_7" },
+    { id: "squad_8", label: "Squad 8 (Captação)", match: "squad_8" },
+    { id: "squad_9", label: "Squad 9 (Internacional)", match: "squad_9" },
+    { id: "squad_10", label: "Squad 10 (Biofarmácia)", match: "squad_10" },
+    { id: "squad_vb", label: "Squad VB (Auditoría Vault)", match: "squad_vb" },
+    { id: "master", label: "Master Sources", match: "master" },
+    { id: "audit", label: "Auditorías", match: "audit" },
   ];
 
   const filteredRecent = useMemo(() => {
@@ -99,12 +104,18 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
 
   function handleSaveSuccess(savedPath: string, newContent: string) {
     setOpen({ path: savedPath, content: newContent });
-    fetch("/api/memory/recent").then((r) => r.json()).then((j) => setRecent(j.recent ?? []));
+    fetch("/api/memory/recent?limit=200").then((r) => r.json()).then((j) => {
+      setRecent(j.recent ?? []);
+      if (j.totalNotes) setTotalNotes(j.totalNotes);
+    });
   }
 
   // initial recent fetch
   useEffect(() => {
-    fetch("/api/memory/recent").then((r) => r.json()).then((j) => setRecent(j.recent ?? []));
+    fetch("/api/memory/recent?limit=200").then((r) => r.json()).then((j) => {
+      setRecent(j.recent ?? []);
+      if (j.totalNotes) setTotalNotes(j.totalNotes);
+    });
   }, []);
 
   // debounced search
@@ -145,7 +156,7 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
     { key: "graph", label: "Graph (3D Galaxy)", icon: <Network size={12} /> },
     { key: "todos", label: "Tareas Vault", icon: <CheckSquare size={13} className="text-amber-400" /> },
     { key: "search", label: "Notes", icon: <FileText size={12} />, count: filteredNotes.length },
-    { key: "recent", label: "Recent", icon: <Clock size={12} />, count: filteredRecent.length },
+    { key: "recent", label: "Notas Vault", icon: <Clock size={12} />, count: filteredRecent.length },
     { key: "omi", label: "Omi", icon: <Sparkles size={12} />, count: omi.length },
     { key: "ingestion", label: "Ingestão & Vault", icon: <ShieldCheck size={13} className="text-[#22c55e]" /> },
     { key: "archify", label: "Diagramas Archify", icon: <Workflow size={13} className="text-[#22c55e]" /> },
@@ -176,8 +187,8 @@ export default function MemoryPanel({ initialTab = "graph" }: { initialTab?: Mem
       accent="system"
       icon={<Brain size={16} className="text-[#22c55e]" />}
       actions={
-        <span className="pill pill-info bg-[#142614] border border-[#22c55e]/40 text-[#22c55e]">
-          {recent.length} notas recientes · {omi.length} omi · Nipëi Vault Master
+        <span className="pill pill-info bg-[#142614] border border-[#22c55e]/40 text-[#22c55e] uppercase tracking-wider font-mono font-bold">
+          {totalNotes} NOTAS NO VAULT · {omi.length} OMI · NIPËI VAULT MASTER
         </span>
       }
       className="lg:col-span-3 min-h-[460px]"
