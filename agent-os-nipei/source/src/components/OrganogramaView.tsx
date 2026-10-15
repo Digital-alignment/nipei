@@ -90,11 +90,17 @@ export default function OrganogramaView() {
     const sorted = [...newSquads].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     setSquadsList(sorted);
     localStorage.setItem("nipei_squads_store", JSON.stringify(sorted));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("nipei_squads_updated", { detail: sorted }));
+    }
   };
 
   const saveMembersToStore = (newMembers: MemberProfile[]) => {
     setMembersList(newMembers);
     localStorage.setItem("nipei_members_store", JSON.stringify(newMembers));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("nipei_members_updated", { detail: newMembers }));
+    }
   };
 
   const handleOpenAddSquad = () => {

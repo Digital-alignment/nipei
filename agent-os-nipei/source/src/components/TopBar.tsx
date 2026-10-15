@@ -3,14 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Building2, Crown, Clock, ChevronDown, ChevronUp, Target } from "lucide-react";
-import CommandPalette from "./CommandPalette";
-import SquadSelector from "./SquadSelector";
-import TopHeaderBar from "./TopHeaderBar";
-import CompanySelector from "./CompanySelector";
-import AgentVaultActivityWidget from "./AgentVaultActivityWidget";
-import { useCompany } from "@/context/CompanyContext";
-import { SQUADS, type SquadId } from "@/lib/nipeiStore";
+import ExecutiveControlsMenu from "./ExecutiveControlsMenu";
+import type { SquadId } from "@/lib/nipeiStore";
 
 interface PageMeta { numeral: string; label: string; title: string; sub: string; }
 
@@ -135,25 +129,6 @@ export default function TopBar() {
   const pathname = usePathname();
   const [time, setTime] = useState<string>("");
   const [activeSquad, setActiveSquad] = useState<SquadId>("super_user");
-  const [isBarCollapsed, setIsBarCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const { activeCompany } = useCompany();
-
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const saved = localStorage.getItem("agentos.topbar.collapsed");
-      if (saved !== null) setIsBarCollapsed(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, []);
-
-  const toggleBarCollapsed = () => {
-    setIsBarCollapsed((prev) => {
-      const next = !prev;
-      try { localStorage.setItem("agentos.topbar.collapsed", JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
 
   useEffect(() => {
     const set = () =>
@@ -163,7 +138,8 @@ export default function TopBar() {
     return () => clearInterval(i);
   }, []);
 
-  if (pathname === "/apollo" || pathname === "/venu") return null;
+  // Apollo, Venu and Kanban manage their own dedicated headers
+  if (pathname === "/apollo" || pathname === "/venu" || pathname === "/kanban") return null;
 
   const routeTitle = TITLES[pathname] ?? TITLES["/"];
   const currentMeta =
@@ -171,108 +147,42 @@ export default function TopBar() {
       ? SQUAD_HEADER_META[activeSquad]
       : routeTitle;
 
-  const currentSquad = SQUADS.find((s) => s.id === activeSquad) ?? SQUADS[0];
-
   return (
-    <div className="w-full mb-4 md:mb-6 space-y-3.5">
-      {/* Row 1: Executive Utility Bar (Collapsible & Super Compact) */}
-      {isBarCollapsed ? (
-        <div className="w-full px-3 py-1.5 rounded-xl border border-white/[0.08] bg-[#07090e]/85 backdrop-blur-xl flex items-center justify-between text-xs font-mono shadow-sm transition">
-          {/* Left: Focus & Timer Summary */}
-          <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-0.5">
-            <span className="flex items-center gap-1.5 text-zinc-300 font-medium shrink-0">
-              <Clock size={12} className="text-emerald-400" />
-              <span className="font-bold text-white tracking-wider">25:00</span>
-            </span>
-            <span className="text-zinc-700 shrink-0">·</span>
-            <span className="flex items-center gap-1 text-zinc-400 shrink-0">
-              <Target size={12} className="text-zinc-500" />
-              <span>Focus <span className="text-zinc-500">OFF</span></span>
-            </span>
+    <div className="w-full mb-5 md:mb-6">
+      {/* Header Row: Title & Metadata on Left, Minimalistic Controls Icon on Right (Non-Sticky) */}
+      <div className="flex items-start justify-between gap-4 relative">
+        {/* Left: Chapter eyebrow, Page Title & Subtitle */}
+        <motion.div
+          key={`${pathname}-${activeSquad}`}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-1.5 flex-1 min-w-0"
+        >
+          {/* Chapter eyebrow */}
+          <div className="eyebrow">
+            <span className="num">{currentMeta.numeral}</span>
+            <span className="line" />
+            <span className="label">{currentMeta.label}</span>
           </div>
 
-          {/* Right: Company, Type of User, Vault Status, Expand Button */}
-          <div className="flex items-center gap-2.5 shrink-0 ml-2">
-            <span className="flex items-center gap-1.5 text-zinc-300 font-medium shrink-0">
-              <Building2 size={12} className="text-emerald-400" />
-              <span className="text-emerald-400 font-bold">
-                {activeCompany ? activeCompany.name : "Todas (Global)"}
-              </span>
-            </span>
-            <span className="text-zinc-700 shrink-0">·</span>
-            <span className="flex items-center gap-1.5 text-zinc-300 shrink-0">
-              <Crown size={12} className="text-emerald-400" />
-              <span className="font-medium text-white">{currentSquad?.name ?? "Super-Usuário"}</span>
-            </span>
-            <span className="text-zinc-700 shrink-0">·</span>
-            <span className="flex items-center gap-1.5 text-zinc-300 shrink-0">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
-              </span>
-              <span className="text-[11px] text-zinc-400">Vault OK</span>
-            </span>
-
-            <button
-              onClick={toggleBarCollapsed}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-zinc-400 hover:text-emerald-400 hover:bg-white/5 transition shrink-0 ml-1"
-              title="Expandir barra de ferramentas"
-            >
-              <span>Expandir</span>
-              <ChevronDown size={13} />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="w-full p-1.5 px-3 rounded-xl border border-white/[0.08] bg-[#07090e]/90 backdrop-blur-xl shadow-xl flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
-          {/* LEFT SIDE: Focus and Timer */}
-          <div className="flex items-center gap-2 shrink-0">
-            <TopHeaderBar />
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h1 className="page-title">{currentMeta.title}</h1>
+            <div className="status-meta text-xs">
+              <span className="hand">{time}</span>
+              <span className="mx-2 opacity-40">·</span>
+              Local · Studio
+            </div>
           </div>
 
-          {/* RIGHT SIDE: Company, Type of User, Vault Status, Command Palette, Collapse Button */}
-          <div className="flex items-center gap-2 shrink-0">
-            <CompanySelector />
-            <SquadSelector activeSquad={activeSquad} onSquadChange={setActiveSquad} />
-            <AgentVaultActivityWidget />
-            <CommandPalette />
-            <button
-              onClick={toggleBarCollapsed}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition shrink-0 ml-0.5"
-              title="Recolher barra de ferramentas"
-            >
-              <ChevronUp size={13} />
-            </button>
-          </div>
-        </div>
-      )}
+          <p className="page-subtitle max-w-3xl leading-relaxed text-xs sm:text-sm">
+            {currentMeta.sub}
+          </p>
+        </motion.div>
 
-      {/* Row 2: Page Eyebrow, Title & Subtitle */}
-      <motion.div
-        key={`${pathname}-${activeSquad}`}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="w-full space-y-1.5"
-      >
-        {/* Chapter eyebrow */}
-        <div className="eyebrow">
-          <span className="num">{currentMeta.numeral}</span>
-          <span className="line" />
-          <span className="label">{currentMeta.label}</span>
-        </div>
-
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="page-title">{currentMeta.title}</h1>
-          <div className="status-meta text-xs">
-            <span className="hand">{time}</span>
-            <span className="mx-2 opacity-40">·</span>
-            Local · Studio
-          </div>
-        </div>
-
-        <p className="page-subtitle max-w-3xl leading-relaxed text-xs sm:text-sm">{currentMeta.sub}</p>
-      </motion.div>
+        {/* Right: Minimalistic, Non-Sticky Icon Trigger */}
+        <ExecutiveControlsMenu activeSquad={activeSquad} onSquadChange={setActiveSquad} />
+      </div>
     </div>
   );
 }

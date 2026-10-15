@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Kanban, Plus, Filter, Play, CheckCircle2, AlertCircle, Clock, Users,
   Sparkles, Layers, ShieldCheck, ChevronRight, X, Bot, Zap, ArrowRight,
   Search, Tag, Maximize2, Minimize2, MessageSquare, CheckSquare, Edit3, Eye,
-  Send, Terminal, FileText, UserCheck, Calendar, AlertTriangle, Trash2, PlusCircle, Check, Folder
+  Send, Terminal, FileText, UserCheck, Calendar, AlertTriangle, Trash2, PlusCircle, Check, Folder,
+  Building2, User, RotateCcw
 } from "lucide-react";
+import ExecutiveControlsMenu from "./ExecutiveControlsMenu";
+import { useCompany } from "@/context/CompanyContext";
 import {
-  INITIAL_TASKS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
-  type TaskComment, type TaskChecklistItem
+  INITIAL_TASKS, INITIAL_SQUADS, INITIAL_MEMBERS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
+  type TaskComment, type TaskChecklistItem, type SquadMeta, type MemberProfile
 } from "@/lib/nipeiStore";
 
 const COLUMNS: { id: KanbanColumnId; label: string; color: string; bg: string; border: string }[] = [
@@ -31,14 +34,90 @@ const AVAILABLE_AGENTS = [
 ];
 
 export default function SquadKanbanView() {
+  const { companies } = useCompany();
   const [tasks, setTasks] = useState<GlobalTask[]>(INITIAL_TASKS);
-  const [selectedSquad, setSelectedSquad] = useState<SquadId | "all">("all");
+  const [squads, setSquads] = useState<SquadMeta[]>(INITIAL_SQUADS);
+  const [members, setMembers] = useState<MemberProfile[]>(INITIAL_MEMBERS);
+
+  // Filters State
+  const [selectedSquad, setSelectedSquad] = useState<string>("all");
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>("all");
+  const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>("all");
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+
+  // Load dynamic squads and members from localStorage and keep synced
+  useEffect(() => {
+    function loadSquadsAndMembers() {
+      try {
+        const savedSquads = localStorage.getItem("nipei_squads_store");
+        if (savedSquads) {
+          const parsed = JSON.parse(savedSquads);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSquads(parsed);
+          }
+        }
+      } catch (e) {
+        console.error("Error loading saved squads in Kanban:", e);
+      }
+
+      try {
+        const savedMembers = localStorage.getItem("nipei_members_store");
+        if (savedMembers) {
+          const parsed = JSON.parse(savedMembers);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMembers(parsed);
+          }
+        }
+      } catch (e) {
+        console.error("Error loading saved members in Kanban:", e);
+      }
+    }
+
+    loadSquadsAndMembers();
+
+    const handleSquadsUpdated = (e: any) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setSquads(e.detail);
+      } else {
+        loadSquadsAndMembers();
+      }
+    };
+
+    const handleMembersUpdated = (e: any) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setMembers(e.detail);
+      } else {
+        loadSquadsAndMembers();
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "nipei_squads_store" || e.key === "nipei_members_store") {
+        loadSquadsAndMembers();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      loadSquadsAndMembers();
+    };
+
+    window.addEventListener("nipei_squads_updated", handleSquadsUpdated);
+    window.addEventListener("nipei_members_updated", handleMembersUpdated);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      window.removeEventListener("nipei_squads_updated", handleSquadsUpdated);
+      window.removeEventListener("nipei_members_updated", handleMembersUpdated);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, []);
 
   // Fetch classified 57 Vault Vacuum Tasks from /api/agent-kanban
   useEffect(() => {
@@ -55,6 +134,18 @@ export default function SquadKanbanView() {
     }
     loadVaultKanbanTasks();
   }, []);
+
+  // Distinct list of member / assignee names
+  const allAssignees = useMemo(() => {
+    const namesSet = new Set<string>();
+    members.forEach((m) => {
+      if (m.name?.trim()) namesSet.add(m.name.trim());
+    });
+    tasks.forEach((t) => {
+      if (t.assignee?.trim()) namesSet.add(t.assignee.trim());
+    });
+    return Array.from(namesSet).sort((a, b) => a.localeCompare(b));
+  }, [members, tasks]);
 
   // Detail & Edit Panel State
   const [detailTask, setDetailTask] = useState<GlobalTask | null>(null);
@@ -89,16 +180,82 @@ export default function SquadKanbanView() {
   const [newDescription, setNewDescription] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<string[]>(["antigravity"]);
 
-  // Filter Tasks
-  const filteredTasks = tasks.filter((t) => {
-    const matchesSquad = selectedSquad === "all" || t.squad === selectedSquad;
-    const matchesAgent =
-      selectedAgentFilter === "all" || (t.assignedAgents && t.assignedAgents.includes(selectedAgentFilter));
-    const matchesSearch =
-      t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (t.project && t.project.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesSquad && matchesAgent && matchesSearch;
-  });
+  // Multi-dimensional Filter
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      // 1. Squad match
+      const matchesSquad =
+        selectedSquad === "all" ||
+        t.squad === selectedSquad ||
+        (t.squad && t.squad.toLowerCase() === selectedSquad.toLowerCase());
+
+      // 2. Company match
+      let matchesCompany = true;
+      if (selectedCompanyFilter !== "all") {
+        const comp = companies.find((c) => c.id === selectedCompanyFilter);
+        const compName = (comp?.name || selectedCompanyFilter).toLowerCase();
+        const compId = selectedCompanyFilter.toLowerCase();
+
+        const taskCompId = ((t as any).companyId || "").toLowerCase();
+        const taskProject = (t.project || "").toLowerCase();
+        const taskTitle = (t.title || "").toLowerCase();
+        const taskDesc = (t.description || "").toLowerCase();
+        const taskVault = (t.vaultPath || "").toLowerCase();
+
+        matchesCompany =
+          taskCompId === compId ||
+          taskProject.includes(compName) ||
+          taskProject.includes(compId) ||
+          taskTitle.includes(compName) ||
+          taskDesc.includes(compName) ||
+          taskVault.includes(compName) ||
+          taskVault.includes(compId);
+      }
+
+      // 3. Member / Assignee match
+      let matchesMember = true;
+      if (selectedMemberFilter !== "all") {
+        const memTarget = selectedMemberFilter.toLowerCase();
+        const taskAssignee = (t.assignee || "").toLowerCase();
+        matchesMember =
+          taskAssignee === memTarget ||
+          taskAssignee.includes(memTarget) ||
+          memTarget.includes(taskAssignee);
+      }
+
+      // 4. Agent match
+      const matchesAgent =
+        selectedAgentFilter === "all" ||
+        (t.assignedAgents && t.assignedAgents.includes(selectedAgentFilter));
+
+      // 5. Search match
+      const q = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        t.title.toLowerCase().includes(q) ||
+        (t.project && t.project.toLowerCase().includes(q)) ||
+        (t.assignee && t.assignee.toLowerCase().includes(q)) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
+        t.id.toLowerCase().includes(q);
+
+      return matchesSquad && matchesCompany && matchesMember && matchesAgent && matchesSearch;
+    });
+  }, [tasks, selectedSquad, selectedCompanyFilter, selectedMemberFilter, selectedAgentFilter, searchTerm, companies]);
+
+  const isAnyFilterActive =
+    selectedSquad !== "all" ||
+    selectedCompanyFilter !== "all" ||
+    selectedMemberFilter !== "all" ||
+    selectedAgentFilter !== "all" ||
+    searchTerm.trim().length > 0;
+
+  const handleResetFilters = () => {
+    setSelectedSquad("all");
+    setSelectedCompanyFilter("all");
+    setSelectedMemberFilter("all");
+    setSelectedAgentFilter("all");
+    setSearchTerm("");
+  };
 
   // Sync Task Updates in State
   function syncTaskUpdate(updated: GlobalTask) {
@@ -330,37 +487,22 @@ export default function SquadKanbanView() {
       }
     >
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-lg border border-[#1e381e] bg-[#0f190f] shrink-0">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="pill pill-ok">Nipëi Agentic Kanban</span>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400">
-              Trinômio Operacional · Multi-Squad · Agentes Autônomos
-            </span>
-            {isFullScreen && (
-              <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-[#142414] border border-[#22c55e] text-[#22c55e] font-bold flex items-center gap-1">
-                <Maximize2 size={11} /> Tela Cheia Imersiva (ESC)
-              </span>
-            )}
-          </div>
-          <h2 className="text-xl font-bold mt-2 text-white">Quadro Kanban Multidisciplinar por Squad</h2>
-          <p className="text-xs text-[#a7f3d0] mt-1">
-            Gestão visual de projetos e tarefas dos 7 Squads. Delegue tarefas diretamente para a Flota de Agentes IA.
-            {isFullScreen && " — Pressione ESC para sair da Tela Cheia."}
-          </p>
-        </div>
+      <div className="flex items-center justify-between gap-4 p-4 md:p-5 rounded-xl border border-[#1e381e] bg-[#0a120b] shrink-0">
+        <h1 className="text-2xl font-bold tracking-tight text-white font-mono">
+          Kanban
+        </h1>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-[#22c55e] text-xs font-bold text-[#050805] hover:bg-[#4ade80] transition shadow-lg shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#22c55e] text-xs font-bold text-[#050805] hover:bg-[#4ade80] transition shadow-lg shrink-0"
           >
             <Plus size={16} /> Nova Tarefa / Projeto
           </button>
 
           <button
             onClick={() => setIsFullScreen(!isFullScreen)}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-md bg-[#142414] border border-[#22c55e]/40 text-xs font-bold text-[#22c55e] hover:bg-[#1e381e] hover:text-white transition shadow-sm shrink-0"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-[#142414] border border-[#22c55e]/40 text-xs font-bold text-[#22c55e] hover:bg-[#1e381e] hover:text-white transition shadow-sm shrink-0"
             title={isFullScreen ? "Sair do modo Tela Cheia (ESC)" : "Ativar Modo Tela Cheia Sem Distrações"}
           >
             {isFullScreen ? (
@@ -373,75 +515,140 @@ export default function SquadKanbanView() {
               </>
             )}
           </button>
+
+          <ExecutiveControlsMenu />
         </div>
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 rounded-lg border border-[#1e381e] bg-[#0f190f] space-y-3 shrink-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#142414] pb-3">
-          {/* Squad Workspace Tabs */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-mono text-[#a7f3d0] mr-1 font-bold flex items-center gap-1">
-              <Filter size={13} /> Squad:
-            </span>
-            <button
-              onClick={() => setSelectedSquad("all")}
-              className={`px-3 py-1 rounded text-xs font-mono transition ${
-                selectedSquad === "all" ? "bg-[#22c55e] text-[#050805] font-bold" : "bg-[#050805] text-[#a7f3d0] hover:bg-[#142414]"
-              }`}
-            >
-              Todos os Squads
-            </button>
-            {SQUADS.filter((s) => s.id !== "super_user").map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedSquad(s.id)}
-                className={`px-2.5 py-1 rounded text-xs font-mono transition truncate max-w-[140px] ${
-                  selectedSquad === s.id ? "bg-[#22c55e] text-[#050805] font-bold" : "bg-[#050805] text-[#a7f3d0] hover:bg-[#142414]"
-                }`}
-              >
-                {s.name.split("—")[0]}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Box */}
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-2.5 text-[#4ade80]" size={14} />
+      <div className="p-3 rounded-xl border border-[#1e381e] bg-[#0c160c]/90 backdrop-blur-md space-y-2.5 shrink-0 shadow-lg shadow-black/40">
+        {/* Row 1: Search & Multi-dimensional Dropdowns */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          {/* Left: Search Input */}
+          <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
+            <Search className="absolute left-2.5 top-2.5 text-[#4ade80]" size={13} />
             <input
               type="text"
-              placeholder="Filtrar tarefas..."
+              placeholder="Buscar tarefa, ID ou projeto..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded bg-[#050805] border border-[#1e381e] text-xs text-white placeholder-[#166534] focus:outline-none focus:border-[#22c55e]"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#050805] border border-[#1e381e] text-xs text-white placeholder-[#166534] focus:outline-none focus:border-[#22c55e] transition"
             />
+          </div>
+
+          {/* Middle: Dimension Selectors */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Empresa Filter */}
+            <div className="flex items-center gap-1.5 bg-[#050805] border border-[#1e381e] rounded-lg px-2.5 py-1 text-xs">
+              <Building2 size={13} className="text-[#a7f3d0] shrink-0" />
+              <select
+                value={selectedCompanyFilter}
+                onChange={(e) => setSelectedCompanyFilter(e.target.value)}
+                className="bg-transparent text-white text-xs focus:outline-none cursor-pointer pr-1"
+              >
+                <option value="all" className="bg-[#0c160c] text-white">Todas Empresas</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id} className="bg-[#0c160c] text-white">
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Integrante Filter */}
+            <div className="flex items-center gap-1.5 bg-[#050805] border border-[#1e381e] rounded-lg px-2.5 py-1 text-xs">
+              <User size={13} className="text-[#a7f3d0] shrink-0" />
+              <select
+                value={selectedMemberFilter}
+                onChange={(e) => setSelectedMemberFilter(e.target.value)}
+                className="bg-transparent text-white text-xs focus:outline-none cursor-pointer pr-1 max-w-[140px] truncate"
+              >
+                <option value="all" className="bg-[#0c160c] text-white">Todos Integrantes</option>
+                {allAssignees.map((name) => (
+                  <option key={name} value={name} className="bg-[#0c160c] text-white">
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Agente IA Filter */}
+            <div className="flex items-center gap-1.5 bg-[#050805] border border-[#1e381e] rounded-lg px-2.5 py-1 text-xs">
+              <Bot size={13} className="text-[#22c55e] shrink-0" />
+              <select
+                value={selectedAgentFilter}
+                onChange={(e) => setSelectedAgentFilter(e.target.value)}
+                className="bg-transparent text-white text-xs focus:outline-none cursor-pointer pr-1"
+              >
+                <option value="all" className="bg-[#0c160c] text-white">Todos Agentes</option>
+                {AVAILABLE_AGENTS.map((ag) => (
+                  <option key={ag.id} value={ag.id} className="bg-[#0c160c] text-white">
+                    @{ag.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Right: Counter & Reset */}
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-[11px] font-mono text-[#a7f3d0] bg-[#142414] px-2.5 py-1 rounded-md border border-[#1e381e]">
+              <span className="text-[#22c55e] font-bold">{filteredTasks.length}</span> / {tasks.length}
+            </span>
+
+            {isAnyFilterActive && (
+              <button
+                onClick={handleResetFilters}
+                title="Limpar todos os filtros"
+                className="text-xs text-emerald-400/80 hover:text-emerald-200 bg-[#050805] hover:bg-[#142414] border border-[#1e381e] px-2 py-1 rounded-md transition flex items-center gap-1"
+              >
+                <RotateCcw size={11} /> Limpar
+              </button>
+            )}
           </div>
         </div>
 
-        {/* AI Agent Filter */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono text-[#a7f3d0] mr-1 font-bold flex items-center gap-1">
-            <Bot size={13} /> Agente Atribuído:
+        {/* Row 2: Dynamic Squads Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-1 border-t border-[#142414] scrollbar-thin">
+          <span className="text-[11px] font-mono text-[#a7f3d0] font-bold flex items-center gap-1 shrink-0 mr-1">
+            <Layers size={12} className="text-[#22c55e]" /> Squad:
           </span>
+
           <button
-            onClick={() => setSelectedAgentFilter("all")}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-mono transition ${
-              selectedAgentFilter === "all" ? "bg-[#4ade80] text-[#050805] font-bold" : "bg-[#050805] text-[#a7f3d0] hover:bg-[#142414]"
+            onClick={() => setSelectedSquad("all")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-mono transition shrink-0 ${
+              selectedSquad === "all"
+                ? "bg-[#22c55e] text-[#050805] font-bold shadow-sm shadow-[#22c55e]/20"
+                : "bg-[#050805] text-[#a7f3d0] hover:bg-[#142414] border border-[#1e381e]"
             }`}
           >
-            Todos Agentes
+            Todos os Squads
           </button>
-          {AVAILABLE_AGENTS.map((ag) => (
-            <button
-              key={ag.id}
-              onClick={() => setSelectedAgentFilter(ag.id)}
-              className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
-                selectedAgentFilter === ag.id ? "bg-[#22c55e] text-[#050805] font-bold" : "bg-[#050805] text-[#a7f3d0] hover:bg-[#142414]"
-              }`}
-            >
-              @{ag.name}
-            </button>
-          ))}
+
+          {squads
+            .filter((s) => s.id !== "super_user")
+            .map((s) => {
+              const isActive = selectedSquad === s.id;
+              const displayName = s.name.split("—")[0].trim();
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => setSelectedSquad(s.id)}
+                  title={s.name}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono transition shrink-0 flex items-center gap-1.5 ${
+                    isActive
+                      ? "bg-[#22c55e] text-[#050805] font-bold shadow-sm shadow-[#22c55e]/20"
+                      : "bg-[#050805] text-[#a7f3d0] hover:bg-[#142414] border border-[#1e381e]"
+                  }`}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: isActive ? "#050805" : (s.colorHex || "#22c55e") }}
+                  />
+                  <span>{displayName}</span>
+                </button>
+              );
+            })}
         </div>
       </div>
 
@@ -483,7 +690,7 @@ export default function SquadKanbanView() {
               >
                 {colTasks.map((task) => {
                   const isExecuting = executingTaskId === task.id;
-                  const squadMeta = SQUADS.find((s) => s.id === task.squad);
+                  const squadMeta = squads.find((s) => s.id === task.squad) || SQUADS.find((s) => s.id === task.squad);
 
                   const checklistTotal = task.checklist?.length || 0;
                   const checklistDone = task.checklist?.filter((c) => c.completed).length || 0;
@@ -774,7 +981,7 @@ export default function SquadKanbanView() {
                           onChange={(e) => syncTaskUpdate({ ...detailTask, squad: e.target.value as SquadId })}
                           className="w-full p-2.5 rounded bg-[#050805] border border-[#1e381e] text-white focus:border-[#22c55e] focus:outline-none"
                         >
-                          {SQUADS.filter((s) => s.id !== "super_user").map((s) => (
+                          {squads.filter((s) => s.id !== "super_user").map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name}
                             </option>
@@ -1153,7 +1360,7 @@ export default function SquadKanbanView() {
                       onChange={(e) => setNewSquad(e.target.value as SquadId)}
                       className="w-full p-2.5 rounded bg-[#050805] border border-[#1e381e] text-white focus:border-[#22c55e] focus:outline-none"
                     >
-                      {SQUADS.filter((s) => s.id !== "super_user").map((s) => (
+                      {squads.filter((s) => s.id !== "super_user").map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name}
                         </option>
