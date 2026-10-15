@@ -50,6 +50,7 @@ const TITLES: Record<string, PageMeta> = {
   "/kanban":      { numeral: "XIII.", label: "Self · Kanban",      title: "Kanban",                  sub: "Hermes Agent multi-agent board. Drop a prompt into triage, watch the orchestrator decompose + assign." },
   "/journal":     { numeral: "XIV.",  label: "Self · Journal",     title: "Journal",                 sub: "Daily entries with voice or text. One markdown file per day." },
   "/memory":      { numeral: "XV.",   label: "Vault · Memory",      title: "Nipëi Memory (Vault & Ingestão)",   sub: "Central de Conhecimento, 1.088 notas ativas no Vault Master, auditoria de vacíos & Omi memories." },
+  "/metodologias":{ numeral: "I·c·2", label: "Frameworks · Metodologias", title: "Hub de Metodologias & Práticas", sub: "Acervo vivo de frameworks globais: Ivy Lee, Agile Scrum, 4DX, Deep Work, PARA e Estoicismo." },
   "/empresas":    { numeral: "IV·a.", label: "Gestão · Empresas",       title: "Empresas & Unidades Nipëi", sub: "Centro de gestão das 5 empresas oficiais, metas estratégicas, categorias e projetos vinculados." },
   "/venu":        { numeral: "VI.",   label: "Voz & Agenda · Venu",     title: "Venu / Apollo",           sub: "Assistente executivo com geometria sagrada, síntese de voz, briefings diários e eventos." },
   "/guide":       { numeral: "XVI.",  label: "Build · Your Own",   title: "Build Your Own",          sub: "Step-by-step guide. Anyone can follow it. Share with your community." },

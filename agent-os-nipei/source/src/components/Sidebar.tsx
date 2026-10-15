@@ -1,17 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutGrid, Brain, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow,
   MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard,
   Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal,
   Check, SquareTerminal, ShieldCheck, Route, Scissors, FlaskConical, Wand2, Kanban, Server,
-  PanelLeftClose, PanelLeftOpen, Sun, Upload, ChevronDown, ChevronRight, Sparkles, Layers, UserCheck
+  PanelLeftClose, PanelLeftOpen, Sun, Upload, ChevronDown, ChevronRight, Sparkles, Layers,
+  UserCheck, Compass, Users
 } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import AgentAvatar from "./AgentAvatar";
+
+interface SubNavItem {
+  href: string;
+  label: string;
+  icon?: ReactNode;
+}
 
 interface NavItem {
   href: string;
@@ -20,21 +27,87 @@ interface NavItem {
   accent: string;
   dim: string;
   group: "active" | "agents_future" | "tools_future";
+  subItems?: SubNavItem[];
 }
 
 const NAV: NavItem[] = [
   // 🟢 1. Active Modules & Main Agents (MVP Core)
-  { href: "/mi-portal",      label: "Meu Portal (Habits & Ivy)", icon: <UserCheck size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.25)",  group: "active" },
-  { href: "/memory",         label: "Memória Nipëi (Vault)",          icon: <Brain size={16} />,                           accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/ingestion",      label: "Ingestão de Conhecimento",       icon: <Upload size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/organograma",    label: "Organograma Global",             icon: <Network size={16} />,                         accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/empresas",       label: "Empresas & Unidades",            icon: <Building2 size={16} />,                       accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/kanban",         label: "Kanban Tasks (Squads)",          icon: <Kanban size={16} />,                          accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "active" },
-  { href: "/venu",           label: "Venu (Voz & Agenda)",            icon: <Sun size={16} />,                             accent: "#22d3ee", dim: "rgba(34,211,238,0.16)", group: "active" },
-  { href: "/hermes",         label: "Hermes 2.0 (Gestão)",            icon: <AgentAvatar agent="hermes" size={22} />,      accent: "#60a5fa", dim: "rgba(96,165,250,0.16)", group: "active" },
-  { href: "/",               label: "Mission Control",                icon: <LayoutGrid size={16} />,                      accent: "#22c55e", dim: "rgba(34,197,94,0.16)",  group: "active" },
-  { href: "/antigravity",    label: "Antigravity",                    icon: <AgentAvatar agent="antigravity" size={22} />, accent: "#7c3aed", dim: "rgba(124,58,237,0.16)", group: "active" },
-  { href: "/productivity",   label: "Produtividade & Desempenho",     icon: <TrendingUp size={16} />,                      accent: "#10b981", dim: "rgba(16,185,129,0.25)",  group: "active" },
+  {
+    href: "/mi-portal",
+    label: "Meu Portal (Habits & Ivy)",
+    icon: <UserCheck size={16} />,
+    accent: "#22c55e",
+    dim: "rgba(34,197,94,0.25)",
+    group: "active",
+  },
+  {
+    href: "/brain",
+    label: "Nipëi Brain",
+    icon: <Brain size={16} />,
+    accent: "#22c55e",
+    dim: "rgba(34,197,94,0.2)",
+    group: "active",
+    subItems: [
+      { href: "/ingestion",    label: "Ingestão de Conhecimento", icon: <Upload size={14} /> },
+      { href: "/memory",       label: "Memória Nipëi (Vault)",    icon: <Brain size={14} /> },
+      { href: "/productivity", label: "Produtividade",            icon: <TrendingUp size={14} /> },
+      { href: "/metodologias", label: "Metodologias Hub",         icon: <Compass size={14} /> },
+    ],
+  },
+  {
+    href: "/organograma",
+    label: "Organograma & Estrutura",
+    icon: <Network size={16} />,
+    accent: "#22c55e",
+    dim: "rgba(34,197,94,0.2)",
+    group: "active",
+    subItems: [
+      { href: "/organograma",             label: "Organograma Global",  icon: <Network size={14} /> },
+      { href: "/empresas",                label: "Empresas & Unidades", icon: <Building2 size={14} /> },
+      { href: "/organograma?tab=squads",  label: "Squads",              icon: <Users size={14} /> },
+      { href: "/organograma?tab=members", label: "Integrantes",         icon: <UserCheck size={14} /> },
+    ],
+  },
+  {
+    href: "/kanban",
+    label: "Kanban Tasks (Squads)",
+    icon: <Kanban size={16} />,
+    accent: "#22c55e",
+    dim: "rgba(34,197,94,0.2)",
+    group: "active",
+  },
+  {
+    href: "/venu",
+    label: "Venu (Voz & Agenda)",
+    icon: <Sun size={16} />,
+    accent: "#22d3ee",
+    dim: "rgba(34,211,238,0.16)",
+    group: "active",
+  },
+  {
+    href: "/hermes",
+    label: "Hermes 2.0 (Gestão)",
+    icon: <AgentAvatar agent="hermes" size={22} />,
+    accent: "#60a5fa",
+    dim: "rgba(96,165,250,0.16)",
+    group: "active",
+  },
+  {
+    href: "/",
+    label: "Mission Control",
+    icon: <LayoutGrid size={16} />,
+    accent: "#22c55e",
+    dim: "rgba(34,197,94,0.16)",
+    group: "active",
+  },
+  {
+    href: "/antigravity",
+    label: "Antigravity",
+    icon: <AgentAvatar agent="antigravity" size={22} />,
+    accent: "#7c3aed",
+    dim: "rgba(124,58,237,0.16)",
+    group: "active",
+  },
 
   // 🔮 2. Specialized Future Agents (Collapsible)
   { href: "/claude",         label: "Claude",                         icon: <AgentAvatar agent="claude" size={22} />,      accent: "#d97757", dim: "rgba(217,119,87,0.16)", group: "agents_future" },
@@ -60,7 +133,6 @@ const NAV: NavItem[] = [
   // 🚀 3. Future Development Tools & Modules (Collapsible)
   { href: "/flow",           label: "Nipëi Flow (Supply)",            icon: <Workflow size={16} />,                        accent: "#22c55e", dim: "rgba(34,197,94,0.2)",   group: "tools_future" },
   { href: "/people",         label: "Nipëi People (CRM 360)",         icon: <Brain size={16} />,                           accent: "#4ade80", dim: "rgba(74,222,128,0.2)",  group: "tools_future" },
-  { href: "/brain",          label: "Nipëi Brain (Governança)",       icon: <ShieldCheck size={16} />,                     accent: "#10b981", dim: "rgba(16,185,129,0.2)",  group: "tools_future" },
   { href: "/paperclip",      label: "Paperclip",                      icon: <Building2 size={16} />,                       accent: "#d4a574", dim: "rgba(212,165,116,0.16)", group: "tools_future" },
   { href: "/room",           label: "AI Agent Mastermind",            icon: <MessagesSquare size={16} />,                  accent: "#a855f7", dim: "rgba(168,85,247,0.16)", group: "tools_future" },
   { href: "/pipeline",       label: "Pipeline",                       icon: <Workflow size={16} />,                        accent: "#34d399", dim: "rgba(52,211,153,0.16)", group: "tools_future" },
@@ -84,18 +156,33 @@ const LS_COLLAPSED = "agentos.sidebar.collapsed";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [order, setOrder] = useState<string[]>(DEFAULT_ORDER);
   const [hidden, setHidden] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
-  const [customize, setCustomize] = useState(false);
 
-  // Collapsible section states for future items
+  // Accordion states
+  const [isBrainOpen, setIsBrainOpen] = useState(true);
+  const [isOrganogramaOpen, setIsOrganogramaOpen] = useState(true);
   const [isAgentsOpen, setIsAgentsOpen] = useState(false);
   const [isFutureToolsOpen, setIsFutureToolsOpen] = useState(false);
 
-  // Auto-expand collapsible if current route belongs to a future section
+  // Auto-expand accordions based on current route
   useEffect(() => {
+    if (
+      pathname.startsWith("/brain") ||
+      pathname.startsWith("/ingestion") ||
+      pathname.startsWith("/memory") ||
+      pathname.startsWith("/productivity") ||
+      pathname.startsWith("/metodologias")
+    ) {
+      setIsBrainOpen(true);
+    }
+    if (pathname.startsWith("/organograma") || pathname.startsWith("/empresas")) {
+      setIsOrganogramaOpen(true);
+    }
+
     const currentItem = BY_HREF[pathname];
     if (currentItem?.group === "agents_future") {
       setIsAgentsOpen(true);
@@ -163,8 +250,90 @@ export default function Sidebar() {
 
         <nav className="flex flex-col gap-0.5 relative">
           {activeNavItems.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const hasSub = Boolean(item.subItems && item.subItems.length > 0);
+            const isBrain = item.href === "/brain";
+            const isOrganograma = item.href === "/organograma";
+            const isOpen = isBrain ? isBrainOpen : isOrganograma ? isOrganogramaOpen : false;
 
+            // Check if active on parent or any subitem
+            const isParentActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href) ||
+                  (hasSub && item.subItems?.some((sub) => pathname.startsWith(sub.href.split("?")[0])));
+
+            // If it has sub-items (Brain or Organograma)
+            if (hasSub) {
+              return (
+                <div key={item.href} className="flex flex-col">
+                  {/* Parent Accordion Trigger */}
+                  <div
+                    onClick={() => {
+                      if (collapsed) {
+                        setCollapsed(false);
+                      }
+                      if (isBrain) setIsBrainOpen(!isBrainOpen);
+                      if (isOrganograma) setIsOrganogramaOpen(!isOrganogramaOpen);
+                    }}
+                    className={`sidebar-item relative group flex items-center justify-between py-2.5 cursor-pointer transition select-none ${
+                      collapsed ? "px-3 justify-center" : "px-5"
+                    } ${isParentActive ? "active font-bold text-emerald-400" : ""}`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className="shrink-0 grid place-items-center w-7 h-7 rounded-md transition"
+                        style={{ color: isParentActive ? "#22c55e" : "var(--cream-dim)" }}
+                      >
+                        {item.icon}
+                      </span>
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                    </div>
+
+                    {!collapsed && (
+                      <span className="text-zinc-500 hover:text-white transition">
+                        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Sub-items list */}
+                  {!collapsed && isOpen && (
+                    <div className="ml-7 pl-3 my-0.5 border-l border-emerald-500/20 space-y-0.5">
+                      {item.subItems?.map((sub) => {
+                        const [subPath, subQuery] = sub.href.split("?");
+                        let isSubActive = false;
+
+                        if (subQuery) {
+                          const paramPair = subQuery.split("=");
+                          const currentParamVal = searchParams.get(paramPair[0]);
+                          isSubActive = pathname === subPath && currentParamVal === paramPair[1];
+                        } else {
+                          isSubActive = pathname === subPath;
+                        }
+
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            title={sub.label}
+                            className={`flex items-center gap-2.5 py-1.5 px-2.5 rounded-lg text-xs transition ${
+                              isSubActive
+                                ? "bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30"
+                                : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
+                            }`}
+                          >
+                            <span className="shrink-0 text-zinc-400">{sub.icon}</span>
+                            <span className="truncate">{sub.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Standard navigation item
             return (
               <Link
                 key={item.href}
@@ -172,9 +341,9 @@ export default function Sidebar() {
                 title={item.label}
                 className={`sidebar-item relative group flex items-center gap-3 py-2.5 transition ${
                   collapsed ? "px-3 justify-center" : "px-5"
-                } ${active ? "active" : ""}`}
+                } ${isParentActive ? "active" : ""}`}
               >
-                {active && (
+                {isParentActive && (
                   <motion.span
                     layoutId="nav-indicator"
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[22px] rounded-r bg-[#22c55e]"
@@ -184,7 +353,7 @@ export default function Sidebar() {
                 )}
                 <span
                   className="shrink-0 grid place-items-center w-7 h-7 rounded-md transition"
-                  style={{ color: active ? "#22c55e" : "var(--cream-dim)" }}
+                  style={{ color: isParentActive ? "#22c55e" : "var(--cream-dim)" }}
                 >
                   {item.icon}
                 </span>
@@ -248,10 +417,10 @@ export default function Sidebar() {
               >
                 <div className="flex items-center gap-2">
                   <Layers size={14} className="text-cyan-400" />
-                  <span className="text-[11px] uppercase tracking-wider">Módulos en Desarrollo (Futuro)</span>
+                  <span className="text-[11px] uppercase tracking-wider">Módulos & Lab (Futuro)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#0d1e24] text-cyan-400 rounded-full border border-cyan-500/30">
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#0d2229] text-cyan-400 rounded-full border border-cyan-500/30">
                     {toolsFutureItems.length}
                   </span>
                   {isFutureToolsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -292,7 +461,13 @@ export default function Sidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
-  const PRIMARY = NAV.filter((n) => n.group === "active").slice(0, 5);
+  const PRIMARY = [
+    { href: "/mi-portal", label: "Portal", icon: <UserCheck size={16} /> },
+    { href: "/memory", label: "Brain", icon: <Brain size={16} /> },
+    { href: "/organograma", label: "Estrutura", icon: <Network size={16} /> },
+    { href: "/kanban", label: "Kanban", icon: <Kanban size={16} /> },
+    { href: "/hermes", label: "Hermes", icon: <AgentAvatar agent="hermes" size={20} /> },
+  ];
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 py-2 border-t border-[#1e381e] bg-[#091409]"
@@ -306,7 +481,7 @@ export function MobileNav() {
             className={`flex flex-col items-center gap-1 p-1.5 rounded transition ${active ? "text-[#22c55e]" : "text-[#a7f3d0]"}`}
           >
             {item.icon}
-            <span className="text-[9px] font-mono font-bold truncate max-w-[60px]">{item.label.split(" ")[0]}</span>
+            <span className="text-[9px] font-mono font-bold truncate max-w-[60px]">{item.label}</span>
           </Link>
         );
       })}

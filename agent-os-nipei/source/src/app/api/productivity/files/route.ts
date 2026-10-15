@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { defaultVault } from "@/lib/config";
 
-const PRODUCTIVITY_DIR = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault\\Productivity";
+function getProductivityDir(): string {
+  const vaultRoot = defaultVault() || "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
+  return path.join(vaultRoot, "Productivity");
+}
 
 export interface ProductivityFileItem {
   name: string;
@@ -51,12 +55,13 @@ function scanDirectory(dirPath: string, baseDir: string): ProductivityFileItem[]
 
 export async function GET(req: NextRequest) {
   try {
+    const productivityDir = getProductivityDir();
     const { searchParams } = new URL(req.url);
     const fileParam = searchParams.get("file");
 
     // If specific file requested, return content
     if (fileParam) {
-      const targetPath = path.join(PRODUCTIVITY_DIR, fileParam.replace(/\.\./g, ""));
+      const targetPath = path.join(productivityDir, fileParam.replace(/\.\./g, ""));
       if (!fs.existsSync(targetPath)) {
         return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });
       }
@@ -66,8 +71,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Otherwise list all MD and CSV files in hierarchy
-    const files = scanDirectory(PRODUCTIVITY_DIR, PRODUCTIVITY_DIR);
-    return NextResponse.json({ files, vaultPath: PRODUCTIVITY_DIR });
+    const files = scanDirectory(productivityDir, productivityDir);
+    return NextResponse.json({ files, vaultPath: productivityDir });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -75,6 +80,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const productivityDir = getProductivityDir();
     const body = await req.json();
     const { relativePath, content } = body;
 
@@ -82,7 +88,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan parámetros relativePath o content" }, { status: 400 });
     }
 
-    const targetPath = path.join(PRODUCTIVITY_DIR, relativePath.replace(/\.\./g, ""));
+    const targetPath = path.join(productivityDir, relativePath.replace(/\.\./g, ""));
     const dir = path.dirname(targetPath);
 
     if (!fs.existsSync(dir)) {

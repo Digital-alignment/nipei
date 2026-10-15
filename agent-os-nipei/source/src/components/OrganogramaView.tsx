@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Network, ShieldCheck, Crown, Users, Brain, Workflow, Building2,
@@ -19,7 +20,17 @@ import AgentProvisioningWizard from "./AgentProvisioningWizard";
 import ArchifyDiagramWidget from "./ArchifyDiagramWidget";
 
 export default function OrganogramaView() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab");
   const [activeTab, setActiveTab] = useState<"squads" | "members">("squads");
+
+  useEffect(() => {
+    if (tabParam === "members" || tabParam === "integrantes") {
+      setActiveTab("members");
+    } else if (tabParam === "squads") {
+      setActiveTab("squads");
+    }
+  }, [tabParam]);
   const [squadsList, setSquadsList] = useState<SquadMeta[]>(INITIAL_SQUADS);
   const [membersList, setMembersList] = useState<MemberProfile[]>(INITIAL_MEMBERS);
   const [selectedNucleus, setSelectedNucleus] = useState<NucleusRole | "all">("all");
