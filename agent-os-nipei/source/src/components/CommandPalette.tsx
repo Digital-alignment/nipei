@@ -69,9 +69,11 @@ export default function CommandPalette() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--panel-border)] text-[12px] text-[var(--fg-dim)] hover:text-[var(--fg)] hover:border-[var(--panel-border-hot)] transition"
+        className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 bg-[#0a120c] hover:border-emerald-500/40 hover:bg-[#0f1a11] text-xs font-mono text-zinc-300 transition shadow-sm"
+        title="Abrir Command Palette (⌘K / Ctrl+K)"
       >
-        <span>⌘K</span><span>Command palette</span>
+        <span className="font-bold text-emerald-400">⌘K</span>
+        <span className="hidden xl:inline text-zinc-400 text-[11px]">Command</span>
       </button>
 
       <AnimatePresence>

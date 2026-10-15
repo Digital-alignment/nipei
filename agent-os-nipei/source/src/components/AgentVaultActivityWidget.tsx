@@ -65,41 +65,44 @@ export default function AgentVaultActivityWidget() {
     <>
       <div className="relative font-mono text-xs">
         {/* Compact Ticker Bar */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#1e3a22] bg-[#050c06] text-slate-300 shadow-md">
-          <span className="relative flex h-2 w-2">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 bg-[#0a120c] text-zinc-300 shadow-sm">
+          <span className="relative flex h-2 w-2 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22c55e]"></span>
           </span>
 
-          <span className="font-bold text-[11px] text-[#22c55e] uppercase tracking-wider shrink-0 flex items-center gap-1">
-            <ShieldCheck size={13} /> Vault Monitor
+          <span className="font-bold text-[11px] text-emerald-400 shrink-0 flex items-center gap-1">
+            <ShieldCheck size={12} />
+            <span className="hidden xl:inline">Vault Monitor</span>
+            <span className="xl:hidden">Vault</span>
           </span>
 
           {latestEntry ? (
             <button
               onClick={() => latestEntry.path && openNotePath(latestEntry.path)}
-              className="truncate max-w-[280px] sm:max-w-[420px] text-[11px] text-slate-300 hover:text-white hover:underline transition text-left"
+              className="truncate max-w-[100px] md:max-w-[150px] xl:max-w-[220px] text-[11px] text-zinc-400 hover:text-white transition text-left"
               title="Click para abrir la nota en vivo"
             >
-              {latestEntry.text} <span className="text-[10px] text-slate-500">({fmtAgo(latestEntry.ts)})</span>
+              {latestEntry.title || latestEntry.text}
             </button>
           ) : (
-            <span className="text-[11px] text-slate-500 italic">Monitoreando cambios en nipei-vault…</span>
+            <span className="text-[11px] text-zinc-500 italic hidden sm:inline">Conectado</span>
           )}
 
-          <div className="flex items-center gap-1 ml-auto shrink-0">
+          <div className="flex items-center gap-0.5 ml-auto shrink-0">
             <button
               onClick={fetchActivity}
-              className="p-1 text-slate-400 hover:text-white transition"
-              title="Refrescar actividad del Vault"
+              className="p-0.5 text-zinc-400 hover:text-white transition"
+              title="Refrescar atividade do Vault"
             >
-              <RefreshCw size={12} className={loading ? "animate-spin text-[#22c55e]" : ""} />
+              <RefreshCw size={11} className={loading ? "animate-spin text-[#22c55e]" : ""} />
             </button>
             <button
               onClick={() => setIsExpanded((v) => !v)}
-              className="p-1 text-slate-400 hover:text-white transition flex items-center gap-1 text-[10px] font-bold"
+              className="p-0.5 text-zinc-400 hover:text-white transition flex items-center"
+              title={isExpanded ? "Ocultar feed" : "Expandir feed de atividades"}
             >
-              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           </div>
         </div>

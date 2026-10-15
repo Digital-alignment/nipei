@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play, Pause, RotateCcw, Target, Layers, ChevronDown, Sparkles,
-  Workflow, Brain, ShieldCheck, Kanban, MessagesSquare, MessageSquare,
-  Crown, Clock, Zap, CheckCircle2, Network
-} from "lucide-react";
+import { Play, Pause, RotateCcw, Target, Clock } from "lucide-react";
 
 export default function TopHeaderBar() {
   const [focusMode, setFocusMode] = useState(false);
@@ -16,8 +10,6 @@ export default function TopHeaderBar() {
   const [timerSeconds, setTimerSeconds] = useState(1500);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerMode, setTimerMode] = useState<"focus" | "short_break">("focus");
-
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -49,117 +41,68 @@ export default function TopHeaderBar() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-      {/* Funcionalidades Dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#142414] border border-[#22c55e] text-white hover:bg-[#1e381e] transition font-bold shadow-sm"
-        >
-          <Layers size={14} className="text-[#22c55e]" />
-          <span>Funcionalidades & Módulos</span>
-          <ChevronDown size={13} className="text-[#4ade80]" />
-        </button>
+    <div className="flex items-center gap-1.5 font-mono text-xs shrink-0">
+      {/* Pomodoro Compact Widget */}
+      <div className="flex items-center gap-1.5 bg-[#0a120c] px-2 py-1 rounded-lg border border-white/10 text-zinc-300 shadow-sm">
+        <Clock size={12} className={`text-[#22c55e] ${timerRunning ? "animate-pulse" : ""}`} />
+        <span className="font-bold text-white tracking-wider text-[11px]">{formattedTime}</span>
 
-        {menuOpen && (
-          <div className="absolute right-0 mt-2 w-72 rounded-xl border border-[#22c55e] bg-[#0f190f] shadow-2xl z-50 p-2 space-y-1">
-            <div className="text-[10px] uppercase font-bold text-[#166534] px-2.5 py-1 border-b border-[#142414] tracking-widest">
-              Módulos Core Nipëi OS
-            </div>
-
-            {[
-              { href: "/mi-portal", label: "Meu Portal (Habits & Orbs)", icon: <Crown size={14} className="text-[#22c55e]" /> },
-              { href: "/memory", label: "Memória Nipëi (Vault)", icon: <Brain size={14} className="text-[#22c55e]" /> },
-              { href: "/ingestion", label: "Ingestão de Conhecimento", icon: <Sparkles size={14} className="text-[#4ade80]" /> },
-              { href: "/organograma", label: "Organograma & Squads", icon: <Network size={14} className="text-[#4ade80]" /> },
-              { href: "/empresas", label: "Empresas & Unidades", icon: <Layers size={14} className="text-[#10b981]" /> },
-              { href: "/kanban", label: "Kanban Tasks (Squads)", icon: <Kanban size={14} className="text-[#22c55e]" /> },
-              { href: "/venu", label: "Venu (Voz & Agenda)", icon: <Zap size={14} className="text-[#22d3ee]" /> },
-              { href: "/hermes", label: "Hermes 2.0 (Gestão de Tarefas)", icon: <MessagesSquare size={14} className="text-[#60a5fa]" /> },
-              { href: "/", label: "Mission Control (Master Global)", icon: <ShieldCheck size={14} className="text-[#a855f7]" /> },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#162416] text-white transition text-xs font-bold"
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Timer / Pomodoro Compact Widget */}
-      <div className="flex items-center gap-2 bg-[#050805] px-2.5 py-1 rounded-lg border border-[#1e381e]">
-        <div className="flex items-center gap-1.5">
-          <Clock size={13} className="text-[#22c55e] animate-pulse" />
-          <span className="text-xs font-bold text-white tracking-wider">{formattedTime}</span>
-        </div>
-
-        <div className="flex items-center gap-1 border-l border-[#1e381e] pl-2">
+        <div className="flex items-center gap-0.5 border-l border-white/10 pl-1.5 ml-0.5">
           <button
             onClick={() => setTimerRunning(!timerRunning)}
-            className="p-1 rounded bg-[#142414] text-[#4ade80] hover:bg-[#1e381e] transition"
-            title={timerRunning ? "Pausar" : "Iniciar"}
+            className="p-1 rounded hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 transition"
+            title={timerRunning ? "Pausar timer" : "Iniciar timer"}
           >
-            {timerRunning ? <Pause size={12} /> : <Play size={12} />}
+            {timerRunning ? <Pause size={11} /> : <Play size={11} />}
           </button>
           <button
             onClick={resetTimer}
-            className="p-1 rounded bg-[#142414] text-[#a7f3d0] hover:bg-[#1e381e] transition"
-            title="Reiniciar Timer"
+            className="p-1 rounded hover:bg-white/5 text-zinc-500 hover:text-zinc-300 transition"
+            title="Reiniciar timer"
           >
-            <RotateCcw size={12} />
+            <RotateCcw size={10} />
           </button>
         </div>
 
-        <div className="flex items-center gap-1 text-[10px]">
+        <div className="flex items-center gap-0.5 text-[10px] border-l border-white/10 pl-1.5">
           <button
             onClick={() => switchTimerMode("focus")}
             className={`px-1.5 py-0.5 rounded transition ${
-              timerMode === "focus" ? "bg-[#22c55e] text-[#050805] font-bold" : "text-[#a7f3d0] hover:bg-[#142414]"
+              timerMode === "focus"
+                ? "bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
+            title="Sessão de Foco (25 min)"
           >
-            Focus 25m
+            25m
           </button>
           <button
             onClick={() => switchTimerMode("short_break")}
             className={`px-1.5 py-0.5 rounded transition ${
-              timerMode === "short_break" ? "bg-[#22c55e] text-[#050805] font-bold" : "text-[#a7f3d0] hover:bg-[#142414]"
+              timerMode === "short_break"
+                ? "bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/40"
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
+            title="Pausa Curta (5 min)"
           >
-            Pausa 5m
+            5m
           </button>
         </div>
       </div>
 
-      {/* Focus Mode Toggle */}
+      {/* Focus Mode Button */}
       <button
         onClick={() => setFocusMode(!focusMode)}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition border ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition border ${
           focusMode
-            ? "bg-[#22c55e] text-[#050805] border-[#4ade80]"
-            : "bg-[#050805] text-[#a7f3d0] border border-[#1e381e] hover:bg-[#142414]"
+            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_12px_rgba(34,197,94,0.25)]"
+            : "bg-[#0a120c] text-zinc-400 border-white/10 hover:text-zinc-200 hover:border-emerald-500/30"
         }`}
+        title={focusMode ? "Modo Foco Ativo (Clique para desativar)" : "Ativar Modo Foco"}
       >
-        <Target size={13} />
-        <span>Focus: {focusMode ? "ON" : "OFF"}</span>
+        <Target size={12} className={focusMode ? "text-emerald-400 animate-spin" : "text-zinc-500"} />
+        <span>Focus <strong className={focusMode ? "text-emerald-400" : "text-zinc-400"}>{focusMode ? "ON" : "OFF"}</strong></span>
       </button>
-
-      {/* Focus Mode Banner */}
-      {focusMode && (
-        <motion.div
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full mt-1 p-2 rounded-lg bg-[#0c1c0c] border border-[#22c55e] text-center text-xs text-[#4ade80] font-mono flex items-center justify-center gap-2"
-        >
-          <Target size={13} className="animate-spin text-[#22c55e]" />
-          <span><strong>Focus Mode Ativado</strong> — Distrações minimizadas.</span>
-        </motion.div>
-      )}
     </div>
   );
 }

@@ -26,30 +26,27 @@ export default function CompanySelector() {
     <div className="relative font-mono text-xs" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition font-bold shadow-sm ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition text-xs font-mono font-medium shadow-sm ${
           activeCompany
-            ? "bg-[#0c1c0c] text-white border-[#22c55e]"
-            : "bg-[#142414] text-white border-[#1e381e] hover:bg-[#1f381f]"
+            ? "bg-[#0c1c0c] text-white border-[#22c55e]/60"
+            : "bg-[#0a120c] text-zinc-300 border-white/10 hover:border-emerald-500/40 hover:bg-[#0f1a11]"
         }`}
         style={{
           borderColor: activeCompany ? activeCompany.accentColor : undefined,
         }}
       >
         <Building2
-          size={14}
+          size={13}
           style={{ color: activeCompany ? activeCompany.accentColor : "#22c55e" }}
         />
-        <span>
+        <span className="truncate max-w-[130px] sm:max-w-[160px]">
           {activeCompany ? (
-            <span className="flex items-center gap-1.5">
-              <span className="text-[#a7f3d0] opacity-70">Focus:</span>
-              <strong style={{ color: activeCompany.accentColor }}>{activeCompany.name}</strong>
-            </span>
+            <strong style={{ color: activeCompany.accentColor }}>{activeCompany.name}</strong>
           ) : (
-            <span>Empresa: <strong className="text-[#22c55e]">Todas (Global)</strong></span>
+            <span>Empresas: <span className="text-emerald-400 font-bold">Todas</span></span>
           )}
         </span>
-        <ChevronDown size={13} className="text-slate-400" />
+        <ChevronDown size={12} className="text-zinc-400 shrink-0" />
       </button>
 
       {isOpen && (

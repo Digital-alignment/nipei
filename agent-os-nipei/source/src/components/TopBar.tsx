@@ -3,9 +3,14 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Building2, Crown, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import CommandPalette from "./CommandPalette";
 import SquadSelector from "./SquadSelector";
-import type { SquadId } from "@/lib/nipeiStore";
+import TopHeaderBar from "./TopHeaderBar";
+import CompanySelector from "./CompanySelector";
+import AgentVaultActivityWidget from "./AgentVaultActivityWidget";
+import { useCompany } from "@/context/CompanyContext";
+import { SQUADS, type SquadId } from "@/lib/nipeiStore";
 
 interface PageMeta { numeral: string; label: string; title: string; sub: string; }
 
@@ -75,10 +80,6 @@ const TITLES: Record<string, PageMeta> = {
   "/seo-guide":   { numeral: "XVI.",  label: "Build · SEO",        title: "SEO Setup Guide",         sub: "Wire the SEO pipeline to your own sites, step by step." },
 };
 
-import TopHeaderBar from "./TopHeaderBar";
-import CompanySelector from "./CompanySelector";
-import AgentVaultActivityWidget from "./AgentVaultActivityWidget";
-
 const SQUAD_HEADER_META: Record<SquadId, { numeral: string; label: string; title: string; sub: string }> = {
   super_user: {
     numeral: "I.",
@@ -134,6 +135,26 @@ export default function TopBar() {
   const pathname = usePathname();
   const [time, setTime] = useState<string>("");
   const [activeSquad, setActiveSquad] = useState<SquadId>("super_user");
+  const [isBarCollapsed, setIsBarCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { activeCompany } = useCompany();
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem("agentos.topbar.collapsed");
+      if (saved !== null) setIsBarCollapsed(JSON.parse(saved));
+    } catch { /* ignore */ }
+  }, []);
+
+  const toggleBarCollapsed = () => {
+    setIsBarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("agentos.topbar.collapsed", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
   useEffect(() => {
     const set = () =>
       setTime(new Date().toLocaleTimeString("en-GB", { hour12: false, hour: "2-digit", minute: "2-digit" }));
@@ -150,45 +171,90 @@ export default function TopBar() {
       ? SQUAD_HEADER_META[activeSquad]
       : routeTitle;
 
-  return (
-    <div className="w-full mb-6 md:mb-8 space-y-6">
-      {/* Row 1: Executive Utility & Command Bar */}
-      <div className="w-full p-2.5 rounded-2xl border border-white/10 bg-[#0a0f18]/80 backdrop-blur-xl shadow-2xl flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <CompanySelector />
-          <TopHeaderBar />
-          <SquadSelector activeSquad={activeSquad} onSquadChange={setActiveSquad} />
-          <CommandPalette />
-        </div>
+  const currentSquad = SQUADS.find((s) => s.id === activeSquad) ?? SQUADS[0];
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <AgentVaultActivityWidget />
+  return (
+    <div className="w-full mb-4 md:mb-6 space-y-3.5">
+      {/* Row 1: Executive Utility Bar (Collapsible & Super Compact) */}
+      {isBarCollapsed ? (
+        <div className="w-full px-3 py-1.5 rounded-xl border border-white/10 bg-[#070b11]/85 backdrop-blur-xl flex items-center justify-between text-xs font-mono shadow-sm transition">
+          <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-0.5">
+            <span className="flex items-center gap-1.5 text-zinc-300 font-medium shrink-0">
+              <Building2 size={13} className="text-[#22c55e]" />
+              <span className="text-emerald-400 font-bold">
+                {activeCompany ? activeCompany.name : "Todas (Global)"}
+              </span>
+            </span>
+            <span className="text-zinc-700 shrink-0">·</span>
+            <span className="flex items-center gap-1.5 text-zinc-300 shrink-0">
+              <Crown size={13} className="text-[#22c55e]" />
+              <span className="font-semibold text-white">{currentSquad?.name ?? "Super-Usuário"}</span>
+            </span>
+            <span className="text-zinc-700 shrink-0">·</span>
+            <span className="flex items-center gap-1 text-zinc-400 shrink-0">
+              <Clock size={12} className="text-emerald-400" />
+              <span className="font-mono text-zinc-200 font-bold">{time}</span>
+            </span>
+          </div>
+
+          <button
+            onClick={toggleBarCollapsed}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-zinc-400 hover:text-emerald-400 hover:bg-white/5 transition shrink-0 ml-2"
+            title="Expandir barra de ferramentas"
+          >
+            <span>Expandir</span>
+            <ChevronDown size={13} />
+          </button>
         </div>
-      </div>
+      ) : (
+        <div className="w-full p-1.5 px-3 rounded-xl border border-white/10 bg-[#070b11]/85 backdrop-blur-xl shadow-lg flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+          {/* Left Controls: Empresa, Squad, Command Palette */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <CompanySelector />
+            <SquadSelector activeSquad={activeSquad} onSquadChange={setActiveSquad} />
+            <CommandPalette />
+          </div>
+
+          {/* Right Controls: Pomodoro Timer, Focus, Vault Monitor, Collapse */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <TopHeaderBar />
+            <AgentVaultActivityWidget />
+            <button
+              onClick={toggleBarCollapsed}
+              className="p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition ml-0.5 shrink-0"
+              title="Recolher barra de utilidades"
+            >
+              <ChevronUp size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Row 2: Page Eyebrow, Title & Subtitle */}
       <motion.div
         key={`${pathname}-${activeSquad}`}
-        initial={{ opacity: 0, y: 6 }}
+        initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="w-full space-y-2"
+        transition={{ duration: 0.3 }}
+        className="w-full space-y-1.5"
       >
-        {/* Chapter eyebrow — `I. ───── MISSION CONTROL` */}
+        {/* Chapter eyebrow */}
         <div className="eyebrow">
           <span className="num">{currentMeta.numeral}</span>
           <span className="line" />
           <span className="label">{currentMeta.label}</span>
         </div>
 
-        <h1 className="page-title">{currentMeta.title}</h1>
-        <p className="page-subtitle max-w-3xl leading-relaxed">{currentMeta.sub}</p>
-
-        <div className="mt-3 status-meta">
-          <span className="hand">{time}</span>
-          <span className="mx-2 opacity-40">·</span>
-          Local · Studio
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h1 className="page-title">{currentMeta.title}</h1>
+          <div className="status-meta text-xs">
+            <span className="hand">{time}</span>
+            <span className="mx-2 opacity-40">·</span>
+            Local · Studio
+          </div>
         </div>
+
+        <p className="page-subtitle max-w-3xl leading-relaxed text-xs sm:text-sm">{currentMeta.sub}</p>
       </motion.div>
     </div>
   );

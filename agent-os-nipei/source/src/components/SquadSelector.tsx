@@ -32,16 +32,16 @@ export default function SquadSelector({ activeSquad, onSquadChange }: Props) {
     <div className="relative inline-block text-left">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#1e381e] bg-[#0a140a] hover:bg-[#142414] text-xs font-mono text-white transition"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 bg-[#0a120c] hover:border-emerald-500/40 hover:bg-[#0f1a11] text-xs font-mono text-zinc-300 transition shadow-sm"
       >
         <span className="shrink-0">{getIcon(currentSquad.iconName)}</span>
-        <span className="font-bold truncate max-w-[200px] sm:max-w-[280px]">{currentSquad.name}</span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
-          currentSquad.nucleus === "sagrado" ? "bg-[#0c1c0c] text-[#4ade80] border border-[#22c55e]" : "bg-[#142414] text-[#a7f3d0]"
+        <span className="font-semibold truncate max-w-[120px] sm:max-w-[160px] text-white">{currentSquad.name}</span>
+        <span className={`text-[9px] px-1 py-0.2 rounded font-bold uppercase ${
+          currentSquad.nucleus === "sagrado" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-white/5 text-zinc-400"
         }`}>
-          {currentSquad.nucleus}
+          {currentSquad.nucleus === "sagrado" ? "SAGRADO" : "ADMIN"}
         </span>
-        <ChevronDown size={14} className="text-[#4ade80] ml-1" />
+        <ChevronDown size={12} className="text-zinc-400 ml-0.5 shrink-0" />
       </button>
 
       {open && (
