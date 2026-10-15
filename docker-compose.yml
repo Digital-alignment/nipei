@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: ./agent-os-nipei/source
+      dockerfile: Dockerfile
+    container_name: nipei-os
+    restart: unless-stopped
+    volumes:
+      - /opt/nipei-vault:/vault:rw
+    environment:
+      - NODE_ENV=production
+      - PORT=3333
+      - VAULT_PATH=/vault
+      - AGENTIC_OS_VAULT=/vault
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://os.nipeihu.app}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ORCA_API_KEY=${ORCA_API_KEY}
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME}
+      - N8N_URL=${N8N_URL}
+      - AI_GATEWAY_URL=${AI_GATEWAY_URL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nipei-os.entrypoints=websecure"
+      - "traefik.http.routers.nipei-os.rule=Host(`os.nipeihu.app`)"
+      - "traefik.http.routers.nipei-os.tls.certresolver=letsencrypt"
+      - "traefik.http.services.nipei-os.loadbalancer.server.port=3333"
