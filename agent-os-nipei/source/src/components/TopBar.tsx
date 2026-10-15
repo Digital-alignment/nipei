@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Building2, Crown, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Building2, Crown, Clock, ChevronDown, ChevronUp, Target } from "lucide-react";
 import CommandPalette from "./CommandPalette";
 import SquadSelector from "./SquadSelector";
 import TopHeaderBar from "./TopHeaderBar";
@@ -177,54 +177,71 @@ export default function TopBar() {
     <div className="w-full mb-4 md:mb-6 space-y-3.5">
       {/* Row 1: Executive Utility Bar (Collapsible & Super Compact) */}
       {isBarCollapsed ? (
-        <div className="w-full px-3 py-1.5 rounded-xl border border-white/10 bg-[#070b11]/85 backdrop-blur-xl flex items-center justify-between text-xs font-mono shadow-sm transition">
+        <div className="w-full px-3 py-1.5 rounded-xl border border-white/[0.08] bg-[#07090e]/85 backdrop-blur-xl flex items-center justify-between text-xs font-mono shadow-sm transition">
+          {/* Left: Focus & Timer Summary */}
           <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-0.5">
             <span className="flex items-center gap-1.5 text-zinc-300 font-medium shrink-0">
-              <Building2 size={13} className="text-[#22c55e]" />
+              <Clock size={12} className="text-emerald-400" />
+              <span className="font-bold text-white tracking-wider">25:00</span>
+            </span>
+            <span className="text-zinc-700 shrink-0">·</span>
+            <span className="flex items-center gap-1 text-zinc-400 shrink-0">
+              <Target size={12} className="text-zinc-500" />
+              <span>Focus <span className="text-zinc-500">OFF</span></span>
+            </span>
+          </div>
+
+          {/* Right: Company, Type of User, Vault Status, Expand Button */}
+          <div className="flex items-center gap-2.5 shrink-0 ml-2">
+            <span className="flex items-center gap-1.5 text-zinc-300 font-medium shrink-0">
+              <Building2 size={12} className="text-emerald-400" />
               <span className="text-emerald-400 font-bold">
                 {activeCompany ? activeCompany.name : "Todas (Global)"}
               </span>
             </span>
             <span className="text-zinc-700 shrink-0">·</span>
             <span className="flex items-center gap-1.5 text-zinc-300 shrink-0">
-              <Crown size={13} className="text-[#22c55e]" />
-              <span className="font-semibold text-white">{currentSquad?.name ?? "Super-Usuário"}</span>
+              <Crown size={12} className="text-emerald-400" />
+              <span className="font-medium text-white">{currentSquad?.name ?? "Super-Usuário"}</span>
             </span>
             <span className="text-zinc-700 shrink-0">·</span>
-            <span className="flex items-center gap-1 text-zinc-400 shrink-0">
-              <Clock size={12} className="text-emerald-400" />
-              <span className="font-mono text-zinc-200 font-bold">{time}</span>
+            <span className="flex items-center gap-1.5 text-zinc-300 shrink-0">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+              </span>
+              <span className="text-[11px] text-zinc-400">Vault OK</span>
             </span>
-          </div>
 
-          <button
-            onClick={toggleBarCollapsed}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-zinc-400 hover:text-emerald-400 hover:bg-white/5 transition shrink-0 ml-2"
-            title="Expandir barra de ferramentas"
-          >
-            <span>Expandir</span>
-            <ChevronDown size={13} />
-          </button>
-        </div>
-      ) : (
-        <div className="w-full p-1.5 px-3 rounded-xl border border-white/10 bg-[#070b11]/85 backdrop-blur-xl shadow-lg flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-          {/* Left Controls: Empresa, Squad, Command Palette */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <CompanySelector />
-            <SquadSelector activeSquad={activeSquad} onSquadChange={setActiveSquad} />
-            <CommandPalette />
-          </div>
-
-          {/* Right Controls: Pomodoro Timer, Focus, Vault Monitor, Collapse */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <TopHeaderBar />
-            <AgentVaultActivityWidget />
             <button
               onClick={toggleBarCollapsed}
-              className="p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-white/5 transition ml-0.5 shrink-0"
-              title="Recolher barra de utilidades"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-zinc-400 hover:text-emerald-400 hover:bg-white/5 transition shrink-0 ml-1"
+              title="Expandir barra de ferramentas"
             >
-              <ChevronUp size={14} />
+              <span>Expandir</span>
+              <ChevronDown size={13} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full p-1.5 px-3 rounded-xl border border-white/[0.08] bg-[#07090e]/90 backdrop-blur-xl shadow-xl flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
+          {/* LEFT SIDE: Focus and Timer */}
+          <div className="flex items-center gap-2 shrink-0">
+            <TopHeaderBar />
+          </div>
+
+          {/* RIGHT SIDE: Company, Type of User, Vault Status, Command Palette, Collapse Button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <CompanySelector />
+            <SquadSelector activeSquad={activeSquad} onSquadChange={setActiveSquad} />
+            <AgentVaultActivityWidget />
+            <CommandPalette />
+            <button
+              onClick={toggleBarCollapsed}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition shrink-0 ml-0.5"
+              title="Recolher barra de ferramentas"
+            >
+              <ChevronUp size={13} />
             </button>
           </div>
         </div>
