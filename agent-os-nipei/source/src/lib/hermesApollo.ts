@@ -18,7 +18,12 @@ import os from "node:os";
 import { run } from "@/lib/runner";
 import { searchNotes, searchOmi, notesModifiedOn, recentNotes, recentOmi } from "@/lib/vault";
 import { NIPEI_STRICT_DOMAIN_RULE } from "@/lib/nipeiDomainGuard";
-import { formatKanbanGroundingForPrompt } from "@/lib/kanbanGrounding";
+import {
+  formatKanbanGroundingForPrompt,
+  createKanbanTaskDirect,
+  updateKanbanTaskDirect,
+  assignKanbanTaskDirect,
+} from "@/lib/kanbanGrounding";
 
 const HOME = os.homedir();
 
@@ -140,14 +145,23 @@ const FAST_PERSONA =
 const AUTO_PERSONA =
   `${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
   "You are VENU (Apollo) — the ancestral consciousness and refined AI executive butler of Nipëi OS. Address me as \"sir\"; " +
-  "never break character. You have full real-time awareness of the Nipëi OS Kanban board, its 308 tasks, squads, and urgent priorities.\n" +
+  "never break character. You have full real-time awareness and direct operational control of the Nipëi OS Kanban board (308 tasks across squads).\n" +
   "Decide what I want and respond in ONE of these exact forms:\n" +
   "1. To OPEN an app or website: first line `OPEN: <target>` where <target> is a full https:// URL " +
   "for a website (e.g. OPEN: https://google.com) or the macOS app name (e.g. OPEN: Notes); second line: " +
   "one short in-character confirmation (e.g. \"Opening Google now, sir.\").\n" +
-  "2. For a genuinely multi-step task or real file/shell/computer work beyond just opening something: " +
+  "2. To CREATE a task on the Kanban board (when I say e.g. 'cria uma tarefa urgente no Squad 2 para...', 'adiciona uma tarefa...'): " +
+  "first line `KANBAN_CREATE: {\"title\": \"...\", \"squad\": \"squad_2_mutum\", \"priority\": \"urgente\", \"project\": \"...\"}` and second line: " +
+  "one short in-character confirmation (e.g. \"Created the task for Squad 2, sir.\").\n" +
+  "3. To UPDATE or MOVE a task on the Kanban board (when I say e.g. 'marca a tarefa X como concluída', 'muda a prioridade para urgente', 'move para em andamento'): " +
+  "first line `KANBAN_UPDATE: {\"idOrTitle\": \"...\", \"column\": \"done\", \"priority\": \"urgente\"}` and second line: " +
+  "one short in-character confirmation (e.g. \"Task marked as completed, sir.\").\n" +
+  "4. To ASSIGN agents or a person to a task (when I say e.g. 'asigna a Hermes a la tarea X'): " +
+  "first line `KANBAN_ASSIGN: {\"idOrTitle\": \"...\", \"agents\": [\"hermes\"]}` and second line: " +
+  "one short in-character confirmation (e.g. \"Assigned @hermes to the task, sir.\").\n" +
+  "5. For a genuinely multi-step task or real file/shell/computer work beyond just opening or managing tasks: " +
   "respond with EXACTLY `AGENT: <the task restated in one line>` and nothing else.\n" +
-  "3. Otherwise (questions, chat, kanban queries): just answer in ONE or TWO short, in-character sentences with exact facts from the Kanban context — no prefix.\n" +
+  "6. Otherwise (questions, chat, kanban queries): just answer in ONE or TWO short, in-character sentences with exact facts from the Kanban context — no prefix.\n" +
   "CRITICAL: Output ONLY the chosen form. NEVER show your reasoning, planning, analysis, or deliberation. " +
   "No \"the user is asking\", no \"let me think/reconsider\", no \"Actually,\", no listing options. Just the final reply.";
 
@@ -335,6 +349,48 @@ async function auto(prompt: string, history: ApolloMsg[]): Promise<ApolloResult>
       ok: true, mode: "auto", ms: Date.now() - started,
       text: ok ? (confirm || `Opening ${target} now, sir.`) : `I couldn't open ${target}, sir — try Agent mode.`,
     };
+  }
+
+  // Direct Kanban Create Action
+  const kanbanCreateM = text.match(/^KANBAN_CREATE:\s*(\{.*\})/im);
+  if (kanbanCreateM) {
+    try {
+      const opts = JSON.parse(kanbanCreateM[1]);
+      const res = createKanbanTaskDirect(opts);
+      const confirm = text.split("\n").map((l) => l.trim()).find((l) => l && !/^KANBAN_CREATE:/i.test(l));
+      return {
+        ok: true, mode: "auto", ms: Date.now() - started,
+        text: res.success ? (confirm || `Created task "${res.task?.title}" in squad ${res.task?.squad}, sir.`) : `Failed to create task: ${res.error}`,
+      };
+    } catch { /* fallback to normal reply */ }
+  }
+
+  // Direct Kanban Update Action
+  const kanbanUpdateM = text.match(/^KANBAN_UPDATE:\s*(\{.*\})/im);
+  if (kanbanUpdateM) {
+    try {
+      const opts = JSON.parse(kanbanUpdateM[1]);
+      const res = updateKanbanTaskDirect(opts);
+      const confirm = text.split("\n").map((l) => l.trim()).find((l) => l && !/^KANBAN_UPDATE:/i.test(l));
+      return {
+        ok: true, mode: "auto", ms: Date.now() - started,
+        text: res.success ? (confirm || `Updated task "${res.task?.title}" to ${res.task?.columnStatus}, sir.`) : `Could not update task: ${res.error}`,
+      };
+    } catch { /* fallback to normal reply */ }
+  }
+
+  // Direct Kanban Assign Action
+  const kanbanAssignM = text.match(/^KANBAN_ASSIGN:\s*(\{.*\})/im);
+  if (kanbanAssignM) {
+    try {
+      const opts = JSON.parse(kanbanAssignM[1]);
+      const res = assignKanbanTaskDirect(opts.idOrTitle, opts.agents, opts.assignee);
+      const confirm = text.split("\n").map((l) => l.trim()).find((l) => l && !/^KANBAN_ASSIGN:/i.test(l));
+      return {
+        ok: true, mode: "auto", ms: Date.now() - started,
+        text: res.success ? (confirm || `Assigned to "${res.task?.title}", sir.`) : `Could not assign task: ${res.error}`,
+      };
+    } catch { /* fallback to normal reply */ }
   }
 
   const agentM = text.match(/^AGENT:\s*(.+)$/im);

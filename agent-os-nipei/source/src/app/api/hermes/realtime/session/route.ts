@@ -157,6 +157,51 @@ export async function POST(req: Request) {
                 required: ["prompt"],
               },
             },
+            {
+              type: "function",
+              name: "kanban_create_task",
+              description: "Create a new task on the Nipëi OS Kanban board. Call this whenever the user asks to create, add, or log a task or demand (e.g. 'cria uma tarefa urgente no Squad 2 para conferir frascos', 'add a task in CEO squad to review contracts').",
+              parameters: {
+                type: "object",
+                properties: {
+                  title: { type: "string", description: "The clear title of the task to create." },
+                  squad: { type: "string", description: "The target squad id, e.g. 'squad_1_ceo', 'squad_2_mutum', 'squad_3_retiros', 'squad_4_vendas_mkt', 'squad_5_adm_legal', 'squad_6_infra', 'squad_7_instituto'." },
+                  priority: { type: "string", enum: ["urgente", "alta", "media", "baixa"], description: "Priority level." },
+                  project: { type: "string", description: "Project name linked to this task." },
+                  description: { type: "string", description: "Details or notes for the task." },
+                },
+                required: ["title"],
+              },
+            },
+            {
+              type: "function",
+              name: "kanban_update_task",
+              description: "Update the status/column or priority of an existing Kanban task. Call this whenever the user asks to move, finish, review, complete, or archive a task (e.g. 'marca a tarefa do inventário como concluída', 'move TSK-02 to in progress', 'pasa la tarea X a revisión').",
+              parameters: {
+                type: "object",
+                properties: {
+                  idOrTitle: { type: "string", description: "The task ID (e.g. 'TSK-01') or matching title keywords." },
+                  column: { type: "string", enum: ["todo", "in_progress", "agent_executing", "review", "done", "archived"], description: "Target Kanban column." },
+                  priority: { type: "string", enum: ["urgente", "alta", "media", "baixa"], description: "New priority level if updating priority." },
+                  squad: { type: "string", description: "New squad id if reassigning squad." },
+                },
+                required: ["idOrTitle"],
+              },
+            },
+            {
+              type: "function",
+              name: "kanban_assign_agent",
+              description: "Assign AI agents or team members to a Kanban task. Call this when the user says 'asigna a Hermes a la tarea X', 'assign @claude to task TSK-04'.",
+              parameters: {
+                type: "object",
+                properties: {
+                  idOrTitle: { type: "string", description: "The task ID or title keywords." },
+                  agents: { type: "array", items: { type: "string" }, description: "List of agents, e.g. ['hermes', 'antigravity', 'claude']." },
+                  assignee: { type: "string", description: "Name of the responsible person if assigning a human." },
+                },
+                required: ["idOrTitle"],
+              },
+            },
           ],
           tool_choice: "auto",
         },

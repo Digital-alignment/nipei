@@ -330,3 +330,205 @@ export function formatKanbanGroundingForPrompt(userQuery?: string): string {
     return "Falha ao extrair contexto em tempo real do Kanban.";
   }
 }
+
+export interface CreateTaskOptions {
+  title: string;
+  squad?: string;
+  priority?: "urgente" | "alta" | "media" | "baixa";
+  project?: string;
+  description?: string;
+  assignedAgents?: string[];
+  assignee?: string;
+}
+
+export function createKanbanTaskDirect(opts: CreateTaskOptions): { success: boolean; task?: GlobalTask; error?: string } {
+  const vaultRoot = defaultVault();
+  if (!vaultRoot) return { success: false, error: "Vault root not configured" };
+
+  const tarefasDir = path.join(vaultRoot, "Productivity", "Tarefas");
+  if (!fs.existsSync(tarefasDir)) {
+    fs.mkdirSync(tarefasDir, { recursive: true });
+  }
+
+  const cleanTitle = opts.title.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 35);
+  const filename = `task_${Date.now().toString().slice(-4)}_${cleanTitle}.md`;
+  const filePath = path.join(tarefasDir, filename);
+  const taskId = `task_${Date.now().toString().slice(-6)}`;
+  const projectName = opts.project || "Demanda Geral Squad";
+  const squad = (opts.squad || "squad_1_ceo") as SquadId;
+  const priority = opts.priority || "alta";
+  const assignedAgents = opts.assignedAgents || ["antigravity", "hermes"];
+  const assignee = opts.assignee || "Time Liderança";
+
+  const content = `---
+id: "${taskId}"
+title: "${opts.title}"
+type: "tarefa"
+status: "A fazer"
+priority: "${priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : "Média"}"
+project: "${projectName}"
+squad: "${squad}"
+tags:
+  - tarefa
+  - nipei-os
+  - status-a-fazer
+updated_at: "${new Date().toISOString()}"
+---
+
+<!-- agente: venu-voice-director -->
+# Tarefa: ${opts.title}
+
+**Status**: \`A fazer\` | **Prioridade**: \`${priority}\`
+
+> 📋 **Ação Operacional criada via Venu (Voz & IA)**
+
+## 📁 Projeto Vinculado
+- [[${projectName}]]
+
+## 👥 Responsáveis & Time Vinculado
+- Squad: \`${squad}\`
+- Agentes: ${assignedAgents.map((a) => (a.startsWith("@") ? a : `@${a}`)).join(", ")}
+- Responsável: ${assignee}
+
+## 📌 Descrição & Notas
+${opts.description || "Criada por comando vocal/executivo em Venu."}
+`;
+
+  fs.writeFileSync(filePath, content, "utf-8");
+
+  const task: GlobalTask = {
+    id: taskId,
+    title: opts.title,
+    project: projectName,
+    squad,
+    columnStatus: "todo",
+    status: "pendente",
+    assignee,
+    priority,
+    dueDate: "2026-10-30",
+    assignedAgents,
+    vaultPath: `Productivity/Tarefas/${filename}`,
+    description: opts.description,
+  };
+
+  return { success: true, task };
+}
+
+export interface UpdateTaskOptions {
+  idOrTitle: string;
+  column?: KanbanColumnId;
+  priority?: "urgente" | "alta" | "media" | "baixa";
+  squad?: string;
+  executionLog?: string;
+}
+
+export function updateKanbanTaskDirect(opts: UpdateTaskOptions): { success: boolean; task?: GlobalTask; error?: string } {
+  const vaultRoot = defaultVault();
+  if (!vaultRoot) return { success: false, error: "Vault root not configured" };
+
+  const tasks = getLiveKanbanTasks();
+  const search = opts.idOrTitle.toLowerCase().trim();
+  const found = tasks.find((t) => t.id.toLowerCase() === search) ||
+                tasks.find((t) => t.title.toLowerCase().includes(search)) ||
+                searchKanbanTasks(opts.idOrTitle, 1)[0];
+
+  if (!found || !found.vaultPath) {
+    return { success: false, error: `Tarefa "${opts.idOrTitle}" não encontrada no Kanban.` };
+  }
+
+  const fullPath = path.join(vaultRoot, found.vaultPath);
+  if (!fs.existsSync(fullPath)) {
+    return { success: false, error: `Arquivo da tarefa não encontrado: ${found.vaultPath}` };
+  }
+
+  let content = fs.readFileSync(fullPath, "utf-8");
+
+  if (opts.column) {
+    let newStatus = "A fazer";
+    if (opts.column === "archived") newStatus = "Arquivado";
+    else if (opts.column === "done") newStatus = "Concluído";
+    else if (opts.column === "agent_executing") newStatus = "IA em Execução";
+    else if (opts.column === "in_progress") newStatus = "Em andamento";
+    else if (opts.column === "review") newStatus = "Revisão / Bloqueado";
+    else if (opts.column === "triage" || opts.column === "todo") newStatus = "A fazer";
+
+    if (content.includes("status:")) {
+      content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "${newStatus}"`);
+    }
+    found.columnStatus = opts.column;
+    found.status = opts.column === "done" ? "concluido" : opts.column === "in_progress" ? "em_progresso" : "pendente";
+  }
+
+  if (opts.priority) {
+    const priTitle = opts.priority === "urgente" ? "Urgente" : opts.priority === "alta" ? "Alta" : "Média";
+    if (content.includes("priority:")) {
+      content = content.replace(/priority:\s*"?([^"\n\r]+)"?/, `priority: "${priTitle}"`);
+    }
+    found.priority = opts.priority;
+  }
+
+  if (opts.squad) {
+    if (content.includes("squad:")) {
+      content = content.replace(/squad:\s*"?([^"\n\r]+)"?/, `squad: "${opts.squad}"`);
+    } else {
+      content = content.replace(/---\n/, `---\nsquad: "${opts.squad}"\n`);
+    }
+    if (content.match(/-\s*Squad:\s*`?[^`\n\r]+`?/i)) {
+      content = content.replace(/-\s*Squad:\s*`?[^`\n\r]+`?/i, `- Squad: \`${opts.squad}\``);
+    }
+    found.squad = opts.squad as SquadId;
+  }
+
+  if (opts.executionLog) {
+    content += `\n\n### 🤖 Atualização via Venu (${new Date().toLocaleString()})\n${opts.executionLog}\n`;
+  }
+
+  fs.writeFileSync(fullPath, content, "utf-8");
+  return { success: true, task: found };
+}
+
+export function assignKanbanTaskDirect(idOrTitle: string, agents?: string[], assignee?: string): { success: boolean; task?: GlobalTask; error?: string } {
+  const vaultRoot = defaultVault();
+  if (!vaultRoot) return { success: false, error: "Vault root not configured" };
+
+  const tasks = getLiveKanbanTasks();
+  const search = idOrTitle.toLowerCase().trim();
+  const found = tasks.find((t) => t.id.toLowerCase() === search) ||
+                tasks.find((t) => t.title.toLowerCase().includes(search)) ||
+                searchKanbanTasks(idOrTitle, 1)[0];
+
+  if (!found || !found.vaultPath) {
+    return { success: false, error: `Tarefa "${idOrTitle}" não encontrada no Kanban.` };
+  }
+
+  const fullPath = path.join(vaultRoot, found.vaultPath);
+  if (!fs.existsSync(fullPath)) {
+    return { success: false, error: `Arquivo da tarefa não encontrado: ${found.vaultPath}` };
+  }
+
+  let content = fs.readFileSync(fullPath, "utf-8");
+
+  if (assignee) {
+    if (content.includes("responsible:")) {
+      content = content.replace(/responsible:\s*"?([^"\n\r]+)"?/, `responsible: "${assignee}"`);
+    }
+    if (content.match(/-\s*Responsável:\s*[^\n\r]+/i)) {
+      content = content.replace(/-\s*Responsável:\s*[^\n\r]+/i, `- Responsável: ${assignee}`);
+    }
+    found.assignee = assignee;
+  }
+
+  if (agents && agents.length > 0) {
+    const formattedAgents = agents.map((a) => (a.startsWith("@") ? a : `@${a}`)).join(", ");
+    if (content.match(/-\s*Agentes:\s*[^\n\r]+/i)) {
+      content = content.replace(/-\s*Agentes:\s*[^\n\r]+/i, `- Agentes: ${formattedAgents}`);
+    } else {
+      content += `\n- Agentes: ${formattedAgents}\n`;
+    }
+    found.assignedAgents = agents.map((a) => a.replace(/^@/, ""));
+  }
+
+  fs.writeFileSync(fullPath, content, "utf-8");
+  return { success: true, task: found };
+}
+

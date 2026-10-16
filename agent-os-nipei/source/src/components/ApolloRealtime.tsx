@@ -99,6 +99,79 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
     try { args = JSON.parse(ev.arguments || "{}"); } catch { /* ignore */ }
     const fn = ev.name || (args.prompt ? "build_app" : "open_app_or_site");
     if (fn === "build_app") { await runBuild(args.prompt || "", ev.call_id); return; }
+
+    if (fn === "kanban_create_task") {
+      let kargs: any = {};
+      try { kargs = JSON.parse(ev.arguments || "{}"); } catch { /* ignore */ }
+      setLines((l) => [...l, { id: nid(), role: "apollo", text: `📋 Criando tarefa no Kanban: "${kargs.title || "Nova tarefa"}"…` }]);
+      try {
+        const res = await fetch("/api/venu/kanban-action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "create", payload: kargs }),
+        }).then((r) => r.json());
+        if (res.success) {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `✅ Tarefa criada: [${res.task?.id}] ${res.task?.title} (${res.task?.squad})` }]);
+          sendFnResult(ev.call_id, { success: true, task: res.task, message: res.message });
+        } else {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Falha ao criar tarefa: ${res.error}` }]);
+          sendFnResult(ev.call_id, { success: false, error: res.error });
+        }
+      } catch (e: any) {
+        setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Erro ao criar tarefa: ${e.message}` }]);
+        sendFnResult(ev.call_id, { success: false, error: e.message });
+      }
+      return;
+    }
+
+    if (fn === "kanban_update_task") {
+      let kargs: any = {};
+      try { kargs = JSON.parse(ev.arguments || "{}"); } catch { /* ignore */ }
+      setLines((l) => [...l, { id: nid(), role: "apollo", text: `🔄 Atualizando tarefa "${kargs.idOrTitle}"…` }]);
+      try {
+        const res = await fetch("/api/venu/kanban-action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "update", payload: kargs }),
+        }).then((r) => r.json());
+        if (res.success) {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `✅ Tarefa atualizada: ${res.task?.title} -> ${res.task?.columnStatus}` }]);
+          sendFnResult(ev.call_id, { success: true, task: res.task, message: res.message });
+        } else {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Falha ao atualizar: ${res.error}` }]);
+          sendFnResult(ev.call_id, { success: false, error: res.error });
+        }
+      } catch (e: any) {
+        setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Erro: ${e.message}` }]);
+        sendFnResult(ev.call_id, { success: false, error: e.message });
+      }
+      return;
+    }
+
+    if (fn === "kanban_assign_agent") {
+      let kargs: any = {};
+      try { kargs = JSON.parse(ev.arguments || "{}"); } catch { /* ignore */ }
+      setLines((l) => [...l, { id: nid(), role: "apollo", text: `🤖 Atribuindo responsáveis para "${kargs.idOrTitle}"…` }]);
+      try {
+        const res = await fetch("/api/venu/kanban-action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "assign", payload: kargs }),
+        }).then((r) => r.json());
+        if (res.success) {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `✅ Atribuição confirmada para ${res.task?.title}` }]);
+          sendFnResult(ev.call_id, { success: true, task: res.task, message: res.message });
+        } else {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Falha na atribuição: ${res.error}` }]);
+          sendFnResult(ev.call_id, { success: false, error: res.error });
+        }
+      } catch (e: any) {
+        setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Erro: ${e.message}` }]);
+        sendFnResult(ev.call_id, { success: false, error: e.message });
+      }
+      return;
+    }
+
     // default: open a website or Mac app
     const target = args.target || "";
     if (target) setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚙️ Opening ${target}…` }]);
