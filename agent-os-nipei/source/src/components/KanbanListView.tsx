@@ -6,7 +6,7 @@ import {
   Clock, Zap, Bot, ShieldCheck, CheckCircle2, Archive, Sparkles,
   User, Building2, Calendar, AlertTriangle, ArrowUpDown, ChevronDown,
   ChevronUp, ChevronRight, CheckSquare, MessageSquare, Tag, Eye, Play, Plus,
-  Layers, Check, ExternalLink, HelpCircle
+  Layers, Check, ExternalLink, HelpCircle, Paperclip, Presentation
 } from "lucide-react";
 import {
   type GlobalTask,
@@ -380,6 +380,18 @@ export default function KanbanListView({
                                       <span className="flex items-center gap-1 text-zinc-400">
                                         <MessageSquare size={10} />
                                         {task.comments.length}
+                                      </span>
+                                    )}
+                                    {task.attachments && task.attachments.length > 0 && (
+                                      <span className="flex items-center gap-1 text-emerald-400" title={`${task.attachments.length} anexos vinculados`}>
+                                        <Paperclip size={10} />
+                                        {task.attachments.length}
+                                      </span>
+                                    )}
+                                    {task.deliverables && task.deliverables.length > 0 && (
+                                      <span className="flex items-center gap-1 text-sky-400 font-bold" title={`${task.deliverables.length} entregáveis gerados por IA`}>
+                                        <Presentation size={10} />
+                                        {task.deliverables.length}
                                       </span>
                                     )}
                                   </div>

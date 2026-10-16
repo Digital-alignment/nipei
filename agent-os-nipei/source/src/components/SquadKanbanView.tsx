@@ -10,13 +10,15 @@ import {
   Search, Tag, Maximize2, Minimize2, MessageSquare, CheckSquare, Edit3, Eye,
   Send, Terminal, FileText, UserCheck, Calendar, AlertTriangle, Trash2, PlusCircle, Check, Folder,
   Building2, User, RotateCcw, Archive, ArchiveRestore, CheckCheck, ListFilter,
-  LayoutGrid, Columns3, Rows3, GripVertical, Copy, ExternalLink, ArrowUpRight, Activity, ChevronDown, Paperclip
+  LayoutGrid, Columns3, Rows3, GripVertical, Copy, ExternalLink, ArrowUpRight, Activity, ChevronDown, Paperclip,
+  Presentation
 } from "lucide-react";
 import ExecutiveControlsMenu from "./ExecutiveControlsMenu";
 import KanbanListView from "./KanbanListView";
 import KanbanCalendarView from "./KanbanCalendarView";
 import TaskAgentBox from "./TaskAgentBox";
 import TaskAttachmentsHub from "./TaskAttachmentsHub";
+import TaskDeliverablesViewer from "./TaskDeliverablesViewer";
 import { useCompany } from "@/context/CompanyContext";
 import {
   INITIAL_TASKS, INITIAL_SQUADS, INITIAL_MEMBERS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
@@ -298,7 +300,7 @@ export default function SquadKanbanView() {
 
   // Detail & Edit Panel State
   const [detailTask, setDetailTask] = useState<GlobalTask | null>(null);
-  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult" | "attachments">("edit");
+  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult" | "attachments" | "deliverables">("edit");
   const [descViewMode, setDescViewMode] = useState<"preview" | "edit">("preview");
   const [activeCardConsultId, setActiveCardConsultId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
@@ -312,6 +314,42 @@ export default function SquadKanbanView() {
       navigator.clipboard.writeText(id);
       setCopiedId(true);
       setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
+  const handleOpenTaskDetail = async (task: GlobalTask) => {
+    setDetailTask(task);
+    try {
+      const query = new URLSearchParams({
+        taskId: task.id,
+        squadId: task.squad || "",
+        taskTitle: task.title || "",
+      });
+      const res = await fetch(`/api/agent-kanban/attachments?${query.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setDetailTask((prev) => {
+          if (!prev || prev.id !== task.id) return prev;
+          return {
+            ...prev,
+            attachments: data.attachments || prev.attachments || [],
+            deliverables: data.deliverables || prev.deliverables || [],
+          };
+        });
+        setTasks((prevTasks) =>
+          prevTasks.map((t) =>
+            t.id === task.id
+              ? {
+                  ...t,
+                  attachments: data.attachments || t.attachments || [],
+                  deliverables: data.deliverables || t.deliverables || [],
+                }
+              : t
+          )
+        );
+      }
+    } catch (e) {
+      console.warn("Could not load attachments/deliverables for task:", e);
     }
   };
 
@@ -1376,7 +1414,7 @@ export default function SquadKanbanView() {
                         draggable={true}
                         onDragStart={(e: any) => handleDragStartCard(e, task.id)}
                         onDragEnd={handleDragEndCard}
-                        onClick={() => setDetailTask(task)}
+                        onClick={() => handleOpenTaskDetail(task)}
                         className={`rounded-xl border transition-all relative cursor-grab active:cursor-grabbing group shadow-sm select-none ${
                           cardDensity === "compact" ? "p-3 space-y-2" : "p-3.5 space-y-2.5"
                         } ${
@@ -1541,6 +1579,15 @@ export default function SquadKanbanView() {
                                 <Paperclip size={10} className="text-[#22c55e]" /> {task.attachments.length}
                               </span>
                             )}
+
+                            {task.deliverables && task.deliverables.length > 0 && (
+                              <span
+                                className="px-1.5 py-0.5 rounded bg-[#0b1924] text-[#7dd3fc] border border-[#0369a1]/40 text-[9px] font-mono font-bold flex items-center gap-1 shadow-sm"
+                                title={`${task.deliverables.length} entregáveis gerados por IA`}
+                              >
+                                <Presentation size={10} className="text-[#38bdf8]" /> {task.deliverables.length}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1613,7 +1660,7 @@ export default function SquadKanbanView() {
                           {/* Row 2: Ver Detalhes + Select Column Dropdown */}
                           <div className="grid grid-cols-2 gap-1.5">
                             <button
-                              onClick={() => setDetailTask(task)}
+                              onClick={() => handleOpenTaskDetail(task)}
                               className="w-full py-1 px-2 rounded bg-[#0f190f] border border-[#1e381e] text-[10px] font-mono text-[#4ade80] hover:bg-[#1e381e] hover:text-white transition flex items-center justify-center gap-1 font-semibold"
                             >
                               <Eye size={11} /> Ver Detalhes
@@ -1686,7 +1733,7 @@ export default function SquadKanbanView() {
           columns={visibleColumns}
           squads={squads}
           members={members}
-          onOpenTask={(t) => setDetailTask(t)}
+          onOpenTask={(t) => handleOpenTaskDetail(t)}
           onMoveColumn={handleMoveColumn}
           onDispatchAgent={handleDispatchAgent}
           onCreateTaskInColumn={(colId) => {
@@ -1703,7 +1750,7 @@ export default function SquadKanbanView() {
           tasks={filteredTasks}
           columns={visibleColumns}
           squads={squads}
-          onOpenTask={(t) => setDetailTask(t)}
+          onOpenTask={(t) => handleOpenTaskDetail(t)}
           onMoveColumn={handleMoveColumn}
           onCreateTaskOnDate={(dateStr) => {
             setNewDueDate(dateStr);
@@ -1842,7 +1889,7 @@ export default function SquadKanbanView() {
                 {/* 3A. Left Side: Tabs & Rich Content (~65%) */}
                 <div className="flex-1 min-w-0 flex flex-col shrink-0 md:shrink md:overflow-hidden">
                   {/* Fluid Sub-Tabs */}
-                  <div className="flex items-center gap-1 border-b border-[#142414] bg-[#050a06] px-4 pt-2 shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex items-center gap-1 border-b border-[#142414] bg-[#050a06] px-4 pt-2 shrink-0 overflow-x-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-black/20 [&::-webkit-scrollbar-thumb]:bg-emerald-900/60 hover:[&::-webkit-scrollbar-thumb]:bg-emerald-600/80">
                     <button
                       onClick={() => setDetailTab("edit")}
                       className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
@@ -1908,6 +1955,17 @@ export default function SquadKanbanView() {
                       }`}
                     >
                       <Paperclip size={13} className={detailTask.attachments && detailTask.attachments.length > 0 ? "text-[#22c55e]" : ""} /> Anexos & Links ({detailTask.attachments?.length || 0})
+                    </button>
+
+                    <button
+                      onClick={() => setDetailTab("deliverables")}
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                        detailTab === "deliverables"
+                          ? "border-[#38bdf8] text-[#38bdf8] bg-[#0c1824]"
+                          : "border-transparent text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <Presentation size={13} className={detailTask.deliverables && detailTask.deliverables.length > 0 ? "text-[#38bdf8]" : ""} /> Entregáveis IA ({detailTask.deliverables?.length || 0})
                     </button>
                   </div>
 
@@ -2275,6 +2333,14 @@ export default function SquadKanbanView() {
                     {/* TAB 6: ATTACHMENTS & LINKS HUB */}
                     {detailTab === "attachments" && (
                       <TaskAttachmentsHub
+                        task={detailTask}
+                        onUpdateTask={(updated) => syncTaskUpdate(updated)}
+                      />
+                    )}
+
+                    {/* TAB 7: DELIVERABLES VIEWER */}
+                    {detailTab === "deliverables" && (
+                      <TaskDeliverablesViewer
                         task={detailTask}
                         onUpdateTask={(updated) => syncTaskUpdate(updated)}
                       />
