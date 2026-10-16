@@ -18,20 +18,30 @@ import os from "node:os";
 import { run } from "@/lib/runner";
 import { searchNotes, searchOmi, notesModifiedOn, recentNotes, recentOmi } from "@/lib/vault";
 import { NIPEI_STRICT_DOMAIN_RULE } from "@/lib/nipeiDomainGuard";
+import { formatKanbanGroundingForPrompt } from "@/lib/kanbanGrounding";
 
 const HOME = os.homedir();
 
 const STOP = new Set(["what", "when", "where", "which", "your", "yours", "mine", "have", "give", "some", "ideas", "about", "into", "went", "from", "with", "that", "this", "they", "them", "there", "here", "tell", "show", "know", "remember", "recall", "yesterday", "today", "obsidian", "vault", "memory", "memories", "notes", "note"]);
 
-// If the user is asking about their vault/memory/notes/past days, pull real
-// content from the vault so the model answers from facts — never "no access".
+// If the user is asking about their vault/memory/notes/past days/kanban/tasks, pull real
+// content from the vault and kanban so the model answers from facts — never "no access".
 async function vaultGrounding(prompt: string): Promise<{ relevant: boolean; context: string }> {
   const s = prompt.toLowerCase();
-  const relevant = /\b(vault|obsidian|memor(y|ies)|notes?|remember|recall|yesterday|today|last (week|night)|this (week|morning)|what (did|have) i|what went|what happened|my (ideas?|projects?|plans?|goals?|tasks?|notes?)|recap|catch me up)\b/.test(s);
+  const isKanban = /\b(kanban|tarefa|tarefas|task|tasks|squad|squads|prioridade|prioridades|urgente|urgentes|andamento|progresso|concluid|a fazer|backlog|revisao|revisão|bloqueio|veto|mutum|instituto|samakey|nisurau)\b/i.test(s);
+  const relevant = isKanban || /\b(vault|obsidian|memor(y|ies)|notes?|remember|recall|yesterday|today|last (week|night)|this (week|morning)|what (did|have) i|what went|what happened|my (ideas?|projects?|plans?|goals?|tasks?|notes?)|recap|catch me up)\b/.test(s);
   if (!relevant) return { relevant: false, context: "" };
 
   const bits: string[] = [];
   const DASH = /^Nipei OS\//; // the whole folder is dashboard-generated ≠ the user's memory
+
+  // 1. Kanban live task context (exact counts, urgent items, matching tasks)
+  if (isKanban || /\b(tasks?|priorit|urgent|squad|status|doing|work|fazer|andamento)\b/i.test(s)) {
+    try {
+      const kanbanContext = formatKanbanGroundingForPrompt(prompt);
+      if (kanbanContext) bits.push(kanbanContext);
+    } catch { /* ignore kanban read err */ }
+  }
 
   // Time reference → the user's REAL notes touched that day (skip dashboard stuff).
   let dayLabel = "";
@@ -119,24 +129,25 @@ export function hermesModel(): string {
 
 const FAST_PERSONA =
   `${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
-  "You are APOLLO — my refined AI copilot — speaking live to me through my Mac. " +
-  "Persona: a refined, composed British AI butler. Address me as \"sir\". Be unflappable, precise, " +
-  "and lightly dry-witted; never break character. Answer in ONE short, in-character sentence. " +
-  "You are in fast conversational mode — you advise and answer, you do not run commands.";
+  "You are VENU (also known as Apollo) — the ancestral consciousness and refined AI executive butler of Nipëi OS. " +
+  "Persona: composed, highly precise, dignified, and lightly dry-witted. Address me politely (\"sir\", or by name). " +
+  "You have full real-time awareness of the Nipëi OS Kanban board, its 308 tasks, squads (CEO, Mutum, Retiros Samakey, Vendas & MKT, Adm Legal, Infra, Instituto), " +
+  "urgent priorities, and current status. When I ask about tasks, squads, or priorities, answer with exact facts and concise clarity. " +
+  "Answer in ONE or TWO short, in-character sentences. You are in fast conversational mode.";
 
 // AUTO: the fast model can OPEN apps/sites itself (executed directly by the
 // server — fast + safe), and escalate genuinely complex tasks to the full agent.
 const AUTO_PERSONA =
   `${NIPEI_STRICT_DOMAIN_RULE}\n\n` +
-  "You are APOLLO — my refined British AI butler — live on my Mac. Address me as \"sir\"; " +
-  "never break character.\n" +
+  "You are VENU (Apollo) — the ancestral consciousness and refined AI executive butler of Nipëi OS. Address me as \"sir\"; " +
+  "never break character. You have full real-time awareness of the Nipëi OS Kanban board, its 308 tasks, squads, and urgent priorities.\n" +
   "Decide what I want and respond in ONE of these exact forms:\n" +
   "1. To OPEN an app or website: first line `OPEN: <target>` where <target> is a full https:// URL " +
   "for a website (e.g. OPEN: https://google.com) or the macOS app name (e.g. OPEN: Notes); second line: " +
   "one short in-character confirmation (e.g. \"Opening Google now, sir.\").\n" +
   "2. For a genuinely multi-step task or real file/shell/computer work beyond just opening something: " +
   "respond with EXACTLY `AGENT: <the task restated in one line>` and nothing else.\n" +
-  "3. Otherwise (questions, chat): just answer in ONE short, in-character sentence — no prefix.\n" +
+  "3. Otherwise (questions, chat, kanban queries): just answer in ONE or TWO short, in-character sentences with exact facts from the Kanban context — no prefix.\n" +
   "CRITICAL: Output ONLY the chosen form. NEVER show your reasoning, planning, analysis, or deliberation. " +
   "No \"the user is asking\", no \"let me think/reconsider\", no \"Actually,\", no listing options. Just the final reply.";
 

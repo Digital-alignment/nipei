@@ -17,6 +17,7 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { VAULT_ROOT, listNotes, recentOmi } from "@/lib/vault";
 import { complete } from "@/lib/hermesApollo";
+import { getTopUrgentTasks, getKanbanStats } from "@/lib/kanbanGrounding";
 
 export type BriefingRange = "daily" | "weekly";
 
@@ -298,23 +299,38 @@ export async function buildBriefing(range: BriefingRange): Promise<Briefing> {
         })
       : [];
 
-    base.tasks = open;
+    const kanbanTasks = getTopUrgentTasks(6);
+    const kanbanStats = getKanbanStats();
+
+    // Map urgent Kanban tasks to BriefingTask format and prepend to open tasks
+    const kanbanOpen: BriefingTask[] = kanbanTasks.map((t) => ({
+      text: `[${t.squad}] ${t.title} (${t.priority.toUpperCase()})`,
+      note: t.project || "Kanban Nipëi",
+      path: (t.vaultPath || "").replace(/\.md$/i, ""),
+    }));
+
+    const allOpen = [...kanbanOpen, ...open];
+    base.tasks = allOpen.slice(0, 16);
     base.worked = worked;
     base.captures = captures.slice(0, 8);
     base.news = news;
     base.wins = done;
     base.activity = activity;
     base.stats = [
-      { label: "Open action items", value: String(open.length) },
-      { label: range === "weekly" ? "Notes this week" : "Notes touched", value: String(worked.length) },
-      { label: "Recent captures", value: String(captures.length) },
-      ...(range === "weekly" ? [{ label: "Completed", value: String(done.length) }] : []),
+      { label: "Kanban Total", value: `${kanbanStats.total} tarefas` },
+      { label: "Urgentes", value: String(kanbanStats.urgentCount) },
+      { label: "Executando IA", value: String(kanbanStats.agentExecutingCount) },
+      { label: range === "weekly" ? "Notas na semana" : "Notas do dia", value: String(worked.length) },
+      ...(range === "weekly" ? [{ label: "Concluídas", value: String(done.length) }] : []),
     ];
 
     // Build the LLM context from real data only.
     const ctxParts: string[] = [`Today: ${base.dateLabel}.`];
+    ctxParts.push(
+      `Nipëi OS Kanban Overview: ${kanbanStats.total} total active tasks (${kanbanStats.urgentCount} urgent, ${kanbanStats.agentExecutingCount} in AI autonomous execution). Top critical demands: ${kanbanTasks.map((t) => `"${t.title}" in ${t.squad} (${t.priority})`).join("; ")}.`
+    );
     if (top3.length) ctxParts.push(`Today's stated priorities (from my daily note): ${top3.join("; ")}.`);
-    if (open.length) ctxParts.push(`Open action items:\n${open.map((t) => `- ${t.text} (in: ${t.note})`).join("\n")}`);
+    if (allOpen.length) ctxParts.push(`Open action items:\n${allOpen.slice(0, 10).map((t) => `- ${t.text} (in: ${t.note})`).join("\n")}`);
     if (worked.length) ctxParts.push(`Notes I touched ${range === "weekly" ? "this week" : "today"}: ${worked.map((w) => w.title).join("; ")}.`);
     if (captures.length) ctxParts.push(`Recent captures from my memory (newest first):\n${captures.slice(0, 12).map((c) => `- ${c}`).join("\n")}`);
     if (done.length) ctxParts.push(`Items I completed this week: ${done.slice(0, 12).join("; ")}.`);

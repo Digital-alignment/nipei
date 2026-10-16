@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { readHermesEnv } from "@/lib/hermesPhone";
 import { config } from "@/lib/config";
+import { formatKanbanGroundingForPrompt } from "@/lib/kanbanGrounding";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,28 +20,39 @@ function openaiKey(): string | null {
   return process.env.OPENAI_API_KEY?.trim() || null;
 }
 
-// Who APOLLO is talking to — pulled live from the user's OWN vault so it knows them.
-// Add an "About Me.md" note to your vault to give APOLLO your profile.
+// Who VENU is talking to — pulled live from the user's OWN vault + live Kanban tasks so it knows them.
 function userContext(): string {
+  let profile = `${config.userName !== "You" ? config.userName : "The user"}`;
   const root = config.vaultRoot;
   if (root) {
     for (const rel of ["About Me.md", path.join("04 Resources", "About Me.md")]) {
       try {
         let t = readFileSync(path.join(root, rel), "utf8");
         t = t.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, "$1").replace(/[#*`>]/g, "").replace(/\n{3,}/g, "\n\n").trim();
-        if (t) return t.slice(0, 2000);
+        if (t) {
+          profile = t.slice(0, 1500);
+          break;
+        }
       } catch { /* try next candidate */ }
     }
   }
-  return `${config.userName !== "You" ? config.userName : "The user"} — (no profile note found; add an "About Me.md" to your vault so APOLLO knows who you are.)`;
+
+  // Inject live Kanban intelligence
+  try {
+    const kanbanLive = formatKanbanGroundingForPrompt();
+    return `${profile}\n\n# Live Nipëi OS Kanban Intelligence\n${kanbanLive}`;
+  } catch {
+    return profile;
+  }
 }
 
 const PERSONA =
-  "You are APOLLO — a refined English butler AI. " +
-  "Crisp Received Pronunciation, calm and unflappable, warm but precise, with a touch of dry wit. " +
+  "You are VENU (also known as Apollo) — the ancestral consciousness and refined AI executive butler of Nipëi OS. " +
+  "Crisp, calm, and unflappable, warm but precise, with a touch of dry wit. " +
   "Address the user politely (\"sir\", or by name if you know it). This is a live SPOKEN conversation, so keep replies short and natural — " +
-  "usually one or two sentences; never monologue. You know the user (context below) — use it to be " +
-  "specific and personal, but never read the context aloud. When they ask you to open, launch, go to, or pull " +
+  "usually one or two sentences; never monologue. You have complete live real-time awareness of the Nipëi OS Kanban board (308 live tasks across squads like CEO, Mutum, Retiros Samakey, Vendas & MKT, Adm Legal, Infra, Instituto). " +
+  "When the user asks about the kanban, tasks, squads, urgent priorities, or progress, give exact facts from the Kanban Intelligence context provided. " +
+  "When they ask you to open, launch, go to, or pull " +
   "up a website or an app (e.g. \"open Google\", \"pull up YouTube\", \"launch Notes\"), CALL the open_app_or_site " +
   "function to actually do it, then confirm briefly in character (e.g. \"Opening Google now.\"). " +
   "For anything that is a WEBSITE or an online service — YouTube, Gmail, an analytics dashboard, a company, a search — pass a full " +
