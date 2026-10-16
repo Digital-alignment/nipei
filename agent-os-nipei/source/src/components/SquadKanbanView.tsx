@@ -13,6 +13,8 @@ import {
   LayoutGrid, Columns3, Rows3, GripVertical, Copy, ExternalLink, ArrowUpRight, Activity, ChevronDown
 } from "lucide-react";
 import ExecutiveControlsMenu from "./ExecutiveControlsMenu";
+import KanbanListView from "./KanbanListView";
+import KanbanCalendarView from "./KanbanCalendarView";
 import { useCompany } from "@/context/CompanyContext";
 import {
   INITIAL_TASKS, INITIAL_SQUADS, INITIAL_MEMBERS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
@@ -131,6 +133,9 @@ export default function SquadKanbanView() {
   // Visual Density State (Compact vs. Expanded)
   const [cardDensity, setCardDensity] = useState<"compact" | "expanded">("compact");
 
+  // View Mode State (Board vs. List vs. Calendar)
+  const [viewMode, setViewMode] = useState<"board" | "list" | "calendar">("board");
+
   // Drag & Drop State
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColId, setDragOverColId] = useState<KanbanColumnId | null>(null);
@@ -148,15 +153,26 @@ export default function SquadKanbanView() {
   const [executingTaskId, setExecutingTaskId] = useState<string | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  // Initialize Card Density from LocalStorage
+  // Initialize Card Density and View Mode from LocalStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("nipei_kanban_card_density");
-      if (saved === "compact" || saved === "expanded") {
-        setCardDensity(saved);
+      const savedDensity = localStorage.getItem("nipei_kanban_card_density");
+      if (savedDensity === "compact" || savedDensity === "expanded") {
+        setCardDensity(savedDensity);
+      }
+      const savedViewMode = localStorage.getItem("nipei_kanban_view_mode");
+      if (savedViewMode === "board" || savedViewMode === "list" || savedViewMode === "calendar") {
+        setViewMode(savedViewMode);
       }
     } catch {}
   }, []);
+
+  const handleSetViewMode = (mode: "board" | "list" | "calendar") => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("nipei_kanban_view_mode", mode);
+    } catch {}
+  };
 
   const handleToggleDensity = () => {
     const next = cardDensity === "compact" ? "expanded" : "compact";
@@ -850,31 +866,75 @@ export default function SquadKanbanView() {
           Kanban
         </h1>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Visual Density Toggle */}
-          <button
-            onClick={handleToggleDensity}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#142414] border border-[#1e381e] text-xs font-mono font-bold text-[#a7f3d0] hover:text-white hover:bg-[#1e381e] transition shadow-sm shrink-0"
-            title={
-              cardDensity === "compact"
-                ? "Modo atual: Compacto. Clique para alternar para modo Expandido (com subtarefas interativas no cartão)."
-                : "Modo atual: Expandido. Clique para alternar para modo Compacto."
-            }
-          >
-            {cardDensity === "compact" ? (
-              <>
-                <Rows3 size={15} className="text-[#22c55e]" />
-                <span className="hidden sm:inline">Densidade:</span>
-                <span>Compacto</span>
-              </>
-            ) : (
-              <>
-                <Columns3 size={15} className="text-[#22c55e]" />
-                <span className="hidden sm:inline">Densidade:</span>
-                <span>Expandido</span>
-              </>
-            )}
-          </button>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
+          {/* View Mode Switcher (Quadro / Lista / Calendário) */}
+          <div className="flex items-center p-0.5 rounded-lg bg-[#050805] border border-[#1e381e]">
+            <button
+              onClick={() => handleSetViewMode("board")}
+              title="Visualização em Quadro Kanban"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-mono font-bold transition ${
+                viewMode === "board"
+                  ? "bg-[#22c55e] text-[#050805] shadow-sm"
+                  : "text-[#a7f3d0] hover:text-white hover:bg-[#142414]"
+              }`}
+            >
+              <LayoutGrid size={14} />
+              <span className="hidden sm:inline">Quadro</span>
+            </button>
+
+            <button
+              onClick={() => handleSetViewMode("list")}
+              title="Visualização em Lista / Tabela Densa"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-mono font-bold transition ${
+                viewMode === "list"
+                  ? "bg-[#22c55e] text-[#050805] shadow-sm"
+                  : "text-[#a7f3d0] hover:text-white hover:bg-[#142414]"
+              }`}
+            >
+              <ListFilter size={14} />
+              <span className="hidden sm:inline">Lista</span>
+            </button>
+
+            <button
+              onClick={() => handleSetViewMode("calendar")}
+              title="Visualização em Calendário Mensal por Prazo"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-mono font-bold transition ${
+                viewMode === "calendar"
+                  ? "bg-[#22c55e] text-[#050805] shadow-sm"
+                  : "text-[#a7f3d0] hover:text-white hover:bg-[#142414]"
+              }`}
+            >
+              <Calendar size={14} />
+              <span className="hidden sm:inline">Calendário</span>
+            </button>
+          </div>
+
+          {/* Visual Density Toggle (Only for Board mode) */}
+          {viewMode === "board" && (
+            <button
+              onClick={handleToggleDensity}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-[#142414] border border-[#1e381e] text-xs font-mono font-bold text-[#a7f3d0] hover:text-white hover:bg-[#1e381e] transition shadow-sm shrink-0"
+              title={
+                cardDensity === "compact"
+                  ? "Modo atual: Compacto. Clique para alternar para modo Expandido (com subtarefas interativas no cartão)."
+                  : "Modo atual: Expandido. Clique para alternar para modo Compacto."
+              }
+            >
+              {cardDensity === "compact" ? (
+                <>
+                  <Rows3 size={15} className="text-[#22c55e]" />
+                  <span className="hidden sm:inline">Densidade:</span>
+                  <span>Compacto</span>
+                </>
+              ) : (
+                <>
+                  <Columns3 size={15} className="text-[#22c55e]" />
+                  <span className="hidden sm:inline">Densidade:</span>
+                  <span>Expandido</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Archive Toggle Button */}
           <button
@@ -1052,8 +1112,9 @@ export default function SquadKanbanView() {
         </div>
       </div>
 
-      {/* QUICK COLUMN NAVIGATION & SCROLL CONTROLS STRIP */}
-      <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-[#1e381e] bg-[#070d07]/90 backdrop-blur-md shrink-0 shadow-md">
+      {/* QUICK COLUMN NAVIGATION & SCROLL CONTROLS STRIP (Only visible in Board mode) */}
+      {viewMode === "board" && (
+        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-[#1e381e] bg-[#070d07]/90 backdrop-blur-md shrink-0 shadow-md">
         {/* Left: Scroll arrows & Label */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
@@ -1108,8 +1169,10 @@ export default function SquadKanbanView() {
           <span>Arraste os cartões entre as colunas</span>
         </div>
       </div>
+      )}
 
-      {/* KANBAN BOARD COLUMNS TRACK (Responsive, Scrollable & Elegant) */}
+      {/* 1. KANBAN BOARD COLUMNS TRACK (Quadro) */}
+      {viewMode === "board" && (
       <div
         ref={scrollTrackRef}
         onWheel={handleTrackWheel}
@@ -1521,6 +1584,42 @@ export default function SquadKanbanView() {
           );
         })}
       </div>
+      )}
+
+      {/* 2. KANBAN LIST VIEW (Lista / Tabela) */}
+      {viewMode === "list" && (
+        <KanbanListView
+          tasks={filteredTasks}
+          columns={visibleColumns}
+          squads={squads}
+          members={members}
+          onOpenTask={(t) => setDetailTask(t)}
+          onMoveColumn={handleMoveColumn}
+          onDispatchAgent={handleDispatchAgent}
+          onCreateTaskInColumn={(colId) => {
+            setNewTaskColumn(colId);
+            setCreateModalOpen(true);
+          }}
+          getDueDateAlert={getDueDateAlert}
+        />
+      )}
+
+      {/* 3. KANBAN CALENDAR VIEW (Calendário) */}
+      {viewMode === "calendar" && (
+        <KanbanCalendarView
+          tasks={filteredTasks}
+          columns={visibleColumns}
+          squads={squads}
+          onOpenTask={(t) => setDetailTask(t)}
+          onMoveColumn={handleMoveColumn}
+          onCreateTaskOnDate={(dateStr) => {
+            setNewDueDate(dateStr);
+            setNewTaskColumn("todo");
+            setCreateModalOpen(true);
+          }}
+          getDueDateAlert={getDueDateAlert}
+        />
+      )}
 
       {/* TASK DETAIL & EDIT MODAL / DRAWER (Ultra-Modern 2-Column Executive Studio) */}
       <AnimatePresence>
@@ -1645,10 +1744,10 @@ export default function SquadKanbanView() {
                 />
               </div>
 
-              {/* 3. Main 2-Column Body */}
-              <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+              {/* 3. Main 2-Column Body (Scrollable on mobile, 2-column on desktop) */}
+              <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden [scrollbar-width:thin]">
                 {/* 3A. Left Side: Tabs & Rich Content (~65%) */}
-                <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+                <div className="flex-1 min-w-0 flex flex-col shrink-0 md:shrink md:overflow-hidden">
                   {/* Fluid Sub-Tabs */}
                   <div className="flex items-center gap-1 border-b border-[#142414] bg-[#050a06] px-6 pt-2 shrink-0 overflow-x-hidden">
                     <button

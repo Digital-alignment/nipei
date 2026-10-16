@@ -482,6 +482,7 @@ export function MobileNav() {
   ];
   return (
     <nav
+      style={{ position: "fixed" }}
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 py-2 border-t border-[#1e381e] bg-[#091409]"
     >
       {PRIMARY.map((item) => {
