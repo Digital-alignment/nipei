@@ -10,12 +10,13 @@ import {
   Search, Tag, Maximize2, Minimize2, MessageSquare, CheckSquare, Edit3, Eye,
   Send, Terminal, FileText, UserCheck, Calendar, AlertTriangle, Trash2, PlusCircle, Check, Folder,
   Building2, User, RotateCcw, Archive, ArchiveRestore, CheckCheck, ListFilter,
-  LayoutGrid, Columns3, Rows3, GripVertical, Copy, ExternalLink, ArrowUpRight, Activity, ChevronDown
+  LayoutGrid, Columns3, Rows3, GripVertical, Copy, ExternalLink, ArrowUpRight, Activity, ChevronDown, Paperclip
 } from "lucide-react";
 import ExecutiveControlsMenu from "./ExecutiveControlsMenu";
 import KanbanListView from "./KanbanListView";
 import KanbanCalendarView from "./KanbanCalendarView";
 import TaskAgentBox from "./TaskAgentBox";
+import TaskAttachmentsHub from "./TaskAttachmentsHub";
 import { useCompany } from "@/context/CompanyContext";
 import {
   INITIAL_TASKS, INITIAL_SQUADS, INITIAL_MEMBERS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
@@ -297,7 +298,7 @@ export default function SquadKanbanView() {
 
   // Detail & Edit Panel State
   const [detailTask, setDetailTask] = useState<GlobalTask | null>(null);
-  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult">("edit");
+  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult" | "attachments">("edit");
   const [descViewMode, setDescViewMode] = useState<"preview" | "edit">("preview");
   const [activeCardConsultId, setActiveCardConsultId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
@@ -1531,6 +1532,15 @@ export default function SquadKanbanView() {
                                 <MessageSquare size={10} /> {commentsCount}
                               </span>
                             )}
+
+                            {task.attachments && task.attachments.length > 0 && (
+                              <span
+                                className="px-1.5 py-0.5 rounded bg-[#0f190f] text-[#a7f3d0] border border-[#1e381e] text-[9px] font-mono font-bold flex items-center gap-1"
+                                title={`${task.attachments.length} anexos vinculados`}
+                              >
+                                <Paperclip size={10} className="text-[#22c55e]" /> {task.attachments.length}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1887,6 +1897,17 @@ export default function SquadKanbanView() {
                       }`}
                     >
                       <Sparkles size={13} className="text-[#22c55e]" /> Consultor IA
+                    </button>
+
+                    <button
+                      onClick={() => setDetailTab("attachments")}
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                        detailTab === "attachments"
+                          ? "border-[#22c55e] text-[#22c55e] bg-[#0c1c0c]"
+                          : "border-transparent text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <Paperclip size={13} className={detailTask.attachments && detailTask.attachments.length > 0 ? "text-[#22c55e]" : ""} /> Anexos & Links ({detailTask.attachments?.length || 0})
                     </button>
                   </div>
 
@@ -2249,6 +2270,14 @@ export default function SquadKanbanView() {
                           onUpdateSquad={(squad, ass) => handleUpdateTaskSquadAssignee(detailTask.id, squad, ass)}
                         />
                       </div>
+                    )}
+
+                    {/* TAB 6: ATTACHMENTS & LINKS HUB */}
+                    {detailTab === "attachments" && (
+                      <TaskAttachmentsHub
+                        task={detailTask}
+                        onUpdateTask={(updated) => syncTaskUpdate(updated)}
+                      />
                     )}
                   </div>
                 </div>
