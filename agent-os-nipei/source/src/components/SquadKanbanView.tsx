@@ -15,6 +15,7 @@ import {
 import ExecutiveControlsMenu from "./ExecutiveControlsMenu";
 import KanbanListView from "./KanbanListView";
 import KanbanCalendarView from "./KanbanCalendarView";
+import TaskAgentBox from "./TaskAgentBox";
 import { useCompany } from "@/context/CompanyContext";
 import {
   INITIAL_TASKS, INITIAL_SQUADS, INITIAL_MEMBERS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
@@ -296,8 +297,9 @@ export default function SquadKanbanView() {
 
   // Detail & Edit Panel State
   const [detailTask, setDetailTask] = useState<GlobalTask | null>(null);
-  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs">("edit");
+  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult">("edit");
   const [descViewMode, setDescViewMode] = useState<"preview" | "edit">("preview");
+  const [activeCardConsultId, setActiveCardConsultId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
   const [newCommentText, setNewCommentText] = useState("");
   const [newCommentAuthor, setNewCommentAuthor] = useState("Ana Castro (CEO)");
@@ -665,6 +667,58 @@ export default function SquadKanbanView() {
     if (!detailTask) return;
     const updatedChecklist = (detailTask.checklist || []).filter((item) => item.id !== itemId);
     syncTaskUpdate({ ...detailTask, checklist: updatedChecklist });
+  }
+
+  // Apply subtasks suggested by TaskAgentBox
+  function handleApplySuggestedSubtasks(taskId: string, subtaskTitles: string[]) {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === taskId) {
+          const newItems: TaskChecklistItem[] = subtaskTitles.map((title, idx) => ({
+            id: `chk-ai-${Date.now()}-${idx}`,
+            title,
+            completed: false,
+          }));
+          const currentList = t.checklist || [];
+          const updated = {
+            ...t,
+            checklist: [...currentList, ...newItems],
+          };
+          if (detailTask && detailTask.id === taskId) {
+            setDetailTask(updated);
+          }
+          return updated;
+        }
+        return t;
+      })
+    );
+  }
+
+  // Update squad and assignee suggested by TaskAgentBox
+  function handleUpdateTaskSquadAssignee(taskId: string, squadId: string, assignee?: string) {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === taskId) {
+          const updated = {
+            ...t,
+            squad: squadId as SquadId,
+            ...(assignee ? { assignee } : {}),
+          };
+          if (detailTask && detailTask.id === taskId) {
+            setDetailTask(updated);
+          }
+          if (t.vaultPath) {
+            fetch("/api/agent-kanban", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ vaultPath: t.vaultPath, squad: squadId })
+            }).catch(console.error);
+          }
+          return updated;
+        }
+        return t;
+      })
+    );
   }
 
   // Quick interactive toggle for checklist directly from card (expanded mode)
@@ -1567,6 +1621,35 @@ export default function SquadKanbanView() {
                               ))}
                             </select>
                           </div>
+
+                          {/* Row 3: Quick AI Advisory Assistant Trigger */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveCardConsultId((prev) => (prev === task.id ? null : task.id));
+                            }}
+                            className={`w-full py-1 px-2 rounded text-[10px] font-mono transition flex items-center justify-center gap-1.5 font-bold ${
+                              activeCardConsultId === task.id
+                                ? "bg-[#143016] text-[#4ade80] border border-[#22c55e] shadow-[0_0_10px_rgba(34,197,94,0.2)]"
+                                : "bg-[#071409] text-[#a7f3d0] hover:text-white hover:bg-[#0f2413] border border-[#1e381e]"
+                            }`}
+                            title="Consultar Agente IA para recomendações, subtarefas ou explicação"
+                          >
+                            <Sparkles size={11} className={activeCardConsultId === task.id ? "text-[#22c55e] animate-pulse" : "text-[#22c55e]"} />
+                            <span>{activeCardConsultId === task.id ? "Ocultar Consultor IA" : "Consultar Agente IA"}</span>
+                          </button>
+
+                          {/* Inline Card AI Advisory Box */}
+                          {activeCardConsultId === task.id && (
+                            <div className="pt-1.5" onClick={(e) => e.stopPropagation()}>
+                              <TaskAgentBox
+                                task={task}
+                                compact={true}
+                                onApplySubtasks={(titles) => handleApplySuggestedSubtasks(task.id, titles)}
+                                onUpdateSquad={(squad, ass) => handleUpdateTaskSquadAssignee(task.id, squad, ass)}
+                              />
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     );
@@ -1749,10 +1832,10 @@ export default function SquadKanbanView() {
                 {/* 3A. Left Side: Tabs & Rich Content (~65%) */}
                 <div className="flex-1 min-w-0 flex flex-col shrink-0 md:shrink md:overflow-hidden">
                   {/* Fluid Sub-Tabs */}
-                  <div className="flex items-center gap-1 border-b border-[#142414] bg-[#050a06] px-6 pt-2 shrink-0 overflow-x-hidden">
+                  <div className="flex items-center gap-1 border-b border-[#142414] bg-[#050a06] px-4 pt-2 shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     <button
                       onClick={() => setDetailTab("edit")}
-                      className={`px-3.5 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
                         detailTab === "edit"
                           ? "border-[#22c55e] text-[#22c55e] bg-[#0c1c0c]"
                           : "border-transparent text-zinc-400 hover:text-white"
@@ -1763,7 +1846,7 @@ export default function SquadKanbanView() {
 
                     <button
                       onClick={() => setDetailTab("checklist")}
-                      className={`px-3.5 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
                         detailTab === "checklist"
                           ? "border-[#22c55e] text-[#22c55e] bg-[#0c1c0c]"
                           : "border-transparent text-zinc-400 hover:text-white"
@@ -1775,7 +1858,7 @@ export default function SquadKanbanView() {
 
                     <button
                       onClick={() => setDetailTab("comments")}
-                      className={`px-3.5 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
                         detailTab === "comments"
                           ? "border-[#22c55e] text-[#22c55e] bg-[#0c1c0c]"
                           : "border-transparent text-zinc-400 hover:text-white"
@@ -1786,13 +1869,24 @@ export default function SquadKanbanView() {
 
                     <button
                       onClick={() => setDetailTab("logs")}
-                      className={`px-3.5 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
                         detailTab === "logs"
                           ? "border-[#22c55e] text-[#22c55e] bg-[#0c1c0c]"
                           : "border-transparent text-zinc-400 hover:text-white"
                       }`}
                     >
                       <Terminal size={13} /> Histórico IA ({detailTask.executionLogs?.length || 0})
+                    </button>
+
+                    <button
+                      onClick={() => setDetailTab("ai_consult")}
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                        detailTab === "ai_consult"
+                          ? "border-[#22c55e] text-[#22c55e] bg-[#0c1c0c]"
+                          : "border-transparent text-emerald-400/80 hover:text-emerald-200"
+                      }`}
+                    >
+                      <Sparkles size={13} className="text-[#22c55e]" /> Consultor IA
                     </button>
                   </div>
 
@@ -1882,12 +1976,37 @@ export default function SquadKanbanView() {
                             </span>
                           </div>
                         )}
+
+                        {/* Task Advisory Micro-Agent */}
+                        <div className="pt-2 border-t border-[#142414]">
+                          <TaskAgentBox
+                            task={detailTask}
+                            onApplySubtasks={(titles) => handleApplySuggestedSubtasks(detailTask.id, titles)}
+                            onUpdateSquad={(squad, ass) => handleUpdateTaskSquadAssignee(detailTask.id, squad, ass)}
+                          />
+                        </div>
                       </div>
                     )}
 
                     {/* TAB 2: SUBTASKS / CHECKLIST */}
                     {detailTab === "checklist" && (
                       <div className="space-y-5 text-xs font-mono">
+                        {/* Quick AI Suggestion Prompt Banner */}
+                        <div className="p-3 rounded-xl border border-emerald-900/60 bg-[#09160a] flex items-center justify-between gap-3 flex-wrap shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <Sparkles size={14} className="text-[#22c55e] shrink-0" />
+                            <span className="text-[11px] text-[#a7f3d0]">
+                              Precisa de sugestões de etapas de execução fundamentadas no Nipëi Vault?
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setDetailTab("ai_consult")}
+                            className="px-2.5 py-1 rounded bg-[#142e18] hover:bg-[#1a3d20] border border-[#22c55e]/50 text-xs font-bold text-[#4ade80] flex items-center gap-1.5 transition"
+                          >
+                            <Sparkles size={12} /> Consultor IA →
+                          </button>
+                        </div>
+
                         {/* Progress Bar */}
                         {detailTask.checklist && detailTask.checklist.length > 0 ? (
                           <div className="space-y-2 p-3.5 rounded-xl border border-[#1e381e] bg-[#0a140b]">
@@ -2105,6 +2224,30 @@ export default function SquadKanbanView() {
                             <div className="text-zinc-600 italic">Nenhum log autônomo registrado para esta tarefa ainda.</div>
                           )}
                         </div>
+                      </div>
+                    )}
+
+                    {/* TAB 5: DEDICATED FULL AI CONSULTANT TAB */}
+                    {detailTab === "ai_consult" && (
+                      <div className="space-y-4 font-mono">
+                        <div className="p-3.5 rounded-xl border border-emerald-900/60 bg-emerald-950/20 text-xs text-[#a7f3d0] flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <Sparkles size={16} className="text-[#22c55e] shrink-0" />
+                            <div>
+                              <div className="text-white font-bold text-xs">Consultor Autônomo da Tarefa</div>
+                              <div className="text-[10px] text-zinc-400">Grounding contextual em tempo real com Nipëi Vault & Contratos de Squads</div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-emerald-400 font-bold bg-[#102010] px-2.5 py-1 rounded-md border border-[#1e381e] shrink-0">
+                            Ativo • Nipëi Grounding
+                          </span>
+                        </div>
+
+                        <TaskAgentBox
+                          task={detailTask}
+                          onApplySubtasks={(titles) => handleApplySuggestedSubtasks(detailTask.id, titles)}
+                          onUpdateSquad={(squad, ass) => handleUpdateTaskSquadAssignee(detailTask.id, squad, ass)}
+                        />
                       </div>
                     )}
                   </div>
