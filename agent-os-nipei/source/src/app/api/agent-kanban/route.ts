@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { defaultVault } from "@/lib/config";
+import type { TaskAttachment, TaskDeliverable } from "@/lib/nipeiStore";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ interface GlobalTask {
   assignedAgents: string[];
   vaultPath: string;
   description: string;
+  attachments?: TaskAttachment[];
+  deliverables?: TaskDeliverable[];
 }
 
 // Helper: load project-to-squad dictionary from Squads/squad_*.md

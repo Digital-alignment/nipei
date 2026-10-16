@@ -256,6 +256,35 @@ export interface TaskChecklistItem {
   completed: boolean;
 }
 
+export type AttachmentType = "image" | "document" | "spreadsheet" | "link" | "vault_note";
+
+export interface TaskAttachment {
+  id: string;
+  name: string;
+  type: AttachmentType;
+  mimeType?: string;
+  sizeBytes?: number;
+  url: string;                // Web accessible URL or external link
+  vaultRelativePath?: string; // e.g. "Task_Workspace/2026/SQ-04/VAC-002/inputs/recibo.pdf"
+  uploadedAt: string;
+  uploadedBy: string;         // e.g. "@usuario" or "@hermes"
+  notes?: string;
+}
+
+export type DeliverableFormat = "executive_report" | "slide_deck" | "technical_brief" | "csv_data";
+
+export interface TaskDeliverable {
+  id: string;
+  title: string;
+  format: DeliverableFormat;
+  fileName: string;
+  vaultRelativePath: string;  // e.g. "Task_Workspace/2026/SQ-04/VAC-002/deliverables/relatorio.md"
+  contentMarkdown: string;
+  generatedByAgent: string;   // e.g. "@hermes" or "@antigravity"
+  generatedAt: string;
+  version: number;
+}
+
 export interface GlobalTask {
   id: string;
   title: string;
@@ -271,6 +300,8 @@ export interface GlobalTask {
   executionLogs?: string[];
   comments?: TaskComment[];
   checklist?: TaskChecklistItem[];
+  attachments?: TaskAttachment[];
+  deliverables?: TaskDeliverable[];
   vaultPath?: string;
 }
 
