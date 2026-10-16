@@ -76,6 +76,7 @@ export async function GET() {
           const projectMatch = content.match(/project:\s*"?([^"\n\r]+)"?/);
           const responsibleMatch = content.match(/responsible:\s*"?([^"\n\r]+)"?/);
           const prazoMatch = content.match(/prazo:\s*"?([^"\n\r]+)"?/);
+          const squadMatch = content.match(/squad:\s*"?([^"\n\r]+)"?/i) || content.match(/Squad:\s*`?([a-zA-Z0-9_-]+)`?/i);
 
           const taskId = idMatch ? idMatch[1].trim() : filename.replace(".md", "");
           const title = titleMatch ? titleMatch[1].trim() : filename.replace(".md", "").replace(/_/g, " ");
@@ -84,6 +85,7 @@ export async function GET() {
           const projectName = projectMatch ? projectMatch[1].trim() : "Geral Nipëi OS";
           const responsible = responsibleMatch && responsibleMatch[1].trim() ? responsibleMatch[1].trim() : "Time Liderança";
           const dueDate = prazoMatch && prazoMatch[1].trim() ? prazoMatch[1].trim() : "2026-10-30";
+          const fileSquad = squadMatch ? squadMatch[1].trim() : null;
 
           // Normalize priority
           let priority: "urgente" | "alta" | "media" | "baixa" = "media";
@@ -110,8 +112,8 @@ export async function GET() {
             column = "todo";
           }
 
-          // Lookup squad from project mapping
-          const squad = projectToSquad[projectName.toLowerCase()] || "squad_1_ceo";
+          // Lookup squad from file frontmatter or project mapping
+          const squad = fileSquad || projectToSquad[projectName.toLowerCase()] || "squad_1_ceo";
 
           // Assigned Agents
           let assignedAgents = ["antigravity", "hermes"];
@@ -234,6 +236,7 @@ type: "tarefa"
 status: "A fazer"
 priority: "${priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : "Média"}"
 project: "${projectName}"
+squad: "${squad || "squad_1_ceo"}"
 tags:
   - tarefa
   - nipei-os
@@ -289,7 +292,7 @@ ${description || "Criada via Nipëi OS Kanban / Hermes Task Assistant."}
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { vaultPath, executionLog, status, column } = body;
+    const { vaultPath, executionLog, status, column, squad } = body;
 
     if (!vaultPath) {
       return NextResponse.json({ success: false, error: "vaultPath is required" }, { status: 400 });
@@ -303,6 +306,18 @@ export async function PATCH(req: Request) {
 
     if (fs.existsSync(fullPath)) {
       let content = fs.readFileSync(fullPath, "utf-8");
+
+      // Update squad if provided
+      if (squad) {
+        if (content.includes("squad:")) {
+          content = content.replace(/squad:\s*"?([^"\n\r]+)"?/, `squad: "${squad}"`);
+        } else {
+          content = content.replace(/---\n/, `---\nsquad: "${squad}"\n`);
+        }
+        if (content.match(/-\s*Squad:\s*`?[^`\n\r]+`?/i)) {
+          content = content.replace(/-\s*Squad:\s*`?[^`\n\r]+`?/i, `- Squad: \`${squad}\``);
+        }
+      }
 
       // Update status in frontmatter if moving columns
       if (column) {
