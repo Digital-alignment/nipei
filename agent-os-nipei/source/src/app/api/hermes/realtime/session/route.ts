@@ -52,6 +52,8 @@ const PERSONA =
   "Address the user politely (\"sir\", or by name if you know it). This is a live SPOKEN conversation, so keep replies short and natural — " +
   "usually one or two sentences; never monologue. You have complete live real-time awareness of the Nipëi OS Kanban board (308 live tasks across squads like CEO, Mutum, Retiros Samakey, Vendas & MKT, Adm Legal, Infra, Instituto). " +
   "When the user asks about the kanban, tasks, squads, urgent priorities, or progress, give exact facts from the Kanban Intelligence context provided. " +
+  "You can directly create tasks (kanban_create_task), update columns or priorities (kanban_update_task), and assign agents (kanban_assign_agent). " +
+  "You can also generate executive deliverables and reports (kanban_generate_deliverable) for any task, and dispatch notifications via WhatsApp, Email, or Webhooks (kanban_dispatch_message). " +
   "When they ask you to open, launch, go to, or pull " +
   "up a website or an app (e.g. \"open Google\", \"pull up YouTube\", \"launch Notes\"), CALL the open_app_or_site " +
   "function to actually do it, then confirm briefly in character (e.g. \"Opening Google now.\"). " +
@@ -200,6 +202,45 @@ export async function POST(req: Request) {
                   assignee: { type: "string", description: "Name of the responsible person if assigning a human." },
                 },
                 required: ["idOrTitle"],
+              },
+            },
+            {
+              type: "function",
+              name: "kanban_generate_deliverable",
+              description: "Generate an executive deliverable (e.g. executive_report, technical_brief, operational_checklist, slide_deck) for a Kanban task and save it to the Nipëi Vault workspace. Call this when the user asks to generate a report, brief, document, or slides for a task (e.g. 'gera um relatório executivo para a tarefa do inventário', 'elabora o brief técnico da tarefa X', 'generate slides for task Y').",
+              parameters: {
+                type: "object",
+                properties: {
+                  idOrTitle: { type: "string", description: "The task ID (e.g. 'TSK-01') or matching title keywords." },
+                  format: {
+                    type: "string",
+                    enum: ["executive_report", "technical_brief", "operational_checklist", "slide_deck", "csv_data"],
+                    description: "Deliverable document format.",
+                  },
+                  instructions: { type: "string", description: "Specific directives or guidelines for the deliverable." },
+                },
+                required: ["idOrTitle"],
+              },
+            },
+            {
+              type: "function",
+              name: "kanban_dispatch_message",
+              description: "Dispatch an outbound message or notification regarding a Kanban task via WhatsApp (Evolution API), Email, or Webhook (n8n). Call this when the user asks to send, notify, or dispatch a message regarding a task (e.g. 'envia um whatsapp para 551199999999 avisando que a tarefa X está pronta', 'despacha por email o status da tarefa Y', 'notifica a equipe sobre a tarefa Z').",
+              parameters: {
+                type: "object",
+                properties: {
+                  idOrTitle: { type: "string", description: "The task ID or title keywords." },
+                  channel: {
+                    type: "string",
+                    enum: ["whatsapp", "email", "webhook_n8n"],
+                    description: "Outbound communication channel.",
+                  },
+                  recipient: { type: "string", description: "Phone number with DDD for WhatsApp, email address, or webhook url." },
+                  recipientName: { type: "string", description: "Name of the person being notified." },
+                  messageText: { type: "string", description: "Message body to dispatch." },
+                  simulate: { type: "boolean", description: "Set true to simulate the dispatch without calling external networks." },
+                },
+                required: ["idOrTitle", "messageText"],
               },
             },
           ],

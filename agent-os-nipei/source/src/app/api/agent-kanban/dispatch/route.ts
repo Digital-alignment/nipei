@@ -14,7 +14,7 @@ const DEFAULT_EVOLUTION_KEY =
 const DEFAULT_EVOLUTION_INSTANCE =
   process.env.EVOLUTION_INSTANCE_NAME || "nipei-santuario";
 
-interface DispatchRequestBody {
+export interface DispatchRequestBody {
   taskId: string;
   taskTitle: string;
   taskSquad?: string;
@@ -121,198 +121,211 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Core outbound dispatch logic exported for direct programmatic use (e.g. from Venu / Kanban Action)
+export async function executeDispatchCommunication(payload: DispatchRequestBody): Promise<{
+  success: boolean;
+  communication?: TaskCommunication;
+  message?: string;
+  error?: string;
+}> {
+  if (!payload.taskId || !payload.taskTitle || !payload.channel || !payload.recipient || !payload.messageText) {
+    return {
+      success: false,
+      error: "Campos obrigatórios: 'taskId', 'taskTitle', 'channel', 'recipient' e 'messageText'",
+    };
+  }
+
+  const agentId = payload.agentId || "@hermes";
+  let status: CommunicationStatus = "sent";
+  let externalId: string | undefined = undefined;
+  let errorMessage: string | undefined = undefined;
+
+  // ──────────────────────────────────────────────────────────
+  // 1. CANAL: WHATSAPP (EVOLUTION API)
+  // ──────────────────────────────────────────────────────────
+  if (payload.channel === "whatsapp") {
+    const cleanPhone = sanitizePhoneNumber(payload.recipient);
+
+    if (payload.simulate) {
+      status = "simulated";
+      externalId = `sim-wa-${Date.now()}`;
+    } else {
+      const evoUrl = payload.customEvolutionUrl?.trim() || DEFAULT_EVOLUTION_URL;
+      const evoKey = payload.customEvolutionKey?.trim() || DEFAULT_EVOLUTION_KEY;
+      const evoInstance = payload.customEvolutionInstance?.trim() || DEFAULT_EVOLUTION_INSTANCE;
+
+      try {
+        // Send text message payload compatible with Evolution API v1 & v2
+        const sendRes = await fetch(`${evoUrl}/message/sendText/${evoInstance}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: evoKey,
+          },
+          body: JSON.stringify({
+            number: cleanPhone,
+            text: payload.messageText,
+            textMessage: {
+              text: payload.messageText,
+            },
+            options: {
+              delay: 1200,
+              presence: "composing",
+            },
+          }),
+        });
+
+        const data = await sendRes.json().catch(() => ({}));
+
+        if (sendRes.ok && (data.key || data.status === "SUCCESS" || data.messageId)) {
+          status = "sent";
+          externalId = data.key?.id || data.messageId || `wa-${Date.now()}`;
+        } else {
+          console.warn("Falha no envio da Evolution API:", data);
+          // If the instance is closed or disconnected, we record as simulated/fallback with reason
+          status = "simulated";
+          errorMessage = data.message || data.error || `Instância WhatsApp '${evoInstance}' não conectada. Mensagem registrada como simulação auditada.`;
+        }
+      } catch (fetchErr: any) {
+        console.warn("Erro de conexão com Evolution API:", fetchErr);
+        status = "simulated";
+        errorMessage = `Servidor Evolution offline ou inacessível (${fetchErr.message}). Registrado como simulação auditada.`;
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // 2. CANAL: E-MAIL EXECUTIVO (HERMES OUTREACH / GMAIL)
+  // ──────────────────────────────────────────────────────────
+  else if (payload.channel === "email") {
+    const emailSubject =
+      payload.subject?.trim() ||
+      `[Nipëi OS] Atualização da Tarefa: ${payload.taskTitle}`;
+
+    if (payload.simulate) {
+      status = "simulated";
+      externalId = `sim-mail-${Date.now()}`;
+    } else {
+      try {
+        const res = await gmailSend(payload.recipient.trim(), emailSubject, payload.messageText, false);
+        if (res.ok) {
+          status = "sent";
+          externalId = `mail-${Date.now()}`;
+        } else {
+          status = "simulated";
+          errorMessage = `Envio de e-mail registrado como rascunho/simulado (${res.detail || "Gmail CLI não autenticado no servidor"}).`;
+        }
+      } catch (mailErr: any) {
+        status = "simulated";
+        errorMessage = `Falha no backend de e-mail (${mailErr.message}). Registrado como simulação auditada.`;
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // 3. CANAL: WEBHOOK N8N / AUTOMAÇÃO
+  // ──────────────────────────────────────────────────────────
+  else if (payload.channel === "webhook_n8n") {
+    const webhookUrl = payload.recipient.trim();
+
+    if (!webhookUrl.startsWith("http://") && !webhookUrl.startsWith("https://")) {
+      return {
+        success: false,
+        error: "URL do webhook n8n inválida (deve iniciar com http:// ou https://)",
+      };
+    }
+
+    if (payload.simulate) {
+      status = "simulated";
+      externalId = `sim-n8n-${Date.now()}`;
+    } else {
+      try {
+        const hookRes = await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "User-Agent": "Nipei-Agent-OS/1.0",
+          },
+          body: JSON.stringify({
+            event: "task_communication_dispatched",
+            taskId: payload.taskId,
+            taskTitle: payload.taskTitle,
+            squad: payload.taskSquad,
+            agentId,
+            recipient: payload.recipient,
+            message: payload.messageText,
+            deliverableId: payload.deliverableId,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+
+        if (hookRes.ok) {
+          status = "sent";
+          externalId = `n8n-${Date.now()}`;
+        } else {
+          status = "failed";
+          errorMessage = `Webhook respondeu com status ${hookRes.status}`;
+        }
+      } catch (hookErr: any) {
+        status = "failed";
+        errorMessage = `Falha ao alcançar webhook: ${hookErr.message}`;
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // 4. PERSISTÊNCIA CANÔNICA NO WORKSPACE DA TAREFA
+  // ──────────────────────────────────────────────────────────
+  const commRecord = recordTaskCommunication(
+    payload.taskId,
+    payload.taskSquad,
+    payload.taskTitle,
+    {
+      channel: payload.channel,
+      recipient: payload.recipient,
+      recipientName: payload.recipientName,
+      subject: payload.subject,
+      messageText: payload.messageText,
+      deliverableId: payload.deliverableId,
+      status,
+      agentId,
+      externalId,
+      error: errorMessage,
+    }
+  );
+
+  // Build user-friendly feedback message
+  let feedback = "";
+  if (payload.channel === "whatsapp") {
+    feedback = status === "sent"
+      ? `WhatsApp enviado com sucesso para ${payload.recipientName || payload.recipient} via Evolution API!`
+      : `WhatsApp registrado com sucesso no workspace (${errorMessage || "Modo simulação auditado"})!`;
+  } else if (payload.channel === "email") {
+    feedback = status === "sent"
+      ? `E-mail executivo disparado com sucesso para ${payload.recipient}!`
+      : `E-mail registrado com sucesso no workspace (${errorMessage || "Modo simulação auditado"})!`;
+  } else {
+    feedback = status === "sent"
+      ? `Webhook disparado com sucesso para o n8n!`
+      : `Webhook registrado com erro: ${errorMessage}`;
+  }
+
+  return {
+    success: true,
+    message: feedback,
+    communication: commRecord,
+  };
+}
+
 // POST: Execute outbound dispatch (WhatsApp, Email or Webhook)
 export async function POST(req: NextRequest) {
   try {
     const payload: DispatchRequestBody = await req.json();
-
-    if (!payload.taskId || !payload.taskTitle || !payload.channel || !payload.recipient || !payload.messageText) {
-      return NextResponse.json(
-        { error: "Campos obrigatórios: 'taskId', 'taskTitle', 'channel', 'recipient' e 'messageText'" },
-        { status: 400 }
-      );
+    const result = await executeDispatchCommunication(payload);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error || "Erro interno ao processar despacho" }, { status: 400 });
     }
-
-    const agentId = payload.agentId || "@hermes";
-    let status: CommunicationStatus = "sent";
-    let externalId: string | undefined = undefined;
-    let errorMessage: string | undefined = undefined;
-
-    // ──────────────────────────────────────────────────────────
-    // 1. CANAL: WHATSAPP (EVOLUTION API)
-    // ──────────────────────────────────────────────────────────
-    if (payload.channel === "whatsapp") {
-      const cleanPhone = sanitizePhoneNumber(payload.recipient);
-
-      if (payload.simulate) {
-        status = "simulated";
-        externalId = `sim-wa-${Date.now()}`;
-      } else {
-        const evoUrl = payload.customEvolutionUrl?.trim() || DEFAULT_EVOLUTION_URL;
-        const evoKey = payload.customEvolutionKey?.trim() || DEFAULT_EVOLUTION_KEY;
-        const evoInstance = payload.customEvolutionInstance?.trim() || DEFAULT_EVOLUTION_INSTANCE;
-
-        try {
-          // Send text message payload compatible with Evolution API v1 & v2
-          const sendRes = await fetch(`${evoUrl}/message/sendText/${evoInstance}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: evoKey,
-            },
-            body: JSON.stringify({
-              number: cleanPhone,
-              text: payload.messageText,
-              textMessage: {
-                text: payload.messageText,
-              },
-              options: {
-                delay: 1200,
-                presence: "composing",
-              },
-            }),
-          });
-
-          const data = await sendRes.json().catch(() => ({}));
-
-          if (sendRes.ok && (data.key || data.status === "SUCCESS" || data.messageId)) {
-            status = "sent";
-            externalId = data.key?.id || data.messageId || `wa-${Date.now()}`;
-          } else {
-            console.warn("Falha no envio da Evolution API:", data);
-            // If the instance is closed or disconnected, we record as simulated/fallback with reason
-            status = "simulated";
-            errorMessage = data.message || data.error || `Instância WhatsApp '${evoInstance}' não conectada. Mensagem registrada como simulação auditada.`;
-          }
-        } catch (fetchErr: any) {
-          console.warn("Erro de conexão com Evolution API:", fetchErr);
-          status = "simulated";
-          errorMessage = `Servidor Evolution offline ou inacessível (${fetchErr.message}). Registrado como simulação auditada.`;
-        }
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // 2. CANAL: E-MAIL EXECUTIVO (HERMES OUTREACH / GMAIL)
-    // ──────────────────────────────────────────────────────────
-    else if (payload.channel === "email") {
-      const emailSubject =
-        payload.subject?.trim() ||
-        `[Nipëi OS] Atualização da Tarefa: ${payload.taskTitle}`;
-
-      if (payload.simulate) {
-        status = "simulated";
-        externalId = `sim-mail-${Date.now()}`;
-      } else {
-        try {
-          const res = await gmailSend(payload.recipient.trim(), emailSubject, payload.messageText, false);
-          if (res.ok) {
-            status = "sent";
-            externalId = `mail-${Date.now()}`;
-          } else {
-            status = "simulated";
-            errorMessage = `Envio de e-mail registrado como rascunho/simulado (${res.detail || "Gmail CLI não autenticado no servidor"}).`;
-          }
-        } catch (mailErr: any) {
-          status = "simulated";
-          errorMessage = `Falha no backend de e-mail (${mailErr.message}). Registrado como simulação auditada.`;
-        }
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // 3. CANAL: WEBHOOK N8N / AUTOMAÇÃO
-    // ──────────────────────────────────────────────────────────
-    else if (payload.channel === "webhook_n8n") {
-      const webhookUrl = payload.recipient.trim();
-
-      if (!webhookUrl.startsWith("http://") && !webhookUrl.startsWith("https://")) {
-        return NextResponse.json(
-          { error: "URL do webhook n8n inválida (deve iniciar com http:// ou https://)" },
-          { status: 400 }
-        );
-      }
-
-      if (payload.simulate) {
-        status = "simulated";
-        externalId = `sim-n8n-${Date.now()}`;
-      } else {
-        try {
-          const hookRes = await fetch(webhookUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "User-Agent": "Nipei-Agent-OS/1.0",
-            },
-            body: JSON.stringify({
-              event: "task_communication_dispatched",
-              taskId: payload.taskId,
-              taskTitle: payload.taskTitle,
-              squad: payload.taskSquad,
-              agentId,
-              recipient: payload.recipient,
-              message: payload.messageText,
-              deliverableId: payload.deliverableId,
-              timestamp: new Date().toISOString(),
-            }),
-          });
-
-          if (hookRes.ok) {
-            status = "sent";
-            externalId = `n8n-${Date.now()}`;
-          } else {
-            status = "failed";
-            errorMessage = `Webhook respondeu com status ${hookRes.status}`;
-          }
-        } catch (hookErr: any) {
-          status = "failed";
-          errorMessage = `Falha ao alcançar webhook: ${hookErr.message}`;
-        }
-      }
-    }
-
-    // ──────────────────────────────────────────────────────────
-    // 4. PERSISTÊNCIA CANÔNICA NO WORKSPACE DA TAREFA
-    // ──────────────────────────────────────────────────────────
-    const commRecord = recordTaskCommunication(
-      payload.taskId,
-      payload.taskSquad,
-      payload.taskTitle,
-      {
-        channel: payload.channel,
-        recipient: payload.recipient,
-        recipientName: payload.recipientName,
-        subject: payload.subject,
-        messageText: payload.messageText,
-        deliverableId: payload.deliverableId,
-        status,
-        agentId,
-        externalId,
-        error: errorMessage,
-      }
-    );
-
-    // Build user-friendly feedback message
-    let feedback = "";
-    if (payload.channel === "whatsapp") {
-      feedback = status === "sent"
-        ? `WhatsApp enviado com sucesso para ${payload.recipientName || payload.recipient} via Evolution API!`
-        : `WhatsApp registrado com sucesso no workspace (${errorMessage || "Modo simulação auditado"})!`;
-    } else if (payload.channel === "email") {
-      feedback = status === "sent"
-        ? `E-mail executivo disparado com sucesso para ${payload.recipient}!`
-        : `E-mail registrado com sucesso no workspace (${errorMessage || "Modo simulação auditado"})!`;
-    } else {
-      feedback = status === "sent"
-        ? `Webhook disparado com sucesso para o n8n!`
-        : `Webhook registrado com erro: ${errorMessage}`;
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: feedback,
-      communication: commRecord,
-    });
+    return NextResponse.json(result);
   } catch (err: any) {
     console.error("Erro na rota POST /api/agent-kanban/dispatch:", err);
     return NextResponse.json(

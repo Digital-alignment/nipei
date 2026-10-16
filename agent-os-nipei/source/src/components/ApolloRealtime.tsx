@@ -172,6 +172,71 @@ export default function ApolloRealtime({ voice = "ash", onClose }: { voice?: str
       return;
     }
 
+    if (fn === "kanban_generate_deliverable") {
+      let kargs: any = {};
+      try { kargs = JSON.parse(ev.arguments || "{}"); } catch { /* ignore */ }
+      const formatLabel = kargs.format ? kargs.format.replace(/_/g, " ") : "relatório executivo";
+      setLines((l) => [...l, { id: nid(), role: "apollo", text: `📄 Compilando entregável (${formatLabel}) para "${kargs.idOrTitle}"…` }]);
+      try {
+        const res = await fetch("/api/venu/kanban-action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "deliverable", payload: kargs }),
+        }).then((r) => r.json());
+        if (res.success) {
+          setLines((l) => [
+            ...l,
+            {
+              id: nid(),
+              role: "apollo",
+              text: `✅ Entregável compilado com sucesso: "${res.deliverable?.title}" no Nipëi Vault.`,
+            },
+          ]);
+          sendFnResult(ev.call_id, { success: true, deliverable: res.deliverable, message: res.message });
+        } else {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Falha ao compilar entregável: ${res.error}` }]);
+          sendFnResult(ev.call_id, { success: false, error: res.error });
+        }
+      } catch (e: any) {
+        setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Erro: ${e.message}` }]);
+        sendFnResult(ev.call_id, { success: false, error: e.message });
+      }
+      return;
+    }
+
+    if (fn === "kanban_dispatch_message") {
+      let kargs: any = {};
+      try { kargs = JSON.parse(ev.arguments || "{}"); } catch { /* ignore */ }
+      const channel = kargs.channel || "whatsapp";
+      const targetName = kargs.recipientName || kargs.recipient || "destinatário";
+      setLines((l) => [...l, { id: nid(), role: "apollo", text: `📡 Despachando via ${channel} para ${targetName}…` }]);
+      try {
+        const res = await fetch("/api/venu/kanban-action", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "dispatch", payload: kargs }),
+        }).then((r) => r.json());
+        if (res.success) {
+          setLines((l) => [
+            ...l,
+            {
+              id: nid(),
+              role: "apollo",
+              text: `✅ Despacho omnicanal concluído (${res.communication?.channel}): ${res.communication?.status}.`,
+            },
+          ]);
+          sendFnResult(ev.call_id, { success: true, communication: res.communication, message: res.message });
+        } else {
+          setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Falha no despacho: ${res.error}` }]);
+          sendFnResult(ev.call_id, { success: false, error: res.error });
+        }
+      } catch (e: any) {
+        setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚠️ Erro no despacho: ${e.message}` }]);
+        sendFnResult(ev.call_id, { success: false, error: e.message });
+      }
+      return;
+    }
+
     // default: open a website or Mac app
     const target = args.target || "";
     if (target) setLines((l) => [...l, { id: nid(), role: "apollo", text: `⚙️ Opening ${target}…` }]);

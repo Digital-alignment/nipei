@@ -275,76 +275,89 @@ ${citations.map((c) => `- ${c}`).join("\n")}
   return { title, markdown: md };
 }
 
+// Core generation logic exported for direct server-side calls (e.g. from Venu / Kanban Action)
+export async function executeGenerateDeliverable(payload: GenerateDeliverablePayload): Promise<{
+  success: boolean;
+  deliverable?: TaskDeliverable;
+  message?: string;
+  error?: string;
+}> {
+  if (!payload.taskId || !payload.taskTitle) {
+    return {
+      success: false,
+      error: "'taskId' e 'taskTitle' são campos obrigatórios",
+    };
+  }
+
+  const ws = getTaskWorkspace(payload.taskId, payload.taskSquad, payload.taskTitle);
+  const inputsSummary = extractInputAttachmentsSummary(ws);
+
+  // Query vault grounding
+  let groundingContext = "";
+  let citations: string[] = [];
+  try {
+    const ragQuery = `${payload.taskTitle} ${payload.taskSquad || ""} ${payload.taskDescription || ""}`;
+    const ground = queryVaultGrounding(ragQuery, payload.taskSquad || "squad_1_ceo");
+    if (ground && ground.groundedContent) {
+      groundingContext = ground.groundedContent;
+      citations = (ground.citations || []).map(
+        (c) => `🏛️ Nipëi Vault: ${c.title || c.filename} (${c.path})`
+      );
+    }
+  } catch (ragErr) {
+    console.warn("RAG Grounding warning:", ragErr);
+  }
+
+  if (citations.length === 0) {
+    citations = [
+      "🏛️ Nipëi Vault: Contratos de Squads e Governança Operacional",
+      "📄 Diretrizes de Ética e Transparência do Instituto Nipëi",
+    ];
+  }
+
+  // Build format
+  const format = payload.format || "executive_report";
+  const { title, markdown } = buildDeliverableContent(
+    format,
+    payload,
+    groundingContext,
+    citations,
+    inputsSummary
+  );
+
+  // Save to disk
+  const deliverable = saveTaskDeliverableFile(
+    payload.taskId,
+    payload.taskSquad,
+    payload.taskTitle,
+    title,
+    format,
+    markdown,
+    payload.agentId || "@hermes"
+  );
+
+  // Sync frontmatter if vaultPath exists
+  if (payload.vaultPath) {
+    const wsData = getTaskWorkspaceData(payload.taskId, payload.taskSquad, payload.taskTitle);
+    syncTaskFrontmatterWithWorkspace(payload.vaultPath, wsData.attachments, wsData.deliverables);
+  }
+
+  return {
+    success: true,
+    message: `Entregável '${title}' gerado com sucesso pelo agente!`,
+    deliverable,
+  };
+}
+
 // POST: Generate deliverable
 export async function POST(req: NextRequest) {
   try {
     const payload: GenerateDeliverablePayload = await req.json();
-
-    if (!payload.taskId || !payload.taskTitle) {
-      return NextResponse.json(
-        { error: "'taskId' e 'taskTitle' são campos obrigatórios" },
-        { status: 400 }
-      );
+    const result = await executeGenerateDeliverable(payload);
+    if (!result.success) {
+      return NextResponse.json({ error: result.error || "Erro ao gerar entregável" }, { status: 400 });
     }
-
-    const ws = getTaskWorkspace(payload.taskId, payload.taskSquad, payload.taskTitle);
-    const inputsSummary = extractInputAttachmentsSummary(ws);
-
-    // Query vault grounding
-    let groundingContext = "";
-    let citations: string[] = [];
-    try {
-      const ragQuery = `${payload.taskTitle} ${payload.taskSquad || ""} ${payload.taskDescription || ""}`;
-      const ground = queryVaultGrounding(ragQuery, payload.taskSquad || "squad_1_ceo");
-      if (ground && ground.groundedContent) {
-        groundingContext = ground.groundedContent;
-        citations = (ground.citations || []).map(
-          (c) => `🏛️ Nipëi Vault: ${c.title || c.filename} (${c.path})`
-        );
-      }
-    } catch (ragErr) {
-      console.warn("RAG Grounding warning:", ragErr);
-    }
-
-    if (citations.length === 0) {
-      citations = [
-        "🏛️ Nipëi Vault: Contratos de Squads e Governança Operacional",
-        "📄 Diretrizes de Ética e Transparência do Instituto Nipëi",
-      ];
-    }
-
-    // Build format
-    const format = payload.format || "executive_report";
-    const { title, markdown } = buildDeliverableContent(
-      format,
-      payload,
-      groundingContext,
-      citations,
-      inputsSummary
-    );
-
-    // Save to disk
-    const deliverable = saveTaskDeliverableFile(
-      payload.taskId,
-      payload.taskSquad,
-      payload.taskTitle,
-      title,
-      format,
-      markdown,
-      payload.agentId || "@hermes"
-    );
-
-    // Sync frontmatter if vaultPath exists
-    if (payload.vaultPath) {
-      const wsData = getTaskWorkspaceData(payload.taskId, payload.taskSquad, payload.taskTitle);
-      syncTaskFrontmatterWithWorkspace(payload.vaultPath, wsData.attachments, wsData.deliverables);
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Entregável '${title}' gerado com sucesso pelo agente!`,
-      deliverable,
-    });
+    return NextResponse.json(result);
   } catch (err: any) {
     console.error("Erro na rota POST /api/agent-kanban/deliverables:", err);
     return NextResponse.json({ error: err.message || "Erro ao gerar entregável" }, { status: 500 });

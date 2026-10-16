@@ -23,7 +23,11 @@ import {
   createKanbanTaskDirect,
   updateKanbanTaskDirect,
   assignKanbanTaskDirect,
+  getLiveKanbanTasks,
+  searchKanbanTasks,
 } from "@/lib/kanbanGrounding";
+import { executeGenerateDeliverable } from "@/app/api/agent-kanban/deliverables/route";
+import { executeDispatchCommunication } from "@/app/api/agent-kanban/dispatch/route";
 
 const HOME = os.homedir();
 
@@ -159,9 +163,15 @@ const AUTO_PERSONA =
   "4. To ASSIGN agents or a person to a task (when I say e.g. 'asigna a Hermes a la tarea X'): " +
   "first line `KANBAN_ASSIGN: {\"idOrTitle\": \"...\", \"agents\": [\"hermes\"]}` and second line: " +
   "one short in-character confirmation (e.g. \"Assigned @hermes to the task, sir.\").\n" +
-  "5. For a genuinely multi-step task or real file/shell/computer work beyond just opening or managing tasks: " +
+  "5. To GENERATE A DELIVERABLE or document for a task (when I say e.g. 'gera um relatório executivo para a tarefa X', 'elabora o brief técnico da tarefa Y', 'generate slides for task Z'): " +
+  "first line `KANBAN_DELIVERABLE: {\"idOrTitle\": \"...\", \"format\": \"executive_report\", \"instructions\": \"...\"}` and second line: " +
+  "one short in-character confirmation (e.g. \"Drafted the deliverable for the task, sir.\").\n" +
+  "6. To DISPATCH A MESSAGE or notify via WhatsApp/Email/Webhook (when I say e.g. 'envia um whatsapp para 5511... avisando da tarefa X', 'notifica por email sobre a tarefa Y'): " +
+  "first line `KANBAN_DISPATCH: {\"idOrTitle\": \"...\", \"channel\": \"whatsapp\", \"recipient\": \"...\", \"messageText\": \"...\"}` and second line: " +
+  "one short in-character confirmation (e.g. \"Dispatched the notification, sir.\").\n" +
+  "7. For a genuinely multi-step task or real file/shell/computer work beyond just opening or managing tasks: " +
   "respond with EXACTLY `AGENT: <the task restated in one line>` and nothing else.\n" +
-  "6. Otherwise (questions, chat, kanban queries): just answer in ONE or TWO short, in-character sentences with exact facts from the Kanban context — no prefix.\n" +
+  "8. Otherwise (questions, chat, kanban queries): just answer in ONE or TWO short, in-character sentences with exact facts from the Kanban context — no prefix.\n" +
   "CRITICAL: Output ONLY the chosen form. NEVER show your reasoning, planning, analysis, or deliberation. " +
   "No \"the user is asking\", no \"let me think/reconsider\", no \"Actually,\", no listing options. Just the final reply.";
 
@@ -391,6 +401,95 @@ async function auto(prompt: string, history: ApolloMsg[]): Promise<ApolloResult>
         text: res.success ? (confirm || `Assigned to "${res.task?.title}", sir.`) : `Could not assign task: ${res.error}`,
       };
     } catch { /* fallback to normal reply */ }
+  }
+
+  // Direct Kanban Deliverable Action
+  const kanbanDeliverableM = text.match(/^KANBAN_DELIVERABLE:\s*(\{.*\})/im);
+  if (kanbanDeliverableM) {
+    try {
+      const opts = JSON.parse(kanbanDeliverableM[1]);
+      const tasks = getLiveKanbanTasks();
+      const idOrTitle = opts.idOrTitle || opts.taskId || opts.taskTitle || "";
+      const search = String(idOrTitle).toLowerCase().trim();
+      const found =
+        tasks.find((t) => t.id.toLowerCase() === search) ||
+        tasks.find((t) => t.title.toLowerCase().includes(search)) ||
+        searchKanbanTasks(idOrTitle, 1)[0];
+
+      if (found) {
+        const res = await executeGenerateDeliverable({
+          taskId: found.id,
+          taskTitle: found.title,
+          taskSquad: found.squad,
+          taskDescription: found.description,
+          taskPriority: found.priority,
+          taskAssignee: found.assignee,
+          format: opts.format || "executive_report",
+          customInstructions: opts.instructions || opts.customInstructions,
+          agentId: opts.agentId || "@apollo",
+          vaultPath: found.vaultPath,
+        });
+        const confirm = text.split("\n").map((l) => l.trim()).find((l) => l && !/^KANBAN_DELIVERABLE:/i.test(l));
+        return {
+          ok: true,
+          mode: "auto",
+          ms: Date.now() - started,
+          text: res.success
+            ? (confirm || `Generated deliverable "${res.deliverable?.title}" for ${found.title}, sir.`)
+            : `Could not generate deliverable: ${res.error}`,
+        };
+      }
+    } catch { /* fallback */ }
+  }
+
+  // Direct Kanban Dispatch Action
+  const kanbanDispatchM = text.match(/^KANBAN_DISPATCH:\s*(\{.*\})/im);
+  if (kanbanDispatchM) {
+    try {
+      const opts = JSON.parse(kanbanDispatchM[1]);
+      const tasks = getLiveKanbanTasks();
+      const idOrTitle = opts.idOrTitle || opts.taskId || opts.taskTitle || "";
+      const search = String(idOrTitle).toLowerCase().trim();
+      const found =
+        tasks.find((t) => t.id.toLowerCase() === search) ||
+        tasks.find((t) => t.title.toLowerCase().includes(search)) ||
+        searchKanbanTasks(idOrTitle, 1)[0];
+
+      if (found) {
+        const channel = opts.channel || "whatsapp";
+        let recipient = opts.recipient;
+        if (!recipient) {
+          if (channel === "whatsapp") recipient = "5511999999999";
+          else if (channel === "email") recipient = "lideranca@nipei.org";
+          else recipient = "https://n8n.digital-alignment.com/webhook/test";
+        }
+        const messageText =
+          opts.messageText ||
+          `[Nipëi OS] Atualização da Tarefa [${found.id}] "${found.title}": Status "${found.columnStatus}".`;
+        const res = await executeDispatchCommunication({
+          taskId: found.id,
+          taskTitle: found.title,
+          taskSquad: found.squad,
+          channel,
+          recipient,
+          recipientName: opts.recipientName || found.assignee || "Responsável Squad",
+          subject: opts.subject,
+          messageText,
+          deliverableId: opts.deliverableId,
+          agentId: opts.agentId || "@apollo",
+          simulate: opts.simulate !== undefined ? opts.simulate : false,
+        });
+        const confirm = text.split("\n").map((l) => l.trim()).find((l) => l && !/^KANBAN_DISPATCH:/i.test(l));
+        return {
+          ok: true,
+          mode: "auto",
+          ms: Date.now() - started,
+          text: res.success
+            ? (confirm || `Dispatched notification via ${channel} for ${found.title}, sir.`)
+            : `Could not dispatch: ${res.error}`,
+        };
+      }
+    } catch { /* fallback */ }
   }
 
   const agentM = text.match(/^AGENT:\s*(.+)$/im);
