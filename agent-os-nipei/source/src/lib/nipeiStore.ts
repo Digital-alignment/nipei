@@ -238,7 +238,7 @@ export interface DREEntry {
   whatsappLogged?: boolean;
 }
 
-export type KanbanColumnId = "triage" | "todo" | "in_progress" | "agent_executing" | "review" | "done";
+export type KanbanColumnId = "triage" | "todo" | "in_progress" | "agent_executing" | "review" | "done" | "archived";
 
 export interface TaskComment {
   id: string;

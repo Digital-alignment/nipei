@@ -91,8 +91,12 @@ export async function GET() {
           // Map status to Kanban column
           let column = "todo";
           const sLower = statusRaw.toLowerCase();
-          if (sLower.includes("conclu") || sLower.includes("done")) {
+          if (sLower.includes("arquiv") || sLower.includes("archiv")) {
+            column = "archived";
+          } else if (sLower.includes("conclu") || sLower.includes("done")) {
             column = "done";
+          } else if (sLower.includes("agente") || sLower.includes("ia") || sLower.includes("execut")) {
+            column = "agent_executing";
           } else if (sLower.includes("andamento") || sLower.includes("fazendo") || sLower.includes("progress")) {
             column = "in_progress";
           } else if (sLower.includes("bloque") || sLower.includes("revis") || sLower.includes("veto")) {
@@ -300,9 +304,11 @@ export async function PATCH(req: Request) {
       // Update status in frontmatter if moving columns
       if (column) {
         let newStatus = "A fazer";
-        if (column === "done") newStatus = "Concluído";
+        if (column === "archived") newStatus = "Arquivado";
+        else if (column === "done") newStatus = "Concluído";
+        else if (column === "agent_executing") newStatus = "IA em Execução";
         else if (column === "in_progress") newStatus = "Em andamento";
-        else if (column === "review") newStatus = "Bloqueado";
+        else if (column === "review") newStatus = "Revisão / Bloqueado";
         else if (column === "triage" || column === "todo") newStatus = "A fazer";
 
         if (content.includes("status:")) {
@@ -317,6 +323,9 @@ export async function PATCH(req: Request) {
       if (status === "done" && !content.includes("RESUELTO_Y_VERIFICADO")) {
         content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "Concluído"`);
         content += `\n- **Estado**: 🟢 Concluído e verificado via Nipëi OS (${new Date().toLocaleString()})\n`;
+      } else if (status === "archived") {
+        content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "Arquivado"`);
+        content += `\n- **Estado**: 📦 Arquivado no histórico Nipëi OS (${new Date().toLocaleString()})\n`;
       }
 
       fs.writeFileSync(fullPath, content, "utf-8");
