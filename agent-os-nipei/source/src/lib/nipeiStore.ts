@@ -65,6 +65,8 @@ export interface AIAgentConfig {
 export interface MemberProfile {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
   nativeName?: string;
   avatar: string;
   type: MemberType;
@@ -285,6 +287,24 @@ export interface TaskDeliverable {
   version: number;
 }
 
+export type CommunicationChannel = "whatsapp" | "email" | "webhook_n8n";
+export type CommunicationStatus = "sent" | "delivered" | "failed" | "simulated" | "draft";
+
+export interface TaskCommunication {
+  id: string;
+  channel: CommunicationChannel;
+  recipient: string;          // Telefone ou E-mail ou URL
+  recipientName?: string;
+  subject?: string;          // Para e-mails
+  messageText: string;
+  deliverableId?: string;    // ID de entregável anexado (relatório/slides)
+  status: CommunicationStatus;
+  agentId: string;           // "@hermes" | "@antigravity"
+  timestamp: string;
+  externalId?: string;       // ID na Evolution API ou ID de e-mail
+  error?: string;
+}
+
 export interface GlobalTask {
   id: string;
   title: string;
@@ -302,6 +322,7 @@ export interface GlobalTask {
   checklist?: TaskChecklistItem[];
   attachments?: TaskAttachment[];
   deliverables?: TaskDeliverable[];
+  communications?: TaskCommunication[];
   vaultPath?: string;
 }
 

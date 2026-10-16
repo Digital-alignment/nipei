@@ -19,6 +19,7 @@ import KanbanCalendarView from "./KanbanCalendarView";
 import TaskAgentBox from "./TaskAgentBox";
 import TaskAttachmentsHub from "./TaskAttachmentsHub";
 import TaskDeliverablesViewer from "./TaskDeliverablesViewer";
+import TaskDispatchHub from "./TaskDispatchHub";
 import { useCompany } from "@/context/CompanyContext";
 import {
   INITIAL_TASKS, INITIAL_SQUADS, INITIAL_MEMBERS, SQUADS, type GlobalTask, type SquadId, type KanbanColumnId,
@@ -300,7 +301,7 @@ export default function SquadKanbanView() {
 
   // Detail & Edit Panel State
   const [detailTask, setDetailTask] = useState<GlobalTask | null>(null);
-  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult" | "attachments" | "deliverables">("edit");
+  const [detailTab, setDetailTab] = useState<"edit" | "checklist" | "comments" | "logs" | "ai_consult" | "attachments" | "deliverables" | "dispatch">("edit");
   const [descViewMode, setDescViewMode] = useState<"preview" | "edit">("preview");
   const [activeCardConsultId, setActiveCardConsultId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
@@ -334,6 +335,7 @@ export default function SquadKanbanView() {
             ...prev,
             attachments: data.attachments || prev.attachments || [],
             deliverables: data.deliverables || prev.deliverables || [],
+            communications: data.communications || prev.communications || [],
           };
         });
         setTasks((prevTasks) =>
@@ -343,6 +345,7 @@ export default function SquadKanbanView() {
                   ...t,
                   attachments: data.attachments || t.attachments || [],
                   deliverables: data.deliverables || t.deliverables || [],
+                  communications: data.communications || t.communications || [],
                 }
               : t
           )
@@ -1588,6 +1591,15 @@ export default function SquadKanbanView() {
                                 <Presentation size={10} className="text-[#38bdf8]" /> {task.deliverables.length}
                               </span>
                             )}
+
+                            {task.communications && task.communications.length > 0 && (
+                              <span
+                                className="px-1.5 py-0.5 rounded bg-[#1c0f2b] text-[#d8b4fe] border border-[#7e22ce]/40 text-[9px] font-mono font-bold flex items-center gap-1 shadow-sm"
+                                title={`${task.communications.length} comunicações despachadas`}
+                              >
+                                <Send size={10} className="text-[#c084fc]" /> {task.communications.length}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -1967,6 +1979,17 @@ export default function SquadKanbanView() {
                     >
                       <Presentation size={13} className={detailTask.deliverables && detailTask.deliverables.length > 0 ? "text-[#38bdf8]" : ""} /> Entregáveis IA ({detailTask.deliverables?.length || 0})
                     </button>
+
+                    <button
+                      onClick={() => setDetailTab("dispatch")}
+                      className={`px-3 py-2 text-xs font-mono font-bold border-b-2 transition flex items-center gap-1.5 shrink-0 ${
+                        detailTab === "dispatch"
+                          ? "border-[#c084fc] text-[#c084fc] bg-[#1a0f2b]"
+                          : "border-transparent text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <Send size={13} className={detailTask.communications && detailTask.communications.length > 0 ? "text-[#c084fc]" : ""} /> Despacho & Alertas ({detailTask.communications?.length || 0})
+                    </button>
                   </div>
 
                   {/* Tab Panels Container */}
@@ -2342,6 +2365,15 @@ export default function SquadKanbanView() {
                     {detailTab === "deliverables" && (
                       <TaskDeliverablesViewer
                         task={detailTask}
+                        onUpdateTask={(updated) => syncTaskUpdate(updated)}
+                      />
+                    )}
+
+                    {/* TAB 8: DISPATCH HUB (WHATSAPP, EMAIL & WEBHOOKS) */}
+                    {detailTab === "dispatch" && (
+                      <TaskDispatchHub
+                        task={detailTask}
+                        members={members}
                         onUpdateTask={(updated) => syncTaskUpdate(updated)}
                       />
                     )}

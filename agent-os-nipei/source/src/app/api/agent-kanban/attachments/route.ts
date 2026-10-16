@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
         taskId,
         attachments: data.attachments,
         deliverables: data.deliverables,
+        communications: data.communications,
         workspacePath: data.workspacePath,
       });
     }

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { defaultVault } from "./config";
-import type { TaskAttachment, TaskDeliverable, AttachmentType, DeliverableFormat, SquadId } from "./nipeiStore";
+import type { TaskAttachment, TaskDeliverable, TaskCommunication, AttachmentType, DeliverableFormat, SquadId } from "./nipeiStore";
 
 export interface TaskWorkspaceInfo {
   relativeRoot: string;
@@ -156,6 +156,7 @@ interface WorkspaceMetaStore {
   updatedAt: string;
   attachments: TaskAttachment[];
   deliverables: TaskDeliverable[];
+  communications?: TaskCommunication[];
 }
 
 function readMetaStore(metaFilePath: string, taskId: string, squadId?: string, taskTitle?: string): WorkspaceMetaStore {
@@ -170,6 +171,7 @@ function readMetaStore(metaFilePath: string, taskId: string, squadId?: string, t
         updatedAt: new Date().toISOString(),
         attachments: Array.isArray(data.attachments) ? data.attachments : [],
         deliverables: Array.isArray(data.deliverables) ? data.deliverables : [],
+        communications: Array.isArray(data.communications) ? data.communications : [],
       };
     } catch {
       /* ignore and create fresh */
@@ -183,6 +185,7 @@ function readMetaStore(metaFilePath: string, taskId: string, squadId?: string, t
     updatedAt: new Date().toISOString(),
     attachments: [],
     deliverables: [],
+    communications: [],
   };
 }
 
@@ -311,12 +314,34 @@ export function saveTaskDeliverableFile(
   return deliverable;
 }
 
-// Load workspace items (attachments & deliverables) for a task
+// Record an outbound communication (WhatsApp, Email, Webhook)
+export function recordTaskCommunication(
+  taskId: string,
+  squadId: string | undefined,
+  taskTitle: string | undefined,
+  comm: Omit<TaskCommunication, "id" | "timestamp">
+): TaskCommunication {
+  const ws = getTaskWorkspace(taskId, squadId, taskTitle);
+  const commId = `comm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+  const fullComm: TaskCommunication = {
+    ...comm,
+    id: commId,
+    timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+  };
+
+  const store = readMetaStore(ws.metaFilePath, taskId, squadId, taskTitle);
+  store.communications = [fullComm, ...(store.communications || []).filter((c) => c.id !== commId)];
+  writeMetaStore(ws.metaFilePath, store);
+
+  return fullComm;
+}
+
+// Load workspace items (attachments & deliverables & communications) for a task
 export function getTaskWorkspaceData(
   taskId: string,
   squadId?: string,
   taskTitle?: string
-): { attachments: TaskAttachment[]; deliverables: TaskDeliverable[]; workspacePath: string } {
+): { attachments: TaskAttachment[]; deliverables: TaskDeliverable[]; communications: TaskCommunication[]; workspacePath: string } {
   const ws = getTaskWorkspace(taskId, squadId, taskTitle);
   const store = readMetaStore(ws.metaFilePath, taskId, squadId, taskTitle);
 
@@ -350,6 +375,7 @@ export function getTaskWorkspaceData(
   return {
     attachments: store.attachments,
     deliverables: store.deliverables,
+    communications: store.communications || [],
     workspacePath: ws.relativeRoot,
   };
 }
