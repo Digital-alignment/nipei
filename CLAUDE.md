@@ -121,7 +121,9 @@ ssh -i C:\Users\ondig\.ssh\nipei_vps -o BatchMode=yes root@85.31.61.100 "docker 
 2. **Separação de Código e Vault:**
    - O código-fonte vive estritamente em `C:\Users\ondig\Code\Nipei\nipei-control`.
    - O código **nunca** deve ser clonado ou movido para `Desktop\DA\` (pasta sincronizada pelo Google Drive).
-3. **Registro no Vault Comercial:**
-   - Se alterar regras de negócio ou completar marcos importantes, atualize também a nota viva em `C:\Users\ondig\Desktop\DA\digitalalignment\Productos\Nipei OS.md` seguindo o contrato frontmatter e o comentário `<!-- agente: claude -->` ou `<!-- agente: antigravity -->`.
+3. **Registro no Vault Comercial (Dualidade Canônica Nipëi OS vs Nipeihu):**
+   - **`Productos\Nipei OS.md`** é a **nota viva do PRODUTO DE SOFTWARE** (`tipo: producto_propio`, `rubro: producto_saas`). Mapeia este repositório (`repo_local: C:\Users\ondig\Code\Nipei\nipei-control\agent-os-nipei\source`), o stack tecnológico e o roadmap da plataforma.
+   - **`Clientes\Nipeihu.md`** é a **nota viva da EMPRESA CLIENTE / COMUNIDADE** (`tipo: cliente_externo`). Mapeia o Santuário Yawanawá em Serra Grande, dietas Samakey, portal e parcerias institucionais, tendo o Nipëi OS como um dos projetos centrais de seu ecossistema.
+   - Ambas as notas devem ser mantidas sincronizadas em grandes marcos de engenharia (como Fases 1 a 5 do Kanban/Venu), sempre validando com `npm run vault:check` a partir de `Code\DA\command-center`.
 4. **Idioma da UI:**
    - Português (pt-BR) para textos de interface, logs executivos e títulos do Kanban.
