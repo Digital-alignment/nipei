@@ -1,6 +1,6 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { listNotes, VAULT_ROOT } from "./vault";
+import { listNotes, VAULT_ROOT, isRawUpload } from "./vault";
 import { getAllIndexedDocuments } from "./vaultIndex";
 
 // Build a knowledge-graph from the vault: nodes = notes, links = [[wikilinks]].
@@ -68,6 +68,7 @@ async function buildBaseGraph(): Promise<BaseGraph> {
   await Promise.all(
     files.map(async (abs) => {
       const rel = path.relative(VAULT_ROOT, abs).replace(/\\/g, "/");
+      if (isRawUpload(rel)) return;
       const head = rel.split("/")[0] || "root";
       let mtime = 0;
       try {
@@ -93,19 +94,17 @@ async function buildBaseGraph(): Promise<BaseGraph> {
   const byTitle = new Map<string, string>();
   for (const m of meta.values()) if (!byTitle.has(m.title.toLowerCase())) byTitle.set(m.title.toLowerCase(), m.rel);
 
-  // Looser index for frontmatter references: canonical filenames, then id/title/name, then Raw_Uploads copies last.
+  // Looser index for frontmatter references: canonical filenames, then id/title/name.
   const byKey = new Map<string, string>();
   const addKey = (k: string, rel: string) => {
     const s = slug(k);
     if (s && !byKey.has(s)) byKey.set(s, rel);
   };
-  const isRaw = (rel: string) => rel.startsWith("Raw_Uploads/");
-  for (const m of meta.values()) if (!isRaw(m.rel)) addKey(m.title, m.rel);
+  for (const m of meta.values()) addKey(m.title, m.rel);
   for (const [rel, c] of contents) {
     const fm = frontmatter(c);
     for (const k of ["id", "title", "name"]) if (fm[k]) addKey(fm[k], rel);
   }
-  for (const m of meta.values()) if (isRaw(m.rel)) addKey(m.title, m.rel);
   // squad_id "Squad_01_CEO" / squad "squad_1_ceo" → Squads/squad_1_*.md
   const squadByNum = new Map<string, string>();
   for (const rel of meta.keys()) {
@@ -150,11 +149,6 @@ async function buildBaseGraph(): Promise<BaseGraph> {
       }
       const targetRel = path.posix.normalize(path.posix.join(path.posix.dirname(rel), p));
       if (meta.has(targetRel)) addLink(rel, targetRel);
-    }
-    // A Notion raw export of a page that was later normalized into the vault → link to the normalized note.
-    if (isRaw(rel)) {
-      const canonical = byKey.get(slug(meta.get(rel)!.title));
-      if (canonical) addLink(rel, canonical);
     }
   }
 

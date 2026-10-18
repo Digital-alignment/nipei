@@ -185,7 +185,7 @@ export default function NipeiBrainView({ squadId = "super_user", nucleus = "come
                     <div className="space-y-1">
                       <div className="text-xs font-bold text-white">{task.title}</div>
                       <div className="text-[10px] text-[#a7f3d0] font-mono">
-                        {task.assignee} · {task.squad} · Prazo: {task.dueDate}
+                        {task.assignee || "Sem responsável"} · {task.squad} · Prazo: {task.dueDate || "sem prazo"}
                       </div>
                     </div>
 

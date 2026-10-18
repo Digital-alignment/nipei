@@ -1,7 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import { listNotes, safeJoin, NoteHit, VAULT_ROOT } from "./vault";
+import { listNotes, safeJoin, NoteHit, VAULT_ROOT, isRawUpload } from "./vault";
 import { isWithinNipeiDomain } from "./nipeiDomainGuard";
 
 export interface VaultIndexedDocument {
@@ -156,6 +156,7 @@ export async function ensureVaultIndex(force = false): Promise<number> {
       files.map(async (absFile) => {
         if (!isWithinNipeiDomain(absFile)) return;
         const relPath = path.relative(VAULT_ROOT, absFile).replace(/\\/g, "/");
+        if (isRawUpload(relPath)) return;
         currentRelPaths.add(relPath);
         await indexSingleDocument(absFile);
       })
@@ -180,7 +181,7 @@ export async function ensureVaultIndex(force = false): Promise<number> {
  */
 export function updateInMemoryIndex(relPath: string, content: string, mtime: number) {
   const absFile = safeJoin(relPath);
-  if (!absFile) return;
+  if (!absFile || isRawUpload(relPath)) return;
 
   const normalizedRel = relPath.replace(/\\/g, "/");
   const { frontmatter, body } = parseFrontmatter(content);

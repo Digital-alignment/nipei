@@ -7,6 +7,10 @@ export const ADDITIONAL_VAULT_ROOT = "";
 export const OMI_PATH = VAULT_ROOT ? path.join(VAULT_ROOT, "Omi/Memories.md") : "";
 export const VAULT_AVAILABLE = Boolean(VAULT_ROOT);
 
+// Raw imports (e.g. Notion exports) are kept on disk for provenance but stay out of search and the
+// graph: 281 of 282 already have a normalized copy elsewhere in the vault.
+export const isRawUpload = (relPath: string) => relPath.split(path.sep).join("/").startsWith("Raw_Uploads/");
+
 const SKIP_DIRS = new Set([".obsidian", ".trash", "node_modules", ".git", "Archive_Deprecados", "Ingestion_Inbox"]);
 
 import { isWithinNipeiDomain } from "./nipeiDomainGuard";

@@ -32,6 +32,26 @@ function loadProjectToSquadMap(vaultRoot: string): Record<string, string> {
   return map;
 }
 
+const MONTHS: Record<string, number> = {
+  enero: 1, janeiro: 1, febrero: 2, fevereiro: 2, marzo: 3, "março": 3, marco: 3, abril: 4, mayo: 5, maio: 5,
+  junio: 6, junho: 6, julio: 7, julho: 7, agosto: 8, septiembre: 9, setiembre: 9, setembro: 9,
+  octubre: 10, outubro: 10, noviembre: 11, novembro: 11, diciembre: 12, dezembro: 12,
+};
+
+/**
+ * Normalizes a task deadline to YYYY-MM-DD. Notion exports store "8 de junio de 2026";
+ * the UI (overdue badges, calendar, sorting) only understands ISO dates.
+ * Returns the raw text when it can't be parsed, "" when absent.
+ */
+export function normalizeDueDate(raw: string): string {
+  const v = raw.trim();
+  if (!v || /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  const m = v.toLowerCase().match(/^(\d{1,2})\s+de\s+([a-zç]+)(?:\s+de)?\s+(\d{4})/);
+  const month = m && MONTHS[m[2]];
+  if (!m || !month) return v;
+  return `${m[3]}-${String(month).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+}
+
 /**
  * Parses the `agents:` frontmatter line of a task note, e.g. `agents: ["claude", "hermes"]`.
  * Returns null when the task has no explicit assignment.
@@ -86,8 +106,9 @@ export function getLiveKanbanTasks(): GlobalTask[] {
           const statusRaw = statusMatch ? statusMatch[1].trim() : "A fazer";
           const priorityRaw = priorityMatch ? priorityMatch[1].trim().toLowerCase() : "media";
           const projectName = projectMatch ? projectMatch[1].trim() : "Geral Nipëi OS";
-          const responsible = responsibleMatch && responsibleMatch[1].trim() ? responsibleMatch[1].trim() : "Time Liderança";
-          const dueDate = prazoMatch && prazoMatch[1].trim() ? prazoMatch[1].trim() : "2026-10-30";
+          // No fallbacks: an empty owner/deadline is shown as such, never invented
+          const responsible = responsibleMatch ? responsibleMatch[1].trim() : "";
+          const dueDate = prazoMatch ? normalizeDueDate(prazoMatch[1]) : "";
           const fileSquad = squadMatch ? squadMatch[1].trim() : null;
 
           // Normalize priority
@@ -174,10 +195,8 @@ export function getLiveKanbanTasks(): GlobalTask[] {
         else if (filename.includes("squad_05")) squad = "squad_6_infra";
         else if (filename.includes("squad_07")) squad = "squad_7_instituto";
 
-        let column: KanbanColumnId = "triage";
         const isResolved = content.includes("RESUELTO_Y_VERIFICADO") || content.includes("[x]");
-        if (isResolved) column = "done";
-        else if (index % 6 === 0) column = "in_progress";
+        const column: KanbanColumnId = isResolved ? "done" : "triage";
 
         tasks.push({
           id: `VAC-${(index + 1).toString().padStart(3, "0")}`,
@@ -186,9 +205,9 @@ export function getLiveKanbanTasks(): GlobalTask[] {
           squad,
           columnStatus: column,
           status: isResolved ? "concluido" : "pendente",
-          assignee: "Vaultkeeper AI",
+          assignee: "",
           priority: "alta",
-          dueDate: "2026-10-31",
+          dueDate: "",
           assignedAgents: ["antigravity", "hermes"],
           vaultPath: `Todo_Audit_Lists/${filename}`,
           description: content.slice(0, 200) || "Auditoria de integridade e vacíos de informação.",
@@ -326,7 +345,7 @@ export function formatKanbanGroundingForPrompt(userQuery?: string): string {
     if (urgent.length > 0) {
       context += `**Tarefas Críticas Imediatas**:\n`;
       for (const t of urgent) {
-        context += `- [${t.id}] **${t.title}** (${t.squad} | ${t.priority.toUpperCase()} | Coluna: \`${t.columnStatus}\` | Resp: ${t.assignee})\n`;
+        context += `- [${t.id}] **${t.title}** (${t.squad} | ${t.priority.toUpperCase()} | Coluna: \`${t.columnStatus}\` | Resp: ${t.assignee || "sem responsável"})\n`;
       }
       context += "\n";
     }
@@ -336,7 +355,7 @@ export function formatKanbanGroundingForPrompt(userQuery?: string): string {
       if (matches.length > 0) {
         context += `**Tarefas Correspondentes à Consulta do Usuário ("${userQuery.trim()}")**:\n`;
         for (const m of matches) {
-          context += `- **${m.id}**: "${m.title}" | Squad: ${m.squad} | Status: \`${m.columnStatus}\` | Prioridade: ${m.priority} | Prazo: ${m.dueDate} | Resp: ${m.assignee}\n`;
+          context += `- **${m.id}**: "${m.title}" | Squad: ${m.squad} | Status: \`${m.columnStatus}\` | Prioridade: ${m.priority} | Prazo: ${m.dueDate || "sem prazo"} | Resp: ${m.assignee || "sem responsável"}\n`;
           if (m.description && m.description.length > 10) {
             context += `  > Resumo: ${m.description.slice(0, 160)}...\n`;
           }
@@ -378,7 +397,7 @@ export function createKanbanTaskDirect(opts: CreateTaskOptions): { success: bool
   const squad = (opts.squad || "squad_1_ceo") as SquadId;
   const priority = opts.priority || "alta";
   const assignedAgents = opts.assignedAgents || ["antigravity", "hermes"];
-  const assignee = opts.assignee || "Time Liderança";
+  const assignee = opts.assignee || "";
 
   const content = `---
 id: "${taskId}"
@@ -388,7 +407,8 @@ status: "A fazer"
 priority: "${priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : "Média"}"
 project: "${projectName}"
 squad: "${squad}"
-tags:
+agents: [${assignedAgents.map((a) => JSON.stringify(a.replace(/^@/, ""))).join(", ")}]
+${assignee ? `responsible: "${assignee}"\n` : ""}tags:
   - tarefa
   - nipei-os
   - status-a-fazer
@@ -408,7 +428,7 @@ updated_at: "${new Date().toISOString()}"
 ## 👥 Responsáveis & Time Vinculado
 - Squad: \`${squad}\`
 - Agentes: ${assignedAgents.map((a) => (a.startsWith("@") ? a : `@${a}`)).join(", ")}
-- Responsável: ${assignee}
+- Responsável: ${assignee || "—"}
 
 ## 📌 Descrição & Notas
 ${opts.description || "Criada por comando vocal/executivo em Venu."}
@@ -425,7 +445,7 @@ ${opts.description || "Criada por comando vocal/executivo em Venu."}
     status: "pendente",
     assignee,
     priority,
-    dueDate: "2026-10-30",
+    dueDate: "",
     assignedAgents,
     vaultPath: `Productivity/Tarefas/${filename}`,
     description: opts.description,

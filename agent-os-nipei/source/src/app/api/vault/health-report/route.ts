@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { NIPEI_VAULT_ROOT } from "@/lib/nipeiDomainGuard";
 
 export const dynamic = "force-dynamic";
-
-const NIPEI_VAULT_ROOT = "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,7 +56,7 @@ agent: "auditor-ingesta"
 
 # 📊 Reporte Ejecutivo de Salud del Vault — Nipëi OS
 - **Fecha de Generación**: ${new Date().toLocaleString("es-ES")}
-- **Ruta del Vault**: \`C:\\Users\\ondig\\Code\\Nipei\\nipei-vault\`
+- **Ruta del Vault**: \`${NIPEI_VAULT_ROOT}\`
 - **Índice de Salud y Cobertura**: **${healthPercentage}% Cobertura**
 
 ---
