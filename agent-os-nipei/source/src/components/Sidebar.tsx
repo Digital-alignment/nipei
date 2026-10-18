@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import AgentAvatar from "./AgentAvatar";
+import pkg from "../../package.json";
 
 interface SubNavItem {
   href: string;
@@ -233,7 +234,7 @@ export default function Sidebar() {
         {!collapsed && (
           <Link href="/" className="block min-w-0">
             <div className="text-[10px] uppercase tracking-[0.25em] mb-0.5" style={{ color: "var(--cream-mute)", fontFamily: "'Manrope', sans-serif", fontWeight: 600 }}>
-              Nipëi OS
+              Nipëi OS <span className="normal-case tracking-normal text-[8px] opacity-60" style={{ fontFamily: "'Space Mono', monospace" }}>v{pkg.version}</span>
             </div>
             <div className="text-base tracking-tight font-bold text-white truncate">
               Mission Control
