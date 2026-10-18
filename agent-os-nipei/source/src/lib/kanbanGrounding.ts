@@ -33,6 +33,26 @@ function loadProjectToSquadMap(vaultRoot: string): Record<string, string> {
 }
 
 /**
+ * Parses the `agents:` frontmatter line of a task note, e.g. `agents: ["claude", "hermes"]`.
+ * Returns null when the task has no explicit assignment.
+ */
+export function parseAgentsFrontmatter(content: string): string[] | null {
+  const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const line = fm?.[1].match(/^agents:\s*(.+)$/m);
+  if (!line) return null;
+  const agents = line[1].replace(/[\[\]"']/g, "").split(",").map((a) => a.trim()).filter(Boolean);
+  return agents.length ? agents : null;
+}
+
+/** Writes (or replaces) the `agents:` frontmatter line of a task note. */
+export function setAgentsFrontmatter(content: string, agents: string[]): string {
+  const line = `agents: [${agents.map((a) => JSON.stringify(a)).join(", ")}]`;
+  return content.replace(/^---\r?\n([\s\S]*?)\r?\n---/, (block, fm: string) =>
+    /^agents:.*$/m.test(fm) ? block.replace(/^agents:.*$/m, line) : block.replace(/\r?\n---$/, `\n${line}\n---`)
+  );
+}
+
+/**
  * Reads all live tasks from the Vault (Productivity/Tarefas and Todo_Audit_Lists)
  */
 export function getLiveKanbanTasks(): GlobalTask[] {
@@ -97,12 +117,12 @@ export function getLiveKanbanTasks(): GlobalTask[] {
 
           const squad = (fileSquad || projectToSquad[projectName.toLowerCase()] || "squad_1_ceo") as SquadId;
 
-          // Assigned Agents default mapping
-          let assignedAgents = ["antigravity", "hermes"];
-          if (squad === "squad_2_mutum") assignedAgents = ["openclaw", "hermes"];
-          else if (squad === "squad_4_vendas_mkt") assignedAgents = ["claude", "antigravity"];
-          else if (squad === "squad_5_adm_legal") assignedAgents = ["antigravity", "hermes"];
-          else if (squad === "squad_6_infra") assignedAgents = ["claude", "antigravity"];
+          // Assigned agents: frontmatter `agents:` wins, else squad default mapping
+          const assignedAgents =
+            parseAgentsFrontmatter(content) ??
+            (squad === "squad_2_mutum" ? ["openclaw", "hermes"]
+              : squad === "squad_4_vendas_mkt" || squad === "squad_6_infra" ? ["claude", "antigravity"]
+              : ["antigravity", "hermes"]);
 
           tasks.push({
             id: taskId,
@@ -526,6 +546,7 @@ export function assignKanbanTaskDirect(idOrTitle: string, agents?: string[], ass
       content += `\n- Agentes: ${formattedAgents}\n`;
     }
     found.assignedAgents = agents.map((a) => a.replace(/^@/, ""));
+    content = setAgentsFrontmatter(content, found.assignedAgents);
   }
 
   fs.writeFileSync(fullPath, content, "utf-8");

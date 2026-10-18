@@ -49,7 +49,7 @@ function loadProjectToSquadMap(vaultRoot: string): Record<string, string> {
   return map;
 }
 
-import { getLiveKanbanTasks } from "@/lib/kanbanGrounding";
+import { getLiveKanbanTasks, setAgentsFrontmatter } from "@/lib/kanbanGrounding";
 
 export async function GET() {
   try {
@@ -99,6 +99,7 @@ status: "A fazer"
 priority: "${priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : "Média"}"
 project: "${projectName}"
 squad: "${squad || "squad_1_ceo"}"
+agents: [${(Array.isArray(assignedAgents) && assignedAgents.length ? assignedAgents : ["antigravity", "hermes"]).map((a: string) => JSON.stringify(a)).join(", ")}]
 tags:
   - tarefa
   - nipei-os
@@ -154,7 +155,7 @@ ${description || "Criada via Nipëi OS Kanban / Hermes Task Assistant."}
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { vaultPath, executionLog, status, column, squad } = body;
+    const { vaultPath, executionLog, status, column, squad, assignedAgents } = body;
 
     if (!vaultPath) {
       return NextResponse.json({ success: false, error: "vaultPath is required" }, { status: 400 });
@@ -179,6 +180,10 @@ export async function PATCH(req: Request) {
         if (content.match(/-\s*Squad:\s*`?[^`\n\r]+`?/i)) {
           content = content.replace(/-\s*Squad:\s*`?[^`\n\r]+`?/i, `- Squad: \`${squad}\``);
         }
+      }
+
+      if (Array.isArray(assignedAgents)) {
+        content = setAgentsFrontmatter(content, assignedAgents);
       }
 
       // Update status in frontmatter if moving columns

@@ -25,7 +25,7 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 │       ├── src/
 │       │   ├── app/             <-- App Router Pages & API Routes
 │       │   │   ├── api/
-│       │   │   │   ├── agent-kanban/     <-- API Kanban, Attachments, Deliverables, Dispatch
+│       │   │   │   ├── agent-kanban/     <-- API Kanban, Attachments, Deliverables, Dispatch, Execute
 │       │   │   │   ├── venu/kanban-action <-- API Bridge Venu ↔ Kanban
 │       │   │   │   ├── hermes/realtime/  <-- OpenAI Realtime WebRTC S2S Session
 │       │   │   │   └── vault/            <-- APIs de leitura/escrita do Nipëi Vault
@@ -70,6 +70,11 @@ c:\Users\ondig\Code\Nipei\nipei-control\
    - **5.1 Grounding Contínuo (`kanbanGrounding.ts`):** Venu lê todas as 308 tarefas e seus squads em tempo real.
    - **5.2 Tool Calling de Mutações (`/api/venu/kanban-action`):** Venu cria tarefas (`create`), move colunas/prioridades (`update`) e atribui agentes/humanos (`assign`) via voz ou texto.
    - **5.3 Entregáveis & Despacho por Voz/Texto:** Venu gera documentos (`deliverable`) e despacha mensagens (`dispatch`) diretamente pelo HUD.
+6. **Fase 6: Execução Real de Agentes CLI (armazenamento único de tarefas)**
+   - **Um só Kanban, um só armazenamento:** as notas de tarefa do vault (`Productivity/Tarefas/*.md`). Não crie outro store de tarefas (o antigo `~/.nipei-os/agent-tasks.json` / `/api/agent-tasks` foi removido; `/agents-todo` não existe).
+   - Atribuição de agentes: linha `agents: ["claude", "hermes"]` no frontmatter da nota (UI, `PATCH /api/agent-kanban`, Venu `assign`).
+   - Rota `/api/agent-kanban/execute` roda o primeiro agente CLI atribuído (claude/openclaw/hermes/custom): status `IA em Execução` → `Revisão` ou `Bloqueado`; logs em `executionLogs` do `_workspace_meta.json`.
+   - O `kanban.db` do Hermes (`lib/kanbanDb.ts`) é só leitura — fila interna do Hermes, não um quadro editável.
 
 ---
 

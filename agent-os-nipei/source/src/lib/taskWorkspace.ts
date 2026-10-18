@@ -157,6 +157,7 @@ interface WorkspaceMetaStore {
   attachments: TaskAttachment[];
   deliverables: TaskDeliverable[];
   communications?: TaskCommunication[];
+  executionLogs?: string[];
 }
 
 function readMetaStore(metaFilePath: string, taskId: string, squadId?: string, taskTitle?: string): WorkspaceMetaStore {
@@ -172,6 +173,7 @@ function readMetaStore(metaFilePath: string, taskId: string, squadId?: string, t
         attachments: Array.isArray(data.attachments) ? data.attachments : [],
         deliverables: Array.isArray(data.deliverables) ? data.deliverables : [],
         communications: Array.isArray(data.communications) ? data.communications : [],
+        executionLogs: Array.isArray(data.executionLogs) ? data.executionLogs : [],
       };
     } catch {
       /* ignore and create fresh */
@@ -336,12 +338,27 @@ export function recordTaskCommunication(
   return fullComm;
 }
 
+// Append agent CLI execution log lines to the task workspace meta
+export function recordTaskExecutionLogs(
+  taskId: string,
+  squadId: string | undefined,
+  taskTitle: string | undefined,
+  lines: string[]
+): string[] {
+  const ws = getTaskWorkspace(taskId, squadId, taskTitle);
+  const store = readMetaStore(ws.metaFilePath, taskId, squadId, taskTitle);
+  // ponytail: keeps the last 500 lines per task; move to a per-run log file if full history matters
+  store.executionLogs = [...(store.executionLogs || []), ...lines].slice(-500);
+  writeMetaStore(ws.metaFilePath, store);
+  return store.executionLogs;
+}
+
 // Load workspace items (attachments & deliverables & communications) for a task
 export function getTaskWorkspaceData(
   taskId: string,
   squadId?: string,
   taskTitle?: string
-): { attachments: TaskAttachment[]; deliverables: TaskDeliverable[]; communications: TaskCommunication[]; workspacePath: string } {
+): { attachments: TaskAttachment[]; deliverables: TaskDeliverable[]; communications: TaskCommunication[]; executionLogs: string[]; workspacePath: string } {
   const ws = getTaskWorkspace(taskId, squadId, taskTitle);
   const store = readMetaStore(ws.metaFilePath, taskId, squadId, taskTitle);
 
@@ -376,6 +393,7 @@ export function getTaskWorkspaceData(
     attachments: store.attachments,
     deliverables: store.deliverables,
     communications: store.communications || [],
+    executionLogs: store.executionLogs || [],
     workspacePath: ws.relativeRoot,
   };
 }

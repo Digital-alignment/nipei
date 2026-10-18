@@ -5,23 +5,10 @@ import path from "node:path";
 import os from "node:os";
 import { execSync } from "node:child_process";
 
-import { config } from "@/lib/config";
+import { config, defaultVault } from "@/lib/config";
 import { registerProc, unregisterProc } from "@/lib/ultracodeProcs";
-import {
-  getTaskById,
-  updateTask,
-  appendLog,
-  type AgentTask,
-  type TaskColumnStatus,
-  type AgentCliType,
-  type ExecutionLogEntry,
-} from "@/lib/agentTaskStore";
-import {
-  readVaultNote,
-  writeVaultNote,
-  withFileLock,
-  type VaultRoadmapItem,
-} from "@/lib/vaultSyncEngine";
+import { parseAgentsFrontmatter } from "@/lib/kanbanGrounding";
+import { recordTaskExecutionLogs } from "@/lib/taskWorkspace";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,20 +17,38 @@ export const dynamic = "force-dynamic";
 // 1. Types & Request Payloads
 // ==========================================
 
+/**
+ * Runs an agent CLI against a vault task note (Productivity/Tarefas/*.md).
+ * The vault note is the only task store: status lives in its frontmatter,
+ * execution logs in its Task_Workspace/_workspace_meta.json.
+ */
 export interface ExecuteRequestBody {
   taskId?: string;
-  id?: string;
+  vaultPath?: string;
+  squadId?: string;
+  agent?: string;
   commandArgs?: string[];
   simulate?: boolean;
-  targetStatus?: "review" | "done";
   customBinaryPath?: string;
   forceReal?: boolean;
   timeoutMs?: number;
-  overrideStorePath?: string;
-  storePath?: string;
-  tasksFile?: string;
-  stateDir?: string;
-  vaultRoot?: string;
+}
+
+type AgentCliType = "claude" | "openclaw" | "hermes" | "custom";
+const CLI_AGENTS: readonly AgentCliType[] = ["claude", "openclaw", "hermes", "custom"];
+
+interface ExecutionLogEntry {
+  timestamp: string;
+  message: string;
+  level: "info" | "warn" | "error" | "output";
+}
+
+interface AgentRun {
+  id: string;
+  title: string;
+  description?: string;
+  assignedAgent: AgentCliType;
+  cwd: string;
 }
 
 interface ProcessExecutionResult {
@@ -224,7 +229,7 @@ function buildAgentExecutionEnv(): NodeJS.ProcessEnv {
   };
 }
 
-function buildDefaultArgs(task: AgentTask, customArgs?: string[]): string[] {
+function buildDefaultArgs(task: AgentRun, customArgs?: string[]): string[] {
   if (customArgs && customArgs.length > 0) {
     return customArgs;
   }
@@ -253,7 +258,7 @@ function buildDefaultArgs(task: AgentTask, customArgs?: string[]): string[] {
 /**
  * Robust simulated execution workflow emitting the 4 required canonical logs.
  */
-async function runSimulatedExecution(task: AgentTask): Promise<ProcessExecutionResult> {
+async function runSimulatedExecution(task: AgentRun): Promise<ProcessExecutionResult> {
   const logs: ExecutionLogEntry[] = [];
   const now = () => new Date().toISOString();
 
@@ -296,7 +301,7 @@ async function runSimulatedExecution(task: AgentTask): Promise<ProcessExecutionR
  * Real CLI execution engine capturing live stdout and stderr telemetry.
  */
 async function runRealExecution(
-  task: AgentTask,
+  task: AgentRun,
   binaryPath: string,
   args: string[],
   timeoutMs = 60_000
@@ -330,7 +335,7 @@ async function runRealExecution(
     let child: ChildProcess;
     try {
       child = spawn(binaryPath, args, {
-        cwd: process.cwd(),
+        cwd: task.cwd,
         env: buildAgentExecutionEnv(),
         shell: useShell,
         stdio: ["ignore", "pipe", "pipe"],
@@ -458,94 +463,22 @@ async function runRealExecution(
 }
 
 // ==========================================
-// 5. Vault Roadmap Synchronization Bridge
+// 5. Vault task note helpers
 // ==========================================
 
-async function syncTaskProgressToVault(
-  task: AgentTask,
-  newStatus: TaskColumnStatus,
-  customVaultRoot?: string
-): Promise<boolean> {
-  if (!task.clientNoteId) return false;
+const TASK_DIRS = ["Productivity/Tarefas/", "Todo_Audit_Lists/"];
 
-  const lockKey = `sync-${task.clientNoteId.toLowerCase()}`;
-  return withFileLock(lockKey, async () => {
-    try {
-      const note = await readVaultNote(task.clientNoteId!, customVaultRoot);
-      if (!note) return false;
-
-      const roadmap: VaultRoadmapItem[] = Array.isArray(note.roadmap) ? [...note.roadmap] : [];
-      const targetRoadmapId = task.vaultRoadmapId || task.id.replace(/^task-/, "");
-      const existingIndex = roadmap.findIndex((item) => item.id === targetRoadmapId);
-
-      const isDone = newStatus === "done";
-      const today = new Date().toISOString().slice(0, 10);
-
-      if (existingIndex >= 0) {
-        const item = { ...roadmap[existingIndex] };
-        item.hecho = isDone;
-        if (isDone) {
-          delete item.estado;
-          item.fecha_completado = today;
-        } else {
-          delete item.fecha_completado;
-          item.estado =
-            newStatus === "in_progress"
-              ? "en_curso"
-              : newStatus === "review"
-              ? "bloqueada"
-              : "pendiente";
-        }
-        item.prioridad = task.priority;
-        item.responsable = `@${task.assignedAgent}`;
-        item.texto = task.title;
-        roadmap[existingIndex] = item;
-      } else {
-        const newItem: VaultRoadmapItem = {
-          id: targetRoadmapId,
-          texto: task.title,
-          prioridad: task.priority,
-          hecho: isDone,
-          orden: roadmap.length,
-          tags: task.tags || [],
-          responsable: `@${task.assignedAgent}`,
-          fecha_creacion: today,
-        };
-        if (isDone) {
-          newItem.fecha_completado = today;
-        } else {
-          newItem.estado =
-            newStatus === "in_progress"
-              ? "en_curso"
-              : newStatus === "review"
-              ? "bloqueada"
-              : "pendiente";
-        }
-        roadmap.push(newItem);
-      }
-
-      const writeRes = await writeVaultNote(
-        task.clientNoteId!,
-        { roadmap },
-        customVaultRoot
-      );
-      return writeRes.success;
-    } catch {
-      return false;
-    }
-  });
+/** Resolves a vault-relative task path, refusing anything outside the task folders. */
+function resolveTaskPath(vaultRoot: string, vaultPath: string): string | null {
+  const rel = vaultPath.replace(/\\/g, "/");
+  if (!rel.endsWith(".md") || !TASK_DIRS.some((d) => rel.startsWith(d))) return null;
+  const abs = path.resolve(vaultRoot, rel);
+  return abs.startsWith(path.resolve(vaultRoot) + path.sep) && fs.existsSync(abs) ? abs : null;
 }
 
-function extractStoreOverride(url: URL, body?: Record<string, unknown>): string | undefined {
-  return (
-    url.searchParams.get("storePath") ||
-    url.searchParams.get("tasksFile") ||
-    url.searchParams.get("stateDir") ||
-    (typeof body?.overrideStorePath === "string" ? body.overrideStorePath : undefined) ||
-    (typeof body?.storePath === "string" ? body.storePath : undefined) ||
-    (typeof body?.tasksFile === "string" ? body.tasksFile : undefined) ||
-    (typeof body?.stateDir === "string" ? body.stateDir : undefined)
-  );
+function setTaskStatus(absPath: string, status: string) {
+  const content = fs.readFileSync(absPath, "utf-8");
+  fs.writeFileSync(absPath, content.replace(/^status:.*$/m, `status: "${status}"`), "utf-8");
 }
 
 // ==========================================
@@ -561,109 +494,73 @@ export async function POST(req: NextRequest) {
       // Body might be empty or invalid JSON
     }
 
-    const url = new URL(req.url);
-    const taskId =
-      body.taskId ||
-      body.id ||
-      url.searchParams.get("taskId") ||
-      url.searchParams.get("id");
-
-    const customVaultRoot =
-      url.searchParams.get("vaultRoot") ||
-      (typeof body.vaultRoot === "string" ? body.vaultRoot : undefined);
-    const overrideStorePath = extractStoreOverride(url, body as Record<string, unknown>);
-
-    const querySimulate = url.searchParams.get("simulate");
-    const shouldForceSimulate =
-      querySimulate === "true" ||
-      querySimulate === "1" ||
-      body.simulate === true;
-    const forceReal =
-      body.forceReal === true || url.searchParams.get("forceReal") === "true";
-
-    // 1. Validate taskId
-    if (!taskId || typeof taskId !== "string" || !taskId.trim()) {
+    const vaultRoot = defaultVault();
+    if (!vaultRoot) {
+      return NextResponse.json({ success: false, error: "Vault root not configured" }, { status: 500 });
+    }
+    const absPath = typeof body.vaultPath === "string" ? resolveTaskPath(vaultRoot, body.vaultPath) : null;
+    if (!absPath) {
       return NextResponse.json(
-        { success: false, error: "Missing or invalid 'taskId'" },
+        { success: false, error: "Missing or invalid 'vaultPath' (must be a task note under Productivity/Tarefas or Todo_Audit_Lists)" },
         { status: 400 }
       );
     }
 
-    const cleanTaskId = taskId.trim();
+    // 1. Read the task note
+    const content = fs.readFileSync(absPath, "utf-8");
+    const title = content.match(/^title:\s*"?([^"\n\r]+)"?/m)?.[1].trim() || path.basename(absPath, ".md");
+    const taskId = body.taskId?.trim() || content.match(/^id:\s*"?([^"\n\r]+)"?/m)?.[1].trim() || path.basename(absPath, ".md");
+    const noteBody = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "").trim().slice(0, 8000);
 
-    // 2. Fetch task from agentTaskStore
-    const task = await getTaskById(cleanTaskId, overrideStorePath);
-    if (!task) {
-      return NextResponse.json(
-        { success: false, error: `Task with id '${cleanTaskId}' not found` },
-        { status: 404 }
-      );
-    }
+    // 2. Pick the agent: explicit request, else first CLI-capable agent assigned on the note
+    const assigned = [body.agent, ...(parseAgentsFrontmatter(content) || [])];
+    const agent = assigned.find((a): a is AgentCliType => CLI_AGENTS.includes(a as AgentCliType));
 
-    // 3. Update task status to "in_progress"
-    await updateTask(cleanTaskId, { status: "in_progress" }, overrideStorePath);
+    const run: AgentRun = {
+      id: taskId,
+      title,
+      description: `${noteBody}\n\n(Nota da tarefa no vault: ${body.vaultPath})`,
+      assignedAgent: agent || "custom",
+      cwd: vaultRoot,
+    };
 
-    // 4. Resolve assigned agent binary
-    const customBin = body.customBinaryPath || task.customBinaryPath;
-    const resolvedBin = resolveAgentBinary(task.assignedAgent, customBin);
-    const simulationActive = isSimulationMode(shouldForceSimulate, Boolean(resolvedBin), forceReal);
+    // 3. Mark as running in the vault
+    setTaskStatus(absPath, "IA em Execução");
 
-    // 5. Execute via real CLI or robust simulation fallback
-    const customArgs = sanitizeArgs(body.commandArgs);
-    const effectiveArgs = buildDefaultArgs(task, customArgs);
-    const timeoutMs =
-      typeof body.timeoutMs === "number" && body.timeoutMs > 0 ? body.timeoutMs : 60_000;
+    // 4. Resolve binary & execute (simulation when no CLI agent/binary is available)
+    const resolvedBin = agent ? resolveAgentBinary(agent, body.customBinaryPath) : null;
+    const simulationActive = isSimulationMode(body.simulate, Boolean(resolvedBin), body.forceReal);
+    const timeoutMs = typeof body.timeoutMs === "number" && body.timeoutMs > 0 ? body.timeoutMs : 60_000;
 
-    let result: ProcessExecutionResult;
-    if (!simulationActive && resolvedBin) {
-      result = await runRealExecution(task, resolvedBin, effectiveArgs, timeoutMs);
-    } else {
-      result = await runSimulatedExecution(task);
-    }
+    const result =
+      !simulationActive && resolvedBin
+        ? await runRealExecution(run, resolvedBin, buildDefaultArgs(run, sanitizeArgs(body.commandArgs)), timeoutMs)
+        : await runSimulatedExecution(run);
 
-    // 6. Append execution logs to task record in store
-    for (const log of result.logs) {
-      await appendLog(cleanTaskId, log, overrideStorePath);
-    }
+    // 5. Persist logs in the task workspace and hand the task to human review
+    const lines = result.logs.map((l) => `${l.timestamp} ${l.message}`);
+    const executionLogs = recordTaskExecutionLogs(taskId, body.squadId, title, [
+      `${new Date().toISOString()} [info] Run ${result.mode} via ${agent || "nenhum agente CLI atribuído"}`,
+      ...lines,
+    ]);
+    const finalStatus = result.exitCode === 0 ? "Revisão" : "Bloqueado";
+    setTaskStatus(absPath, finalStatus);
 
-    // 7. Transition status from "in_progress" to "review" (or "done")
-    const targetStatus: TaskColumnStatus =
-      body.targetStatus === "done"
-        ? "done"
-        : "review";
-
-    const updatedTask = await updateTask(
-      cleanTaskId,
-      {
-        status: targetStatus,
-      },
-      overrideStorePath
-    );
-
-    // 8. Synchronize with Obsidian vault note if linked
-    const vaultSynced = await syncTaskProgressToVault(
-      updatedTask,
-      targetStatus,
-      customVaultRoot
-    );
-
-    // 9. Return execution response payload
     return NextResponse.json({
       success: true,
-      taskId: cleanTaskId,
-      status: updatedTask.status,
-      logs: updatedTask.executionLogs || [],
-      assignedAgent: updatedTask.assignedAgent,
+      taskId,
+      status: finalStatus,
+      column: "review",
+      assignedAgent: agent || null,
       mode: result.mode,
-      vaultSynced,
+      exitCode: result.exitCode,
+      logs: lines,
+      executionLogs,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      {
-        success: false,
-        error: `Agent task execution failed: ${message}`,
-      },
+      { success: false, error: `Agent task execution failed: ${message}` },
       { status: 500 }
     );
   }

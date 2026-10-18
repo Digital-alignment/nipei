@@ -12,5 +12,5 @@ Para a documentação completa, especificações de arquitetura, comandos de bui
 
 ### Vault & Dados
 - Vault principal: `C:\Users\ondig\Code\Nipei\nipei-vault`
-- Endpoints de Kanban: `/api/agent-kanban`, `/api/agent-kanban/attachments`, `/api/agent-kanban/deliverables`, `/api/agent-kanban/dispatch`
+- Endpoints de Kanban: `/api/agent-kanban`, `/api/agent-kanban/attachments`, `/api/agent-kanban/deliverables`, `/api/agent-kanban/dispatch`, `/api/agent-kanban/execute`
 - Endpoint de Venu: `/api/venu/kanban-action`

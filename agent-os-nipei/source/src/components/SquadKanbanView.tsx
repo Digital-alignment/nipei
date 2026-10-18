@@ -336,6 +336,7 @@ export default function SquadKanbanView() {
             attachments: data.attachments || prev.attachments || [],
             deliverables: data.deliverables || prev.deliverables || [],
             communications: data.communications || prev.communications || [],
+            executionLogs: data.executionLogs?.length ? data.executionLogs : prev.executionLogs,
           };
         });
         setTasks((prevTasks) =>
@@ -346,6 +347,7 @@ export default function SquadKanbanView() {
                   attachments: data.attachments || t.attachments || [],
                   deliverables: data.deliverables || t.deliverables || [],
                   communications: data.communications || t.communications || [],
+                  executionLogs: data.executionLogs?.length ? data.executionLogs : t.executionLogs,
                 }
               : t
           )
@@ -569,77 +571,34 @@ export default function SquadKanbanView() {
     );
   }
 
-  function handleDispatchAgent(taskId: string) {
-    setExecutingTaskId(taskId);
-    handleMoveColumn(taskId, "agent_executing");
-
+  async function handleDispatchAgent(taskId: string) {
     const targetTask = tasks.find((t) => t.id === taskId);
+    if (!targetTask?.vaultPath) return;
+    // The execute route owns the vault status (IA em Execução → Revisão/Bloqueado); UI state only here.
+    const applyResult = (patch: Partial<GlobalTask>) => {
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...patch } : t)));
+      setDetailTask((prev) => (prev && prev.id === taskId ? { ...prev, ...patch } : prev));
+    };
+    setExecutingTaskId(taskId);
+    applyResult({ columnStatus: "agent_executing", status: "em_progresso" });
 
-    setTimeout(() => {
-      setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === taskId) {
-            const logs = t.executionLogs ?? [];
-            const updated = {
-              ...t,
-              executionLogs: [...logs, "🤖 Agente IA lendo contrato do Squad & datos do Vault de Nipëi OS..."],
-            };
-            if (detailTask && detailTask.id === taskId) setDetailTask(updated);
-            return updated;
-          }
-          return t;
-        })
-      );
-    }, 1500);
-
-    setTimeout(() => {
-      setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === taskId) {
-            const logs = t.executionLogs ?? [];
-            const updated = {
-              ...t,
-              executionLogs: [...logs, "⚡ Agente IA procesó investigación de mercado, e-commerce & notas en nipei-vault."],
-            };
-            if (detailTask && detailTask.id === taskId) setDetailTask(updated);
-            return updated;
-          }
-          return t;
-        })
-      );
-    }, 3000);
-
-    setTimeout(() => {
-      setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === taskId) {
-            const logs = t.executionLogs ?? [];
-            const updated: GlobalTask = {
-              ...t,
-              columnStatus: "done",
-              status: "concluido",
-              executionLogs: [...logs, "✅ Tarefa finalizada e guardada no nipei-vault com sucesso pelo Agente IA!"],
-            };
-            if (detailTask && detailTask.id === taskId) setDetailTask(updated);
-
-            if (t.vaultPath) {
-              fetch("/api/agent-kanban", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  vaultPath: t.vaultPath,
-                  status: "done",
-                  executionLog: "Resolução automatizada por Agente IA. Resultado armazenado e auditado no Vault nipei-vault."
-                })
-              }).catch(console.error);
-            }
-            return updated;
-          }
-          return t;
-        })
-      );
+    try {
+      const res = await fetch("/api/agent-kanban/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, vaultPath: targetTask.vaultPath, squadId: targetTask.squad }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        applyResult({ columnStatus: "review", status: "pendente", executionLogs: data.executionLogs });
+      } else {
+        applyResult({ columnStatus: "review", executionLogs: [...(targetTask.executionLogs ?? []), `❌ ${data.error}`] });
+      }
+    } catch (err) {
+      applyResult({ columnStatus: "review", executionLogs: [...(targetTask.executionLogs ?? []), `❌ ${String(err)}`] });
+    } finally {
       setExecutingTaskId(null);
-    }, 4500);
+    }
   }
 
   function toggleAgentSelection(agentId: string) {
@@ -662,6 +621,13 @@ export default function SquadKanbanView() {
       next = [...current, agentId];
     }
     syncTaskUpdate({ ...detailTask, assignedAgents: next });
+    if (detailTask.vaultPath) {
+      fetch("/api/agent-kanban", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vaultPath: detailTask.vaultPath, assignedAgents: next }),
+      }).catch(console.error);
+    }
   }
 
   function handleAddComment() {

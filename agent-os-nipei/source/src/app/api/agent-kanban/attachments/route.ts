@@ -81,6 +81,7 @@ export async function GET(req: NextRequest) {
         attachments: data.attachments,
         deliverables: data.deliverables,
         communications: data.communications,
+        executionLogs: data.executionLogs,
         workspacePath: data.workspacePath,
       });
     }
