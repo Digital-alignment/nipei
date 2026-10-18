@@ -473,7 +473,9 @@ function resolveTaskPath(vaultRoot: string, vaultPath: string): string | null {
   const rel = vaultPath.replace(/\\/g, "/");
   if (!rel.endsWith(".md") || !TASK_DIRS.some((d) => rel.startsWith(d))) return null;
   const abs = path.resolve(vaultRoot, rel);
-  return abs.startsWith(path.resolve(vaultRoot) + path.sep) && fs.existsSync(abs) ? abs : null;
+  // Re-check the folder on the resolved path so "Productivity/Tarefas/../x.md" can't escape it
+  const inside = path.relative(path.resolve(vaultRoot), abs).replace(/\\/g, "/");
+  return TASK_DIRS.some((d) => inside.startsWith(d)) && fs.existsSync(abs) ? abs : null;
 }
 
 function setTaskStatus(absPath: string, status: string) {

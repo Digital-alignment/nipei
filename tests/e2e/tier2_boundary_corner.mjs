@@ -1,223 +1,103 @@
 /**
- * Tier 2: Boundary & Corner Cases E2E Tests
- * Covers edge conditions, extreme values, encoding fidelity, and corrupt inputs:
- * 1. Empty tasks collection & boundaries (2 tests)
- * 2. Corrupt/missing YAML frontmatter (2 tests)
- * 3. Mandatory schema omission degradation (1 test)
- * 4. Radical status jumping & edge status transitions (1 test)
- * 5. Special characters, accents & Unicode emoji fidelity (1 test)
- * 6. Windows backslash vs Unix slash path normalization (1 test)
- * 7. Extreme markdown body stress & preservation (1 test)
+ * Tier 2: Boundary, corner and adversarial cases for the task store API.
  */
 
-import path from "node:path";
 import fs from "node:fs";
-import { describe, test, expect, beforeEach, afterEach } from "./harness.mjs";
-import { createTempVault, createTempStateDir } from "./fixtures.mjs";
-import { createTaskStore, createVaultEngine } from "./engine.mjs";
-import { validateVaultNoteContent } from "./validator.mjs";
+import { describe, test, expect, afterAll } from "./harness.mjs";
+import { api, simRun, findTask } from "./engine.mjs";
+import { writeTempNote, cleanupAll, abs, uid, MARKER } from "./fixtures.mjs";
+import { readNote } from "./validator.mjs";
 
 export function registerTier2Tests() {
   describe("Tier 2: Boundary, Corner Cases & Adversarial Verification", () => {
-    let vaultDir, cleanupVault, engine;
-    let stateDir, cleanupState, store;
-
-    beforeEach(async () => {
-      const vault = await createTempVault();
-      vaultDir = vault.vaultDir;
-      cleanupVault = vault.cleanup;
-      engine = createVaultEngine(vaultDir);
-
-      const state = await createTempStateDir();
-      stateDir = state.stateDir;
-      cleanupState = state.cleanup;
-      store = createTaskStore(stateDir);
+    // A task-shaped note one folder above Tarefas: execute must refuse it even via "..".
+    const outsideRel = `Productivity/${MARKER}_outside.md`;
+    afterAll(() => {
+      fs.rmSync(abs(outsideRel), { force: true });
+      cleanupAll();
     });
 
-    afterEach(async () => {
-      await cleanupVault();
-      await cleanupState();
+    test("2.1 POST without title returns 400 and writes nothing", async () => {
+      const { status, body } = await api.createTask({ description: "sem titulo" });
+      expect(status).toBe(400);
+      expect(body.success).toBe(false);
     });
 
-    test("2.1 Empty tasks collection handles listing, filtering, and sorting without error", async () => {
-      const list = await store.listTasks();
-      expect(list).toEqual([]);
-
-      const filtered = await store.listTasks({ status: "backlog", assignedAgent: "claude" });
-      expect(filtered).toEqual([]);
-
-      const sorted = await store.listTasks({ sortBy: "priority" });
-      expect(sorted).toEqual([]);
+    test("2.2 PATCH without vaultPath returns 400", async () => {
+      const { status } = await api.patchTask({ column: "done" });
+      expect(status).toBe(400);
     });
 
-    test("2.2 Boundary task attributes: empty description, empty tags, single-char title, long title (500 chars)", async () => {
-      const singleChar = await store.createTask({
-        title: "A",
-        description: "",
-        tags: [],
-      });
-      expect(singleChar.title).toBe("A");
-      expect(singleChar.description).toBe("");
-      expect(singleChar.tags).toEqual([]);
+    test("2.3 PATCH on a missing note is a no-op and creates no file", async () => {
+      const vaultPath = `Productivity/Tarefas/${uid()}.md`;
+      const { status } = await api.patchTask({ vaultPath, column: "done" });
+      expect(status).toBe(200);
+      expect(fs.existsSync(abs(vaultPath))).toBe(false);
+    });
 
-      const longTitle = "Z".repeat(500);
-      const largeTask = await store.createTask({
-        title: longTitle,
-      });
-      expect(largeTask.title.length).toBe(500);
-
-      // Empty string title must throw
-      let threw = false;
-      try {
-        await store.createTask({ title: "   " });
-      } catch {
-        threw = true;
+    test("2.4 execute rejects missing, non-.md, absolute and nonexistent paths", async () => {
+      const note = writeTempNote();
+      const bad = [
+        undefined,
+        note.vaultPath.replace(/\.md$/, ".txt"),
+        abs(note.vaultPath),
+        `Productivity/Tarefas/${uid()}.md`,
+        `Clientes/${uid()}.md`,
+      ];
+      for (const vaultPath of bad) {
+        const { status, body } = await api.execute({ vaultPath, taskId: note.id, simulate: true });
+        expect(status).toBe(400);
+        expect(body.success).toBe(false);
       }
-      expect(threw).toBe(true);
+      expect(readNote(note.vaultPath).fm.status).toBe("A fazer");
     });
 
-    test("2.3 Malformed YAML frontmatter syntax handled gracefully without crashing", async () => {
-      const malformedContent = `---
-id: broken-yaml
-nombre: Broken: [Unclosed bracket
-tipo: cliente_externo
----
-# Body of broken file
-`;
-      const notePath = path.join(vaultDir, "Clientes", "Broken.md");
-      await fs.promises.writeFile(notePath, malformedContent, "utf8");
-
-      const read = await engine.readVaultNote("Clientes/Broken.md");
-      expect(read).toBeNull();
-
-      const validation = validateVaultNoteContent(malformedContent, "Broken.md");
-      expect(validation.valid).toBe(false);
-      expect(validation.errors[0]).toContain("YAML parse error");
+    test("2.5 execute refuses '..' traversal out of the task folders", async () => {
+      fs.writeFileSync(abs(outsideRel), `---\nid: "${MARKER}_outside"\ntitle: "fora"\nstatus: "A fazer"\n---\n`, "utf-8");
+      const paths = [
+        `Productivity/Tarefas/../${MARKER}_outside.md`,
+        `Productivity/Tarefas/../../../nipei-control/CLAUDE.md`,
+      ];
+      for (const vaultPath of paths) {
+        const { status } = await api.execute({ vaultPath, taskId: uid(), simulate: true });
+        expect(status).toBe(400);
+      }
+      expect(fs.readFileSync(abs(outsideRel), "utf-8")).toContain('status: "A fazer"');
     });
 
-    test("2.4 Missing frontmatter entirely (pure markdown file) detected and discarded from brand listing", async () => {
-      const pureMarkdown = `# Pure Documentation Note
-This file does not have any YAML frontmatter at all.
-It is a simple reference document.
-`;
-      const notePath = path.join(vaultDir, "Clientes", "DocNote.md");
-      await fs.promises.writeFile(notePath, pureMarkdown, "utf8");
-
-      const read = await engine.readVaultNote("Clientes/DocNote.md");
-      expect(read).toBeNull();
-
-      const clients = await engine.parseAllClients();
-      const ids = clients.map((c) => c.id);
-      expect(ids).not.toContain("docnote");
+    test("2.6 execute with an invalid JSON body returns 400", async () => {
+      const { status } = await api.raw("POST", "/api/agent-kanban/execute", "{not json");
+      expect(status).toBe(400);
     });
 
-    test("2.5 Missing mandatory root keys (id missing or nombre missing) discarded per da-vault-schema", async () => {
-      const missingId = `---
-nombre: Name Without ID
-tipo: cliente_externo
----
-# Note
-`;
-      const validationMissingId = validateVaultNoteContent(missingId, "no-id.md");
-      expect(validationMissingId.valid).toBe(false);
-      expect(validationMissingId.errors.some((e) => e.includes("Missing mandatory root key 'id'"))).toBe(true);
-
-      const missingNombre = `---
-id: brand-without-name
-tipo: cliente_externo
----
-# Note
-`;
-      const validationMissingNombre = validateVaultNoteContent(missingNombre, "no-nombre.md");
-      expect(validationMissingNombre.valid).toBe(false);
-      expect(validationMissingNombre.errors.some((e) => e.includes("Missing mandatory root key 'nombre'"))).toBe(true);
+    test("2.7 execute accepts Windows backslash vault paths", async () => {
+      const note = writeTempNote({ agents: ["claude"] });
+      const { status, body } = await simRun(note, { vaultPath: note.vaultPath.replace(/\//g, "\\") });
+      expect(status).toBe(200);
+      expect(body.status).toBe("Revisão");
     });
 
-    test("2.6 Direct edge status jumps: task moves directly from backlog to done, then reopened to in_progress", async () => {
-      const task = await store.createTask({ title: "Edge Status Jump Task", status: "backlog" });
-      expect(task.status).toBe("backlog");
-
-      // Jump directly from backlog to done
-      const completed = await store.moveTaskStatus(task.id, "done");
-      expect(completed.status).toBe("done");
-
-      // Reopen directly to in_progress
-      const reopened = await store.moveTaskStatus(task.id, "in_progress");
-      expect(reopened.status).toBe("in_progress");
-
-      // Move back to backlog
-      const backlogged = await store.moveTaskStatus(task.id, "backlog");
-      expect(backlogged.status).toBe("backlog");
+    test("2.8 Unicode title (accents, emoji) survives POST and GET", async () => {
+      const title = `${uid()} Ação Yawanawá ñandú 🌿`;
+      const { body } = await api.createTask({ title });
+      expect(readNote(body.task.vaultPath).fm.title).toBe(title);
+      expect((await findTask(body.task.vaultPath)).title).toBe(title);
     });
 
-    test("2.7 Special characters & Unicode integrity: Portuguese/Indigenous accents, emojis, quotes", async () => {
-      const complexTitle = `Nipëi OS 🪶 — Integração de "Cantos Yawanawá", Açúcar & Rapé (Serra Grande / BA)`;
-      const task = await store.createTask({
-        title: complexTitle,
-        description: "Caracteres especiais: ç, ã, õ, ê, î, ë, ü, 🪶, 🏛️, 🌿, ⚡, «aspas francesas»",
-        tags: ["sananga-pura", "língua-indígena", "pajé"],
-      });
-
-      expect(task.title).toBe(complexTitle);
-      expect(task.description).toContain("ç, ã, õ, ê, î, ë, ü");
-      expect(task.description).toContain("🪶, 🏛️, 🌿");
-
-      // Verify writing to vault preserves all unicode symbols
-      await engine.writeVaultNote("Clientes/unicode-test.md", {
-        id: "unicode-test",
-        nombre: "Nipëi & Inî Rau 🌿",
-        categoria: "Santuário Espiritual Yawanawá",
-        emoji: "🪶",
-      });
-
-      const read = await engine.readVaultNote("Clientes/unicode-test.md");
-      expect(read.nombre).toBe("Nipëi & Inî Rau 🌿");
-      expect(read.categoria).toBe("Santuário Espiritual Yawanawá");
-      expect(read.emoji).toBe("🪶");
+    test("2.9 Empty assignedAgents writes agents: [] and GET falls back to squad default", async () => {
+      const note = writeTempNote({ agents: ["claude"], squad: "squad_2_mutum" });
+      await api.patchTask({ vaultPath: note.vaultPath, assignedAgents: [] });
+      expect(readNote(note.vaultPath).fm.agents).toBe("[]");
+      expect((await findTask(note.vaultPath)).assignedAgents).toEqual(["openclaw", "hermes"]);
     });
 
-    test("2.8 Path normalization: relative path with Windows backslashes resolves identically to forward slashes", async () => {
-      const readUnix = await engine.readVaultNote("Clientes/Nipeihu.md");
-      const readWindows = await engine.readVaultNote("Clientes\\Nipeihu.md");
-
-      expect(readUnix).toBeDefined();
-      expect(readWindows).toBeDefined();
-      expect(readUnix.id).toBe(readWindows.id);
-      expect(readUnix.nombre).toBe(readWindows.nombre);
-    });
-
-    test("2.9 Extreme markdown body sizes with code blocks, tables, and wiki links preserved byte-for-byte", async () => {
-      const largeTable = Array.from({ length: 50 }, (_, i) => `| Item ${i} | Valor ${i * 10} | Tag ${i} |`).join("\n");
-      const codeBlock = "```typescript\nconst a = 1;\nconst b = 2;\nconsole.log(a + b);\n```";
-      const wikiLinks = "[[Ini Rau]] · [[Oca Yary]] · [[MUV Grafica]] · [[Event Master]]";
-
-      const largeBody = `<!-- agente: antigravity -->
-
-# Large Stress Body 🚀
-
-## Links
-${wikiLinks}
-
-## Código
-${codeBlock}
-
-## Tabela de Dados
-| Coluna A | Coluna B | Coluna C |
-|---|---|---|
-${largeTable}
-`;
-
-      await engine.writeVaultNote("Clientes/stress-body.md", {
-        id: "stress-body",
-        nombre: "Stress Body Test",
-        bodyMarkdown: largeBody,
-      });
-
-      const read = await engine.readVaultNote("Clientes/stress-body.md");
-      expect(read.bodyMarkdown.trim()).toBe(largeBody.trim());
-      expect(read.bodyMarkdown).toContain(codeBlock);
-      expect(read.bodyMarkdown).toContain(wikiLinks);
-      expect(read.bodyMarkdown).toContain("Item 49");
+    test("2.10 Note without frontmatter id falls back to filename as task id", async () => {
+      const id = uid();
+      const vaultPath = `Productivity/Tarefas/${id}.md`;
+      fs.writeFileSync(abs(vaultPath), `---\ntitle: "${id} sem id"\nstatus: "A fazer"\n---\ncorpo\n`, "utf-8");
+      expect((await findTask(vaultPath)).id).toBe(id);
+      const { body } = await api.execute({ vaultPath, simulate: true });
+      expect(body.taskId).toBe(id);
     });
   });
 }
