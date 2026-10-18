@@ -43,6 +43,10 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 
 ### Vault Canônico
 - **Caminho Local:** `C:\Users\ondig\Code\Nipei\nipei-vault`
+- **Sync (desde 2026-10-18):** local e VPS (`/opt/nipei-vault`, montado no container como `/vault`) sincronizam via GitHub `Digital-alignment/nipei-vault` (privado).
+  - VPS: cron a cada 5 min → `/opt/nipei-vault-sync/sync.sh` (commit das edições da app + pull --rebase + push, deploy key `/root/.ssh/nipei_vault_deploy`, host alias `github-nipei-vault`). Snapshot diário 03:30 → `/opt/backups/nipei-vault/` (14 dias). Log: `/var/log/nipei-vault-sync.log`.
+  - Local: tarefa agendada do Windows "Nipei Vault Sync" a cada 10 min → `scripts/vault-sync.ps1`. Log: `%LOCALAPPDATA%\nipei-vault-sync.log`.
+  - Conflito: nada é sobrescrito; o rebase é abortado, o commit fica local e o log registra `CONFLICT` até resolução manual. Nunca use `git reset --hard`/`push --force` no vault sem olhar o que será descartado.
 - **Tarefas Operacionais:** `Productivity/Tarefas/` e `Productivity/Todo_Audit_Lists/` (308 tarefas ativas)
 - **Workspaces de Tarefas:** `Task_Workspace/YYYY/SQ-XX/TASK_ID/`
   - `inputs/`: Anexos, dados e insumos
