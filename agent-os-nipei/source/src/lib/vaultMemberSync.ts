@@ -1,12 +1,32 @@
 import fs from "fs";
 import path from "path";
 import { MemberProfile } from "./nipeiStore";
+import { defaultVault } from "./config";
 
-const VAULT_PATH = process.env.NIPEI_VAULT_PATH || "C:\\Users\\ondig\\Code\\Nipei\\nipei-vault";
+/**
+ * For an existing note, only the keys this function manages are rewritten: every other
+ * frontmatter key (whatsapp, email, area, photo…) and the whole body (incl. merged
+ * historical records) are kept as-is. New notes get the full template.
+ */
+function mergeIntoExisting(existing: string, generated: string): string {
+  const oldFm = existing.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const newFm = generated.match(/^---\n([\s\S]*?)\n---/);
+  if (!oldFm || !newFm) return generated;
+  const newKeys = new Set([...newFm[1].matchAll(/^([a-z_]+):/gm)].map((m) => m[1]));
+  const kept = oldFm[1]
+    .split(/\r?\n(?=[a-z_]+:)/)
+    .filter((block) => {
+      const key = block.match(/^([a-z_]+):/)?.[1];
+      return key && !newKeys.has(key);
+    });
+  return `---\n${[newFm[1], ...kept].join("\n")}\n---${existing.slice(oldFm[0].length)}`;
+}
 
 export function syncMemberToVault(member: MemberProfile): boolean {
   try {
-    const membersDir = path.join(VAULT_PATH, "Miembros");
+    const vaultRoot = defaultVault();
+    if (!vaultRoot) throw new Error("Vault root not configured");
+    const membersDir = path.join(vaultRoot, "Miembros");
     if (!fs.existsSync(membersDir)) {
       fs.mkdirSync(membersDir, { recursive: true });
     }
@@ -29,6 +49,8 @@ export function syncMemberToVault(member: MemberProfile): boolean {
       `has_missing_info: ${member.hasMissingInfo ? "true" : "false"}`,
       `missing_info_details: "${member.missingInfoDetails || ""}"`,
       `global_role: "${member.globalRole}"`,
+      ...(member.email !== undefined ? [`email: "${member.email}"`] : []),
+      ...(member.phone !== undefined ? [`whatsapp: "${member.phone}"`] : []),
       "tags:",
       "  - membro",
       "  - integrante-real",
@@ -93,7 +115,8 @@ export function syncMemberToVault(member: MemberProfile): boolean {
       `*Expediente sincronizado con enlaces bidireccionales por Nipëi OS Core — ${new Date().toLocaleString()}*`,
     ].join("\n");
 
-    fs.writeFileSync(filePath, yamlFrontmatter, "utf-8");
+    const out = fs.existsSync(filePath) ? mergeIntoExisting(fs.readFileSync(filePath, "utf-8"), yamlFrontmatter) : yamlFrontmatter;
+    fs.writeFileSync(filePath, out, "utf-8");
     console.log(`[VaultMemberSync] Expediente con [[wikilinks]] sincronizado: ${filePath}`);
     return true;
   } catch (err) {
