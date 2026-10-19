@@ -11,13 +11,17 @@ import { normalizeDueDate } from "@/lib/kanbanGrounding";
 
 export type Status = "todo" | "doing" | "done";
 
-export type Equipe = { id: string; nome: string; cor: string; areas: string[]; coordenadores: string[]; membros: string[] };
+export type Equipe = {
+  id: string; nome: string; cor: string; areas: string[]; coordenadores: string[]; membros: string[];
+  acesso: boolean; // members of this team can log in
+  gestao: boolean; // members of this team manage everything (full session, v1 included)
+};
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string };
 export type Objetivo = { id: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string };
 export type Evento = { id: string; titulo: string; inicio: string; fim: string; status: string; equipe: string };
 export type Pessoa = {
-  id: string; name: string; equipes: string[]; coordena: string[]; usuario: string;
-  whatsapp: string; email: string; incompleta: boolean;
+  id: string; nipeiId: string; name: string; nativeName: string; equipes: string[]; coordena: string[]; usuario: string;
+  whatsapp: string; email: string; area: string; funcao: string; disponibilidade: string; incompleta: boolean; cadastroEm: string;
 };
 export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
@@ -65,7 +69,10 @@ export const STATUS_RAW: Record<Status, string> = { todo: "A fazer", doing: "Em 
 
 export function getEquipes(): Equipe[] {
   return readDir("Equipes")
-    .map(({ fm }) => ({ id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), coordenadores: arr(fm.coordenadores), membros: arr(fm.membros) }))
+    .map(({ fm }) => ({
+      id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), coordenadores: arr(fm.coordenadores),
+      membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true,
+    }))
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
@@ -90,13 +97,19 @@ export function getPessoas(): Pessoa[] {
     .filter(({ fm }) => !s(fm.type).startsWith("ai") && !s(fm.id).startsWith("agente_"))
     .map(({ fm, file }) => ({
       id: s(fm.id) || path.basename(file, ".md"),
+      nipeiId: s(fm.nipei_id),
       name: s(fm.name),
+      nativeName: s(fm.native_name),
       equipes: arr(fm.equipes),
       coordena: arr(fm.coordena),
       usuario: s(fm.usuario),
       whatsapp: s(fm.whatsapp),
       email: s(fm.email),
+      area: s(fm.area),
+      funcao: s(fm.funcao),
+      disponibilidade: s(fm.disponibilidade),
       incompleta: fm.has_missing_info === true,
+      cadastroEm: s(fm.cadastro_em),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
@@ -122,12 +135,45 @@ export function getTarefas(): Tarefa[] {
   });
 }
 
-/** The logged-in person (session cookie → `usuario:` in their Miembros note). */
-export async function currentUser(): Promise<{ username: string; pessoa: Pessoa | null } | null> {
-  const username = verifyToken((await cookies()).get(SESSION_COOKIE)?.value, "session");
-  if (!username) return null;
-  return { username, pessoa: getPessoas().find((p) => p.usuario === username) ?? null };
+// Two kinds of session cookie (same name, different token purpose — see src/proxy.ts):
+//   "session": gestão — everything, v1 pages and /api included
+//   "member":  everyone else — v2 pages only
+export const MEMBER_PURPOSE = "member";
+
+export type Me = { username: string; pessoa: Pessoa | null; gestao: boolean; coordena: string[]; equipes: string[] };
+
+/**
+ * The logged-in person, or null when not logged in or when none of their teams has access
+ * (so turning a team's access off takes effect on the next request, not when the cookie expires).
+ */
+export async function currentUser(): Promise<Me | null> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const full = verifyToken(token, "session");
+  const sub = full ?? verifyToken(token, MEMBER_PURPOSE);
+  if (!sub) return null;
+  const pessoa = getPessoas().find((p) => p.usuario === sub || p.id === sub) ?? null;
+  const equipes = getEquipes();
+  // A full session is only ever issued to gestão (NIPEI_OS_USERS passwords or a gestão login link).
+  // ponytail: it stays full until it expires even if the person leaves gestão; rotate NIPEI_AUTH_SECRET to cut all sessions.
+  const gestao = !!full || !!pessoa?.equipes.some((id) => equipes.find((e) => e.id === id)?.gestao);
+  const acesso = gestao || !!pessoa?.equipes.some((id) => equipes.find((e) => e.id === id)?.acesso);
+  if (!acesso) return null;
+  return { username: sub, pessoa, gestao, coordena: pessoa?.coordena ?? [], equipes: pessoa?.equipes ?? [] };
 }
+
+/** Which session a person gets from a login link: full for gestão, v2-only for everyone else. */
+export function sessionPurposeFor(pessoa: Pessoa) {
+  return pessoa.equipes.some((id) => getEquipes().find((e) => e.id === id)?.gestao) ? "session" : MEMBER_PURPOSE;
+}
+
+// Permissions (plan §4.4): gestão edits everything; a coordinator everything of their team;
+// a member their own tasks, and creates tasks in their own teams.
+export const can = {
+  editTarefa: (me: Me, t: Tarefa) => me.gestao || (!!t.equipe && me.coordena.includes(t.equipe)) || (!!me.pessoa && t.responsaveis.includes(me.pessoa.id)),
+  criarEm: (me: Me, equipe: string) => me.gestao || (!!equipe && (me.equipes.includes(equipe) || me.coordena.includes(equipe))),
+  gerirEquipe: (me: Me, equipe: string) => me.gestao || me.coordena.includes(equipe),
+  gerirPessoa: (me: Me, p: Pessoa) => me.gestao || p.equipes.some((e) => me.coordena.includes(e)),
+};
 
 export const today = () => new Date().toISOString().slice(0, 10);
 
@@ -139,12 +185,21 @@ export function progresso(objetivoId: string, tarefas: Tarefa[]) {
 
 // ---------------------------------------------------------------- writes
 
-function yamlValue(v: string | string[]) {
-  return Array.isArray(v) ? `[${v.map((x) => JSON.stringify(x)).join(", ")}]` : JSON.stringify(v);
+type FmValue = string | string[] | boolean;
+
+function yamlValue(v: FmValue) {
+  return Array.isArray(v) ? `[${v.map((x) => JSON.stringify(x)).join(", ")}]` : typeof v === "boolean" ? String(v) : JSON.stringify(v);
 }
 
+/** "Ligar p/ Melo — urgente" → "ligar_p_melo_urgente" (file names) */
+const slugify = (v: string) =>
+  v.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "_").slice(0, 40).replace(/^_|_$/g, "");
+
+const noteText = (fm: Record<string, FmValue>, body: string) =>
+  ["---", ...Object.entries(fm).map(([k, v]) => `${k}: ${yamlValue(v)}`), "---", "", "<!-- agente: nipei-os v2 -->", body, ""].join("\n");
+
 /** Sets single-line top-level frontmatter keys, leaving every other line untouched. */
-export function setFrontmatter(text: string, items: Record<string, string | string[]>): string {
+export function setFrontmatter(text: string, items: Record<string, FmValue>): string {
   return text.replace(/^---\r?\n([\s\S]*?)(\r?\n---)/, (_, fm: string, close: string) => {
     for (const [k, v] of Object.entries(items)) {
       const line = `${k}: ${yamlValue(v)}`;
@@ -155,7 +210,7 @@ export function setFrontmatter(text: string, items: Record<string, string | stri
   });
 }
 
-function updateNote(relFile: string, items: Record<string, string | string[]>) {
+function updateNote(relFile: string, items: Record<string, FmValue>) {
   const full = path.join(vault(), relFile);
   fs.writeFileSync(full, setFrontmatter(fs.readFileSync(full, "utf-8"), { ...items, updated_at: new Date().toISOString() }), "utf-8");
 }
@@ -169,16 +224,15 @@ export function setTarefaStatus(id: string, status: Status) {
 export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string }) {
   const ids = getTarefas().map((t) => Number(t.id.match(/^task_(\d+)$/)?.[1] ?? 0));
   const n = Math.max(0, ...ids) + 1;
-  const slug = input.title.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").slice(0, 40).replace(/^_|_$/g, "");
+  const slug = slugify(input.title);
   const projeto = getProjetos().find((p) => p.id === input.projeto);
-  const fm: Record<string, string | string[]> = {
+  const fm: Record<string, FmValue> = {
     id: `task_${n}`, title: input.title, type: "tarefa", status: STATUS_RAW.todo, priority: "Média",
     prazo: input.prazo, responsible: input.responsaveis.map((r) => getPessoas().find((p) => p.id === r)?.name ?? r).join(", "),
     project: projeto?.nome ?? "Geral", tags: ["tarefa", "nipei-os"], updated_at: new Date().toISOString(),
     equipe: input.equipe, projeto: input.projeto, objetivo: input.objetivo, responsaveis: input.responsaveis,
   };
-  const text = `---\n${Object.entries(fm).map(([k, v]) => `${k}: ${yamlValue(v)}`).join("\n")}\n---\n\n<!-- agente: nipei-os v2 -->\n# Tarefa: ${input.title}\n`;
-  fs.writeFileSync(path.join(vault(), "Productivity", "Tarefas", `${n}_${slug || "tarefa"}.md`), text, { encoding: "utf-8", flag: "wx" });
+  fs.writeFileSync(path.join(vault(), "Productivity", "Tarefas", `${n}_${slug || "tarefa"}.md`), noteText(fm, `# Tarefa: ${input.title}`), { encoding: "utf-8", flag: "wx" });
 }
 
 /** Adds a person to a team: both the person's `equipes` and the team's `membros`. */
@@ -188,4 +242,44 @@ export function addToEquipe(pessoaId: string, equipeId: string) {
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
   updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])] });
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
+}
+
+/** Fields a person may fill in their own cadastro form. */
+export const CADASTRO_FIELDS = ["name", "native_name", "whatsapp", "email", "area", "funcao", "disponibilidade"] as const;
+
+export function saveCadastro(pessoaId: string, data: Partial<Record<(typeof CADASTRO_FIELDS)[number], string>>) {
+  const note = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
+  if (!note) throw new Error("Pessoa não encontrada");
+  const items: Record<string, string> = {};
+  for (const k of CADASTRO_FIELDS) if (data[k] != null) items[k] = String(data[k]).trim().slice(0, 300);
+  const faltam = [!items.email && !s(note.fm.email) && "email", !items.whatsapp && !s(note.fm.whatsapp) && "WhatsApp"].filter(Boolean);
+  updateNote(note.file, {
+    ...items,
+    has_missing_info: faltam.length > 0,
+    missing_info_details: faltam.length ? `Falta: ${faltam.join(", ")}.` : "",
+    cadastro_em: new Date().toISOString().slice(0, 10),
+  });
+}
+
+/** New person note with the next NIP id; optionally already in a team. Returns the new id. */
+export function createPessoa(name: string, equipeId: string) {
+  const slug = slugify(name) || "pessoa";
+  const ids = new Set(getPessoas().map((p) => p.id));
+  let id = slug;
+  for (let i = 2; ids.has(id); i++) id = `${slug}_${i}`;
+  const n = Math.max(0, ...getPessoas().map((p) => Number(p.nipeiId.slice(4)) || 0)) + 1;
+  const fm: Record<string, FmValue> = {
+    id, nipei_id: `NIP-${String(n).padStart(4, "0")}`, name, native_name: "", type: "human_staff", status: "APPROVED",
+    global_role: "OPERATOR", whatsapp: "", email: "", equipes: [], has_missing_info: true,
+    missing_info_details: "Falta: email, WhatsApp.", updated_at: new Date().toISOString(),
+  };
+  fs.writeFileSync(path.join(vault(), "Miembros", `${id}.md`), noteText(fm, `# ${name}`), { encoding: "utf-8", flag: "wx" });
+  if (equipeId) addToEquipe(id, equipeId);
+  return id;
+}
+
+export function setEquipeAcesso(equipeId: string, acesso: boolean) {
+  const note = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
+  if (!note) throw new Error("Equipe não encontrada");
+  updateNote(note.file, { acesso });
 }

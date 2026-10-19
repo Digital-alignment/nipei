@@ -20,6 +20,15 @@ const pt = {
   lista: "Lista", mes: "Mês", semana: ["D", "S", "T", "Q", "Q", "S", "S"], nadaNoDia: "Nada neste dia.",
   googleTitulo: "Ver no Google Calendar", googleTexto: "No Google Calendar (computador): Outras agendas → + → Do URL, e cole este endereço. O Google atualiza a cada poucas horas. Eventos só com mês (sem dia) não entram até terem data.",
   falar: "Falar uma tarefa", ouvindo: "Ouvindo…", vozIndisponivel: "Este navegador não reconhece voz.",
+  cadastroTitulo: "Cadastro", cadastroIntro: "Confira e complete seus dados. Só a coordenação vê estas informações.",
+  nome: "Nome", nomeNativo: "Nome na língua (opcional)", whatsapp: "WhatsApp (com DDD)", email: "E-mail", area: "Onde você atua",
+  funcao: "O que você faz", disponibilidade: "Disponibilidade (dias / horários)", salvar: "Salvar", obrigado: "Obrigado! Seus dados foram salvos.",
+  linkInvalido: "Este link expirou ou não é válido. Peça um novo para a coordenação.", semAcesso: "Sua equipe ainda não tem acesso à plataforma.",
+  linkCadastro: "Link de cadastro", linkAcesso: "Link de acesso", enviarWhats: "Enviar por WhatsApp", copiarLink: "Ou copie o link:",
+  msgCadastro: "Olá {nome}! Este é o seu link para completar o cadastro no Nipëi:", msgAcesso: "Olá {nome}! Este é o seu link para entrar no Nipëi (vale 7 dias):",
+  acessoPlataforma: "Acesso à plataforma", acessoLigado: "Membros desta equipe podem entrar", acessoDesligado: "Membros desta equipe ainda não entram",
+  ligar: "Liberar acesso", desligar: "Tirar acesso", novaPessoa: "Nova pessoa", adicionar: "Adicionar", cadastradoEm: "Cadastro feito em",
+  equipeSemAcesso: "Nenhuma equipe desta pessoa tem acesso ainda.", semContato: "Sem WhatsApp: copie o link e envie por outro meio.",
 };
 type Dict = typeof pt;
 
@@ -39,6 +48,15 @@ const en: Dict = {
   lista: "List", mes: "Month", semana: ["S", "M", "T", "W", "T", "F", "S"], nadaNoDia: "Nothing on this day.",
   googleTitulo: "View in Google Calendar", googleTexto: "In Google Calendar (desktop): Other calendars → + → From URL, and paste this address. Google refreshes it every few hours. Events with only a month (no day) are left out until they get a date.",
   falar: "Say a task", ouvindo: "Listening…", vozIndisponivel: "This browser can't recognise speech.",
+  cadastroTitulo: "Registration", cadastroIntro: "Check and complete your details. Only the coordination sees this.",
+  nome: "Name", nomeNativo: "Name in your language (optional)", whatsapp: "WhatsApp (with area code)", email: "E-mail", area: "Where you work",
+  funcao: "What you do", disponibilidade: "Availability (days / hours)", salvar: "Save", obrigado: "Thank you! Your details were saved.",
+  linkInvalido: "This link has expired or is not valid. Ask the coordination for a new one.", semAcesso: "Your team does not have access to the platform yet.",
+  linkCadastro: "Registration link", linkAcesso: "Login link", enviarWhats: "Send by WhatsApp", copiarLink: "Or copy the link:",
+  msgCadastro: "Hi {nome}! Here is your link to complete your registration in Nipëi:", msgAcesso: "Hi {nome}! Here is your link to log in to Nipëi (valid for 7 days):",
+  acessoPlataforma: "Platform access", acessoLigado: "Members of this team can log in", acessoDesligado: "Members of this team cannot log in yet",
+  ligar: "Grant access", desligar: "Remove access", novaPessoa: "New person", adicionar: "Add", cadastradoEm: "Registered on",
+  equipeSemAcesso: "None of this person's teams has access yet.", semContato: "No WhatsApp: copy the link and send it another way.",
 };
 
 export async function getLang(): Promise<Lang> {

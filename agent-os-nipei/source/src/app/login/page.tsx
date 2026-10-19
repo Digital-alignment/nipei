@@ -4,7 +4,8 @@ import { getT } from "@/lib/v2/i18n";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+  const { erro } = await searchParams;
   const { t } = await getT();
   // Whoever has a `usuario:` in their Miembros note can log in (passwords live in NIPEI_OS_USERS).
   const pessoas = getPessoas().filter((p) => p.usuario).map((p) => ({ id: p.id, name: p.name, usuario: p.usuario }));
@@ -13,6 +14,7 @@ export default async function LoginPage() {
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold mb-1">Nipëi</h1>
         <p className="text-sm text-neutral-500 mb-6">{t.quemEntra}</p>
+        {erro && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{erro === "acesso" ? t.semAcesso : t.linkInvalido}</p>}
         <LoginForm pessoas={pessoas} labels={{ usuario: t.usuario, senha: t.senha, entrar: t.entrar, erroLogin: t.erroLogin, erroServidor: t.erroServidor }} />
       </div>
     </div>

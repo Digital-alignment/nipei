@@ -21,7 +21,7 @@ export default async function Hoje() {
   // dated events first ("2027-01"), then the ones with only a year ("2027")
   const eventos = getEventos().filter((e) => e.inicio >= hoje.slice(0, 7))
     .sort((a, b) => Number(a.inicio.length < 7) - Number(b.inicio.length < 7) || a.inicio.localeCompare(b.inicio)).slice(0, 3);
-  const props = { equipes, pessoas, lang, hoje };
+  const props = { equipes, pessoas, lang, hoje, me: user! };
 
   return (
     <>

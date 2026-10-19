@@ -2,13 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Avatar, Card, Chip, Empty, Progress, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
-import { getEquipes, getObjetivos, getPessoas, getTarefas, progresso, today } from "@/lib/v2/data";
+import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, progresso, today } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
+import { setEquipeAcessoAction } from "../../actions";
 
 export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string }> }) {
   const { id } = await params;
   const { area } = await searchParams;
   const { t, lang } = await getT();
+  const me = (await currentUser())!;
   const equipes = getEquipes(), pessoas = getPessoas(), tarefas = getTarefas();
   const e = equipes.find((x) => x.id === id);
   if (!e) notFound();
@@ -30,7 +32,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
 
       <Section title={t.tarefasAbertas} count={abertas.length}>
         <Link href={`/tarefas/nova?equipe=${id}&back=/equipes/${id}`} className="inline-flex items-center gap-1 text-sm mb-1 text-neutral-600 dark:text-neutral-400"><Plus size={16} />{t.novaTarefa}</Link>
-        {abertas.length ? <TaskList tarefas={abertas} equipes={equipes} pessoas={pessoas} lang={lang} hoje={today()} /> : <Empty>{t.semTarefas}</Empty>}
+        {abertas.length ? <TaskList tarefas={abertas} equipes={equipes} pessoas={pessoas} lang={lang} hoje={today()} me={me} /> : <Empty>{t.semTarefas}</Empty>}
       </Section>
 
       <Section title={t.objetivos} count={objetivos.length}>
@@ -47,15 +49,28 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         </div>
       </Section>
 
+      <Section title={t.acessoPlataforma}>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className={e.acesso ? "text-green-700 dark:text-green-400" : "text-neutral-500"}>{e.acesso ? t.acessoLigado : t.acessoDesligado}</span>
+          {me.gestao && !e.gestao && (
+            <form action={setEquipeAcessoAction}>
+              <input type="hidden" name="equipe" value={e.id} />
+              <input type="hidden" name="acesso" value={String(!e.acesso)} />
+              <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs">{e.acesso ? t.desligar : t.ligar}</button>
+            </form>
+          )}
+        </div>
+      </Section>
+
       <Section title={t.coordenacao}>
         <div className="flex flex-wrap gap-3">
-          {e.coordenadores.map((c) => <span key={c} className="inline-flex items-center gap-2 text-sm"><Avatar name={nome(c)} size={28} />{nome(c)}</span>)}
+          {e.coordenadores.map((c) => <Link key={c} href={`/pessoas/${c}`} className="inline-flex items-center gap-2 text-sm"><Avatar name={nome(c)} size={28} />{nome(c)}</Link>)}
         </div>
       </Section>
 
       <Section title={t.membros} count={e.membros.length}>
         <div className="flex flex-wrap gap-3">
-          {e.membros.map((m) => <span key={m} className="inline-flex items-center gap-2 text-sm"><Avatar name={nome(m)} size={28} />{nome(m)}</span>)}
+          {e.membros.map((m) => <Link key={m} href={`/pessoas/${m}`} className="inline-flex items-center gap-2 text-sm"><Avatar name={nome(m)} size={28} />{nome(m)}</Link>)}
         </div>
       </Section>
     </>

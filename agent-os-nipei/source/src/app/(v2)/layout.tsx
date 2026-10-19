@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
 import Nav from "@/components/v2/Nav";
 import { Avatar } from "@/components/v2/ui";
-import { currentUser } from "@/lib/v2/data";
+import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
+import { MEMBER_PURPOSE, currentUser } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
 
@@ -11,7 +13,11 @@ export const dynamic = "force-dynamic";
 
 export default async function V2Layout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
-  if (!user) redirect("/login");
+  if (!user) {
+    // Valid cookie but no access: the person's teams were switched off (or they left them).
+    const token = (await cookies()).get(SESSION_COOKIE)?.value;
+    redirect(verifyToken(token, MEMBER_PURPOSE) ? "/login?erro=acesso" : "/login");
+  }
   const { t } = await getT();
   const name = user.pessoa?.name ?? user.username;
 
@@ -26,7 +32,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
           <form action={logoutAction}>
             <button aria-label={t.sair} title={t.sair} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><LogOut size={18} /></button>
           </form>
-          <Link href="/pessoas" aria-label={t.pessoas}><Avatar name={name} size={30} /></Link>
+          <Link href={user.pessoa ? `/pessoas/${user.pessoa.id}` : "/pessoas"} aria-label={t.pessoas}><Avatar name={name} size={30} /></Link>
         </div>
       </header>
       <div className="flex">

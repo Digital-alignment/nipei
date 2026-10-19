@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Card, Chip, Empty, Progress, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
-import { getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, progresso, today } from "@/lib/v2/data";
+import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, progresso, today } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
 export default async function ProjetoDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ equipe?: string }> }) {
   const { id } = await params;
   const { equipe } = await searchParams;
   const { t, lang } = await getT();
+  const me = (await currentUser())!;
   const p = getProjetos().find((x) => x.id === id);
   if (!p) notFound();
   const equipes = getEquipes(), pessoas = getPessoas(), tarefas = getTarefas();
@@ -43,7 +44,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
 
       <Section title={t.tarefasAbertas} count={abertas.length}>
         <Link href={`/tarefas/nova?projeto=${id}&back=/projetos/${id}`} className="inline-flex items-center gap-1 text-sm mb-1 text-neutral-600 dark:text-neutral-400"><Plus size={16} />{t.novaTarefa}</Link>
-        {abertas.length ? <TaskList tarefas={abertas} equipes={equipes} pessoas={pessoas} lang={lang} hoje={today()} /> : <Empty>{t.semTarefas}</Empty>}
+        {abertas.length ? <TaskList tarefas={abertas} equipes={equipes} pessoas={pessoas} lang={lang} hoje={today()} me={me} /> : <Empty>{t.semTarefas}</Empty>}
       </Section>
     </>
   );

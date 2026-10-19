@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Title } from "@/components/v2/ui";
-import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { createTarefaAction } from "../../actions";
 
@@ -9,10 +9,13 @@ const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-7
 export default async function NovaTarefa({ searchParams }: { searchParams: Promise<{ equipe?: string; projeto?: string; objetivo?: string; back?: string }> }) {
   const q = await searchParams;
   const { t } = await getT();
-  const me = (await currentUser())?.pessoa;
-  const equipes = getEquipes(), projetos = getProjetos(), objetivos = getObjetivos();
+  const user = (await currentUser())!;
+  const me = user.pessoa;
+  // Only the teams this person may create tasks in (plan §4.4); "no team" is for gestão only.
+  const equipes = getEquipes().filter((e) => can.criarEm(user, e.id)), projetos = getProjetos(), objetivos = getObjetivos();
+  const equipeInicial = equipes.some((e) => e.id === q.equipe) ? q.equipe : me?.equipes.find((id) => equipes.some((e) => e.id === id)) ?? equipes[0]?.id ?? "";
   const pessoas = getPessoas().filter((p) => p.equipes.length > 0);
-  const back = q.back?.startsWith("/") ? q.back : "/hoje";
+  const back = q.back?.startsWith("/") && !q.back.startsWith("//") ? q.back : "/hoje";
 
   return (
     <>
@@ -24,8 +27,8 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1 text-sm">{t.equipe}
-            <select name="equipe" defaultValue={q.equipe ?? me?.equipes[0] ?? ""} className={field}>
-              <option value="">{t.nenhum}</option>
+            <select name="equipe" defaultValue={equipeInicial} className={field}>
+              {user.gestao && <option value="">{t.nenhum}</option>}
               {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
             </select>
           </label>

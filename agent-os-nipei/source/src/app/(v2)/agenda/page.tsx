@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { Chip, Empty, Section, TaskRow, Title } from "@/components/v2/ui";
+import { Chip, Empty, Section, TaskRow, Title, type RowProps } from "@/components/v2/ui";
 import { signToken } from "@/lib/auth";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today, type Evento } from "@/lib/v2/data";
 import { fmtDate, getT, type Lang } from "@/lib/v2/i18n";
@@ -39,12 +39,12 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const equipes = getEquipes(), pessoas = getPessoas();
   const tarefas = getTarefas().filter((x) => x.prazo && x.status !== "done" && (!equipe || x.equipe === equipe));
   const eventos = getEventos().filter((e) => !equipe || e.equipe === equipe);
-  const rowProps = { equipes, pessoas, lang, hoje };
+  const user = await currentUser();
+  const rowProps = { equipes, pessoas, lang, hoje, me: user! };
   const link = (p: Record<string, string | undefined>) =>
     "/agenda?" + new URLSearchParams(Object.entries({ equipe, vista: q.vista, m: q.m, ...p }).filter(([, v]) => v) as [string, string][]).toString();
 
   // Subscription URL for Google Calendar: a long-lived token scoped to "ics" only (cannot log in).
-  const user = await currentUser();
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const icsUrl = user ? `${origin}/api/agenda/ics?token=${signToken("ics", user.username, ICS_TTL)}${equipe ? `&equipe=${equipe}` : ""}` : "";
@@ -77,7 +77,6 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   );
 }
 
-type RowProps = { equipes: ReturnType<typeof getEquipes>; pessoas: ReturnType<typeof getPessoas>; lang: Lang; hoje: string };
 type T = Awaited<ReturnType<typeof getT>>["t"];
 
 function Lista({ hoje, tarefas, eventos, rowProps, t, lang }: { hoje: string; tarefas: ReturnType<typeof getTarefas>; eventos: Evento[]; rowProps: RowProps; t: T; lang: Lang }) {

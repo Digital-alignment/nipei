@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { setStatusAction } from "@/app/(v2)/actions";
-import type { Equipe, Pessoa, Tarefa } from "@/lib/v2/data";
+import { can, type Equipe, type Me, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, type Lang } from "@/lib/v2/i18n";
 
 export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
@@ -54,20 +54,27 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 /** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */
-export function TaskRow({ t, equipes, pessoas, lang, hoje }: { t: Tarefa; equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string }) {
+export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
+
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me }: { t: Tarefa } & RowProps) {
   const eq = equipes.find((e) => e.id === t.equipe);
   const who = t.responsaveis.map((id) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id).join(", ") || t.responsible;
   const late = t.prazo && t.prazo < hoje && t.status !== "done";
   return (
     <li className="flex items-start gap-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-      <form action={setStatusAction}>
-        <input type="hidden" name="id" value={t.id} />
-        <input type="hidden" name="status" value={t.status === "done" ? "todo" : "done"} />
-        <button aria-label={t.status === "done" ? "Reabrir" : "Concluir"}
-          className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] ${t.status === "done" ? "bg-neutral-800 border-neutral-800 text-white dark:bg-neutral-200 dark:border-neutral-200 dark:text-neutral-900" : "border-neutral-400 hover:border-neutral-700"}`}>
-          {t.status === "done" ? "✓" : t.status === "doing" ? "•" : ""}
-        </button>
-      </form>
+      {can.editTarefa(me, t) ? (
+        <form action={setStatusAction}>
+          <input type="hidden" name="id" value={t.id} />
+          <input type="hidden" name="status" value={t.status === "done" ? "todo" : "done"} />
+          <button aria-label={t.status === "done" ? "Reabrir" : "Concluir"}
+            className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] ${t.status === "done" ? "bg-neutral-800 border-neutral-800 text-white dark:bg-neutral-200 dark:border-neutral-200 dark:text-neutral-900" : "border-neutral-400 hover:border-neutral-700"}`}>
+            {t.status === "done" ? "✓" : t.status === "doing" ? "•" : ""}
+          </button>
+        </form>
+      ) : (
+        // Read-only: not yours and not your team's to coordinate.
+        <span aria-hidden className="mt-0.5 w-5 h-5 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-700 shrink-0" />
+      )}
       <div className="min-w-0 flex-1">
         <p className={`text-sm leading-snug ${t.status === "done" ? "line-through text-neutral-400" : ""}`}>{t.title}</p>
         <p className="text-xs text-neutral-500 mt-0.5 flex flex-wrap items-center gap-x-2">
@@ -80,7 +87,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje }: { t: Tarefa; equipe
   );
 }
 
-export function TaskList({ tarefas, ...rest }: { tarefas: Tarefa[]; equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string }) {
+export function TaskList({ tarefas, ...rest }: { tarefas: Tarefa[] } & RowProps) {
   return <ul>{tarefas.map((t) => <TaskRow key={t.id} t={t} {...rest} />)}</ul>;
 }
 
