@@ -17,8 +17,8 @@ export type Equipe = {
   gestao: boolean; // members of this team manage everything (full session, v1 included)
 };
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string };
-export type Objetivo = { id: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string };
-export type Evento = { id: string; titulo: string; inicio: string; fim: string; status: string; equipe: string };
+export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
+export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string };
 export type Pessoa = {
   id: string; nipeiId: string; name: string; nativeName: string; equipes: string[]; coordena: string[]; usuario: string;
   whatsapp: string; email: string; area: string; funcao: string; disponibilidade: string; incompleta: boolean; cadastroEm: string;
@@ -82,13 +82,16 @@ export function getProjetos(): Projeto[] {
 
 export function getObjetivos(): Objetivo[] {
   return readDir("Objetivos")
-    .map(({ fm, body }) => ({ id: s(fm.id), titulo: s(fm.titulo), ano: Number(fm.ano) || 0, equipe: s(fm.equipe), apoio: arr(fm.apoio), projeto: s(fm.projeto), descricao: desc(body) }))
+    .map(({ fm, body, file }) => ({
+      id: s(fm.id), file, titulo: s(fm.titulo), ano: Number(fm.ano) || 0, equipe: s(fm.equipe), apoio: arr(fm.apoio), projeto: s(fm.projeto),
+      descricao: desc(body), donoConfirmado: fm.dono_confirmado === true,
+    }))
     .sort((a, b) => a.ano - b.ano || a.id.localeCompare(b.id));
 }
 
 export function getEventos(): Evento[] {
   return readDir("Eventos")
-    .map(({ fm }) => ({ id: s(fm.id), titulo: s(fm.titulo), inicio: s(fm.inicio), fim: s(fm.fim), status: s(fm.status), equipe: s(fm.equipe) }))
+    .map(({ fm, file }) => ({ id: s(fm.id), file, titulo: s(fm.titulo), inicio: s(fm.inicio), fim: s(fm.fim), status: s(fm.status), equipe: s(fm.equipe) }))
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
@@ -173,6 +176,10 @@ export const can = {
   criarEm: (me: Me, equipe: string) => me.gestao || (!!equipe && (me.equipes.includes(equipe) || me.coordena.includes(equipe))),
   gerirEquipe: (me: Me, equipe: string) => me.gestao || me.coordena.includes(equipe),
   gerirPessoa: (me: Me, p: Pessoa) => me.gestao || p.equipes.some((e) => me.coordena.includes(e)),
+  // A task with no team can be claimed by a coordinator into their own team ("Sem equipe" triage).
+  assumir: (me: Me, t: Tarefa) => !t.equipe && me.coordena.length > 0,
+  editEvento: (me: Me, e: Evento) => me.gestao || (!!e.equipe && me.coordena.includes(e.equipe)),
+  editObjetivo: (me: Me) => me.gestao,
 };
 
 export const today = () => new Date().toISOString().slice(0, 10);
@@ -346,4 +353,37 @@ export function createAcervo(input: Omit<AcervoItem, "id">, por: string) {
   const id = `acv_${Date.now().toString(36)}`;
   const fm: Record<string, FmValue> = { ...input, id, type: "acervo", adicionado_por: por, updated_at: new Date().toISOString() };
   fs.writeFileSync(path.join(dir, `${slugify(input.titulo) || "item"}_${id.slice(4)}.md`), noteText(fm, `# ${input.titulo}\n\n${input.url}`), { encoding: "utf-8", flag: "wx" });
+}
+
+// ---------------------------------------------------------------- edits (tarefa, evento, objetivo)
+
+export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status }) {
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t) throw new Error("Tarefa não encontrada");
+  const pessoas = getPessoas();
+  updateNote(t.file, {
+    title: input.title, equipe: input.equipe, area: input.area, projeto: input.projeto, objetivo: input.objetivo, prazo: input.prazo,
+    responsaveis: input.responsaveis, status: STATUS_RAW[input.status],
+    // keep the v1 free-text owner in sync so the old kanban shows the same people
+    responsible: input.responsaveis.map((r) => pessoas.find((p) => p.id === r)?.name ?? r).join(", "),
+  });
+}
+
+export function createEvento(input: { titulo: string; inicio: string; fim: string; status: string; equipe: string }) {
+  const dir = path.join(vault(), "Eventos");
+  const base = `${input.inicio || "sem_data"}_${slugify(input.titulo) || "evento"}`;
+  const fm: Record<string, FmValue> = { id: `evt_${base}`, type: "evento", ...input, projeto: "santuario", updated_at: new Date().toISOString() };
+  fs.writeFileSync(path.join(dir, `${base}.md`), noteText(fm, `# ${input.titulo}`), { encoding: "utf-8", flag: "wx" });
+}
+
+export function updateEvento(id: string, input: { titulo: string; inicio: string; fim: string; status: string; equipe: string }) {
+  const e = getEventos().find((x) => x.id === id);
+  if (!e) throw new Error("Evento não encontrado");
+  updateNote(e.file, input);
+}
+
+export function updateObjetivo(id: string, input: { equipe: string; apoio: string[] }) {
+  const o = getObjetivos().find((x) => x.id === id);
+  if (!o) throw new Error("Objetivo não encontrado");
+  updateNote(o.file, { ...input, dono_confirmado: true });
 }

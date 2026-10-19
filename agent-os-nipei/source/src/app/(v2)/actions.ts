@@ -6,8 +6,9 @@ import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
 import {
-  ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createLancamento, createPessoa, createTarefa,
-  currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus, type Status,
+  ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
+  currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
+  updateEvento, updateObjetivo, updateTarefa, type Status,
 } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
@@ -78,6 +79,76 @@ export async function setEquipeAcessoAction(form: FormData) {
   if (!me.gestao) return;
   setEquipeAcesso(String(form.get("equipe")), form.get("acesso") === "true");
   revalidatePath("/", "layout");
+}
+
+const isDate = (v: FormDataEntryValue | null) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) ? String(v) : "");
+
+/** Full edit of a task — also used to triage "Sem equipe" tasks into a team and to people. */
+export async function updateTarefaAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  if (!t || !(can.editTarefa(me, t) || can.assumir(me, t))) return;
+  const equipes = getEquipes().map((e) => e.id), pessoas = getPessoas().map((p) => p.id);
+  const equipe = pick(form.get("equipe"), equipes);
+  // Moving a task to another team needs rights there; only gestão may leave it without a team.
+  if (equipe !== t.equipe && !(equipe ? can.criarEm(me, equipe) : me.gestao)) return;
+  const status = String(form.get("status")) as Status;
+  const title = String(form.get("title") ?? "").trim().slice(0, 200) || t.title;
+  updateTarefa(t.id, {
+    title, equipe,
+    area: equipe === t.equipe ? t.area : "", // an area belongs to the old team
+    projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
+    objetivo: pick(form.get("objetivo"), getObjetivos().map((o) => o.id)),
+    prazo: isDate(form.get("prazo")),
+    responsaveis: form.getAll("responsaveis").map(String).filter((id) => pessoas.includes(id)),
+    status: ["todo", "doing", "done"].includes(status) ? status : t.status,
+  });
+  revalidatePath("/", "layout");
+  redirect(safeBack(form.get("back")));
+}
+
+const eventoInput = (form: FormData) => {
+  const inicio = isDate(form.get("inicio")), fim = isDate(form.get("fim"));
+  return {
+    titulo: String(form.get("titulo") ?? "").trim().slice(0, 150),
+    inicio, fim: fim && inicio && fim >= inicio ? fim : "",
+    status: form.get("status") === "confirmado" ? "confirmado" : "a_confirmar",
+    equipe: pick(form.get("equipe"), getEquipes().map((e) => e.id)),
+  };
+};
+
+export async function createEventoAction(form: FormData) {
+  const me = await requireUser();
+  const input = eventoInput(form);
+  if (!input.titulo || !input.equipe || !can.gerirEquipe(me, input.equipe)) return;
+  createEvento(input);
+  revalidatePath("/", "layout");
+  redirect("/agenda");
+}
+
+export async function updateEventoAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEventos().find((x) => x.id === String(form.get("id")));
+  const input = eventoInput(form);
+  // Keeping the old date when the field is cleared avoids wiping "2027-01" (month only) by accident.
+  if (!e || !input.titulo || !can.editEvento(me, e) || (input.equipe !== e.equipe && !can.gerirEquipe(me, input.equipe))) return;
+  updateEvento(e.id, { ...input, inicio: input.inicio || e.inicio, equipe: input.equipe || e.equipe });
+  revalidatePath("/", "layout");
+  redirect(safeBack(form.get("back")));
+}
+
+export async function updateObjetivoAction(form: FormData) {
+  const me = await requireUser();
+  if (!can.editObjetivo(me)) return;
+  const equipes = getEquipes().map((e) => e.id);
+  const equipe = pick(form.get("equipe"), equipes);
+  if (!equipe) return;
+  updateObjetivo(String(form.get("id")), {
+    equipe,
+    apoio: form.getAll("apoio").map(String).filter((id) => equipes.includes(id) && id !== equipe),
+  });
+  revalidatePath("/", "layout");
+  redirect(safeBack(form.get("back")));
 }
 
 export async function createLancamentoAction(form: FormData) {

@@ -17,6 +17,10 @@ export default async function Equipes() {
             </p>
           </Card>
         ))}
+        <Card href="/equipes/sem-equipe">
+          <p className="font-semibold">{t.semEquipe}</p>
+          <p className="text-xs text-neutral-500 mt-1">{tarefas.filter((x) => !x.equipe && x.status !== "done").length} {t.tarefasAbertas.toLowerCase()}</p>
+        </Card>
       </div>
     </>
   );

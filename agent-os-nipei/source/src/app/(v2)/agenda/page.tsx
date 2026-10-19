@@ -1,10 +1,10 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Chip, Empty, Section, TaskRow, Title, type RowProps } from "@/components/v2/ui";
 import { signToken } from "@/lib/auth";
-import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today, type Evento } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, today, type Evento } from "@/lib/v2/data";
 import { fmtDate, getT, type Lang } from "@/lib/v2/i18n";
 
 // Year-only dates ("2027") go after that year's dated items.
@@ -16,7 +16,7 @@ function EventoRow({ e, lang, t }: { e: Evento; lang: Lang; t: { confirmado: str
     <li className="flex items-start gap-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
       <CalendarDays size={18} className="mt-0.5 text-neutral-500" />
       <div>
-        <p className="text-sm font-medium">{e.titulo}</p>
+        <Link href={`/eventos/${encodeURIComponent(e.id)}`} className="text-sm font-medium hover:underline">{e.titulo}</Link>
         <p className="text-xs text-neutral-500">{e.inicio.length > 7 ? fmtDate(e.inicio, lang) : ""}{e.fim ? ` → ${fmtDate(e.fim, lang)}` : ""} {e.status === "confirmado" ? t.confirmado : t.aConfirmar}</p>
       </div>
     </li>
@@ -52,6 +52,9 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <Title sub={t.semPrazo}>{t.agenda}</Title>
+      {user && equipes.some((e) => can.gerirEquipe(user, e.id)) && (
+        <Link href="/eventos/novo" className="inline-flex items-center gap-1 text-sm mb-3 text-neutral-600 dark:text-neutral-400"><Plus size={16} />{t.novoEvento}</Link>
+      )}
       <div className="flex flex-wrap gap-2 mb-3">
         <Chip href={link({ vista: undefined })} on={!vistaMes}>{t.lista}</Chip>
         <Chip href={link({ vista: "mes" })} on={vistaMes}>{t.mes}</Chip>

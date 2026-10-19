@@ -9,7 +9,7 @@ import MobileFX from "./MobileFX";
 import HermesFloatingAssistant from "./HermesFloatingAssistant";
 import { INITIAL_MEMBERS } from "@/lib/nipeiStore";
 
-const V2_PATHS = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/legacy", "/cadastro", "/financas", "/acervo"];
+const V2_PATHS = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/legacy", "/cadastro", "/financas", "/acervo", "/eventos"];
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

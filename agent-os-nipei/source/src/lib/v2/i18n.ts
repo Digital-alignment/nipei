@@ -36,6 +36,10 @@ const pt = {
   acervo: "Acervo", acervoIntro: "Os arquivos ficam no Google Drive; aqui fica o índice. Quem abrir precisa ter permissão na pasta.",
   novoItem: "Adicionar ao acervo", link: "Link (Google Drive)", tipo: "Tipo", ano: "Ano", abrir: "Abrir", semItens: "Nada encontrado.",
   tipos: { fotos: "Fotos", videos: "Vídeos", audios: "Áudios", cursos: "Cursos", documentos: "Documentos", marca: "Marca", outros: "Outros" } as Record<string, string>,
+  editar: "Editar", editarTarefa: "Editar tarefa", status: "Status", areaEquipe: "Área (opcional)", semPermissao: "Você não pode editar esta tarefa.",
+  semEquipeIntro: "Tarefas que ainda não têm equipe. Escolha a equipe (e, se quiser, quem faz) para tirá-las daqui.", atribuir: "Atribuir", ninguem: "Ninguém",
+  novoEvento: "Novo evento", editarEvento: "Editar evento", inicio: "Início", fim: "Fim (opcional)", soMes: "Hoje só tem mês/ano:",
+  donoEquipe: "Equipe dona", donoProposto: "Dono proposto — confirme ou troque", confirmarDono: "Confirmar", donoConfirmado: "Dono confirmado",
 };
 type Dict = typeof pt;
 
@@ -71,6 +75,10 @@ const en: Dict = {
   acervo: "Archive", acervoIntro: "Files stay in Google Drive; this is the index. Whoever opens one needs permission on the folder.",
   novoItem: "Add to archive", link: "Link (Google Drive)", tipo: "Type", ano: "Year", abrir: "Open", semItens: "Nothing found.",
   tipos: { fotos: "Photos", videos: "Videos", audios: "Audio", cursos: "Courses", documentos: "Documents", marca: "Brand", outros: "Other" },
+  editar: "Edit", editarTarefa: "Edit task", status: "Status", areaEquipe: "Area (optional)", semPermissao: "You can't edit this task.",
+  semEquipeIntro: "Tasks with no team yet. Pick the team (and, if you want, who does it) to move them out of here.", atribuir: "Assign", ninguem: "Nobody",
+  novoEvento: "New event", editarEvento: "Edit event", inicio: "Start", fim: "End (optional)", soMes: "Only month/year today:",
+  donoEquipe: "Owner team", donoProposto: "Proposed owner — confirm or change", confirmarDono: "Confirm", donoConfirmado: "Owner confirmed",
 };
 
 export async function getLang(): Promise<Lang> {

@@ -76,7 +76,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me }: { t: Tarefa } &
         <span aria-hidden className="mt-0.5 w-5 h-5 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-700 shrink-0" />
       )}
       <div className="min-w-0 flex-1">
-        <p className={`text-sm leading-snug ${t.status === "done" ? "line-through text-neutral-400" : ""}`}>{t.title}</p>
+        <Link href={`/tarefas/${t.id}`} className={`block text-sm leading-snug hover:underline ${t.status === "done" ? "line-through text-neutral-400" : ""}`}>{t.title}</Link>
         <p className="text-xs text-neutral-500 mt-0.5 flex flex-wrap items-center gap-x-2">
           {eq && <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ background: eq.cor }} />{eq.nome}</span>}
           {t.prazo && <span className={late ? "text-red-600 dark:text-red-400 font-medium" : ""}>{fmtDate(t.prazo, lang)}</span>}
