@@ -185,10 +185,10 @@ export function progresso(objetivoId: string, tarefas: Tarefa[]) {
 
 // ---------------------------------------------------------------- writes
 
-type FmValue = string | string[] | boolean;
+type FmValue = string | string[] | boolean | number;
 
 function yamlValue(v: FmValue) {
-  return Array.isArray(v) ? `[${v.map((x) => JSON.stringify(x)).join(", ")}]` : typeof v === "boolean" ? String(v) : JSON.stringify(v);
+  return Array.isArray(v) ? `[${v.map((x) => JSON.stringify(x)).join(", ")}]` : typeof v === "string" ? JSON.stringify(v) : String(v);
 }
 
 /** "Ligar p/ Melo — urgente" → "ligar_p_melo_urgente" (file names) */
@@ -282,4 +282,68 @@ export function setEquipeAcesso(equipeId: string, acesso: boolean) {
   const note = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
   if (!note) throw new Error("Equipe não encontrada");
   updateNote(note.file, { acesso });
+}
+
+// ---------------------------------------------------------------- finanças (gestão only)
+// One note per entry in Financeiro/Lancamentos/ — readable in Obsidian, versioned by the vault sync.
+// An entry is never deleted from the app: "anular" keeps it (and who did it) out of the totals.
+
+const LANC_DIR = path.join("Financeiro", "Lancamentos");
+export const CATEGORIAS = {
+  entrada: ["Retiros e eventos", "Vendas Inirau / loja", "Doações e grants", "Cursos", "Outras entradas"],
+  despesa: ["Alimentação", "Transporte e combustível", "Manutenção e obras", "Materiais e insumos", "Serviços e honorários",
+    "Ajudas de custo / equipe", "Impostos e taxas", "Comunicação e internet", "Outras despesas"],
+} as const;
+
+export type Lancamento = {
+  id: string; file: string; data: string; tipo: "entrada" | "despesa"; valor: number; categoria: string; descricao: string;
+  projeto: string; equipe: string; registradoPor: string; anulado: boolean;
+};
+
+export function getLancamentos(): Lancamento[] {
+  return readDir(LANC_DIR)
+    .map(({ fm, file }) => ({
+      id: s(fm.id), file, data: s(fm.data), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Lancamento["tipo"],
+      valor: Number(fm.valor) || 0, categoria: s(fm.categoria), descricao: s(fm.descricao), projeto: s(fm.projeto),
+      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true,
+    }))
+    .sort((a, b) => b.data.localeCompare(a.data) || b.id.localeCompare(a.id));
+}
+
+export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado">) {
+  const dir = path.join(vault(), LANC_DIR);
+  fs.mkdirSync(dir, { recursive: true });
+  const id = `lanc_${Date.now().toString(36)}`;
+  const fm: Record<string, FmValue> = {
+    id, type: "lancamento", data: input.data, tipo: input.tipo, valor: Math.round(input.valor * 100) / 100, categoria: input.categoria,
+    descricao: input.descricao, projeto: input.projeto, equipe: input.equipe, registrado_por: input.registradoPor,
+    anulado: false, updated_at: new Date().toISOString(),
+  };
+  const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
+  fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });
+}
+
+export function anularLancamento(id: string, por: string) {
+  const l = getLancamentos().find((x) => x.id === id);
+  if (!l) throw new Error("Lançamento não encontrado");
+  updateNote(l.file, { anulado: true, anulado_por: por, anulado_em: new Date().toISOString().slice(0, 10) });
+}
+
+// ---------------------------------------------------------------- acervo (links to Drive folders/files)
+
+export const ACERVO_TIPOS = ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] as const;
+export type AcervoItem = { id: string; titulo: string; url: string; tipo: string; projeto: string; ano: string; descricao: string };
+
+export function getAcervo(): AcervoItem[] {
+  return readDir("Acervo")
+    .map(({ fm }) => ({ id: s(fm.id), titulo: s(fm.titulo), url: s(fm.url), tipo: s(fm.tipo) || "outros", projeto: s(fm.projeto), ano: s(fm.ano), descricao: s(fm.descricao) }))
+    .sort((a, b) => b.ano.localeCompare(a.ano) || a.titulo.localeCompare(b.titulo, "pt"));
+}
+
+export function createAcervo(input: Omit<AcervoItem, "id">, por: string) {
+  const dir = path.join(vault(), "Acervo");
+  fs.mkdirSync(dir, { recursive: true });
+  const id = `acv_${Date.now().toString(36)}`;
+  const fm: Record<string, FmValue> = { ...input, id, type: "acervo", adicionado_por: por, updated_at: new Date().toISOString() };
+  fs.writeFileSync(path.join(dir, `${slugify(input.titulo) || "item"}_${id.slice(4)}.md`), noteText(fm, `# ${input.titulo}\n\n${input.url}`), { encoding: "utf-8", flag: "wx" });
 }

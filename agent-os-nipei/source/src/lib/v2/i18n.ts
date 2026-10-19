@@ -29,6 +29,13 @@ const pt = {
   acessoPlataforma: "Acesso à plataforma", acessoLigado: "Membros desta equipe podem entrar", acessoDesligado: "Membros desta equipe ainda não entram",
   ligar: "Liberar acesso", desligar: "Tirar acesso", novaPessoa: "Nova pessoa", adicionar: "Adicionar", cadastradoEm: "Cadastro feito em",
   equipeSemAcesso: "Nenhuma equipe desta pessoa tem acesso ainda.", semContato: "Sem WhatsApp: copie o link e envie por outro meio.",
+  financas: "Finanças", entradas: "Entradas", despesas: "Despesas", saldoMes: "Saldo do mês", saldoTotal: "Saldo acumulado",
+  novoLancamento: "Novo lançamento", entrada: "Entrada", despesa: "Despesa", data: "Data", valor: "Valor (R$)", categoria: "Categoria",
+  descricao: "Descrição", porCategoria: "Despesas por categoria", porProjeto: "Por projeto", ultimosMeses: "Últimos 6 meses",
+  lancamentos: "Lançamentos", anular: "Anular", anulado: "anulado", semLancamentos: "Nenhum lançamento neste mês.", geral: "Geral",
+  acervo: "Acervo", acervoIntro: "Os arquivos ficam no Google Drive; aqui fica o índice. Quem abrir precisa ter permissão na pasta.",
+  novoItem: "Adicionar ao acervo", link: "Link (Google Drive)", tipo: "Tipo", ano: "Ano", abrir: "Abrir", semItens: "Nada encontrado.",
+  tipos: { fotos: "Fotos", videos: "Vídeos", audios: "Áudios", cursos: "Cursos", documentos: "Documentos", marca: "Marca", outros: "Outros" } as Record<string, string>,
 };
 type Dict = typeof pt;
 
@@ -57,6 +64,13 @@ const en: Dict = {
   acessoPlataforma: "Platform access", acessoLigado: "Members of this team can log in", acessoDesligado: "Members of this team cannot log in yet",
   ligar: "Grant access", desligar: "Remove access", novaPessoa: "New person", adicionar: "Add", cadastradoEm: "Registered on",
   equipeSemAcesso: "None of this person's teams has access yet.", semContato: "No WhatsApp: copy the link and send it another way.",
+  financas: "Finances", entradas: "Income", despesas: "Expenses", saldoMes: "Month balance", saldoTotal: "Running balance",
+  novoLancamento: "New entry", entrada: "Income", despesa: "Expense", data: "Date", valor: "Amount (R$)", categoria: "Category",
+  descricao: "Description", porCategoria: "Expenses by category", porProjeto: "By project", ultimosMeses: "Last 6 months",
+  lancamentos: "Entries", anular: "Void", anulado: "voided", semLancamentos: "No entries this month.", geral: "General",
+  acervo: "Archive", acervoIntro: "Files stay in Google Drive; this is the index. Whoever opens one needs permission on the folder.",
+  novoItem: "Add to archive", link: "Link (Google Drive)", tipo: "Type", ano: "Year", abrir: "Open", semItens: "Nothing found.",
+  tipos: { fotos: "Photos", videos: "Videos", audios: "Audio", cursos: "Courses", documentos: "Documents", marca: "Brand", outros: "Other" },
 };
 
 export async function getLang(): Promise<Lang> {
