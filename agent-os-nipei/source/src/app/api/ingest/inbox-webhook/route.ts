@@ -9,8 +9,8 @@ function authenticateWebhook(req: Request): boolean {
   const authHeader = req.headers.get("authorization") || "";
   const secretEnv = process.env.NIPEI_WEBHOOK_SECRET;
 
-  // If no secret env configured, allow local calls with warning
-  if (!secretEnv) return true;
+  // No secret configured: allow only in local dev, never in production
+  if (!secretEnv) return process.env.NODE_ENV !== "production";
 
   if (authHeader.startsWith("Bearer ")) {
     const token = authHeader.slice(7).trim();

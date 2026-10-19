@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   // Form inputs
   const [usernameInput, setUsernameInput] = useState<string>("ashuan");
-  const [passwordInput, setPasswordInput] = useState<string>("ashuan2026");
+  const [passwordInput, setPasswordInput] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loginMode, setLoginMode] = useState<"human" | "ai_agent">("human");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -52,10 +52,11 @@ export default function LoginPage() {
   };
 
   // Quick preset selection handler
-  const handleSelectPreset = (member: MemberProfile, customUser: string, customPass: string) => {
+  // Passwords are verified server-side (NIPEI_OS_USERS); presets only fill the username.
+  const handleSelectPreset = (member: MemberProfile, customUser: string) => {
     setSelectedPresetId(member.id);
     setUsernameInput(customUser);
-    setPasswordInput(customPass);
+    setPasswordInput("");
     setErrorMessage(null);
     if (member.type === "ai_agent") {
       setLoginMode("ai_agent");
@@ -65,7 +66,7 @@ export default function LoginPage() {
   };
 
   // Perform Login
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Check MVP Gatekeeper
@@ -76,7 +77,19 @@ export default function LoginPage() {
       return;
     }
 
-    // Store current logged-in user profile into localStorage
+    // Server-side check: sets the httpOnly session cookie required by every /api route
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: usernameInput.trim(), password: passwordInput }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null);
+      setErrorMessage(data?.error || "Falha ao conectar com o servidor.");
+      return;
+    }
+
+    // Store current logged-in user profile into localStorage (UI state only)
     try {
       localStorage.setItem("nipei_current_user", JSON.stringify(activeMember));
       localStorage.setItem("nipei_selected_member_id", activeMember.id);
@@ -84,8 +97,9 @@ export default function LoginPage() {
       /* fallback */
     }
 
-    // Redirect to /mi-portal with active user role
-    router.push("/mi-portal");
+    // Back to the page that required login, or /mi-portal
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/mi-portal");
   };
 
   return (
@@ -142,8 +156,7 @@ export default function LoginPage() {
               onClick={() =>
                 handleSelectPreset(
                   INITIAL_MEMBERS.find((m) => m.id === "ashuan_web") || INITIAL_MEMBERS[0],
-                  "ashuan",
-                  "ashuan2026"
+                  "ashuan"
                 )
               }
               className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
@@ -182,8 +195,7 @@ export default function LoginPage() {
               onClick={() =>
                 handleSelectPreset(
                   INITIAL_MEMBERS.find((m) => m.id === "jordao_pekuti") || INITIAL_MEMBERS[0],
-                  "jordao",
-                  "jordao2026"
+                  "jordao"
                 )
               }
               className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
@@ -222,8 +234,7 @@ export default function LoginPage() {
               onClick={() =>
                 handleSelectPreset(
                   INITIAL_MEMBERS.find((m) => m.id === "rodrigo_andrade") || INITIAL_MEMBERS[0],
-                  "rodrigo",
-                  "rodrigo2026"
+                  "rodrigo"
                 )
               }
               className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
@@ -262,8 +273,7 @@ export default function LoginPage() {
               onClick={() =>
                 handleSelectPreset(
                   INITIAL_MEMBERS.find((m) => m.id === "ppr") || INITIAL_MEMBERS[0],
-                  "ppr",
-                  "ppr2026"
+                  "ppr"
                 )
               }
               className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
@@ -302,8 +312,7 @@ export default function LoginPage() {
               onClick={() =>
                 handleSelectPreset(
                   INITIAL_MEMBERS.find((m) => m.id === "ana_castro_human_api") || INITIAL_MEMBERS[0],
-                  "anacastro",
-                  "anacastro2026"
+                  "anacastro"
                 )
               }
               className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
@@ -350,8 +359,7 @@ export default function LoginPage() {
                   onClick={() =>
                     handleSelectPreset(
                       INITIAL_MEMBERS.find((m) => m.id === "agente_antigravity") || INITIAL_MEMBERS[0],
-                      "@antigravity",
-                      "agentpass"
+                      "@antigravity"
                     )
                   }
                   className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2.5 ${
@@ -373,8 +381,7 @@ export default function LoginPage() {
                   onClick={() =>
                     handleSelectPreset(
                       INITIAL_MEMBERS.find((m) => m.id === "agente_vaultkeeper") || INITIAL_MEMBERS[0],
-                      "@vaultkeeper",
-                      "agentpass"
+                      "@vaultkeeper"
                     )
                   }
                   className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2.5 ${
