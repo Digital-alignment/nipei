@@ -22,6 +22,10 @@ services:
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME}
       - N8N_URL=${N8N_URL}
       - AI_GATEWAY_URL=${AI_GATEWAY_URL}
+      - NIPEI_AUTH_SECRET=${NIPEI_AUTH_SECRET}
+      - NIPEI_API_TOKEN=${NIPEI_API_TOKEN}
+      - NIPEI_WEBHOOK_SECRET=${NIPEI_WEBHOOK_SECRET}
+      - NIPEI_OS_USERS=${NIPEI_OS_USERS}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nipei-os.entrypoints=websecure"
