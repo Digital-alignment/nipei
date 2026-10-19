@@ -11,8 +11,55 @@ import {
 import { executeGenerateDeliverable } from "@/app/api/agent-kanban/deliverables/route";
 import { executeDispatchCommunication } from "@/app/api/agent-kanban/dispatch/route";
 
+import { getEquipes, getPessoas, getProjetos, getObjetivos, updateNote } from "@/lib/v2/data";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type V2Input = { equipe?: unknown; responsaveis?: unknown; projeto?: unknown; objetivo?: unknown; prazo?: unknown; project?: unknown; assignee?: unknown };
+
+/** Checks the optional v2 fields against the vault and returns the frontmatter to add (same keys createTarefa writes). */
+function validateV2Fields(input: V2Input): { fields: Record<string, string | string[]> } | { error: string } {
+  const str = (v: unknown) => (v == null ? "" : String(v).trim());
+  const fields: Record<string, string | string[]> = {};
+
+  const objetivoId = str(input.objetivo);
+  const objetivo = objetivoId ? getObjetivos().find((o) => o.id === objetivoId) : undefined;
+  if (objetivoId && !objetivo) return { error: `objetivo "${objetivoId}" não existe. Válidos: ${getObjetivos().map((o) => o.id).join(", ")}` };
+
+  // An objetivo already belongs to a team; use it when equipe is omitted.
+  const equipe = str(input.equipe) || objetivo?.equipe || "";
+  if (equipe && !getEquipes().some((e) => e.id === equipe)) {
+    return { error: `equipe "${equipe}" não existe. Válidas: ${getEquipes().map((e) => e.id).join(", ")}` };
+  }
+
+  const projetoId = str(input.projeto);
+  const projeto = projetoId ? getProjetos().find((p) => p.id === projetoId) : undefined;
+  if (projetoId && !projeto) return { error: `projeto "${projetoId}" não existe. Válidos: ${getProjetos().map((p) => p.id).join(", ")}` };
+
+  const responsaveis = input.responsaveis == null ? [] : (Array.isArray(input.responsaveis) ? input.responsaveis : [input.responsaveis]).map(str).filter(Boolean);
+  const pessoas = getPessoas();
+  const unknown = responsaveis.filter((r) => !pessoas.some((p) => p.id === r));
+  if (unknown.length) return { error: `responsaveis não encontrados em Miembros/: ${unknown.join(", ")}` };
+
+  const prazo = str(input.prazo);
+  if (prazo && !(/^\d{4}-\d{2}-\d{2}$/.test(prazo) && !isNaN(Date.parse(prazo)))) {
+    return { error: `prazo "${prazo}" inválido; use YYYY-MM-DD` };
+  }
+
+  if (equipe) fields.equipe = equipe;
+  if (objetivoId) fields.objetivo = objetivoId;
+  if (projeto) {
+    fields.projeto = projeto.id;
+    if (!str(input.project)) fields.project = projeto.nome;
+  }
+  if (responsaveis.length) {
+    fields.responsaveis = responsaveis;
+    if (!str(input.assignee)) fields.responsible = responsaveis.map((r) => pessoas.find((p) => p.id === r)!.name || r).join(", ");
+  }
+  if (prazo) fields.prazo = prazo;
+  return { fields };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,9 +81,18 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      const v2 = validateV2Fields(opts);
+      if ("error" in v2) {
+        return NextResponse.json({ success: false, error: v2.error }, { status: 400 });
+      }
+      if (typeof v2.fields.project === "string") opts.project = v2.fields.project;
       const res = createKanbanTaskDirect(opts);
       if (!res.success) {
         return NextResponse.json({ success: false, error: res.error }, { status: 500 });
+      }
+      if (res.task && Object.keys(v2.fields).length) {
+        updateNote(res.task.vaultPath!, v2.fields);
+        res.task.dueDate = String(v2.fields.prazo ?? "");
       }
       return NextResponse.json({
         success: true,

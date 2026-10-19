@@ -1,7 +1,7 @@
 ---
 name: nipei-os
 description: "Ler e gerenciar as tarefas do Nipëi OS (os.nipeihu.app): listar, criar, mover de coluna, mudar prioridade e atribuir responsáveis."
-version: 1.0.0
+version: 1.1.0
 author: Digital Alignment
 platforms: [linux]
 required_environment_variables:
@@ -41,9 +41,9 @@ São ~250 tarefas: filtre (grep / python) antes de responder, nunca despeje a li
 Tudo vai para `POST $NIPEI_OS_URL/api/venu/kanban-action` com `{"action": ..., "payload": {...}}`.
 
 ```bash
-# Criar — só "title" é obrigatório
+# Criar — só "title" é obrigatório; mande sempre "equipe" (sem ela a tarefa aparece "sem equipe")
 curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$NIPEI_OS_URL/api/venu/kanban-action" \
-  -d '{"action":"create","payload":{"title":"Comprar chip telefônico","priority":"alta","project":"Ações imediatas","description":"...","assignee":"jordao_pekuti"}}'
+  -d '{"action":"create","payload":{"title":"Comprar chip telefônico","equipe":"equipe_1","responsaveis":["jordao_pekuti"],"prazo":"2026-11-05","priority":"alta","description":"..."}}'
 
 # Mover / mudar prioridade — idOrTitle aceita o id (task_001) ou parte do título
 curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$NIPEI_OS_URL/api/venu/kanban-action" \
@@ -54,6 +54,12 @@ curl -s -X POST -H "$AUTH" -H "Content-Type: application/json" "$NIPEI_OS_URL/ap
   -d '{"action":"assign","payload":{"idOrTitle":"task_001","assignee":"txiva","agents":["hermes"]}}'
 ```
 
+- Campos de organização no `create` (opcionais, validados contra o vault — id inválido devolve erro com os válidos):
+  - `equipe`: `equipe_1` Escritório / Gestão Geral · `equipe_2` Produção Yawanawa · `equipe_3` Guardiões · `equipe_4` Manutenção e Logística. Se omitida e houver `objetivo`, usa a equipe do objetivo.
+  - `responsaveis`: lista de ids das fichas em `Miembros/` (ex.: `["adair","txiva"]`).
+  - `projeto`: id em `Projetos/` — `financeiro` | `inirau` | `juridico` | `santuario`.
+  - `objetivo`: id em `Objetivos/` (ex.: `obj_2026_acervo`, `obj_2026_mutiroes`, `obj_2027_eventos`).
+  - `prazo`: data `YYYY-MM-DD`.
 - `priority`: `urgente` | `alta` | `media` | `baixa`
 - `column`: `triage` | `todo` | `in_progress` | `review` | `done` | `archived`
 - Resposta: `{"success": true, "task": {...}, "message": "..."}`. Se `success` for `false`, repita o `error` para a pessoa; não invente que deu certo.

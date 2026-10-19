@@ -210,7 +210,7 @@ export function setFrontmatter(text: string, items: Record<string, FmValue>): st
   });
 }
 
-function updateNote(relFile: string, items: Record<string, FmValue>) {
+export function updateNote(relFile: string, items: Record<string, FmValue>) {
   const full = path.join(vault(), relFile);
   fs.writeFileSync(full, setFrontmatter(fs.readFileSync(full, "utf-8"), { ...items, updated_at: new Date().toISOString() }), "utf-8");
 }
