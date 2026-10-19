@@ -14,7 +14,7 @@ export type Status = "todo" | "doing" | "done";
 export type Equipe = { id: string; nome: string; cor: string; areas: string[]; coordenadores: string[]; membros: string[] };
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string };
 export type Objetivo = { id: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string };
-export type Evento = { id: string; titulo: string; inicio: string; status: string; equipe: string };
+export type Evento = { id: string; titulo: string; inicio: string; fim: string; status: string; equipe: string };
 export type Pessoa = {
   id: string; name: string; equipes: string[]; coordena: string[]; usuario: string;
   whatsapp: string; email: string; incompleta: boolean;
@@ -81,7 +81,7 @@ export function getObjetivos(): Objetivo[] {
 
 export function getEventos(): Evento[] {
   return readDir("Eventos")
-    .map(({ fm }) => ({ id: s(fm.id), titulo: s(fm.titulo), inicio: s(fm.inicio), status: s(fm.status), equipe: s(fm.equipe) }))
+    .map(({ fm }) => ({ id: s(fm.id), titulo: s(fm.titulo), inicio: s(fm.inicio), fim: s(fm.fim), status: s(fm.status), equipe: s(fm.equipe) }))
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 

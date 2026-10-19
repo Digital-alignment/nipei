@@ -6,6 +6,7 @@ import { SESSION_COOKIE, isValidApiToken, verifyToken } from "@/lib/auth";
 const PUBLIC_API = [
   "/api/auth/login",
   "/api/ingest/inbox-webhook", // checks NIPEI_WEBHOOK_SECRET itself
+  "/api/agenda/ics", // Google Calendar feed: checks its signed "ics" token itself
 ];
 const PUBLIC_PAGES = ["/login"];
 

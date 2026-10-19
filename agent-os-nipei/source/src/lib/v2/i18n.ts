@@ -17,6 +17,9 @@ const pt = {
   semPrazo: "Tarefas sem prazo não aparecem aqui.", entrar: "Entrar", usuario: "Usuário", senha: "Senha", quemEntra: "Quem é você?",
   erroLogin: "Usuário ou senha inválidos.", erroServidor: "Falha ao conectar com o servidor.", legacyIntro: "A versão anterior continua disponível enquanto a nova é construída.",
   semResponsavel: "sem responsável", hojeDia: "hoje",
+  lista: "Lista", mes: "Mês", semana: ["D", "S", "T", "Q", "Q", "S", "S"], nadaNoDia: "Nada neste dia.",
+  googleTitulo: "Ver no Google Calendar", googleTexto: "No Google Calendar (computador): Outras agendas → + → Do URL, e cole este endereço. O Google atualiza a cada poucas horas. Eventos só com mês (sem dia) não entram até terem data.",
+  falar: "Falar uma tarefa", ouvindo: "Ouvindo…", vozIndisponivel: "Este navegador não reconhece voz.",
 };
 type Dict = typeof pt;
 
@@ -33,6 +36,9 @@ const en: Dict = {
   semPrazo: "Tasks without a due date are not shown here.", entrar: "Log in", usuario: "Username", senha: "Password", quemEntra: "Who are you?",
   erroLogin: "Invalid username or password.", erroServidor: "Could not reach the server.", legacyIntro: "The previous version stays available while the new one is being built.",
   semResponsavel: "no owner", hojeDia: "today",
+  lista: "List", mes: "Month", semana: ["S", "M", "T", "W", "T", "F", "S"], nadaNoDia: "Nothing on this day.",
+  googleTitulo: "View in Google Calendar", googleTexto: "In Google Calendar (desktop): Other calendars → + → From URL, and paste this address. Google refreshes it every few hours. Events with only a month (no day) are left out until they get a date.",
+  falar: "Say a task", ouvindo: "Listening…", vozIndisponivel: "This browser can't recognise speech.",
 };
 
 export async function getLang(): Promise<Lang> {

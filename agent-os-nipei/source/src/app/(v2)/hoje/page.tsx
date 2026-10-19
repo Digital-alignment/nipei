@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Card, Empty, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
+import VoiceTask from "@/components/v2/VoiceTask";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -27,6 +28,9 @@ export default async function Hoje() {
       <Title sub={new Date().toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "long", day: "numeric", month: "long" })}>
         {t.ola}, {(me?.name ?? user?.username ?? "").split(" ")[0]}
       </Title>
+
+      {me && <VoiceTask lang={lang} equipe={me.equipes[0] ?? ""} me={me.id}
+        labels={{ falar: t.falar, ouvindo: t.ouvindo, vozIndisponivel: t.vozIndisponivel, criar: t.criar, cancelar: t.cancelar }} />}
 
       {minhas.length === 0 && <Empty>{t.nadaPendente}</Empty>}
       {grupos.map(([titulo, ts]) => ts.length > 0 && (
