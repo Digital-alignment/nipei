@@ -10,14 +10,16 @@ const LINK_SESSION_TTL = 60 * 60 * 24 * 30;
 // ponytail: the link works until it expires (7 days), not just once — one-time links need a used-token store.
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const fail = (erro: string) => NextResponse.redirect(new URL(`/login?erro=${erro}`, url));
+  // Behind Traefik req.url is the container address (0.0.0.0:3333): redirect to the public origin.
+  const base = process.env.NEXT_PUBLIC_APP_URL || url.origin;
+  const fail = (erro: string) => NextResponse.redirect(new URL(`/login?erro=${erro}`, base));
   const id = verifyToken(url.searchParams.get("token") ?? undefined, "login-link");
   if (!id) return fail("link");
   const pessoa = getPessoas().find((p) => p.id === id);
   const equipes = getEquipes();
   if (!pessoa || !pessoa.equipes.some((e) => equipes.find((x) => x.id === e)?.acesso)) return fail("acesso");
 
-  const res = NextResponse.redirect(new URL("/hoje", url));
+  const res = NextResponse.redirect(new URL("/hoje", base));
   res.cookies.set(SESSION_COOKIE, signToken(sessionPurposeFor(pessoa), pessoa.id, LINK_SESSION_TTL), {
     httpOnly: true,
     sameSite: "lax",
