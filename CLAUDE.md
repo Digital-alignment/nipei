@@ -89,6 +89,11 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - Cada escrita registra a atividade e chama `requestSync`, que toca `/vault/.sync-request` (gitignored); no VPS a unidade systemd `nipei-vault-sync.path` sincroniza com o GitHub em ~5 s (`scripts/vault-sync-on-write/`). O cron de 5 min continua como reserva. Local: tarefa agendada a cada 2 min.
 - Migração das notas antigas: `node scripts/migrar-tarefas.ts <vaultRoot> [--dry]` (a partir de `nipei-control/`, idempotente, verifica que nenhum dado muda).
 
+## 3.2 IA nas tarefas (T2/T3)
+
+- **T2** `src/lib/v2/ia.ts`: proposta via OpenRouter (`NIPEI_IA_MODEL`, padrão `anthropic/claude-haiku-5.5`); só Equipe 1; nada é gravado sem "Aplicar" (`aplicarSugestao`).
+- **T3** "Fazer por mim": `src/lib/v2/trabalhos.ts` enfileira em `<vault>/.jobs/` (gitignored); o worker do host (`scripts/hermes-worker/`, units systemd `nipei-hermes-worker.{path,service,timer}`, log `/var/log/nipei-hermes-worker.log`) roda o Hermes do contêiner `hermes-agent-upmh` **só com `-t web`** e devolve em `POST /api/tarefas/entregavel` (token). Nunca libere terminal/arquivos para o Hermes nesse fluxo: o texto vem dos usuários.
+
 ---
 
 ## 4. Comandos Essenciais
