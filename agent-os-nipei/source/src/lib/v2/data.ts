@@ -477,11 +477,13 @@ export function addArquivo(id: string, file: { nome: string; bytes: Buffer }, ac
   let nome = `${base}.${ext}`;
   for (let i = 2; fs.existsSync(path.join(vault(), dirRel, nome)); i++) nome = `${base}_${i}.${ext}`;
   fs.writeFileSync(path.join(vault(), dirRel, nome), file.bytes);
+  const rel = path.join(dirRel, nome).split(path.sep).join("/");
   editarTarefa(id, actor, (d) => {
     d.fm.anexos = [...(Array.isArray(d.fm.anexos) ? d.fm.anexos : []), {
-      id: novoAnexoId(), tipo: "arquivo", titulo: file.nome, path: path.join(dirRel, nome).split(path.sep).join("/"), tamanho: file.bytes.length, por, em: hoje(),
+      id: novoAnexoId(), tipo: "arquivo", titulo: file.nome, path: rel, tamanho: file.bytes.length, por, em: hoje(),
     }];
   });
+  return rel;
 }
 
 /** Removes an attachment from the note; a file of this task is deleted too (the vault git history keeps it). */

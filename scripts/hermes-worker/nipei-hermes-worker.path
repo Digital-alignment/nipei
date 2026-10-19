@@ -1,0 +1,12 @@
+# Runs the "Fazer por mim" worker whenever the app queues a job.
+# Install: copy worker.py to /opt/nipei-ia-worker/, both units to /etc/systemd/system/, then
+#   systemctl daemon-reload && systemctl enable --now nipei-hermes-worker.path
+[Unit]
+Description=Nipei Hermes worker trigger
+
+[Path]
+DirectoryNotEmpty=/opt/nipei-vault/.jobs/pendentes
+MakeDirectory=yes
+
+[Install]
+WantedBy=multi-user.target

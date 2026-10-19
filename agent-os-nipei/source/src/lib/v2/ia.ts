@@ -45,7 +45,7 @@ Regras:
 
 type Parte = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } } | { type: "file"; file: { filename: string; file_data: string } };
 
-function contexto(id: string): { texto: string; anexos: Parte[] } {
+export function contexto(id: string): { texto: string; anexos: Parte[] } {
   const det = getTarefaDetalhe(id);
   if (!det) throw new Error("Tarefa não encontrada");
   const { tarefa, doc, anexos } = det;

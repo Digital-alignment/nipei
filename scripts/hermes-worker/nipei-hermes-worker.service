@@ -1,0 +1,7 @@
+[Unit]
+Description=Nipei Hermes worker ("Fazer por mim")
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/nipei-ia-worker/worker.py
+TimeoutStartSec=3600

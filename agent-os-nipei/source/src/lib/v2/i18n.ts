@@ -50,6 +50,10 @@ const pt = {
   iaNovaDescricao: "Nova descrição (pode editar antes de aplicar)", iaAdicionar: "Adicionar à checklist", iaConcluir: "Marcar como feito",
   iaProximoPasso: "Registrar como comentário: próximo passo", iaStatus: "Mudar status para", iaPrazo: "Mudar prazo para", iaFontes: "Fontes",
   iaNada: "A IA não sugeriu mudanças.", iaAviso: "Sugestão da IA: confira antes de aplicar",
+  fazerPorMim: "Fazer por mim", fazerInstrucao: "O que o Hermes deve fazer? (ex.: rascunho de e-mail para o fornecedor, pesquisa de preços…)",
+  fazerAviso: "O Hermes trabalha em segundo plano (alguns minutos), só com pesquisa na web. Ele não envia mensagens nem muda a tarefa: entrega um documento nos anexos e avisa você.",
+  hermesTrabalhando: "O Hermes está trabalhando nisso", pedidoPor: "pedido por", prontosIA: "Prontos do Hermes", verEntrega: "ver entrega",
+  falhou: "não conseguiu concluir",
 };
 type Dict = typeof pt;
 
@@ -99,6 +103,10 @@ const en: Dict = {
   iaNovaDescricao: "New description (you can edit it before applying)", iaAdicionar: "Add to checklist", iaConcluir: "Mark as done",
   iaProximoPasso: "Save as comment: next step", iaStatus: "Change status to", iaPrazo: "Change due date to", iaFontes: "Sources",
   iaNada: "The AI suggested no changes.", iaAviso: "AI suggestion: check before applying",
+  fazerPorMim: "Do it for me", fazerInstrucao: "What should Hermes do? (e.g. draft an e-mail to the supplier, research prices…)",
+  fazerAviso: "Hermes works in the background (a few minutes), with web search only. It doesn't send messages or change the task: it delivers a document in the attachments and lets you know.",
+  hermesTrabalhando: "Hermes is working on this", pedidoPor: "asked by", prontosIA: "Ready from Hermes", verEntrega: "see delivery",
+  falhou: "could not finish",
 };
 
 export async function getLang(): Promise<Lang> {

@@ -9,9 +9,10 @@ import Upload from "@/components/v2/Upload";
 import IAPanel from "@/components/v2/IAPanel";
 import { ANEXO_TIPOS, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, today, type Anexo, type Status } from "@/lib/v2/data";
 import { parseAtividade } from "@/lib/tarefaNote";
+import { emAndamento } from "@/lib/v2/trabalhos";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import {
-  aplicarIAAction, checklistAction, comentarAction, descricaoAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
+  aplicarIAAction, checklistAction, comentarAction, descricaoAction, fazerPorMimAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
 } from "../../actions";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
@@ -96,6 +97,26 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
           fontes: t.iaFontes, nada: t.iaNada, aviso: t.iaAviso, status: { todo: t.aFazer, doing: t.fazendo, done: t.feito },
         }} />
       )}
+
+      {/* T3: Hermes does the work in the background */}
+      {can.usarIA(me, tarefa) && (() => {
+        const jobs = emAndamento(id);
+        return jobs.length ? (
+          <div className="mb-7 rounded-xl border border-violet-200 dark:border-violet-900 p-3 text-sm animate-pulse">
+            ⏳ {t.hermesTrabalhando} · {t.pedidoPor} {jobs[0].pedidoPorNome} · {new Date(jobs[0].criado).toLocaleTimeString(lang === "en" ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })}
+          </div>
+        ) : (
+          <details className="mb-7 rounded-xl border border-violet-200 dark:border-violet-900 p-3">
+            <summary className="cursor-pointer text-sm font-medium">🤖 {t.fazerPorMim}</summary>
+            <form action={fazerPorMimAction} className="grid gap-2 mt-2">
+              <input type="hidden" name="id" value={id} />
+              <textarea name="instrucao" rows={3} maxLength={1000} placeholder={t.fazerInstrucao} className={field} />
+              <p className="text-[11px] text-neutral-500">{t.fazerAviso}</p>
+              <button className={`justify-self-start ${btn}`}>{t.fazerPorMim}</button>
+            </form>
+          </details>
+        );
+      })()}
 
       {/* Descrição */}
       <Section title={t.descricaoTitulo}>

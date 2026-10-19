@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
+import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
@@ -234,6 +235,16 @@ export async function proporIAAction(id: string, modo: ModoIA): Promise<{ propos
   } catch (e) {
     return { error: (e as Error).message };
   }
+}
+
+export async function fazerPorMimAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  if (!t || !can.usarIA(me, t)) return;
+  try {
+    pedirTrabalho(t.id, String(form.get("instrucao") ?? ""), me.pessoa?.id ?? me.username, actorName(me));
+  } catch { /* already running: the page shows the banner */ }
+  voltarTarefa(t.id);
 }
 
 const ORIGEM_IA: Record<string, string> = { detalhar: "Explicar e detalhar", proximo: "O que fazer agora", atualizar: "Atualizar com anexos" };

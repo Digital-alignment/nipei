@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Card, Empty, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
 import VoiceTask from "@/components/v2/VoiceTask";
+import { prontosPara } from "@/lib/v2/trabalhos";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -31,6 +32,20 @@ export default async function Hoje() {
 
       {me && <VoiceTask lang={lang} equipe={me.equipes[0] ?? ""} me={me.id}
         labels={{ falar: t.falar, ouvindo: t.ouvindo, vozIndisponivel: t.vozIndisponivel, criar: t.criar, cancelar: t.cancelar }} />}
+
+      {me && prontosPara(me.id).length > 0 && (
+        <Section title={t.prontosIA}>
+          <ul className="grid gap-2">
+            {prontosPara(me.id).map((j) => (
+              <li key={j.id}>
+                <Link href={`/tarefas/${j.taskId}`} className="block rounded-lg border border-violet-200 dark:border-violet-900 p-3 text-sm hover:underline">
+                  {j.estado === "ok" ? "✅" : "⚠️"} {j.titulo} <span className="text-xs text-neutral-500">· {j.estado === "ok" ? t.verEntrega : t.falhou}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       {minhas.length === 0 && <Empty>{t.nadaPendente}</Empty>}
       {grupos.map(([titulo, ts]) => ts.length > 0 && (
