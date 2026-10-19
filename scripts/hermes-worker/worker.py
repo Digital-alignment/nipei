@@ -6,7 +6,7 @@ web search ONLY (no terminal, files or code execution — task text comes from u
 to run anything on the server), and posts the result to the app (/api/tarefas/entregavel), which saves
 it in the vault through the single task writer and notifies whoever asked.
 """
-import json, os, shutil, subprocess, time, urllib.request
+import json, os, shutil, subprocess, time, urllib.error, urllib.request
 
 JOBS = "/opt/nipei-vault/.jobs"
 APP = os.environ.get("NIPEI_APP_URL", "https://os.nipeihu.app")
@@ -33,22 +33,41 @@ def entregar(job_id, ok, resultado):
     req = urllib.request.Request(
         f"{APP}/api/tarefas/entregavel", method="POST",
         data=json.dumps({"job": job_id, "ok": ok, "resultado": resultado}).encode(),
-        headers={"Authorization": f"Bearer {token()}", "Content-Type": "application/json"},
+        # Cloudflare in front of the app blocks the default "Python-urllib" agent (403).
+        headers={"Authorization": f"Bearer {token()}", "Content-Type": "application/json", "User-Agent": "nipei-hermes-worker/1.0"},
     )
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             log(f"{job_id} entregue: {r.read()[:200]!r}")
-    except Exception as e:  # keep the job in rodando/ so the stale check retries the report later
+            return True
+    except urllib.error.HTTPError as e:
+        log(f"{job_id} ERRO ao entregar: {e} {e.read()[:200]!r}")
+        return e.code == 400  # the app refused the job itself (unknown/finished): don't retry forever
+    except Exception as e:
         log(f"{job_id} ERRO ao entregar: {e}")
+        return False
+
+
+def entregar_salvo(job_id, ok, resultado):
+    """Saves Hermes's answer next to the job first, so a failed report is retried, not lost."""
+    out = f"{JOBS}/rodando/{job_id}.out"
+    with open(out, "w") as f:
+        json.dump({"ok": ok, "resultado": resultado}, f)
+    if entregar(job_id, ok, resultado):
+        os.remove(out)
 
 
 def main():
     for d in ("pendentes", "rodando", "feitos"):
         os.makedirs(f"{JOBS}/{d}", exist_ok=True)
-    # Jobs left "rodando" by a crash: report them as failed so the task doesn't wait forever.
+    # Answers whose report failed earlier: retry. Jobs left "rodando" by a crash: report as failed.
     for f in os.listdir(f"{JOBS}/rodando"):
         p = f"{JOBS}/rodando/{f}"
-        if f.endswith(".json") and time.time() - os.path.getmtime(p) > STALE:
+        if f.endswith(".out"):
+            saved = json.load(open(p))
+            if entregar(f[:-4], saved["ok"], saved["resultado"]):
+                os.remove(p)
+        elif f.endswith(".json") and not os.path.exists(p[:-5] + ".out") and time.time() - os.path.getmtime(p) > STALE:
             entregar(f[:-5], False, "O trabalho foi interrompido (servidor reiniciado ou tempo esgotado). Peça de novo.")
     for f in sorted(os.listdir(f"{JOBS}/pendentes")):
         if not f.endswith(".json"):
@@ -63,9 +82,9 @@ def main():
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT)
             out = (r.stdout or "").strip()
             ok = r.returncode == 0 and "#" in out
-            entregar(job["id"], ok, out if ok else (out or r.stderr)[-2000:])
+            entregar_salvo(job["id"], ok, out if ok else (out or r.stderr)[-2000:])
         except subprocess.TimeoutExpired:
-            entregar(job["id"], False, f"O Hermes passou de {TIMEOUT // 60} minutos e foi interrompido.")
+            entregar_salvo(job["id"], False, f"O Hermes passou de {TIMEOUT // 60} minutos e foi interrompido.")
 
 
 if __name__ == "__main__":

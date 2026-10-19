@@ -1,0 +1,11 @@
+# Every 10 min: retry reports that failed and close jobs left running by a crash.
+# Install with the other units, then: systemctl enable --now nipei-hermes-worker.timer
+[Unit]
+Description=Nipei Hermes worker retries
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target
