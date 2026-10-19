@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { TAREFAS_DIR, writeTarefa } from "@/lib/tarefaNote";
 import os from "node:os";
 import { execSync } from "node:child_process";
 
@@ -479,6 +480,13 @@ function resolveTaskPath(vaultRoot: string, vaultPath: string): string | null {
 }
 
 function setTaskStatus(absPath: string, status: string) {
+  const vaultRoot = defaultVault()!;
+  const rel = path.relative(vaultRoot, absPath);
+  // Task notes go through the single writer (format + activity log + sync); audit lists keep their own format.
+  if (rel.startsWith(TAREFAS_DIR + path.sep)) {
+    writeTarefa(vaultRoot, rel, "agente IA (v1)", (d) => { d.fm.status = status; });
+    return;
+  }
   const content = fs.readFileSync(absPath, "utf-8");
   fs.writeFileSync(absPath, content.replace(/^status:.*$/m, `status: "${status}"`), "utf-8");
 }

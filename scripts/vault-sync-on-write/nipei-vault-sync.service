@@ -1,0 +1,8 @@
+[Unit]
+Description=Nipei vault sync (on write)
+
+[Service]
+Type=oneshot
+# Wait a few seconds so a burst of writes (e.g. several task edits) goes out in one commit.
+ExecStartPre=/bin/sleep 5
+ExecStart=/opt/nipei-vault-sync/sync.sh

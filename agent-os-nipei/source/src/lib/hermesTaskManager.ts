@@ -1,4 +1,5 @@
 import fs from "fs";
+import { TAREFAS_DIR, createTarefaNote, writeTarefa } from "./tarefaNote";
 import path from "path";
 import { defaultVault } from "@/lib/config";
 import { queryVaultGrounding, HermesRAGResult } from "@/lib/hermesRAG";
@@ -174,50 +175,10 @@ export async function processHermesTaskCommand(
     const tarefasDir = path.join(vaultRoot, "Productivity", "Tarefas");
     if (!fs.existsSync(tarefasDir)) fs.mkdirSync(tarefasDir, { recursive: true });
 
-    const timestamp = Date.now().toString().slice(-4);
-    const cleanSlug = taskTitle.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 35);
-    const filename = `task_${timestamp}_${cleanSlug}.md`;
-    const filePath = path.join(tarefasDir, filename);
-    const taskId = `task_${Date.now().toString().slice(-6)}`;
-
-    const markdown = `---
-id: "${taskId}"
-title: "${taskTitle}"
-type: "tarefa"
-status: "A fazer"
-priority: "${priority}"
-responsible: "${assignee}"
-squad: "${squad}"
-project: "Demanda Operacional ${squad.toUpperCase()}"
-tags:
-  - tarefa
-  - nipei-os
-  - status-a-fazer
-created_by: "Hermes 2.0 (Comando Natural)"
-updated_at: "${new Date().toISOString()}"
----
-
-<!-- agente: hermes-task-manager -->
-# Tarefa: ${taskTitle}
-
-**Status**: \`A fazer\` | **Prioridade**: \`${priority}\` | **Responsável**: \`${assignee}\`
-
-> 📋 **Criada pelo Agente Hermes 2.0 para ${userIdentifier}**
-
-## 👥 Responsáveis & Squad
-- **Responsável**: \`${assignee}\`
-- **Squad**: \`${squad}\`
-
-## 📌 Descrição & Instruções
-- ${taskTitle}
-- Registrada via comando de linguagem natural no Nipëi OS.
-
-## 🔗 Trazabilidad
-- **Vault File**: \`Productivity/Tarefas/${filename}\`
-- **Data**: ${new Date().toLocaleString()}
-`;
-
-    fs.writeFileSync(filePath, markdown, "utf-8");
+    const { id: taskId, relFile } = createTarefaNote(vaultRoot, {
+      title: taskTitle, priority, responsible: assignee, squad, project: `Demanda Operacional ${squad.toUpperCase()}`,
+    }, `Hermes 2.0 (${userIdentifier})`, { origem: `Criada pelo Hermes 2.0 a pedido de ${userIdentifier}.` });
+    const filename = path.basename(relFile);
 
     return {
       type: "TASK_CREATED",
@@ -267,19 +228,10 @@ updated_at: "${new Date().toISOString()}"
     const matchedTask = findTaskFile(vaultRoot, searchQuery || p);
 
     if (matchedTask) {
-      let content = matchedTask.content;
-
-      // Update status in frontmatter
-      if (content.includes("status:")) {
-        content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "${targetStatus}"`);
-      } else {
-        content = `---\nstatus: "${targetStatus}"\n---\n` + content;
-      }
-
-      // Append log entry
-      content += `\n- ⚡ **Actualizado por Hermes 2.0**: Estado cambiado a \`${targetStatus}\` a solicitud de **${userIdentifier}** (${new Date().toLocaleString()})\n`;
-
-      fs.writeFileSync(matchedTask.filePath, content, "utf-8");
+      writeTarefa(vaultRoot, path.join(TAREFAS_DIR, matchedTask.filename), `Hermes 2.0 (${userIdentifier})`, (d) => {
+        d.fm.status = targetStatus;
+      });
+      const content = fs.readFileSync(matchedTask.filePath, "utf-8");
 
       // Extract title from content
       const titleMatch = content.match(/title:\s*"?([^"\n\r]+)"?/);
@@ -320,9 +272,8 @@ updated_at: "${new Date().toISOString()}"
     const matchedTask = findTaskFile(vaultRoot, p);
 
     if (matchedTask) {
-      let content = matchedTask.content;
-      content += `\n\n### 💬 Nota de Seguimiento — ${userIdentifier} (${new Date().toLocaleString()})\n> "${commentText}"\n`;
-      fs.writeFileSync(matchedTask.filePath, content, "utf-8");
+      writeTarefa(vaultRoot, path.join(TAREFAS_DIR, matchedTask.filename), userIdentifier, () => {}, [`comentou “${commentText.replace(/\s+/g, " ").slice(0, 500)}”`]);
+      const content = fs.readFileSync(matchedTask.filePath, "utf-8");
 
       const titleMatch = content.match(/title:\s*"?([^"\n\r]+)"?/);
       const title = titleMatch ? titleMatch[1].trim() : matchedTask.filename.replace(".md", "");

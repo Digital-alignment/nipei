@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { defaultVault } from "@/lib/config";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { normalizeDueDate } from "@/lib/kanbanGrounding";
+import { createTarefaNote, requestSync, writeTarefa } from "@/lib/tarefaNote";
 
 // v2 data layer: everything is read straight from the vault notes on each request.
 // Source of truth per concept: Equipes/, Projetos/, Objetivos/, Eventos/, Miembros/, Productivity/Tarefas/.
@@ -60,7 +61,7 @@ const desc = (body: string) =>
 
 export function statusOf(raw: string): Status {
   const v = raw.toLowerCase();
-  if (v.includes("conclu") || v.includes("done") || v.includes("feito")) return "done";
+  if (v.includes("conclu") || v.includes("done") || v.includes("feito") || v.includes("arquiv")) return "done";
   if (v.includes("andamento") || v.includes("fazendo") || v.includes("progress")) return "doing";
   return "todo";
 }
@@ -220,26 +221,22 @@ export function setFrontmatter(text: string, items: Record<string, FmValue>): st
 export function updateNote(relFile: string, items: Record<string, FmValue>) {
   const full = path.join(vault(), relFile);
   fs.writeFileSync(full, setFrontmatter(fs.readFileSync(full, "utf-8"), { ...items, updated_at: new Date().toISOString() }), "utf-8");
+  requestSync(vault());
 }
 
-export function setTarefaStatus(id: string, status: Status) {
+export function setTarefaStatus(id: string, status: Status, actor: string) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");
-  updateNote(t.file, { status: STATUS_RAW[status] });
+  writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW[status]; });
 }
 
-export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string }) {
-  const ids = getTarefas().map((t) => Number(t.id.match(/^task_(\d+)$/)?.[1] ?? 0));
-  const n = Math.max(0, ...ids) + 1;
-  const slug = slugify(input.title);
+export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string }, actor: string) {
   const projeto = getProjetos().find((p) => p.id === input.projeto);
-  const fm: Record<string, FmValue> = {
-    id: `task_${n}`, title: input.title, type: "tarefa", status: STATUS_RAW.todo, priority: "Média",
-    prazo: input.prazo, responsible: input.responsaveis.map((r) => getPessoas().find((p) => p.id === r)?.name ?? r).join(", "),
-    project: projeto?.nome ?? "Geral", tags: ["tarefa", "nipei-os"], updated_at: new Date().toISOString(),
+  createTarefaNote(vault(), {
+    title: input.title, prazo: input.prazo, project: projeto?.nome ?? "Geral",
+    responsible: input.responsaveis.map((r) => getPessoas().find((p) => p.id === r)?.name ?? r).join(", "),
     equipe: input.equipe, projeto: input.projeto, objetivo: input.objetivo, responsaveis: input.responsaveis,
-  };
-  fs.writeFileSync(path.join(vault(), "Productivity", "Tarefas", `${n}_${slug || "tarefa"}.md`), noteText(fm, `# Tarefa: ${input.title}`), { encoding: "utf-8", flag: "wx" });
+  }, actor);
 }
 
 /** Adds a person to a team: both the person's `equipes` and the team's `membros`. */
@@ -281,6 +278,7 @@ export function createPessoa(name: string, equipeId: string) {
     missing_info_details: "Falta: email, WhatsApp.", updated_at: new Date().toISOString(),
   };
   fs.writeFileSync(path.join(vault(), "Miembros", `${id}.md`), noteText(fm, `# ${name}`), { encoding: "utf-8", flag: "wx" });
+  requestSync(vault());
   if (equipeId) addToEquipe(id, equipeId);
   return id;
 }
@@ -328,6 +326,7 @@ export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulad
   };
   const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
   fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });
+  requestSync(vault());
 }
 
 export function anularLancamento(id: string, por: string) {
@@ -353,19 +352,26 @@ export function createAcervo(input: Omit<AcervoItem, "id">, por: string) {
   const id = `acv_${Date.now().toString(36)}`;
   const fm: Record<string, FmValue> = { ...input, id, type: "acervo", adicionado_por: por, updated_at: new Date().toISOString() };
   fs.writeFileSync(path.join(dir, `${slugify(input.titulo) || "item"}_${id.slice(4)}.md`), noteText(fm, `# ${input.titulo}\n\n${input.url}`), { encoding: "utf-8", flag: "wx" });
+  requestSync(vault());
 }
 
 // ---------------------------------------------------------------- edits (tarefa, evento, objetivo)
 
-export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status }) {
+export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status }, actor: string) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");
   const pessoas = getPessoas();
-  updateNote(t.file, {
-    title: input.title, equipe: input.equipe, area: input.area, projeto: input.projeto, objetivo: input.objetivo, prazo: input.prazo,
-    responsaveis: input.responsaveis, status: STATUS_RAW[input.status],
-    // keep the v1 free-text owner in sync so the old kanban shows the same people
-    responsible: input.responsaveis.map((r) => pessoas.find((p) => p.id === r)?.name ?? r).join(", "),
+  writeTarefa(vault(), t.file, actor, (d) => {
+    // Status and date are rewritten only when they really change, so saving an untouched form
+    // doesn't log "A Fazer → A fazer" or turn "5 de junio de 2026" into its ISO form for nothing.
+    if (statusOf(String(d.fm.status ?? "")) !== input.status) d.fm.status = STATUS_RAW[input.status];
+    if (normalizeDueDate(String(d.fm.prazo ?? "")) !== input.prazo) d.fm.prazo = input.prazo;
+    Object.assign(d.fm, {
+      title: input.title, equipe: input.equipe, area: input.area, projeto: input.projeto, objetivo: input.objetivo,
+      responsaveis: input.responsaveis,
+      // keep the v1 free-text owner in sync so the old kanban shows the same people
+      responsible: input.responsaveis.map((r) => pessoas.find((p) => p.id === r)?.name ?? r).join(", "),
+    });
   });
 }
 
@@ -374,6 +380,7 @@ export function createEvento(input: { titulo: string; inicio: string; fim: strin
   const base = `${input.inicio || "sem_data"}_${slugify(input.titulo) || "evento"}`;
   const fm: Record<string, FmValue> = { id: `evt_${base}`, type: "evento", ...input, projeto: "santuario", updated_at: new Date().toISOString() };
   fs.writeFileSync(path.join(dir, `${base}.md`), noteText(fm, `# ${input.titulo}`), { encoding: "utf-8", flag: "wx" });
+  requestSync(vault());
 }
 
 export function updateEvento(id: string, input: { titulo: string; inicio: string; fim: string; status: string; equipe: string }) {

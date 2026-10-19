@@ -19,6 +19,9 @@ async function requireUser() {
   return u;
 }
 
+/** How a person appears in a task's activity log: first name (or login). */
+const actorName = (me: { username: string; pessoa: { name: string } | null }) => me.pessoa?.name.split(" (")[0] ?? me.username;
+
 const pick = (v: FormDataEntryValue | null, allowed: string[]) => {
   const s = String(v ?? "");
   return allowed.includes(s) ? s : "";
@@ -33,7 +36,7 @@ export async function setStatusAction(form: FormData) {
   const status = String(form.get("status")) as Status;
   const t = getTarefas().find((x) => x.id === String(form.get("id")));
   if (!t || !["todo", "doing", "done"].includes(status) || !can.editTarefa(me, t)) return;
-  setTarefaStatus(t.id, status);
+  setTarefaStatus(t.id, status, actorName(me));
   revalidatePath("/", "layout");
 }
 
@@ -51,7 +54,7 @@ export async function createTarefaAction(form: FormData) {
     objetivo: pick(form.get("objetivo"), getObjetivos().map((o) => o.id)),
     prazo: /^\d{4}-\d{2}-\d{2}$/.test(prazo) ? prazo : "",
     responsaveis: form.getAll("responsaveis").map(String).filter((id) => pessoas.includes(id)),
-  });
+  }, actorName(me));
   revalidatePath("/", "layout");
   redirect(safeBack(form.get("back")));
 }
@@ -102,7 +105,7 @@ export async function updateTarefaAction(form: FormData) {
     prazo: isDate(form.get("prazo")),
     responsaveis: form.getAll("responsaveis").map(String).filter((id) => pessoas.includes(id)),
     status: ["todo", "doing", "done"].includes(status) ? status : t.status,
-  });
+  }, actorName(me));
   revalidatePath("/", "layout");
   redirect(safeBack(form.get("back")));
 }

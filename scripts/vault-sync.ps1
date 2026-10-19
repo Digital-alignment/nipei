@@ -1,4 +1,4 @@
-# Nipëi vault sync (local side) — run by Windows Task Scheduler ("Nipei Vault Sync", every 10 min).
+# Nipëi vault sync (local side) — run by Windows Task Scheduler ("Nipei Vault Sync", every 2 min).
 # Commits Obsidian edits in the local vault, pulls production edits (the VPS pushes every 5 min),
 # and pushes back to GitHub (Digital-alignment/nipei-vault).
 # On a conflict nothing is overwritten: the rebase is aborted, the commit stays local, and the

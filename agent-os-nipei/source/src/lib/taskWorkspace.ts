@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { writeTarefa } from "./tarefaNote";
 import { defaultVault } from "./config";
 import type { TaskAttachment, TaskDeliverable, TaskCommunication, AttachmentType, DeliverableFormat, SquadId } from "./nipeiStore";
 
@@ -411,27 +412,11 @@ export function syncTaskFrontmatterWithWorkspace(
   if (!fs.existsSync(absPath)) return;
 
   try {
-    let content = fs.readFileSync(absPath, "utf-8");
-    const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    if (!frontmatterMatch) return;
-
-    let fm = frontmatterMatch[1];
-
-    // Build attachments summary for YAML
-    const attSummaries = attachments.map((a) => `    - id: "${a.id}"\n      nome: "${a.name.replace(/"/g, '\\"')}"\n      tipo: "${a.type}"\n      path: "${a.vaultRelativePath || a.url}"`);
-    const attBlock = attSummaries.length > 0 ? `\nanexos:\n${attSummaries.join("\n")}` : `\nanexos: []`;
-
-    // Build deliverables summary for YAML
-    const delSummaries = deliverables.map((d) => `    - id: "${d.id}"\n      titulo: "${d.title.replace(/"/g, '\\"')}"\n      formato: "${d.format}"\n      path: "${d.vaultRelativePath}"`);
-    const delBlock = delSummaries.length > 0 ? `\nentregaveis:\n${delSummaries.join("\n")}` : `\nentregaveis: []`;
-
-    // Replace or append in frontmatter
-    fm = fm.replace(/\nanexos:\s*(\[[^\]]*\]|(?:\n\s*-\s+.*)*)/g, "");
-    fm = fm.replace(/\nentregaveis:\s*(\[[^\]]*\]|(?:\n\s*-\s+.*)*)/g, "");
-    fm += attBlock + delBlock;
-
-    const newContent = content.replace(/^---\r?\n([\s\S]*?)\r?\n---/, `---\n${fm.trim()}\n---`);
-    fs.writeFileSync(absPath, newContent, "utf-8");
+    // Task notes are only written through lib/tarefaNote (format + activity + sync).
+    writeTarefa(vaultRoot, path.relative(vaultRoot, absPath), "workspace v1", (d) => {
+      d.fm.anexos = attachments.map((a) => ({ id: a.id, nome: a.name, tipo: a.type, path: a.vaultRelativePath || a.url }));
+      d.fm.entregaveis = deliverables.map((x) => ({ id: x.id, titulo: x.title, formato: x.format, path: x.vaultRelativePath }));
+    });
   } catch (err) {
     console.error("Error syncing task frontmatter with workspace:", err);
   }

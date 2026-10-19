@@ -1,4 +1,5 @@
 import fs from "fs";
+import { createTarefaNote, nomesDoVault, writeTarefa } from "./tarefaNote";
 import path from "path";
 import { defaultVault } from "@/lib/config";
 import type { GlobalTask, SquadId, KanbanColumnId } from "@/lib/nipeiStore";
@@ -380,64 +381,30 @@ export interface CreateTaskOptions {
   assignee?: string;
 }
 
-export function createKanbanTaskDirect(opts: CreateTaskOptions): { success: boolean; task?: GlobalTask; error?: string } {
+export function createKanbanTaskDirect(
+  opts: CreateTaskOptions,
+  extraFm: Record<string, unknown> = {},
+  actor = "API (Venu/Hermes)",
+): { success: boolean; task?: GlobalTask; error?: string } {
   const vaultRoot = defaultVault();
   if (!vaultRoot) return { success: false, error: "Vault root not configured" };
 
-  const tarefasDir = path.join(vaultRoot, "Productivity", "Tarefas");
-  if (!fs.existsSync(tarefasDir)) {
-    fs.mkdirSync(tarefasDir, { recursive: true });
-  }
-
-  const cleanTitle = opts.title.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 35);
-  const filename = `task_${Date.now().toString().slice(-4)}_${cleanTitle}.md`;
-  const filePath = path.join(tarefasDir, filename);
-  const taskId = `task_${Date.now().toString().slice(-6)}`;
-  const projectName = opts.project || "Demanda Geral Squad";
+  const projectName = opts.project || "Geral";
   const squad = (opts.squad || "squad_1_ceo") as SquadId;
   const priority = opts.priority || "alta";
-  const assignedAgents = opts.assignedAgents || ["antigravity", "hermes"];
+  const assignedAgents = (opts.assignedAgents || ["antigravity", "hermes"]).map((a) => a.replace(/^@/, ""));
   const assignee = opts.assignee || "";
 
-  const content = `---
-id: "${taskId}"
-title: "${opts.title}"
-type: "tarefa"
-status: "A fazer"
-priority: "${priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : "Média"}"
-project: "${projectName}"
-squad: "${squad}"
-agents: [${assignedAgents.map((a) => JSON.stringify(a.replace(/^@/, ""))).join(", ")}]
-${assignee ? `responsible: "${assignee}"\n` : ""}tags:
-  - tarefa
-  - nipei-os
-  - status-a-fazer
-updated_at: "${new Date().toISOString()}"
----
-
-<!-- agente: venu-voice-director -->
-# Tarefa: ${opts.title}
-
-**Status**: \`A fazer\` | **Prioridade**: \`${priority}\`
-
-> 📋 **Ação Operacional criada via Venu (Voz & IA)**
-
-## 📁 Projeto Vinculado
-- [[${projectName}]]
-
-## 👥 Responsáveis & Time Vinculado
-- Squad: \`${squad}\`
-- Agentes: ${assignedAgents.map((a) => (a.startsWith("@") ? a : `@${a}`)).join(", ")}
-- Responsável: ${assignee || "—"}
-
-## 📌 Descrição & Notas
-${opts.description || "Criada por comando vocal/executivo em Venu."}
-`;
-
-  fs.writeFileSync(filePath, content, "utf-8");
+  // One writer for every task note (lib/tarefaNote.ts): same format, activity log, immediate sync.
+  const { id, relFile } = createTarefaNote(vaultRoot, {
+    title: opts.title,
+    priority: priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : priority === "baixa" ? "Baixa" : "Média",
+    project: projectName, squad, agents: assignedAgents, responsible: assignee,
+    ...extraFm,
+  }, actor, { descricao: opts.description || "", origem: `Criada por ${actor}.` });
 
   const task: GlobalTask = {
-    id: taskId,
+    id,
     title: opts.title,
     project: projectName,
     squad,
@@ -445,14 +412,20 @@ ${opts.description || "Criada por comando vocal/executivo em Venu."}
     status: "pendente",
     assignee,
     priority,
-    dueDate: "",
+    dueDate: typeof extraFm.prazo === "string" ? extraFm.prazo : "",
     assignedAgents,
-    vaultPath: `Productivity/Tarefas/${filename}`,
+    vaultPath: relFile.split(path.sep).join("/"),
     description: opts.description,
   };
 
   return { success: true, task };
 }
+
+/** Status string written for each v1 kanban column (the v1 parser maps these back). */
+export const COLUMN_STATUS: Record<KanbanColumnId, string> = {
+  triage: "A fazer", todo: "A fazer", in_progress: "Em andamento", agent_executing: "IA em Execução",
+  review: "Revisão / Bloqueado", done: "Concluído", archived: "Arquivado",
+};
 
 export interface UpdateTaskOptions {
   idOrTitle: string;
@@ -462,7 +435,7 @@ export interface UpdateTaskOptions {
   executionLog?: string;
 }
 
-export function updateKanbanTaskDirect(opts: UpdateTaskOptions): { success: boolean; task?: GlobalTask; error?: string } {
+export function updateKanbanTaskDirect(opts: UpdateTaskOptions, actor = "API (Venu/Hermes)"): { success: boolean; task?: GlobalTask; error?: string } {
   const vaultRoot = defaultVault();
   if (!vaultRoot) return { success: false, error: "Vault root not configured" };
 
@@ -475,59 +448,29 @@ export function updateKanbanTaskDirect(opts: UpdateTaskOptions): { success: bool
   if (!found || !found.vaultPath) {
     return { success: false, error: `Tarefa "${opts.idOrTitle}" não encontrada no Kanban.` };
   }
-
-  const fullPath = path.join(vaultRoot, found.vaultPath);
-  if (!fs.existsSync(fullPath)) {
+  if (!fs.existsSync(path.join(vaultRoot, found.vaultPath))) {
     return { success: false, error: `Arquivo da tarefa não encontrado: ${found.vaultPath}` };
   }
 
-  let content = fs.readFileSync(fullPath, "utf-8");
-
-  if (opts.column) {
-    let newStatus = "A fazer";
-    if (opts.column === "archived") newStatus = "Arquivado";
-    else if (opts.column === "done") newStatus = "Concluído";
-    else if (opts.column === "agent_executing") newStatus = "IA em Execução";
-    else if (opts.column === "in_progress") newStatus = "Em andamento";
-    else if (opts.column === "review") newStatus = "Revisão / Bloqueado";
-    else if (opts.column === "triage" || opts.column === "todo") newStatus = "A fazer";
-
-    if (content.includes("status:")) {
-      content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "${newStatus}"`);
+  writeTarefa(vaultRoot, found.vaultPath, actor, (d) => {
+    if (opts.column) {
+      d.fm.status = COLUMN_STATUS[opts.column];
+      found.columnStatus = opts.column;
+      found.status = opts.column === "done" ? "concluido" : opts.column === "in_progress" ? "em_progresso" : "pendente";
     }
-    found.columnStatus = opts.column;
-    found.status = opts.column === "done" ? "concluido" : opts.column === "in_progress" ? "em_progresso" : "pendente";
-  }
-
-  if (opts.priority) {
-    const priTitle = opts.priority === "urgente" ? "Urgente" : opts.priority === "alta" ? "Alta" : "Média";
-    if (content.includes("priority:")) {
-      content = content.replace(/priority:\s*"?([^"\n\r]+)"?/, `priority: "${priTitle}"`);
+    if (opts.priority) {
+      d.fm.priority = opts.priority === "urgente" ? "Urgente" : opts.priority === "alta" ? "Alta" : opts.priority === "baixa" ? "Baixa" : "Média";
+      found.priority = opts.priority;
     }
-    found.priority = opts.priority;
-  }
-
-  if (opts.squad) {
-    if (content.includes("squad:")) {
-      content = content.replace(/squad:\s*"?([^"\n\r]+)"?/, `squad: "${opts.squad}"`);
-    } else {
-      content = content.replace(/---\n/, `---\nsquad: "${opts.squad}"\n`);
+    if (opts.squad) {
+      d.fm.squad = opts.squad;
+      found.squad = opts.squad as SquadId;
     }
-    if (content.match(/-\s*Squad:\s*`?[^`\n\r]+`?/i)) {
-      content = content.replace(/-\s*Squad:\s*`?[^`\n\r]+`?/i, `- Squad: \`${opts.squad}\``);
-    }
-    found.squad = opts.squad as SquadId;
-  }
-
-  if (opts.executionLog) {
-    content += `\n\n### 🤖 Atualização via Venu (${new Date().toLocaleString()})\n${opts.executionLog}\n`;
-  }
-
-  fs.writeFileSync(fullPath, content, "utf-8");
+  }, opts.executionLog ? [`registro: ${opts.executionLog.replace(/\s+/g, " ").slice(0, 500)}`] : []);
   return { success: true, task: found };
 }
 
-export function assignKanbanTaskDirect(idOrTitle: string, agents?: string[], assignee?: string): { success: boolean; task?: GlobalTask; error?: string } {
+export function assignKanbanTaskDirect(idOrTitle: string, agents?: string[], assignee?: string, actor = "API (Venu/Hermes)"): { success: boolean; task?: GlobalTask; error?: string } {
   const vaultRoot = defaultVault();
   if (!vaultRoot) return { success: false, error: "Vault root not configured" };
 
@@ -540,36 +483,29 @@ export function assignKanbanTaskDirect(idOrTitle: string, agents?: string[], ass
   if (!found || !found.vaultPath) {
     return { success: false, error: `Tarefa "${idOrTitle}" não encontrada no Kanban.` };
   }
-
-  const fullPath = path.join(vaultRoot, found.vaultPath);
-  if (!fs.existsSync(fullPath)) {
+  if (!fs.existsSync(path.join(vaultRoot, found.vaultPath))) {
     return { success: false, error: `Arquivo da tarefa não encontrado: ${found.vaultPath}` };
   }
 
-  let content = fs.readFileSync(fullPath, "utf-8");
-
-  if (assignee) {
-    if (content.includes("responsible:")) {
-      content = content.replace(/responsible:\s*"?([^"\n\r]+)"?/, `responsible: "${assignee}"`);
+  writeTarefa(vaultRoot, found.vaultPath, actor, (d) => {
+    if (assignee) {
+      // A Miembros id becomes a v2 owner and the v1 text lists everyone by name; free text stays as given.
+      const ids = Array.isArray(d.fm.responsaveis) ? (d.fm.responsaveis as string[]) : [];
+      if (fs.existsSync(path.join(vaultRoot, "Miembros", `${assignee}.md`))) {
+        const todos = ids.includes(assignee) ? ids : [...ids, assignee];
+        const nomes = nomesDoVault(vaultRoot);
+        d.fm.responsaveis = todos;
+        d.fm.responsible = todos.map((i) => nomes[i] ?? i).join(", ");
+      } else {
+        d.fm.responsible = assignee;
+      }
+      found.assignee = String(d.fm.responsible);
     }
-    if (content.match(/-\s*Responsável:\s*[^\n\r]+/i)) {
-      content = content.replace(/-\s*Responsável:\s*[^\n\r]+/i, `- Responsável: ${assignee}`);
+    if (agents && agents.length > 0) {
+      found.assignedAgents = agents.map((a) => a.replace(/^@/, ""));
+      d.fm.agents = found.assignedAgents;
     }
-    found.assignee = assignee;
-  }
-
-  if (agents && agents.length > 0) {
-    const formattedAgents = agents.map((a) => (a.startsWith("@") ? a : `@${a}`)).join(", ");
-    if (content.match(/-\s*Agentes:\s*[^\n\r]+/i)) {
-      content = content.replace(/-\s*Agentes:\s*[^\n\r]+/i, `- Agentes: ${formattedAgents}`);
-    } else {
-      content += `\n- Agentes: ${formattedAgents}\n`;
-    }
-    found.assignedAgents = agents.map((a) => a.replace(/^@/, ""));
-    content = setAgentsFrontmatter(content, found.assignedAgents);
-  }
-
-  fs.writeFileSync(fullPath, content, "utf-8");
+  });
   return { success: true, task: found };
 }
 

@@ -1,0 +1,11 @@
+# Runs the vault sync as soon as the app writes a note (lib/tarefaNote.ts requestSync touches
+# /opt/nipei-vault/.sync-request). The 5-minute cron stays as a fallback.
+# Install: copy both units to /etc/systemd/system/ then: systemctl daemon-reload && systemctl enable --now nipei-vault-sync.path
+[Unit]
+Description=Sync the Nipei vault when the app requests it
+
+[Path]
+PathModified=/opt/nipei-vault/.sync-request
+
+[Install]
+WantedBy=multi-user.target

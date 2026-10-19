@@ -11,7 +11,7 @@ import {
 import { executeGenerateDeliverable } from "@/app/api/agent-kanban/deliverables/route";
 import { executeDispatchCommunication } from "@/app/api/agent-kanban/dispatch/route";
 
-import { getEquipes, getPessoas, getProjetos, getObjetivos, updateNote } from "@/lib/v2/data";
+import { getEquipes, getPessoas, getProjetos, getObjetivos } from "@/lib/v2/data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,13 +86,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: v2.error }, { status: 400 });
       }
       if (typeof v2.fields.project === "string") opts.project = v2.fields.project;
-      const res = createKanbanTaskDirect(opts);
+      const res = createKanbanTaskDirect(opts, v2.fields);
       if (!res.success) {
         return NextResponse.json({ success: false, error: res.error }, { status: 500 });
-      }
-      if (res.task && Object.keys(v2.fields).length) {
-        updateNote(res.task.vaultPath!, v2.fields);
-        res.task.dueDate = String(v2.fields.prazo ?? "");
       }
       return NextResponse.json({
         success: true,

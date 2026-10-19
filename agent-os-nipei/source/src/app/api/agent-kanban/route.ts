@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
+import { createTarefaNote, resolveTarefa, writeTarefa } from "@/lib/tarefaNote";
 import path from "path";
 import { defaultVault } from "@/lib/config";
 import type { TaskAttachment, TaskDeliverable } from "@/lib/nipeiStore";
@@ -49,7 +50,7 @@ function loadProjectToSquadMap(vaultRoot: string): Record<string, string> {
   return map;
 }
 
-import { getLiveKanbanTasks, setAgentsFrontmatter } from "@/lib/kanbanGrounding";
+import { COLUMN_STATUS, getLiveKanbanTasks } from "@/lib/kanbanGrounding";
 
 export async function GET() {
   try {
@@ -83,49 +84,15 @@ export async function POST(req: Request) {
       fs.mkdirSync(tarefasDir, { recursive: true });
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    const cleanTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 35);
-    const filename = `task_${Date.now().toString().slice(-4)}_${cleanTitle}.md`;
-    const filePath = path.join(tarefasDir, filename);
-
-    const taskId = `task_${Date.now().toString().slice(-6)}`;
-    const projectName = project || "Demanda Geral Squad 1";
-
-    const content = `---
-id: "${taskId}"
-title: "${title}"
-type: "tarefa"
-status: "A fazer"
-priority: "${priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : "Média"}"
-project: "${projectName}"
-squad: "${squad || "squad_1_ceo"}"
-agents: [${(Array.isArray(assignedAgents) && assignedAgents.length ? assignedAgents : ["antigravity", "hermes"]).map((a: string) => JSON.stringify(a)).join(", ")}]
-tags:
-  - tarefa
-  - nipei-os
-  - status-a-fazer
-updated_at: "${new Date().toISOString()}"
----
-
-<!-- agente: hermes-task-manager -->
-# Tarefa: ${title}
-
-**Status**: \`A fazer\` | **Prioridade**: \`${priority || "Média"}\`
-
-> 📋 **Ação Operacional do Ecossistema Nipëi OS**
-
-## 📁 Projeto Vinculado
-- [[${projectName}]]
-
-## 👥 Responsáveis & Time Vinculado
-- Squad: \`${squad || "squad_1_ceo"}\`
-- Agentes: ${Array.isArray(assignedAgents) ? assignedAgents.map((a: string) => `@${a}`).join(", ") : "@hermes, @antigravity"}
-
-## 📌 Descrição & Notas
-${description || "Criada via Nipëi OS Kanban / Hermes Task Assistant."}
-`;
-
-    fs.writeFileSync(filePath, content, "utf-8");
+    const projectName = project || "Geral";
+    const { id: taskId, relFile } = createTarefaNote(vaultRoot, {
+      title,
+      priority: priority === "urgente" ? "Urgente" : priority === "alta" ? "Alta" : priority === "baixa" ? "Baixa" : "Média",
+      project: projectName,
+      squad: squad || "squad_1_ceo",
+      agents: Array.isArray(assignedAgents) && assignedAgents.length ? assignedAgents : ["antigravity", "hermes"],
+    }, "Kanban v1", { descricao: description || "" });
+    const filename = path.basename(relFile);
 
     return NextResponse.json({
       success: true,
@@ -165,55 +132,17 @@ export async function PATCH(req: Request) {
     if (!vaultRoot) {
       return NextResponse.json({ success: false, error: "Vault root not configured" }, { status: 500 });
     }
-    const fullPath = path.join(vaultRoot, vaultPath);
-
-    if (fs.existsSync(fullPath)) {
-      let content = fs.readFileSync(fullPath, "utf-8");
-
-      // Update squad if provided
-      if (squad) {
-        if (content.includes("squad:")) {
-          content = content.replace(/squad:\s*"?([^"\n\r]+)"?/, `squad: "${squad}"`);
-        } else {
-          content = content.replace(/---\n/, `---\nsquad: "${squad}"\n`);
-        }
-        if (content.match(/-\s*Squad:\s*`?[^`\n\r]+`?/i)) {
-          content = content.replace(/-\s*Squad:\s*`?[^`\n\r]+`?/i, `- Squad: \`${squad}\``);
-        }
-      }
-
-      if (Array.isArray(assignedAgents)) {
-        content = setAgentsFrontmatter(content, assignedAgents);
-      }
-
-      // Update status in frontmatter if moving columns
-      if (column) {
-        let newStatus = "A fazer";
-        if (column === "archived") newStatus = "Arquivado";
-        else if (column === "done") newStatus = "Concluído";
-        else if (column === "agent_executing") newStatus = "IA em Execução";
-        else if (column === "in_progress") newStatus = "Em andamento";
-        else if (column === "review") newStatus = "Revisão / Bloqueado";
-        else if (column === "triage" || column === "todo") newStatus = "A fazer";
-
-        if (content.includes("status:")) {
-          content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "${newStatus}"`);
-        }
-      }
-
-      if (executionLog) {
-        content += `\n\n### 🤖 Registro de Execução de Agente IA (${new Date().toLocaleString()})\n${executionLog}\n`;
-      }
-
-      if (status === "done" && !content.includes("RESUELTO_Y_VERIFICADO")) {
-        content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "Concluído"`);
-        content += `\n- **Estado**: 🟢 Concluído e verificado via Nipëi OS (${new Date().toLocaleString()})\n`;
-      } else if (status === "archived") {
-        content = content.replace(/status:\s*"?([^"\n\r]+)"?/, `status: "Arquivado"`);
-        content += `\n- **Estado**: 📦 Arquivado no histórico Nipëi OS (${new Date().toLocaleString()})\n`;
-      }
-
-      fs.writeFileSync(fullPath, content, "utf-8");
+    // resolveTarefa refuses any path outside Productivity/Tarefas (it used to accept any vaultPath).
+    if (fs.existsSync(resolveTarefa(vaultRoot, vaultPath))) {
+      const extra: string[] = [];
+      if (executionLog) extra.push(`registro do agente: ${String(executionLog).replace(/\s+/g, " ").slice(0, 500)}`);
+      writeTarefa(vaultRoot, vaultPath, "Kanban v1", (d) => {
+        if (squad) d.fm.squad = squad;
+        if (Array.isArray(assignedAgents)) d.fm.agents = assignedAgents.map((a: string) => String(a).replace(/^@/, ""));
+        if (column && column in COLUMN_STATUS) d.fm.status = COLUMN_STATUS[column as keyof typeof COLUMN_STATUS];
+        if (status === "done") d.fm.status = "Concluído";
+        else if (status === "archived") d.fm.status = "Arquivado";
+      }, extra);
     }
 
     return NextResponse.json({ success: true });
