@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
+import { proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
   updateEvento, updateObjetivo, updateTarefa, type Status,
-  addArquivo, addLink, comentar, editChecklist, removeAnexo, setDescricao,
+  addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setDescricao,
 } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
@@ -218,6 +219,40 @@ export async function removeAnexoAction(form: FormData) {
   const { me, t, pode } = await tarefaEditavel(form);
   if (!t || !pode) return;
   removeAnexo(t.id, String(form.get("anexo")), actorName(me));
+  voltarTarefa(t.id);
+}
+
+// ---------------------------------------------------------------- task AI (T2)
+
+export async function proporIAAction(id: string, modo: ModoIA): Promise<{ proposta?: PropostaIA; error?: string }> {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t || !can.usarIA(me, t)) return { error: "Sem permissão para usar a IA nesta tarefa" };
+  if (!["detalhar", "proximo", "atualizar"].includes(modo)) return { error: "Modo inválido" };
+  try {
+    return { proposta: await proporIA(id, modo, me.username) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+const ORIGEM_IA: Record<string, string> = { detalhar: "Explicar e detalhar", proximo: "O que fazer agora", atualizar: "Atualizar com anexos" };
+
+export async function aplicarIAAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  if (!t || !can.usarIA(me, t)) return;
+  const status = String(form.get("status") ?? "");
+  const prazo = String(form.get("prazo") ?? "");
+  aplicarSugestao(t.id, `${actorName(me)} (IA)`, {
+    descricao: form.get("usarDescricao") ? String(form.get("descricao") ?? "").slice(0, 20000) : null,
+    adicionar: form.getAll("adicionar").map(String).map((x) => x.slice(0, 300)),
+    concluir: form.getAll("concluir").map(String),
+    status: form.get("usarStatus") && ["todo", "doing", "done"].includes(status) ? (status as Status) : null,
+    prazo: form.get("usarPrazo") && /^\d{4}-\d{2}-\d{2}$/.test(prazo) ? prazo : null,
+    proximo: form.get("usarProximo") ? String(form.get("proximo") ?? "").trim() || null : null,
+    origem: `${ORIGEM_IA[String(form.get("modo"))] ?? "IA"} · ${String(form.get("modelo") ?? "").slice(0, 60)}`,
+  });
   voltarTarefa(t.id);
 }
 

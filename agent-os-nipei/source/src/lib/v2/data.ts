@@ -185,6 +185,8 @@ export const can = {
   assumir: (me: Me, t: Tarefa) => !t.equipe && me.coordena.length > 0,
   editEvento: (me: Me, e: Evento) => me.gestao || (!!e.equipe && me.coordena.includes(e.equipe)),
   editObjetivo: (me: Me) => me.gestao,
+  // T2: AI on tasks is Equipe 1 (gestão) only for now.
+  usarIA: (me: Me, t: Tarefa) => me.gestao && (can.editTarefa(me, t) || can.assumir(me, t)),
 };
 
 export const today = () => new Date().toISOString().slice(0, 10);
@@ -502,3 +504,19 @@ export function arquivoDaTarefa(id: string, nome: string): { abs: string; tipo: 
   if (!abs.startsWith(own + path.sep) || !fs.existsSync(abs)) return null;
   return { abs, tipo: ANEXO_TIPOS[nome.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream" };
 }
+
+/** Applies the parts of an AI suggestion a person ticked, in one write; the log says it came from the AI. */
+export function aplicarSugestao(id: string, actor: string, sug: {
+  descricao: string | null; adicionar: string[]; concluir: string[]; status: Status | null; prazo: string | null; proximo: string | null; origem: string;
+}) {
+  const extra = [`aplicou sugestão da IA (${sug.origem})`];
+  if (sug.proximo) extra.push(`comentou “Próximo passo (IA): ${sug.proximo.replace(/\s+/g, " ").slice(0, 800)}”`);
+  editarTarefa(id, actor, (d) => {
+    if (sug.descricao != null) d.descricao = sug.descricao.trim();
+    for (const texto of sug.adicionar) if (texto.trim() && !d.checklist.some((c) => c.texto === texto.trim())) d.checklist.push({ feito: false, texto: texto.trim() });
+    for (const c of d.checklist) if (sug.concluir.includes(c.texto)) c.feito = true;
+    if (sug.status) d.fm.status = STATUS_RAW[sug.status];
+    if (sug.prazo) d.fm.prazo = sug.prazo;
+  }, extra);
+}
+

@@ -6,11 +6,12 @@ import remarkGfm from "remark-gfm";
 import { ArrowLeft, Check, ExternalLink, FileText, Image as ImageIcon, Link2, Pencil, X } from "lucide-react";
 import { Avatar, Chip, Section } from "@/components/v2/ui";
 import Upload from "@/components/v2/Upload";
+import IAPanel from "@/components/v2/IAPanel";
 import { ANEXO_TIPOS, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, today, type Anexo, type Status } from "@/lib/v2/data";
 import { parseAtividade } from "@/lib/tarefaNote";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import {
-  checklistAction, comentarAction, descricaoAction, linkAction, removeAnexoAction, setStatusAction, uploadAction,
+  aplicarIAAction, checklistAction, comentarAction, descricaoAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
 } from "../../actions";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
@@ -86,6 +87,15 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
           {!tarefa.responsaveis.length && tarefa.responsible && <span className="text-sm text-neutral-500">{tarefa.responsible}</span>}
         </div>
       </div>
+
+      {can.usarIA(me, tarefa) && (
+        <IAPanel id={id} propor={proporIAAction} aplicar={aplicarIAAction} labels={{
+          titulo: t.iaTitulo, detalhar: t.iaDetalhar, proximo: t.iaProximo, atualizar: t.iaAtualizar, pensando: t.iaPensando,
+          aplicar: t.iaAplicar, descartar: t.iaDescartar, novaDescricao: t.iaNovaDescricao, adicionarChecklist: t.iaAdicionar,
+          concluirChecklist: t.iaConcluir, proximoPasso: t.iaProximoPasso, mudarStatus: t.iaStatus, mudarPrazo: t.iaPrazo,
+          fontes: t.iaFontes, nada: t.iaNada, aviso: t.iaAviso, status: { todo: t.aFazer, doing: t.fazendo, done: t.feito },
+        }} />
+      )}
 
       {/* Descrição */}
       <Section title={t.descricaoTitulo}>

@@ -45,6 +45,11 @@ const pt = {
   tituloLink: "Nome (opcional)", arquivo: "Arquivo", foto: "Foto", enviando: "Enviando…", maximo: "Máximo 10 MB. Para vídeos e arquivos grandes, use um link do Drive.",
   remover: "Remover", atividade: "Atividade", comentar: "Comentar", escreverComentario: "Escrever um comentário…", origem: "Origem",
   verMais: "ver histórico completo",
+  iaTitulo: "IA", iaDetalhar: "Explicar e detalhar", iaProximo: "O que fazer agora?", iaAtualizar: "Atualizar com anexos",
+  iaPensando: "A IA está lendo a tarefa, as notas e os anexos…", iaAplicar: "Aplicar selecionados", iaDescartar: "Descartar",
+  iaNovaDescricao: "Nova descrição (pode editar antes de aplicar)", iaAdicionar: "Adicionar à checklist", iaConcluir: "Marcar como feito",
+  iaProximoPasso: "Registrar como comentário: próximo passo", iaStatus: "Mudar status para", iaPrazo: "Mudar prazo para", iaFontes: "Fontes",
+  iaNada: "A IA não sugeriu mudanças.", iaAviso: "Sugestão da IA: confira antes de aplicar",
 };
 type Dict = typeof pt;
 
@@ -89,6 +94,11 @@ const en: Dict = {
   tituloLink: "Name (optional)", arquivo: "File", foto: "Photo", enviando: "Uploading…", maximo: "Max 10 MB. For videos and large files, use a Drive link.",
   remover: "Remove", atividade: "Activity", comentar: "Comment", escreverComentario: "Write a comment…", origem: "Origin",
   verMais: "see full history",
+  iaTitulo: "AI", iaDetalhar: "Explain and detail", iaProximo: "What to do now?", iaAtualizar: "Update from attachments",
+  iaPensando: "The AI is reading the task, notes and attachments…", iaAplicar: "Apply selected", iaDescartar: "Discard",
+  iaNovaDescricao: "New description (you can edit it before applying)", iaAdicionar: "Add to checklist", iaConcluir: "Mark as done",
+  iaProximoPasso: "Save as comment: next step", iaStatus: "Change status to", iaPrazo: "Change due date to", iaFontes: "Sources",
+  iaNada: "The AI suggested no changes.", iaAviso: "AI suggestion: check before applying",
 };
 
 export async function getLang(): Promise<Lang> {
