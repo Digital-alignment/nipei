@@ -40,6 +40,11 @@ const pt = {
   semEquipeIntro: "Tarefas que ainda não têm equipe. Escolha a equipe (e, se quiser, quem faz) para tirá-las daqui.", atribuir: "Atribuir", ninguem: "Ninguém",
   novoEvento: "Novo evento", editarEvento: "Editar evento", inicio: "Início", fim: "Fim (opcional)", soMes: "Hoje só tem mês/ano:",
   donoEquipe: "Equipe dona", donoProposto: "Dono proposto — confirme ou troque", confirmarDono: "Confirmar", donoConfirmado: "Dono confirmado",
+  descricaoTitulo: "Descrição", semDescricao: "Ainda sem descrição. O que precisa ser feito?", editarDescricao: "Editar descrição",
+  checklist: "Checklist", novoItem2: "Novo item…", anexos: "Anexos", semAnexos: "Nenhum anexo.", adicionarLink: "Adicionar link",
+  tituloLink: "Nome (opcional)", arquivo: "Arquivo", foto: "Foto", enviando: "Enviando…", maximo: "Máximo 10 MB. Para vídeos e arquivos grandes, use um link do Drive.",
+  remover: "Remover", atividade: "Atividade", comentar: "Comentar", escreverComentario: "Escrever um comentário…", origem: "Origem",
+  verMais: "ver histórico completo",
 };
 type Dict = typeof pt;
 
@@ -79,6 +84,11 @@ const en: Dict = {
   semEquipeIntro: "Tasks with no team yet. Pick the team (and, if you want, who does it) to move them out of here.", atribuir: "Assign", ninguem: "Nobody",
   novoEvento: "New event", editarEvento: "Edit event", inicio: "Start", fim: "End (optional)", soMes: "Only month/year today:",
   donoEquipe: "Owner team", donoProposto: "Proposed owner — confirm or change", confirmarDono: "Confirm", donoConfirmado: "Owner confirmed",
+  descricaoTitulo: "Description", semDescricao: "No description yet. What needs to be done?", editarDescricao: "Edit description",
+  checklist: "Checklist", novoItem2: "New item…", anexos: "Attachments", semAnexos: "No attachments.", adicionarLink: "Add link",
+  tituloLink: "Name (optional)", arquivo: "File", foto: "Photo", enviando: "Uploading…", maximo: "Max 10 MB. For videos and large files, use a Drive link.",
+  remover: "Remove", atividade: "Activity", comentar: "Comment", escreverComentario: "Write a comment…", origem: "Origin",
+  verMais: "see full history",
 };
 
 export async function getLang(): Promise<Lang> {

@@ -186,12 +186,29 @@ function diffLines(antes: TarefaDoc, depois: TarefaDoc, nomes: Record<string, st
   for (const [k, label] of Object.entries(LABELS)) {
     if (show(antes.fm[k]) !== show(depois.fm[k])) out.push(`${label} ${show(antes.fm[k], nomes)} → ${show(depois.fm[k], nomes)}`);
   }
-  const anexosA = Array.isArray(antes.fm.anexos) ? antes.fm.anexos.length : 0, anexosD = Array.isArray(depois.fm.anexos) ? depois.fm.anexos.length : 0;
-  if (anexosA !== anexosD) out.push(anexosD > anexosA ? `anexou ${anexosD - anexosA} item(ns)` : `removeu ${anexosA - anexosD} anexo(s)`);
+  // Attachments and checklist: say which item, not just a count.
+  const anexoNome = (x: unknown) => { const o = (x ?? {}) as Record<string, unknown>; return String(o.titulo ?? o.nome ?? o.url ?? o.path ?? "anexo"); };
+  const anexoKey = (x: unknown) => { const o = (x ?? {}) as Record<string, unknown>; return String(o.id ?? o.path ?? o.url ?? JSON.stringify(o)); };
+  const lista = (v: unknown) => (Array.isArray(v) ? v : []);
+  const keysA = new Set(lista(antes.fm.anexos).map(anexoKey)), keysD = new Set(lista(depois.fm.anexos).map(anexoKey));
+  for (const x of lista(depois.fm.anexos)) if (!keysA.has(anexoKey(x))) out.push(`anexou “${anexoNome(x)}”`);
+  for (const x of lista(antes.fm.anexos)) if (!keysD.has(anexoKey(x))) out.push(`removeu o anexo “${anexoNome(x)}”`);
   if (antes.descricao.trim() !== depois.descricao.trim()) out.push("Descrição atualizada");
-  const ck = (d: TarefaDoc) => d.checklist.map((c) => `${c.feito}${c.texto}`).join("|");
-  if (ck(antes) !== ck(depois)) out.push(`Checklist ${depois.checklist.filter((c) => c.feito).length}/${depois.checklist.length}`);
+  const itensA = new Map(antes.checklist.map((c) => [c.texto, c.feito])), itensD = new Map(depois.checklist.map((c) => [c.texto, c.feito]));
+  for (const [texto, feito] of itensD) {
+    if (!itensA.has(texto)) out.push(`adicionou à checklist “${texto}”`);
+    else if (itensA.get(texto) !== feito) out.push(`${feito ? "concluiu" : "reabriu"} “${texto}”`);
+  }
+  for (const texto of itensA.keys()) if (!itensD.has(texto)) out.push(`removeu da checklist “${texto}”`);
   return out;
+}
+
+/** "- 2026-10-19 18:40 · Bruna · comentou “…”" → parts for the UI (null for free-form lines). */
+export function parseAtividade(line: string): { quando: string; quem: string; texto: string; comentario: string | null } | null {
+  const m = line.match(/^-\s*(.*?)\s+·\s+(.*?)\s+·\s+([\s\S]*)$/);
+  if (!m) return null;
+  const c = m[3].match(/^comentou “([\s\S]*)”$/);
+  return { quando: m[1], quem: m[2], texto: m[3], comentario: c ? c[1] : null };
 }
 
 // ---------------------------------------------------------------- read / write

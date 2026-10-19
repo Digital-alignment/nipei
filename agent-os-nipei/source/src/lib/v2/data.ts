@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { defaultVault } from "@/lib/config";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { normalizeDueDate } from "@/lib/kanbanGrounding";
-import { createTarefaNote, requestSync, writeTarefa } from "@/lib/tarefaNote";
+import { createTarefaNote, parseTarefa, requestSync, writeTarefa, type ChecklistItem, type TarefaDoc } from "@/lib/tarefaNote";
 
 // v2 data layer: everything is read straight from the vault notes on each request.
 // Source of truth per concept: Equipes/, Projetos/, Objetivos/, Eventos/, Miembros/, Productivity/Tarefas/.
@@ -27,6 +27,7 @@ export type Pessoa = {
 export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
   equipe: string; area: string; projeto: string; objetivo: string; responsaveis: string[]; responsible: string;
+  checklist: { feitos: number; total: number }; anexos: number;
 };
 
 const vault = () => {
@@ -119,8 +120,9 @@ export function getPessoas(): Pessoa[] {
 }
 
 export function getTarefas(): Tarefa[] {
-  return readDir(path.join("Productivity", "Tarefas")).map(({ fm, file }) => {
+  return readDir(path.join("Productivity", "Tarefas")).map(({ fm, file, body }) => {
     const statusRaw = s(fm.status);
+    const itens = body.match(/^- \[( |x|X)\] /gm) ?? [];
     return {
       id: s(fm.id) || path.basename(file, ".md"),
       file,
@@ -135,6 +137,8 @@ export function getTarefas(): Tarefa[] {
       objetivo: s(fm.objetivo),
       responsaveis: arr(fm.responsaveis),
       responsible: s(fm.responsible),
+      checklist: { feitos: itens.filter((i) => i[3] !== " ").length, total: itens.length },
+      anexos: Array.isArray(fm.anexos) ? fm.anexos.length : 0,
     };
   });
 }
@@ -393,4 +397,108 @@ export function updateObjetivo(id: string, input: { equipe: string; apoio: strin
   const o = getObjetivos().find((x) => x.id === id);
   if (!o) throw new Error("Objetivo não encontrado");
   updateNote(o.file, { ...input, dono_confirmado: true });
+}
+
+// ---------------------------------------------------------------- task detail (T1)
+// Attachments live in the vault: links in frontmatter `anexos`, files in Task_Workspace/<task id>/.
+// ponytail: files ≤ 10 MB in git; move big ones to Drive when the vault repo grows (see Analisis_Tareas_v2 §4).
+
+export const ANEXO_MAX_BYTES = 10 * 1024 * 1024;
+export const ANEXO_TIPOS: Record<string, string> = {
+  pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif",
+  heic: "image/heic", txt: "text/plain", md: "text/markdown", csv: "text/csv",
+  doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint", pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  mp3: "audio/mpeg", m4a: "audio/mp4", ogg: "audio/ogg", opus: "audio/ogg",
+};
+
+export type Anexo = { id: string; tipo: "link" | "arquivo"; titulo: string; url: string; path: string; tamanho: number; por: string; em: string };
+
+/** Accepts both the v2 shape and the v1 workspace shape ({id, nome, tipo, path}). */
+function toAnexo(x: unknown, i: number): Anexo {
+  const o = (x ?? {}) as Record<string, unknown>;
+  const url = s(o.url) || (/^https?:\/\//.test(s(o.path)) ? s(o.path) : "");
+  return {
+    id: s(o.id) || `anexo_${i}`, tipo: url ? "link" : "arquivo", titulo: s(o.titulo) || s(o.nome) || url || path.basename(s(o.path)),
+    url, path: url ? "" : s(o.path), tamanho: Number(o.tamanho) || 0, por: s(o.por), em: s(o.em),
+  };
+}
+
+export const tarefaDir = (taskId: string) => path.join("Task_Workspace", taskId.replace(/[^a-zA-Z0-9_-]/g, "_"));
+
+export function getTarefaDetalhe(id: string): { tarefa: Tarefa; doc: TarefaDoc; anexos: Anexo[] } | null {
+  const tarefa = getTarefas().find((t) => t.id === id);
+  if (!tarefa) return null;
+  const doc = parseTarefa(fs.readFileSync(path.join(vault(), tarefa.file), "utf-8"));
+  return { tarefa, doc, anexos: (Array.isArray(doc.fm.anexos) ? doc.fm.anexos : []).map(toAnexo) };
+}
+
+function editarTarefa(id: string, actor: string, mutate: (d: TarefaDoc) => void, extra: string[] = []) {
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t) throw new Error("Tarefa não encontrada");
+  return writeTarefa(vault(), t.file, actor, mutate, extra);
+}
+
+export const setDescricao = (id: string, texto: string, actor: string) =>
+  editarTarefa(id, actor, (d) => { d.descricao = texto.trim(); });
+
+export function editChecklist(id: string, actor: string, op: { tipo: "add"; texto: string } | { tipo: "toggle" | "remove"; idx: number }) {
+  editarTarefa(id, actor, (d) => {
+    const c: ChecklistItem[] = d.checklist;
+    if (op.tipo === "add" && op.texto.trim() && !c.some((x) => x.texto === op.texto.trim())) c.push({ feito: false, texto: op.texto.trim() });
+    if (op.tipo === "toggle" && c[op.idx]) c[op.idx].feito = !c[op.idx].feito;
+    if (op.tipo === "remove" && c[op.idx]) c.splice(op.idx, 1);
+  });
+}
+
+export const comentar = (id: string, texto: string, actor: string) =>
+  editarTarefa(id, actor, () => {}, [`comentou “${texto.replace(/\s+/g, " ").trim().slice(0, 1000)}”`]);
+
+const novoAnexoId = () => `anx_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+export function addLink(id: string, titulo: string, url: string, actor: string, por: string) {
+  editarTarefa(id, actor, (d) => {
+    d.fm.anexos = [...(Array.isArray(d.fm.anexos) ? d.fm.anexos : []), { id: novoAnexoId(), tipo: "link", titulo: titulo || url, url, por, em: hoje() }];
+  });
+}
+
+/** Saves the file under Task_Workspace/<task id>/ (never overwrites) and lists it in the note. */
+export function addArquivo(id: string, file: { nome: string; bytes: Buffer }, actor: string, por: string) {
+  const ext = file.nome.split(".").pop()?.toLowerCase() ?? "";
+  if (!ANEXO_TIPOS[ext]) throw new Error(`Tipo de arquivo não permitido: .${ext}`);
+  if (file.bytes.length > ANEXO_MAX_BYTES) throw new Error("Arquivo maior que 10 MB");
+  const dirRel = tarefaDir(id);
+  fs.mkdirSync(path.join(vault(), dirRel), { recursive: true });
+  const base = slugify(file.nome.replace(/\.[^.]+$/, "")) || "arquivo";
+  let nome = `${base}.${ext}`;
+  for (let i = 2; fs.existsSync(path.join(vault(), dirRel, nome)); i++) nome = `${base}_${i}.${ext}`;
+  fs.writeFileSync(path.join(vault(), dirRel, nome), file.bytes);
+  editarTarefa(id, actor, (d) => {
+    d.fm.anexos = [...(Array.isArray(d.fm.anexos) ? d.fm.anexos : []), {
+      id: novoAnexoId(), tipo: "arquivo", titulo: file.nome, path: path.join(dirRel, nome).split(path.sep).join("/"), tamanho: file.bytes.length, por, em: hoje(),
+    }];
+  });
+}
+
+/** Removes an attachment from the note; a file of this task is deleted too (the vault git history keeps it). */
+export function removeAnexo(id: string, anexoId: string, actor: string) {
+  const det = getTarefaDetalhe(id);
+  const a = det?.anexos.find((x) => x.id === anexoId);
+  if (!det || !a) return;
+  editarTarefa(id, actor, (d) => {
+    d.fm.anexos = (Array.isArray(d.fm.anexos) ? d.fm.anexos : []).filter((x, i) => toAnexo(x, i).id !== anexoId);
+  });
+  const own = path.resolve(vault(), tarefaDir(id));
+  const abs = a.path ? path.resolve(vault(), a.path) : "";
+  if (abs && abs.startsWith(own + path.sep) && fs.existsSync(abs)) fs.unlinkSync(abs);
+}
+
+/** Absolute path of a file attached to this task, or null (only files inside the task's own folder are served). */
+export function arquivoDaTarefa(id: string, nome: string): { abs: string; tipo: string } | null {
+  const own = path.resolve(vault(), tarefaDir(id));
+  const abs = path.resolve(own, nome);
+  if (!abs.startsWith(own + path.sep) || !fs.existsSync(abs)) return null;
+  return { abs, tipo: ANEXO_TIPOS[nome.split(".").pop()?.toLowerCase() ?? ""] ?? "application/octet-stream" };
 }

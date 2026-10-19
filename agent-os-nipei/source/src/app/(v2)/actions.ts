@@ -9,6 +9,7 @@ import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
   updateEvento, updateObjetivo, updateTarefa, type Status,
+  addArquivo, addLink, comentar, editChecklist, removeAnexo, setDescricao,
 } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
@@ -38,6 +39,7 @@ export async function setStatusAction(form: FormData) {
   if (!t || !["todo", "doing", "done"].includes(status) || !can.editTarefa(me, t)) return;
   setTarefaStatus(t.id, status, actorName(me));
   revalidatePath("/", "layout");
+  revalidatePath(`/tarefas/${t.id}`);
 }
 
 export async function createTarefaAction(form: FormData) {
@@ -152,6 +154,71 @@ export async function updateObjetivoAction(form: FormData) {
   });
   revalidatePath("/", "layout");
   redirect(safeBack(form.get("back")));
+}
+
+// ---------------------------------------------------------------- task detail (T1)
+
+/** The task and whether the caller may change it (comments are open to anyone who can see it). */
+async function tarefaEditavel(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  return { me, t, pode: !!t && (can.editTarefa(me, t) || can.assumir(me, t)) };
+}
+const voltarTarefa = (id: string) => revalidatePath(`/tarefas/${id}`);
+
+export async function descricaoAction(form: FormData) {
+  const { me, t, pode } = await tarefaEditavel(form);
+  if (!t || !pode) return;
+  setDescricao(t.id, String(form.get("descricao") ?? "").slice(0, 20000), actorName(me));
+  voltarTarefa(t.id);
+}
+
+export async function checklistAction(form: FormData) {
+  const { me, t, pode } = await tarefaEditavel(form);
+  if (!t || !pode) return;
+  const op = String(form.get("op"));
+  if (op === "add") editChecklist(t.id, actorName(me), { tipo: "add", texto: String(form.get("texto") ?? "").slice(0, 300) });
+  else if (op === "toggle" || op === "remove") editChecklist(t.id, actorName(me), { tipo: op, idx: Number(form.get("idx")) });
+  voltarTarefa(t.id);
+}
+
+export async function comentarAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  const texto = String(form.get("texto") ?? "").trim();
+  if (!t || !texto) return;
+  comentar(t.id, texto, actorName(me));
+  voltarTarefa(t.id);
+}
+
+export async function linkAction(form: FormData) {
+  const { me, t, pode } = await tarefaEditavel(form);
+  const url = String(form.get("url") ?? "").trim();
+  if (!t || !pode || !/^https?:\/\/\S+$/.test(url)) return;
+  addLink(t.id, String(form.get("titulo") ?? "").trim().slice(0, 150), url, actorName(me), me.pessoa?.id ?? me.username);
+  voltarTarefa(t.id);
+}
+
+/** Returns an error message for the upload widget instead of throwing (the user sees why it failed). */
+export async function uploadAction(form: FormData): Promise<{ error?: string }> {
+  const { me, t, pode } = await tarefaEditavel(form);
+  if (!t || !pode) return { error: "Sem permissão" };
+  const file = form.get("arquivo");
+  if (!(file instanceof File) || !file.size) return { error: "Nenhum arquivo" };
+  try {
+    addArquivo(t.id, { nome: file.name, bytes: Buffer.from(await file.arrayBuffer()) }, actorName(me), me.pessoa?.id ?? me.username);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  voltarTarefa(t.id);
+  return {};
+}
+
+export async function removeAnexoAction(form: FormData) {
+  const { me, t, pode } = await tarefaEditavel(form);
+  if (!t || !pode) return;
+  removeAnexo(t.id, String(form.get("anexo")), actorName(me));
+  voltarTarefa(t.id);
 }
 
 export async function createLancamentoAction(form: FormData) {
