@@ -1,5 +1,5 @@
-import Overview from "@/components/Overview";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <Overview />;
+  redirect("/hoje");
 }

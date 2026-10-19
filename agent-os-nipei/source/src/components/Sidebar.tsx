@@ -34,6 +34,14 @@ interface NavItem {
 const NAV: NavItem[] = [
   // 🟢 1. Active Modules & Main Agents (MVP Core)
   {
+    href: "/hoje",
+    label: "Nipëi v2 (Hoje)",
+    icon: <Sun size={16} />,
+    accent: "#22c55e",
+    dim: "rgba(34,197,94,0.25)",
+    group: "active",
+  },
+  {
     href: "/mi-portal",
     label: "Meu Portal (Habits & Ivy)",
     icon: <UserCheck size={16} />,
@@ -94,7 +102,7 @@ const NAV: NavItem[] = [
     group: "active",
   },
   {
-    href: "/",
+    href: "/overview",
     label: "Mission Control",
     icon: <LayoutGrid size={16} />,
     accent: "#22c55e",
@@ -475,7 +483,7 @@ export default function Sidebar() {
 export function MobileNav() {
   const pathname = usePathname();
   const PRIMARY = [
-    { href: "/mi-portal", label: "Portal", icon: <UserCheck size={16} /> },
+    { href: "/hoje", label: "v2", icon: <Sun size={16} /> },
     { href: "/memory", label: "Brain", icon: <Brain size={16} /> },
     { href: "/organograma", label: "Estrutura", icon: <Network size={16} /> },
     { href: "/kanban", label: "Kanban", icon: <Kanban size={16} /> },

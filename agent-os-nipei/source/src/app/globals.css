@@ -607,3 +607,10 @@ blockquote cite {
   background: #22c55e;
 }
 
+
+/* v2 (Hoje/Equipes/…): plain, light/dark by system — opt out of the v1 theme */
+.v2 { position: relative; z-index: 2; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.v2 h1, .v2 h2, .v2 h3 { font-family: inherit; color: inherit; letter-spacing: normal; }
+/* v1 forces `nav, header { position: relative }` unlayered, which beats Tailwind's layered .fixed/.sticky */
+.v2 nav.fixed { position: fixed; z-index: 20; }
+.v2 header.sticky { position: sticky; z-index: 20; }
