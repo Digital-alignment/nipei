@@ -44,7 +44,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
             // no profile to hold the language switch → keep it here
             <form action={toggleLangAction}><button className="text-xs rounded-md px-2 py-1 border border-neutral-300 dark:border-neutral-700">{t.idioma}</button></form>
           )}
-          <Link href={user.pessoa ? `/pessoas/${user.pessoa.id}` : "/pessoas"} aria-label={t.meuPerfil} title={t.meuPerfil} className="mx-1 sm:mx-1.5 rounded-full ring-2 ring-transparent hover:ring-neutral-300 dark:hover:ring-neutral-700 transition"><Avatar name={name} size={32} /></Link>
+          <Link href={user.pessoa ? `/pessoas/${user.pessoa.id}` : "/pessoas"} aria-label={t.meuPerfil} title={t.meuPerfil} className="mx-1 sm:mx-1.5 rounded-full ring-2 ring-transparent hover:ring-neutral-300 dark:hover:ring-neutral-700 transition"><Avatar name={name} size={32} src={user.pessoa?.foto ? `/pessoas/${user.pessoa.id}/foto?v=${encodeURIComponent(user.pessoa.dadosConfirmadosEm)}` : undefined} /></Link>
           <form action={logoutAction}>
             <button aria-label={t.sair} title={t.sair} className={ICONE}><LogOut size={19} /></button>
           </form>
