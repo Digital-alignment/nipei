@@ -3,6 +3,10 @@ import { headers } from "next/headers";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Chip, Empty, TaskRow, Title } from "@/components/v2/ui";
 import PrazoRapido from "@/components/v2/PrazoRapido";
+import ArrastarAgenda from "@/components/v2/ArrastarAgenda";
+import CopiarBotao from "@/components/v2/CopiarBotao";
+import LembrarVista from "@/components/v2/LembrarVista";
+import { Suspense } from "react";
 import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Evento, type Tarefa } from "@/lib/v2/data";
 import { ordenarAgora, type Selo } from "@/lib/v2/ordem";
@@ -22,6 +26,8 @@ const addMonths = (ym: string, n: number) => {
 /** A dated event covers every day from inicio to fim. */
 const noDia = (e: Evento, d: string) => e.inicio.length === 10 && e.inicio <= d && (e.fim || e.inicio) >= d;
 const porHora = (a: Evento, b: Evento) => (a.hora || "99").localeCompare(b.hora || "99");
+/** From this many tasks due in one day, the day is flagged as full. */
+const SOBRECARGA = 5;
 
 function EventoRow({ e, lang, t, cor, mostrarData = true }: { e: Evento; lang: Lang; t: T; cor: string; mostrarData?: boolean }) {
   const aConfirmar = e.status !== "confirmado";
@@ -68,7 +74,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const linhas = (ts: Tarefa[]) => {
     const o = ordenar(ts);
     return o.tarefas.map((x) => (
-      <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]}
+      <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]} arrastavel={can.editTarefa(user, x)}
         extra={(y) => can.editTarefa(user, y) ? <PrazoRapido id={y.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} /> : null} />
     ));
   };
@@ -77,6 +83,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
     "/agenda?" + new URLSearchParams(Object.entries({ quem: q.quem, equipe, vista: q.vista, ...p }).filter(([, v]) => v) as [string, string][]).toString();
 
   const atrasadas = comPrazo.filter((x) => x.prazo < hoje);
+  const podeEvento = equipes.some((e) => can.gerirEquipe(user, e.id));
   // events with only a month or a year: shown as "to be scheduled" (they don't fit a day)
   const semDia = eventos.filter((e) => e.inicio.length < 10 && e.inicio >= hoje.slice(0, e.inicio.length)).sort((a, b) => a.inicio.localeCompare(b.inicio));
 
@@ -95,10 +102,10 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2">
         <div className="flex gap-1.5">
-          {(["semana", "lista", "mes"] as const).map((v) => <Chip key={v} href={link({ vista: v === "semana" ? undefined : v, dia: undefined, m: undefined, s: undefined })} on={vista === v}>{v === "semana" ? t.semanaLbl : v === "lista" ? t.lista : t.mes}</Chip>)}
+          {(["semana", "lista", "mes"] as const).map((v) => <Chip key={v} href={link({ vista: v, quem, dia: undefined, m: undefined, s: undefined })} on={vista === v}>{v === "semana" ? t.semanaLbl : v === "lista" ? t.lista : t.mes}</Chip>)}
         </div>
         <div className="flex gap-1.5">
-          {(["minhas", "equipe", "todas"] as const).map((x) => <Chip key={x} href={link({ quem: x, equipe: undefined })} on={quem === x}>{x === "minhas" ? t.minhas : x === "equipe" ? t.minhaEquipe : t.todas}</Chip>)}
+          {(["minhas", "equipe", "todas"] as const).map((x) => <Chip key={x} href={link({ quem: x, vista, equipe: undefined })} on={quem === x}>{x === "minhas" ? t.minhas : x === "equipe" ? t.minhaEquipe : t.todas}</Chip>)}
         </div>
       </div>
       {quem === "todas" && (
@@ -131,37 +138,49 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </div>
       )}
 
-      {vista === "semana" && <Semana {...{ inicio: /^\d{4}-\d{2}-\d{2}$/.test(q.s ?? "") ? segunda(q.s!) : segunda(hoje), hoje, comPrazo, eventos, linhas, cor, link, t, lang }} />}
-      {vista === "lista" && <Lista {...{ hoje, comPrazo, eventos, linhas, cor, t, lang }} />}
-      {vista === "mes" && <Mes {...{ mes: /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7), dia: q.dia, hoje, comPrazo, eventos, linhas, cor, link, t, lang }} />}
+      <Suspense><LembrarVista chave="agenda" params={["vista", "quem"]} /></Suspense>
+      {vista !== "lista" && <ArrastarAgenda dica={t.dicaArrastar} />}
+      {vista === "semana" && <Semana {...{ inicio: /^\d{4}-\d{2}-\d{2}$/.test(q.s ?? "") ? segunda(q.s!) : segunda(hoje), hoje, comPrazo, eventos, linhas, cor, link, t, lang, podeEvento }} />}
+      {vista === "lista" && <Lista {...{ hoje, comPrazo, eventos, linhas, cor, t, lang, podeEvento }} />}
+      {vista === "mes" && <Mes {...{ mes: /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7), dia: q.dia, hoje, comPrazo, eventos, linhas, cor, link, t, lang, podeEvento }} />}
 
       <details className="mt-10 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
         <summary className="cursor-pointer px-4 py-3 text-sm font-medium">{t.googleTitulo}</summary>
-        <div className="px-4 pb-4 text-sm text-neutral-600 dark:text-neutral-400">
-          <p className="mb-2">{t.googleTexto}</p>
-          <input readOnly value={icsUrl} className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 px-2 py-1.5 text-xs font-mono" />
+        <div className="px-4 pb-4 text-sm text-neutral-600 dark:text-neutral-400 grid gap-3">
+          <div className="flex flex-wrap gap-2">
+            <a href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(icsUrl.replace(/^https?:/, "webcal:"))}`} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm font-medium">{t.adicionarGoogle}</a>
+            <CopiarBotao texto={icsUrl} label={t.copiarLinkCal} copiado={t.copiado} />
+          </div>
+          <p className="text-xs">{t.googleTexto}</p>
         </div>
       </details>
     </>
   );
 }
 
-type Comum = { hoje: string; comPrazo: Tarefa[]; eventos: Evento[]; linhas: (ts: Tarefa[]) => React.ReactNode[]; cor: (id: string) => string; t: T; lang: Lang };
+type Comum = { hoje: string; comPrazo: Tarefa[]; eventos: Evento[]; linhas: (ts: Tarefa[]) => React.ReactNode[]; cor: (id: string) => string; t: T; lang: Lang; podeEvento: boolean };
 
 const rotuloDia = (d: string, hoje: string, t: T, lang: Lang) =>
   d === hoje ? t.hoje : d === somar(hoje, 1) ? t.amanha
     : new Date(`${d}T12:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 
 /** One day block: events by time, then tasks in smart order. */
-function Dia({ d, hoje, comPrazo, eventos, linhas, cor, t, lang, vazio = true }: Comum & { d: string; vazio?: boolean }) {
+function Dia({ d, hoje, comPrazo, eventos, linhas, cor, t, lang, podeEvento, vazio = true }: Comum & { d: string; vazio?: boolean }) {
   const evs = eventos.filter((e) => noDia(e, d)).sort(porHora);
   const ts = comPrazo.filter((x) => x.prazo === d);
   if (!vazio && !evs.length && !ts.length) return null;
   return (
-    <section className="mb-3">
-      <h2 className={`flex items-baseline gap-2 py-1.5 text-sm border-b border-neutral-200 dark:border-neutral-800 ${d === hoje ? "font-semibold" : "font-medium"} ${d < hoje ? "text-neutral-400" : ""}`}>
+    <section data-dia={d} className="mb-3 rounded-lg">
+      <h2 className={`group flex items-baseline gap-2 py-1.5 text-sm border-b border-neutral-200 dark:border-neutral-800 ${d === hoje ? "font-semibold" : "font-medium"} ${d < hoje ? "text-neutral-400" : ""}`}>
         <span className="first-letter:uppercase">{rotuloDia(d, hoje, t, lang)}</span>
-        {(evs.length + ts.length > 0) && <span className="text-xs font-normal text-neutral-400 tabular-nums">{evs.length + ts.length}</span>}
+        {(evs.length + ts.length > 0) && <span className={`text-xs font-normal tabular-nums ${ts.length >= SOBRECARGA ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}`}>{evs.length + ts.length}{ts.length >= SOBRECARGA ? ` · ${t.diaCheio}` : ""}</span>}
+        {d >= hoje && (
+          <span className="ml-auto flex gap-2 text-xs font-normal text-neutral-500">
+            <Link href={`/tarefas/nova?prazo=${d}&back=/agenda`} className="hover:underline">+ {t.tarefaLbl}</Link>
+            {podeEvento && <Link href={`/eventos/novo?inicio=${d}`} className="hover:underline">+ {t.eventoLbl}</Link>}
+          </span>
+        )}
       </h2>
       {evs.length + ts.length === 0 ? <p className="py-1.5 text-xs text-neutral-400">{t.livre}</p> : (
         <ul>
@@ -237,14 +256,20 @@ function Mes({ mes, dia, link, ...c }: Comum & { mes: string; dia?: string; link
         {Array.from({ length: first }, (_, i) => <div key={`b${i}`} />)}
         {Array.from({ length: days }, (_, i) => {
           const d = iso(i + 1);
-          const dots = [...eventos.filter((e) => noDia(e, d)).map((e) => cor(e.equipe)), ...comPrazo.filter((x) => x.prazo === d).map((x) => cor(x.equipe))];
+          const col = (first + i) % 7;
+          const evs = eventos.filter((e) => noDia(e, d)).slice(0, 2);
+          const n = comPrazo.filter((x) => x.prazo === d).length;
+          const cheio = n >= SOBRECARGA;
           return (
-            <Link key={d} href={link({ m: mes, dia: d })}
-              className={`aspect-square rounded-lg flex flex-col items-center justify-start pt-1.5 gap-1 border ${d === sel ? "border-neutral-900 dark:border-white" : "border-transparent hover:border-neutral-300 dark:hover:border-neutral-700"} ${d === hoje ? "font-bold" : ""} ${d < hoje ? "text-neutral-400" : ""}`}>
-              {i + 1}
-              <span className="flex flex-wrap justify-center gap-0.5 px-1">
-                {dots.slice(0, 4).map((x, j) => <span key={j} className="w-1.5 h-1.5 rounded-full" style={{ background: x }} />)}
-              </span>
+            <Link key={d} href={link({ m: mes, dia: d })} data-dia={d}
+              className={`aspect-square rounded-lg flex flex-col items-stretch justify-start pt-1 gap-0.5 border ${d === sel ? "border-neutral-900 dark:border-white" : "border-transparent hover:border-neutral-300 dark:hover:border-neutral-700"} ${cheio ? "bg-amber-50 dark:bg-amber-950/30" : ""} ${d === hoje ? "font-bold" : ""} ${d < hoje ? "text-neutral-400" : ""}`}>
+              <span>{i + 1}</span>
+              {evs.map((e) => {
+                // a bar that continues across days: square edges where the event goes on
+                const comeca = e.inicio === d || col === 0, termina = (e.fim || e.inicio) === d || col === 6;
+                return <span key={e.id} title={e.titulo} className={`h-1 ${comeca ? "rounded-l-full ml-1" : "-ml-1"} ${termina ? "rounded-r-full mr-1" : "-mr-1"}`} style={{ background: cor(e.equipe) }} />;
+              })}
+              {n > 0 && <span className={`mx-auto mt-auto mb-1 min-w-4 rounded-full px-1 text-[10px] leading-4 tabular-nums ${cheio ? "bg-amber-500 text-white" : "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"}`}>{n}</span>}
             </Link>
           );
         })}

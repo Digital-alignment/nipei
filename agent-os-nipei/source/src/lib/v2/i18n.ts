@@ -136,6 +136,8 @@ const pt = {
   sugestoes: ["O que tenho hoje?", "Resumo da minha semana", "Nova tarefa para amanhã: "], verConversa: "ver conversa",
   agendaIntro: "Tarefas com prazo e eventos. Tarefas sem prazo ficam na Hoje.", minhas: "Minhas", minhaEquipe: "Minha equipe", todasEquipes: "Todas as equipes",
   aDefinirData: "Eventos sem dia definido", definirData: "Definir data", livre: "Livre",
+  dicaArrastar: "Dica: arraste uma tarefa para outro dia para mudar o prazo.", diaCheio: "dia cheio", tarefaLbl: "tarefa", eventoLbl: "evento",
+  adicionarGoogle: "Adicionar ao Google Calendar", copiarLinkCal: "Copiar link", copiado: "Copiado",
 };
 export type Dict = typeof pt;
 
@@ -271,6 +273,8 @@ const en: Dict = {
   sugestoes: ["What do I have today?", "Summary of my week", "New task for tomorrow: "], verConversa: "see conversation",
   agendaIntro: "Tasks with a due date and events. Undated tasks live in Today.", minhas: "Mine", minhaEquipe: "My team", todasEquipes: "All teams",
   aDefinirData: "Events without a set day", definirData: "Set the date", livre: "Free",
+  dicaArrastar: "Tip: drag a task to another day to change its due date.", diaCheio: "full day", tarefaLbl: "task", eventoLbl: "event",
+  adicionarGoogle: "Add to Google Calendar", copiarLinkCal: "Copy link", copiado: "Copied",
 };
 
 export async function getLang(): Promise<Lang> {

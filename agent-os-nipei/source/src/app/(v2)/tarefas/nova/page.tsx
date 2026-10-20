@@ -6,7 +6,7 @@ import { createTarefaAction } from "../../actions";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
 
-export default async function NovaTarefa({ searchParams }: { searchParams: Promise<{ equipe?: string; projeto?: string; objetivo?: string; back?: string }> }) {
+export default async function NovaTarefa({ searchParams }: { searchParams: Promise<{ equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string }> }) {
   const q = await searchParams;
   const { t } = await getT();
   const user = (await currentUser())!;
@@ -33,7 +33,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
             </select>
           </label>
           <label className="grid gap-1 text-sm">{t.prazo}
-            <input type="date" name="prazo" className={field} />
+            <input type="date" name="prazo" defaultValue={/^\d{4}-\d{2}-\d{2}$/.test(q.prazo ?? "") ? q.prazo : undefined} className={field} />
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3 items-end">

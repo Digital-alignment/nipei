@@ -56,7 +56,7 @@ export function Empty({ children }: { children: ReactNode }) {
 /** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
-export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[] } & RowProps) {
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean } & RowProps) {
   const eq = equipes.find((e) => e.id === t.equipe);
   const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id;
   const minha = !!me.pessoa && t.responsaveis.includes(me.pessoa.id);
@@ -66,7 +66,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos }: {
   const late = t.prazo && t.prazo < hoje && t.status !== "done";
   const marca = t.priority === "urgente" ? "text-red-600 dark:text-red-400" : t.priority === "alta" ? "text-amber-600 dark:text-amber-400" : "";
   return (
-    <li title={eq?.nome} className="flex flex-wrap items-start gap-x-3 py-2 pl-2.5 border-l-2 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0"
+    <li title={eq?.nome} draggable={arrastavel || undefined} data-tarefa={arrastavel ? t.id : undefined} className="flex flex-wrap items-start gap-x-3 py-2 pl-2.5 border-l-2 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0"
       style={{ borderLeftColor: eq?.cor ?? "transparent" }}>
       {can.editTarefa(me, t) ? (
         <StatusBotao id={t.id} status={t.status} />

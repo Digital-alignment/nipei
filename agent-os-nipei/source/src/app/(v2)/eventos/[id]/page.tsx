@@ -9,8 +9,9 @@ const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-7
 const isDay = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // /eventos/novo creates; /eventos/<id> edits (gestão, or the coordinator of the event's team).
-export default async function EventoForm({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventoForm({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ inicio?: string }> }) {
   const { id } = await params;
+  const { inicio: inicioQ } = await searchParams; // "+ Evento neste dia" from Agenda
   const { t } = await getT();
   const me = (await currentUser())!;
   const novo = id === "novo";
@@ -28,7 +29,7 @@ export default async function EventoForm({ params }: { params: Promise<{ id: str
         <label className="grid gap-1 text-sm">{t.titulo}<input name="titulo" defaultValue={e?.titulo} required maxLength={150} className={field} /></label>
         {e && !isDay(e.inicio) && <p className="text-xs text-amber-700 dark:text-amber-400">{t.soMes} {e.inicio}</p>}
         <div className="grid grid-cols-2 gap-3">
-          <label className="grid gap-1 text-sm">{t.inicio}<input type="date" name="inicio" defaultValue={e && isDay(e.inicio) ? e.inicio : ""} required={novo} className={field} /></label>
+          <label className="grid gap-1 text-sm">{t.inicio}<input type="date" name="inicio" defaultValue={e && isDay(e.inicio) ? e.inicio : novo && /^\d{4}-\d{2}-\d{2}$/.test(inicioQ ?? "") ? inicioQ : ""} required={novo} className={field} /></label>
           <label className="grid gap-1 text-sm">{t.fim}<input type="date" name="fim" defaultValue={e?.fim} className={field} /></label>
         </div>
         <label className="grid gap-1 text-sm max-w-40">{t.hora}<input type="time" name="hora" defaultValue={e?.hora} className={field} /></label>
