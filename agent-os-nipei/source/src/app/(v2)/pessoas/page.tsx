@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { Avatar, Chip, Title } from "@/components/v2/ui";
 import { can, currentUser, getEquipes, getPessoas, type Pessoa } from "@/lib/v2/data";
 import { resumoPessoas } from "@/lib/v2/pessoasInfo";
@@ -57,6 +57,9 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
 
   return (
     <>
+      {(() => { const e = q.equipe ? equipes.find((x) => x.id === q.equipe) : null; return (
+        <Link href={e ? `/equipes/${e.id}` : "/equipes"} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{e ? e.nome : t.equipes}</Link>
+      ); })()}
       <Title>{t.pessoas}</Title>
       <form className="mb-3">
         {q.equipe && <input type="hidden" name="equipe" value={q.equipe} />}
@@ -66,10 +69,10 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       </form>
       <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
         <Chip href={link({ equipe: undefined })} on={!q.equipe}>{t.todas}</Chip>
-        {equipes.map((e) => <Chip key={e.id} href={link({ equipe: e.id })} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
+        {[...equipes].sort((a, b) => Number(b.id === q.equipe) - Number(a.id === q.equipe)).map((e) => <Chip key={e.id} href={link({ equipe: e.id })} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
       </div>
       {me.gestao && (
-        <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs text-neutral-500">
+        <div className="flex items-center gap-1.5 mb-5 whitespace-nowrap text-xs text-neutral-500 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
           {t.ordenar}:
           {(["nome", "carga", "atrasadas", "participacao"] as const).map((o) => (
             <Link key={o} href={link({ ordem: o === "nome" ? undefined : o })} className={`rounded-full px-2 py-0.5 ${ordem === o ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "border border-neutral-300 dark:border-neutral-700"}`}>

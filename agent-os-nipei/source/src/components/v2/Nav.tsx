@@ -9,16 +9,16 @@ const ITEMS = [
   { href: "/agenda", key: "agenda", Icon: CalendarDays },
   { href: "/equipes", key: "equipes", Icon: UsersRound },
   { href: "/projetos", key: "projetos", Icon: FolderKanban },
-  { href: "/pessoas", key: "pessoas", Icon: Users },
 ] as const;
-// Sub-pages that live inside a main section (own URL, no slot in the bar).
-const SUB: Record<string, { href: string; key: "objetivos"; Icon: typeof Target }[]> = {
+// Sub-pages that live inside a main section (own URL, no slot in the bar; the section stays lit).
+const SUB: Record<string, { href: string; key: "objetivos" | "pessoas"; Icon: typeof Target }[]> = {
+  "/equipes": [{ href: "/pessoas", key: "pessoas", Icon: Users }],
   "/projetos": [{ href: "/objetivos", key: "objetivos", Icon: Target }],
 };
 
-type Labels = Record<(typeof ITEMS)[number]["key"] | "objetivos", string>;
+type Labels = Record<(typeof ITEMS)[number]["key"] | "objetivos" | "pessoas", string>;
 
-/** Desktop: left rail (sub-items indented under their section). Phone: bottom bar with the 5 sections. */
+/** Desktop: left rail (sub-items indented under their section). Phone: bottom bar with the 4 sections. */
 export default function Nav({ labels }: { labels: Labels }) {
   const path = usePathname() ?? "";
   const em = (href: string) => path === href || path.startsWith(href + "/");
@@ -38,7 +38,7 @@ export default function Nav({ labels }: { labels: Labels }) {
           </Link>
         ))])}
       </nav>
-      <nav className="print:hidden md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-5 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <nav className="print:hidden md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-4 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         {ITEMS.map(({ href, key, Icon }) => (
           <Link key={href} href={href}
             className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${active(href) ? "text-neutral-900 dark:text-white font-semibold" : "text-neutral-500"}`}>

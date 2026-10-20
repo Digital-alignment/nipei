@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Lock } from "lucide-react";
+import { Bell, Lock, Users } from "lucide-react";
 import { Avatar, Title } from "@/components/v2/ui";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, today, type Equipe } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
@@ -70,7 +70,12 @@ export default async function Equipes() {
 
   return (
     <>
-      <Title>{t.equipes}</Title>
+      <div className="flex items-start justify-between gap-3">
+        <Title>{t.equipes}</Title>
+        <Link href="/pessoas" className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900">
+          <Users size={15} />{t.pessoas} <span className="text-neutral-400 tabular-nums">{pessoas.filter((p) => p.equipes.length).length}</span>
+        </Link>
+      </div>
       {minhas.length && outras.length ? (<><Grade titulo={t.minhasEquipes} lista={minhas} /><Grade titulo={t.outrasEquipes} lista={outras} /></>) : <Grade lista={equipes} />}
       {semEquipe > 0 && (
         <Link href="/equipes/sem-equipe" className="flex items-center justify-between rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-4 py-3 text-sm">

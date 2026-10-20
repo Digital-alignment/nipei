@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Plus, Scale } from "lucide-react";
+import { ArrowLeft, CalendarDays, Plus, Scale, Users } from "lucide-react";
 import { Avatar, Card, Chip, Empty, Progress, TaskRow, Title } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
@@ -14,6 +14,7 @@ import { getT } from "@/lib/v2/i18n";
 import { atribuirAction, reatribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
 const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 mb-3";
+const BOTAO = "inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900";
 const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2";
 const sel = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs max-w-36";
 
@@ -92,7 +93,6 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           {e.areas.map((a) => <Chip key={a} href={url({ area: a })} on={q.area === a}>{a}</Chip>)}
         </div>
       )}
-      <Link href={`/tarefas/nova?equipe=${id}${pessoaFiltro ? `&responsavel=${pessoaFiltro.id}` : ""}&back=/equipes/${id}`} className="inline-flex items-center gap-1 text-sm mb-3 text-neutral-600 dark:text-neutral-400"><Plus size={16} />{t.novaTarefa}</Link>
       {filtradas.length === 0 ? <Empty>{t.nadaPendente}</Empty> : (
         <>
           {grupo(t.agora, ordenarAgora(filtradas.filter((x) => x.prazo && x.prazo <= hoje), ctx), true)}
@@ -234,7 +234,11 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       <Title sub={e.coordenadores.length > 0 && <span className="text-sm text-neutral-500">{t.coordenacao}: {e.coordenadores.map(primeiro).join(", ")}</span>}>
         <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ background: e.cor }} />{e.nome}</span>
       </Title>
-      <Link href={`/equipes/${id}/reuniao`} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm mb-4"><CalendarDays size={14} />{t.reuniaoEquipe}</Link>
+      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
+        <Link href={`/tarefas/nova?equipe=${id}${pessoaFiltro ? `&responsavel=${pessoaFiltro.id}` : ""}&back=/equipes/${id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium"><Plus size={15} />{t.novaTarefa}</Link>
+        <Link href={`/equipes/${id}/reuniao`} className={BOTAO}><CalendarDays size={15} />{t.reuniaoEquipe}</Link>
+        <Link href={`/pessoas?equipe=${id}`} className={BOTAO}><Users size={15} />{t.pessoas}</Link>
+      </div>
       <div className="grid grid-cols-4 gap-2 mb-4">
         <Num v={abertasEq.length} label={t.abertasLbl} />
         <Num v={atrasadas} label={t.atrasadasLbl} cor="text-red-600 dark:text-red-400" />
@@ -243,7 +247,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       </div>
       <Abas id="equipe" inicial={q.pessoa || q.area ? "tarefas" : undefined} abas={[
         { id: "tarefas", label: t.tarefasLbl, count: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
-        { id: "pessoas", label: t.pessoas, count: gente.length, conteudo: pessoasAba },
+        { id: "pessoas", label: t.membros, count: gente.length, conteudo: pessoasAba },
         { id: "objetivos", label: t.objetivos, count: objetivos.length, conteudo: objetivosAba },
         ...(gerir ? [{ id: "config", label: `🔒 ${t.configuracao}`, count: 0, conteudo: config }] : []),
       ]} />

@@ -157,7 +157,7 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 
 ## 3.10 Projetos e navegação (v2.32)
 
-- Menu: 5 seções (Hoje, Agenda, Equipes, Projetos, Pessoas — Pessoas agora cabe na barra do celular). Objetivos saiu do menu: continua em `/objetivos` (nenhum link mudou), aparece como subitem recuado de Projetos no menu lateral (`SUB` em `components/v2/Nav.tsx`) e como botão no topo de `/projetos`; em `/objetivos` a seção Projetos fica ativa.
+- Menu (v2.33): 4 seções (Hoje, Agenda, Equipes, Projetos). Pessoas é subitem de Equipes (botão no topo de `/equipes` e "Pessoas" em cada equipe → `/pessoas?equipe=`, que volta para a equipe; a aba da equipe se chama Membros). Objetivos saiu do menu: continua em `/objetivos` (nenhum link mudou), aparece como subitem recuado de Projetos no menu lateral (`SUB` em `components/v2/Nav.tsx`) e como botão no topo de `/projetos`; em `/objetivos` a seção Projetos fica ativa.
 - `/projetos`: cartões com equipes, abertas/atrasadas, objetivos, % concluído e última atualização.
 - `/projetos/[id]`: números (abertas, atrasadas, sem responsável → filtro, % concluído), botões (Nova tarefa, Visão holística, Objetivos, Diagnóstico p/ gestão) e abas: Tarefas (filtros sem responsável/pessoa/equipe, ordem inteligente, ações em lote), Objetivos (progresso, + tarefa), Pessoas (quem tem tarefa aberta no projeto → filtra) e Atualizações (linha do tempo; gestão/coordenação publica com `anotarProjetoAction`).
 - Seleção em lote escondida por padrão: chip "Selecionar" (`LoteToggle`) liga `html[data-lote]` e mostra as caixas `.lote-caixa` (CSS em `globals.css`). Linhas de chips/abas rolam sem barra visível (`.v2 .overflow-x-auto`).
