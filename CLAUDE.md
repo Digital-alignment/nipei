@@ -122,7 +122,8 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - Modelo de questionário no vault: `Diagnosticos/_modelos/<id>.md` (YAML com `secoes[]`: `escopo` individual|coletivo, `destino` perfil|evento|diagnostico, `perguntas[]` com `texto`, `texto_en`, `guia`). O primeiro é `team-development` (documento da Lynn, 60 perguntas).
 - Aplicação a um projeto: `Diagnosticos/<id>/diagnostico.md` (`modelo`, `projeto`, `equipes`). Para Inirau ou outro projeto, basta criar outro com o mesmo modelo.
 - `lib/v2/diagnostico.ts`: parte individual respondida em `/pessoas/[id]/respostas` (só a própria pessoa edita; a pessoa e a gestão veem) → `Diagnosticos/<id>/individuais/<pessoa>.md` (YAML + markdown legível). Guia por pergunta, aviso abaixo de 40 palavras, rascunho da IA (`rascunhoIA`, só seções `papel` e `retiro`, nunca sobrescreve). Seções `destino: perfil` aparecem na ficha ("Meu papel e compromisso"); aviso em Hoje; progresso para a gestão em `/diagnosticos/[id]`.
-- Próximos: D2 parte coletiva + lacunas → tarefas, D3 listas (melhorias, marketing, finanças, reuniões), D4 documento final EN/PT, D5 visão holística do projeto.
+- **D2 parte coletiva (v2.17)**: `Diagnosticos/<id>/coletivo.md` (responsável por seção, respostas com `fontes`, `falta`, `tarefa`). Gestão define o responsável em `/diagnosticos/[id]`; gestão e o responsável editam em `/diagnosticos/[id]/coletivo` (todos os participantes leem). `rascunhoColetivoIA` (base confirmada + notas + tarefas do projeto + lançamentos em finanças) nunca sobrescreve respostas escritas. `criarTarefasLacunas` cria uma tarefa por lacuna sem WhatsApp (`semAviso`) — o responsável vê a seção em Hoje. `enviarAoConhecimento` manda as respostas marcadas como fonte (fatos passam pela revisão normal).
+- Próximos: D3 listas (melhorias, marketing, finanças, reuniões), D4 documento final EN/PT, D5 visão holística do projeto.
 
 ---
 

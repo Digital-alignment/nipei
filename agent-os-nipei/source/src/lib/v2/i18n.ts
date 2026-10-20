@@ -96,6 +96,11 @@ const pt = {
   statusRascunho: "Rascunho", statusRascunhoIA: "Rascunho da IA", statusRespondida: "Respondida", privadoDiag: "Privado: só você e a gestão veem estas respostas.",
   meuPapel: "Meu papel e compromisso", responderDiag: "Responder", bannerDiag: "Responda o diagnóstico da equipe", participantes: "Participantes",
   verRespostas: "Ver respostas", soLeitura: "Somente leitura: só a própria pessoa edita as respostas.",
+  parteColetiva: "Parte coletiva", responsavel: "Responsável", definir: "Definir",
+  oQueFalta: "O que falta para uma resposta completa", fontesUsadas: "Fontes usadas", criarTarefasFalta: "Criar tarefas para o que falta",
+  enviarConhecimento: "Enviar respostas ao Conhecimento", enviadoConhecimento: "Enviado ao Conhecimento", tarefaLacuna: "Tarefa",
+  rascunhoColetivoAviso: "A IA usa a base confirmada, as notas do vault, as tarefas do projeto e (em finanças) os lançamentos. Não sobrescreve respostas escritas; atualiza o que falta.",
+  soResponsavel: "Só a gestão e o responsável desta seção editam.", tarefaConcluida: "tarefa concluída: revise a resposta",
 };
 export type Dict = typeof pt;
 
@@ -191,6 +196,11 @@ const en: Dict = {
   statusRascunho: "Draft", statusRascunhoIA: "AI draft", statusRespondida: "Answered", privadoDiag: "Private: only you and management see these answers.",
   meuPapel: "My role and commitment", responderDiag: "Answer", bannerDiag: "Answer the team assessment", participantes: "Participants",
   verRespostas: "See answers", soLeitura: "Read only: only the person edits their answers.",
+  parteColetiva: "Team part", responsavel: "Owner", definir: "Set",
+  oQueFalta: "What is missing for a complete answer", fontesUsadas: "Sources used", criarTarefasFalta: "Create tasks for what is missing",
+  enviarConhecimento: "Send answers to Knowledge", enviadoConhecimento: "Sent to Knowledge", tarefaLacuna: "Task",
+  rascunhoColetivoAviso: "The AI uses the confirmed base, vault notes, the project's tasks and (for finances) the ledger. It never overwrites written answers; it updates what is missing.",
+  soResponsavel: "Only management and this section's owner edit.", tarefaConcluida: "task done: review the answer",
 };
 
 export async function getLang(): Promise<Lang> {

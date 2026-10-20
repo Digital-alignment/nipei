@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Avatar, Progress, Section, Title } from "@/components/v2/ui";
 import { currentUser, getProjetos } from "@/lib/v2/data";
-import { getDiagnostico, participantes, progresso } from "@/lib/v2/diagnostico";
+import { getColetivo, getDiagnostico, participantes, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
+import { definirResponsavelAction } from "../../actions";
 import { getT } from "@/lib/v2/i18n";
 
 // Gestão overview of an assessment: who answered how much (the answers themselves are on each person's page).
@@ -15,6 +16,8 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
   if (!d || !me.gestao) notFound();
   const projeto = getProjetos().find((p) => p.id === d.projeto);
   const en = lang === "en";
+  const c = getColetivo(d.id);
+  const quem = participantes(d);
 
   return (
     <div className="max-w-2xl">
@@ -40,11 +43,26 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
         </ul>
       </Section>
 
-      <Section title={en ? "Sections" : "Seções"}>
-        <ul className="grid gap-1 text-sm">
-          {d.modelo.secoes.map((s) => (
-            <li key={s.id}>{en ? s.titulo_en : s.titulo} <span className="text-xs text-neutral-500">· {s.escopo === "individual" ? (en ? "individual" : "individual") : (en ? "team (next phase)" : "coletivo (próxima fase)")} · {s.perguntas.length}</span></li>
-          ))}
+      <Section title={t.parteColetiva}>
+        <ul className="grid gap-4">
+          {secoesColetivas(d).map((s) => {
+            const feitas = s.perguntas.filter((q) => c.respostas[q.id]?.status === "respondida").length;
+            return (
+              <li key={s.id} className="grid gap-1.5">
+                <Link href={`/diagnosticos/${d.id}/coletivo?secao=${s.id}`} className="text-sm font-medium underline">{en ? s.titulo_en : s.titulo}</Link>
+                <Progress done={feitas} total={s.perguntas.length} />
+                <form action={definirResponsavelAction} className="flex items-center gap-2 text-xs">
+                  <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={s.id} />
+                  <span className="text-neutral-500">{t.responsavel}:</span>
+                  <select name="pessoa" defaultValue={c.responsaveis[s.id] ?? ""} className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1">
+                    <option value="">{t.semResponsavel}</option>
+                    {quem.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                  <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1">{t.definir}</button>
+                </form>
+              </li>
+            );
+          })}
         </ul>
       </Section>
     </div>

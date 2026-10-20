@@ -9,7 +9,10 @@ import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { criarFonte, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
 import { decidirProposta, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
-import { getDiagnostico, participa, rascunhoIA, salvarRespostas, type Resposta } from "@/lib/v2/diagnostico";
+import {
+  criarTarefasLacunas, definirResponsavel, enviarAoConhecimento, getColetivo, getDiagnostico, participa, participantes, podeEditarSecao,
+  rascunhoColetivoIA, rascunhoIA, salvarColetivo, salvarRespostas, type Resposta,
+} from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
@@ -462,5 +465,59 @@ export async function rascunhoIAAction(form: FormData) {
   if (!d || !me.pessoa || !participa(d, me.pessoa)) return;
   contarUso(me.pessoa.id);
   await rascunhoIA(d, me.pessoa.id, String(form.get("secao")));
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Diagnóstico (D2): collective part
+
+async function secaoEditavel(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  const secao = String(form.get("secao") ?? "");
+  if (!d || !podeEditarSecao(me, getColetivo(d.id), secao)) return null;
+  return { me, d, secao };
+}
+
+export async function definirResponsavelAction(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  const pessoa = String(form.get("pessoa") ?? "");
+  if (!d || !me.gestao || (pessoa && !participantes(d).some((p) => p.id === pessoa))) return;
+  definirResponsavel(d, String(form.get("secao")), pessoa);
+  revalidatePath("/diagnosticos", "layout");
+}
+
+export async function salvarColetivoAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  const responder = form.get("acao") === "responder";
+  const novas: Record<string, { texto: string; falta?: string; responder?: boolean }> = {};
+  for (const [k, v] of form.entries()) {
+    if (k.startsWith("r:")) novas[k.slice(2)] = { ...novas[k.slice(2)], texto: String(v), responder };
+    if (k.startsWith("f:")) novas[k.slice(2)] = { ...(novas[k.slice(2)] ?? { texto: "" }), falta: String(v) };
+  }
+  salvarColetivo(ok.d, actorName(ok.me), novas);
+  revalidatePath("/diagnosticos", "layout");
+}
+
+export async function rascunhoColetivoAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  contarUso(ok.me.pessoa?.id ?? ok.me.username);
+  await rascunhoColetivoIA(ok.d, ok.secao, actorName(ok.me));
+  revalidatePath("/diagnosticos", "layout");
+}
+
+export async function tarefasLacunasAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  criarTarefasLacunas(ok.d, ok.secao, actorName(ok.me));
+  revalidatePath("/", "layout");
+}
+
+export async function enviarConhecimentoAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  enviarAoConhecimento(ok.d, ok.secao, ok.me.pessoa?.id ?? ok.me.username);
   revalidatePath("/", "layout");
 }

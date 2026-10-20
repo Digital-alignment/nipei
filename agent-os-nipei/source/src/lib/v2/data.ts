@@ -257,14 +257,14 @@ export function setTarefaStatus(id: string, status: Status, actor: string) {
   writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW[status]; });
 }
 
-export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string }, actor: string) {
+export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string }, actor: string, opts: { descricao?: string; semAviso?: boolean } = {}) {
   const projeto = getProjetos().find((p) => p.id === input.projeto);
-  createTarefaNote(vault(), {
+  return createTarefaNote(vault(), {
     title: input.title, prazo: input.prazo, project: projeto?.nome ?? "Geral",
     responsible: input.responsaveis.map((r) => getPessoas().find((p) => p.id === r)?.name ?? r).join(", "),
     equipe: input.equipe, projeto: input.projeto, objetivo: input.objetivo, responsaveis: input.responsaveis,
     ...(input.recorrencia ? { recorrencia: input.recorrencia } : {}),
-  }, actor);
+  }, actor, opts).id;
 }
 
 /** Adds a person to a team: both the person's `equipes` and the team's `membros`. */

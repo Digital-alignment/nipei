@@ -2,9 +2,10 @@ import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
 import { requestSync } from "@/lib/tarefaNote";
+import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { chamarIA } from "./ia";
-import { buscarConhecimento, formatarConhecimento } from "./conhecimento";
-import { getEquipes, getPessoas, getProjetos, getTarefas, vault, type Me, type Pessoa } from "./data";
+import { buscarConhecimento, criarFonte, formatarConhecimento, processarFonte } from "./conhecimento";
+import { createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, today, vault, type Me, type Pessoa } from "./data";
 
 // Diagnósticos (D0/D1): a questionnaire template (Diagnosticos/_modelos/<id>.md, e.g. Lynn's
 // "Team Development Agenda") applied to a project (Diagnosticos/<id>/diagnostico.md).
@@ -162,4 +163,159 @@ export async function rascunhoIA(d: Diagnostico, pessoaId: string, secaoId: stri
   }
   if (Object.keys(novas).length) salvarRespostas(d, pessoaId, novas);
   return Object.keys(novas).length;
+}
+
+// ---------------------------------------------------------------- D2: collective part
+// Diagnosticos/<id>/coletivo.md holds, per collective section, its responsible person and the answers.
+// Gestão assigns the responsible; gestão and that person edit the section; every participant reads it.
+
+export type RespostaColetiva = Resposta & { por: string; fontes: string[]; falta: string; tarefa: string };
+export type Coletivo = { responsaveis: Record<string, string>; respostas: Record<string, RespostaColetiva>; enviadas: Record<string, string> };
+
+const arquivoColetivo = (diagId: string) => path.join(vault(), DIR, diagId, "coletivo.md");
+export const secoesColetivas = (d: Diagnostico) => d.modelo.secoes.filter((x) => x.escopo === "coletivo");
+
+export function getColetivo(diagId: string): Coletivo {
+  const fm = lerFrontmatter(arquivoColetivo(diagId)) ?? {};
+  const r = (fm.respostas ?? {}) as Record<string, Record<string, unknown>>;
+  return {
+    responsaveis: Object.fromEntries(Object.entries((fm.responsaveis ?? {}) as Record<string, unknown>).map(([k, v]) => [k, s(v)])),
+    enviadas: Object.fromEntries(Object.entries((fm.enviadas ?? {}) as Record<string, unknown>).map(([k, v]) => [k, s(v)])),
+    respostas: Object.fromEntries(Object.entries(r).map(([k, v]) => [k, {
+      texto: s(v?.texto), status: s(v?.status) === "respondida" ? "respondida" : "rascunho", ia: v?.ia === true, em: s(v?.em),
+      por: s(v?.por), fontes: arr(v?.fontes), falta: s(v?.falta), tarefa: s(v?.tarefa),
+    } as RespostaColetiva])),
+  };
+}
+
+export const podeEditarSecao = (me: Me, c: Coletivo, secaoId: string) => me.gestao || (!!me.pessoa && c.responsaveis[secaoId] === me.pessoa.id);
+
+function escreverColetivo(d: Diagnostico, c: Coletivo) {
+  const pessoas = getPessoas();
+  const nome = (id: string) => pessoas.find((p) => p.id === id)?.name ?? id;
+  const corpo = secoesColetivas(d).map((sec) => [
+    `## ${sec.titulo}${c.responsaveis[sec.id] ? ` — responsável: ${nome(c.responsaveis[sec.id])}` : ""}`,
+    ...sec.perguntas.map((q) => {
+      const r = c.respostas[q.id];
+      return [`### ${q.texto}`, r?.texto || "_(sem resposta)_", r?.texto && r.status !== "respondida" ? "_(rascunho)_" : "", r?.falta ? `**Falta:** ${r.falta}` : "", r?.tarefa ? `Tarefa: [[${r.tarefa}]]` : ""].filter(Boolean).join("\n");
+    }),
+  ].join("\n\n")).join("\n\n");
+  const fm = { type: "respostas_coletivas", diagnostico: d.id, atualizado_em: new Date().toISOString(), ...c };
+  const abs = arquivoColetivo(d.id);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, `---\n${yaml.dump(fm, { lineWidth: -1 })}---\n\n<!-- agente: nipei-os v2 (diagnóstico coletivo) -->\n# ${d.titulo} — parte coletiva\n\n${corpo}\n`, "utf-8");
+  requestSync(vault());
+}
+
+export function definirResponsavel(d: Diagnostico, secaoId: string, pessoaId: string) {
+  if (!secoesColetivas(d).some((x) => x.id === secaoId)) throw new Error("Seção inválida");
+  const c = getColetivo(d.id);
+  if (pessoaId) c.responsaveis[secaoId] = pessoaId; else delete c.responsaveis[secaoId];
+  escreverColetivo(d, c);
+}
+
+export function salvarColetivo(d: Diagnostico, quem: string, novas: Record<string, { texto: string; falta?: string; responder?: boolean }>) {
+  const validas = new Set(secoesColetivas(d).flatMap((x) => x.perguntas.map((q) => q.id)));
+  const c = getColetivo(d.id);
+  const agora = new Date().toISOString();
+  for (const [id, n] of Object.entries(novas)) {
+    if (!validas.has(id)) continue;
+    const antes = c.respostas[id];
+    const texto = n.texto.trim().slice(0, 12000);
+    if (!texto && !antes) continue;
+    const mudou = texto !== (antes?.texto ?? "");
+    c.respostas[id] = {
+      texto, status: texto && (n.responder || (antes?.status === "respondida" && !mudou)) ? "respondida" : "rascunho",
+      ia: antes?.ia === true && !mudou, em: mudou || n.responder ? agora : antes?.em ?? agora, por: mudou ? quem : antes?.por ?? quem,
+      fontes: antes?.fontes ?? [], falta: n.falta !== undefined ? n.falta.trim().slice(0, 600) : antes?.falta ?? "", tarefa: antes?.tarefa ?? "",
+    };
+  }
+  escreverColetivo(d, c);
+}
+
+const SISTEMA_COLETIVO = `Você prepara RASCUNHOS de respostas coletivas da equipe do Nipëi (Santuário Nipeihu, povo Yawanawá) para um diagnóstico pedido pela Lynn. Responda em português do Brasil.
+Use SÓ o contexto (base de conhecimento confirmada, notas do vault, tarefas, lançamentos financeiros, projeto). Zero invenção: nada de números, nomes ou datas fora do contexto.
+Para cada pergunta, siga o guia e escreva uma resposta completa e concreta com o que existe. Em "fontes", liste as notas/fatos/tarefas que usou.
+Em "falta", diga exatamente que informação ainda falta para uma resposta completa (o quê, de quem, onde buscar). Se o contexto não tiver nada, "texto" fica "" e "falta" explica tudo o que é preciso.
+Responda APENAS com JSON: {"respostas": {"<id>": {"texto": string, "fontes": [string], "falta": string}}}`;
+
+/** AI drafts for a collective section (never overwrites a written answer; always refreshes "falta"). */
+export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: string): Promise<number> {
+  const sec = secoesColetivas(d).find((x) => x.id === secaoId);
+  if (!sec) throw new Error("Seção inválida");
+  const projeto = getProjetos().find((p) => p.id === d.projeto);
+  const consulta = `${projeto?.nome ?? ""} ${sec.titulo} ${sec.perguntas.map((q) => `${q.texto} ${q.guia.join(" ")}`).join(" ")}`;
+  const base = buscarConhecimento(consulta, { projetos: d.projeto ? [d.projeto] : [], limite: 30, minimo: 0.12 });
+  const rag = queryVaultGrounding(`${projeto?.nome ?? ""} retiro dieta ${sec.titulo}`.slice(0, 400));
+  const tarefas = getTarefas().filter((t) => !d.projeto || t.projeto === d.projeto);
+  const lanc = secaoId === "financas" ? getLancamentos().filter((l) => !l.anulado && (!d.projeto || l.projeto === d.projeto)) : [];
+  const contexto = [
+    `Hoje: ${today()} · Diagnóstico: ${d.titulo} · Evento: ${d.evento}`,
+    projeto ? `Projeto: ${projeto.nome} — ${projeto.descricao}` : "",
+    "## Base de conhecimento confirmada", base.length ? formatarConhecimento(base) : "(nada)",
+    "## Notas do vault (não revisadas)", ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 6).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
+    `## Tarefas do projeto (${tarefas.length})`, ...tarefas.slice(0, 80).map((t) => `- ${t.id}: ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
+    secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo} R$ ${l.valor} ${l.categoria}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}` : "",
+    `## Perguntas (${sec.titulo})`, ...sec.perguntas.map((q) => `- ${q.id}: ${q.texto}\n  Guia: ${q.guia.join(" | ")}`),
+  ].filter(Boolean).join("\n");
+  const { o } = await chamarIA(SISTEMA_COLETIVO, [{ type: "text", text: contexto }], 6000, 150_000);
+  const r = (o.respostas ?? {}) as Record<string, Record<string, unknown>>;
+  const c = getColetivo(d.id);
+  const agora = new Date().toISOString();
+  let n = 0;
+  for (const q of sec.perguntas) {
+    const x = r[q.id];
+    if (!x) continue;
+    const atual = c.respostas[q.id];
+    const texto = s(x.texto).slice(0, 12000);
+    const falta = s(x.falta).slice(0, 600);
+    if (atual?.texto) { if (atual.status !== "respondida") atual.falta = falta; continue; }
+    if (!texto && !falta) continue;
+    c.respostas[q.id] = { texto, status: "rascunho", ia: !!texto, em: agora, por: quem, fontes: arr(x.fontes).slice(0, 10), falta, tarefa: atual?.tarefa ?? "" };
+    n++;
+  }
+  escreverColetivo(d, c);
+  return n;
+}
+
+/** One task per open gap of the section (skips gaps that already have a task). Returns how many were created. */
+export function criarTarefasLacunas(d: Diagnostico, secaoId: string, quem: string): number {
+  const sec = secoesColetivas(d).find((x) => x.id === secaoId);
+  if (!sec) throw new Error("Seção inválida");
+  const c = getColetivo(d.id);
+  const responsavel = c.responsaveis[secaoId];
+  const abertas = new Set(getTarefas().filter((t) => t.status !== "done").map((t) => t.id));
+  let n = 0;
+  for (const q of sec.perguntas) {
+    const r = c.respostas[q.id];
+    if (!r?.falta || r.status === "respondida" || (r.tarefa && abertas.has(r.tarefa))) continue;
+    // no WhatsApp per task: a whole section of gaps would be a burst of messages; Hoje shows the owner's section instead
+    const id = createTarefa({
+      title: `Diagnóstico · ${sec.titulo}: ${q.texto}`.slice(0, 200), equipe: d.equipes[0] ?? "", prazo: "",
+      responsaveis: responsavel ? [responsavel] : [], projeto: d.projeto, objetivo: "", recorrencia: "",
+    }, quem, {
+      semAviso: true,
+      descricao: [`Informação que falta para responder a pergunta do diagnóstico **${d.titulo}** (pedido da ${d.modelo.autor}):`, "", r.falta, "",
+        `Pergunta: ${q.texto}`, `Guia: ${q.guia.join(" · ")}`, "", `Quando tiver a informação, complete a resposta em /diagnosticos/${d.id}/coletivo?secao=${secaoId}`].join("\n"),
+    });
+    r.tarefa = id;
+    n++;
+  }
+  if (n) escreverColetivo(d, c);
+  return n;
+}
+
+/** Sends the section's answered questions to Conhecimento as a source (facts go through the usual review). */
+export function enviarAoConhecimento(d: Diagnostico, secaoId: string, quem: string): string {
+  const sec = secoesColetivas(d).find((x) => x.id === secaoId);
+  if (!sec) throw new Error("Seção inválida");
+  const c = getColetivo(d.id);
+  const prontas = sec.perguntas.filter((q) => c.respostas[q.id]?.status === "respondida");
+  if (!prontas.length) throw new Error("Nenhuma resposta marcada como respondida");
+  const texto = [`${d.titulo} — ${sec.titulo}`, "", ...prontas.map((q) => `## ${q.texto}\n${c.respostas[q.id].texto}`)].join("\n\n");
+  const id = criarFonte({ tipo: "texto", titulo: `Diagnóstico: ${sec.titulo} (${d.titulo})`.slice(0, 150), texto, por: quem });
+  c.enviadas[secaoId] = id;
+  escreverColetivo(d, c);
+  void processarFonte(id);
+  return id;
 }

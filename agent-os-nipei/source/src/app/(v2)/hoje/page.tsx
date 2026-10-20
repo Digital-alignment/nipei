@@ -7,7 +7,7 @@ import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
-import { diagnosticosAbertos, progresso } from "@/lib/v2/diagnostico";
+import { diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -54,6 +54,15 @@ export default async function Hoje() {
             📝 {t.bannerDiag}: {pr.respondidas}/{pr.total} {t.respondidas} · <span className="underline font-medium">{t.responderDiag}</span>
           </Link>
         );
+      })}
+
+      {me && diagnosticosAbertos(me).flatMap((d) => {
+        const c = getColetivo(d.id);
+        return secoesColetivas(d).filter((x) => c.responsaveis[x.id] === me.id && x.perguntas.some((q) => c.respostas[q.id]?.status !== "respondida")).map((x) => (
+          <Link key={`${d.id}:${x.id}`} href={`/diagnosticos/${d.id}/coletivo?secao=${x.id}`} className="block rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 px-4 py-3 text-sm mb-5">
+            📝 {t.parteColetiva}: {lang === "en" ? x.titulo_en : x.titulo} ({t.responsavel.toLowerCase()}) · <span className="underline font-medium">{t.responderDiag}</span>
+          </Link>
+        ));
       })}
 
       {(revisar > 0 || alertasK > 0) && (
