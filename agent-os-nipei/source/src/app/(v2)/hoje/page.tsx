@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, ChevronRight, Plus, Target } from "lucide-react";
+import { AlertTriangle, BarChart3, Bot, Brain, Check, ChevronRight, ClipboardList, Clock, Handshake, ListChecks, Plus, Target, UserRound, type LucideIcon } from "lucide-react";
 import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BomDia from "@/components/v2/BomDia";
@@ -18,11 +18,11 @@ import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 
 
-const PILULA = "inline-flex items-center gap-1 shrink-0 rounded-full border px-2.5 py-1 text-xs";
+const PILULA = "inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap rounded-full border h-8 px-3 text-xs font-medium transition-colors";
 const TOM = {
   azul: "border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200",
   ambar: "border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200",
-  neutro: "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900",
+  neutro: "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-600",
 } as const;
 
 // Hoje, compact: what matters today in three lines (Bom dia, agenda, pending pills), one place to ask,
@@ -72,20 +72,20 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const { hoje: eventosHoje, proximos } = agendaDoDia(user);
 
   // pending items as small pills (each opens its page)
-  type Pilula = { href: string; icone: string; texto: string; tom: keyof typeof TOM; titulo: string };
+  type Pilula = { href: string; icone: LucideIcon; texto: string; tom: keyof typeof TOM; titulo: string; alerta?: number };
   const pilulas: Pilula[] = [];
   const passos = primeirosPassos(user);
   const comPassos = passos.some((x) => !x.feito);
   const missao = missaoDaSemana(user);
-  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "👤", texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
+  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: UserRound, texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
   for (const d of me ? diagnosticosAbertos(me) : []) {
     const pr = progresso(d, me!.id);
-    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "📝", texto: `${pr.respondidas}/${pr.total}`, tom: "azul", titulo: t.bannerDiag });
-    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "🤝", texto: t.codigoAcordos, tom: "azul", titulo: t.bannerCodigo });
+    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: ClipboardList, texto: `${t.diagnostico} ${pr.respondidas}/${pr.total}`, tom: "azul", titulo: t.bannerDiag });
+    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: Handshake, texto: t.codigoAcordos, tom: "azul", titulo: t.bannerCodigo });
     const c = getColetivo(d.id);
     for (const x of secoesColetivas(d).filter((x) => c.responsaveis[x.id] === me!.id)) {
       const feitas = x.perguntas.filter((q) => c.respostas[q.id]?.status === "respondida").length;
-      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "📋", texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, tom: "azul", titulo: t.parteColetiva });
+      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: ListChecks, texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, tom: "azul", titulo: t.parteColetiva });
     }
   }
   const fatos = getFatos();
@@ -94,8 +94,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     const f = fatos.find((x) => x.id === a.fato);
     return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
   }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
-  if (revisar || alertas) pilulas.push({ href: alertas ? "/conhecimento/alertas" : "/conhecimento", icone: "🧠", texto: [revisar, alertas && `⚠ ${alertas}`].filter(Boolean).join(" · "), tom: "neutro", titulo: t.conhecimento });
-  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "🤖", texto: `${prontos.length} ${t.prontoHermes}`, tom: "neutro", titulo: t.prontosIA });
+  if (revisar || alertas) pilulas.push({ href: alertas ? "/conhecimento/alertas" : "/conhecimento", icone: Brain, texto: revisar ? `${revisar} ${t.aRevisar}` : t.conhecimento, tom: "neutro", titulo: t.conhecimento, alerta: alertas });
+  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: Bot, texto: `${prontos.length} ${t.prontoHermes}`, tom: "neutro", titulo: t.prontosIA });
   const p = user.gestao ? pulso() : null;
 
   const linhaTarefas = (ts: Tarefa[], grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
@@ -114,7 +114,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       {(eventosHoje.length > 0 || proximos.length > 0) && (
         <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1" aria-label={t.agenda}>
           {eventosHoje.map((e) => (
-            <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.azul}`}>🕒 {e.hora && <b className="font-medium">{e.hora}</b>} {e.titulo}</Link>
+            <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.azul}`}><Clock size={14} aria-hidden className="shrink-0 opacity-80" />{e.hora && <b className="font-semibold">{e.hora}</b>} {e.titulo}</Link>
           ))}
           {proximos.map((e) => (
             <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.neutro} text-neutral-600 dark:text-neutral-300`}>
@@ -126,9 +126,16 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
 
       {(pilulas.length > 0 || p) && (
         <div className="flex gap-1.5 overflow-x-auto mb-4 -mx-1 px-1">
-          {pilulas.map((x) => <Link key={x.href + x.texto} href={x.href} title={x.titulo} className={`${PILULA} ${TOM[x.tom]}`}><span aria-hidden>{x.icone}</span>{x.texto}</Link>)}
+          {pilulas.map((x) => (
+            <Link key={x.href + x.texto} href={x.href} title={x.titulo} className={`${PILULA} ${TOM[x.tom]}`}>
+              <x.icone size={14} aria-hidden className="shrink-0 opacity-80" />{x.texto}
+              {!!x.alerta && <span className="inline-flex items-center gap-1 ml-0.5 pl-2 border-l border-current/20 text-amber-700 dark:text-amber-400"><AlertTriangle size={13} aria-hidden />{x.alerta} {t.alertasLbl}</span>}
+            </Link>
+          ))}
           {p && (p.atrasadas > 0 || p.semDono > 0) && (
-            <Link href="/pulso" title={t.pulso} className={`${PILULA} ${TOM.ambar}`}>📊 {p.atrasadas} {t.atrasadasLbl} · {p.semDono} {t.semDonoLbl}</Link>
+            <Link href="/pulso" title={t.pulso} className={`${PILULA} ${TOM.ambar}`}>
+              <BarChart3 size={14} aria-hidden className="shrink-0 opacity-80" />{p.atrasadas} {t.atrasadasLbl}<span className="opacity-40">·</span>{p.semDono} {t.semDonoLbl}
+            </Link>
           )}
         </div>
       )}
@@ -216,7 +223,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             <Link href="/hoje" scroll={false} className="text-xs text-neutral-500 underline">{t.verTudo}</Link>
           </div>
           {getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)).map((e) => (
-            <Link key={e.id} href={`/eventos/${e.id}`} className="flex gap-2 py-2 text-sm border-b border-neutral-100 dark:border-neutral-800"><span className="text-sky-600 dark:text-sky-400">🕒 {e.hora || "—"}</span>{e.titulo}</Link>
+            <Link key={e.id} href={`/eventos/${e.id}`} className="flex gap-2 py-2 text-sm border-b border-neutral-100 dark:border-neutral-800"><span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400"><Clock size={14} aria-hidden />{e.hora || "—"}</span>{e.titulo}</Link>
           ))}
           {linhaTarefas(doDia.tarefas, "datadas", doDia.selos)}
         </div>

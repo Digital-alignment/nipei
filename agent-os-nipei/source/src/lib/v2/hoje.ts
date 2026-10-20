@@ -23,7 +23,7 @@ export function agendaDoDia(me: Me): { hoje: Evento[]; proximos: Evento[] } {
 // ---------------------------------------------------------------- Bom dia
 
 // ponytail: cached per person per day in .jobs/ (gitignored, so 7 people × 365 days don't land in git).
-const ARQ = (pessoa: string, dia: string) => path.join(vault(), ".jobs", "bomdia", `${pessoa.replace(/[^a-zA-Z0-9_-]/g, "_")}-${dia}.txt`);
+const ARQ = (pessoa: string, dia: string) => path.join(vault(), ".jobs", "bomdia", `${pessoa.replace(/[^a-zA-Z0-9_-]/g, "_")}-${dia}-v2.txt`);
 
 export function bomDiaGuardado(me: Me): string | null {
   if (!me.pessoa) return null;
@@ -31,8 +31,8 @@ export function bomDiaGuardado(me: Me): string | null {
   return fs.existsSync(f) ? fs.readFileSync(f, "utf-8") : null;
 }
 
-const SISTEMA = (lang: string) => `Você escreve o "Bom dia" de uma pessoa da equipe do Nipëi: no máximo 2 frases curtas (40 palavras), em ${lang === "en" ? "inglês" : "português do Brasil"}, tom caloroso e direto.
-Diga o que mais importa hoje: compromissos de hoje, o que está atrasado ou vence hoje (cite 1 ou 2 títulos), e uma pendência importante se houver. Sem saudação genérica longa, sem listas, sem emojis. Use só o contexto.`;
+const SISTEMA = (lang: string) => `Você escreve a linha de abertura do dia de uma pessoa da equipe do Nipëi: UMA frase curta, no máximo 18 palavras, em ${lang === "en" ? "inglês" : "português do Brasil"}, tom caloroso e direto.
+Diga só o que mais importa hoje (um compromisso, ou quantas tarefas estão atrasadas e a mais importante pelo título curto). Sem saudação, sem nome da pessoa (o título já cumprimenta), sem "Bom dia", sem listas, sem emojis. Use só o contexto.`;
 
 /** Today's summary for this person (generated once a day, then read from the cache). */
 export async function gerarBomDia(me: Me, lang: string): Promise<string> {
@@ -53,7 +53,7 @@ export async function gerarBomDia(me: Me, lang: string): Promise<string> {
     `Sem data: ${minhas.filter((t) => !t.prazo).length}`,
     `Novidades: ${novidadesPara(me, 2, 4).map((n) => `${n.quem} em "${n.titulo}"`).join("; ") || "-"}`,
   ].join("\n");
-  const texto = (await chamarIATexto(SISTEMA(lang), [{ type: "text", text: contexto }], 1500, 40_000)).replace(/\s+/g, " ").trim().slice(0, 400);
+  const texto = (await chamarIATexto(SISTEMA(lang), [{ type: "text", text: contexto }], 1500, 40_000)).replace(/\s+/g, " ").trim().slice(0, 200);
   const f = ARQ(p.id, hoje);
   fs.mkdirSync(path.dirname(f), { recursive: true });
   fs.writeFileSync(f, texto, "utf-8");
