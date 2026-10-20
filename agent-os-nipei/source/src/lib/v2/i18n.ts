@@ -165,6 +165,9 @@ const pt = {
   agendarReuniao: "Marcar na Agenda", ataLbl: "Ata", presentes: "Presentes", decisoes: "Decisões",
   encaminhamentos: "Encaminhamentos (um por linha)", encaminhamentosAjuda: "Cada linha vira uma tarefa da equipe. Use @Nome para o responsável e “até 25/10” para o prazo.",
   salvarAta: "Salvar ata e criar tarefas", ataSalva: "Ata salva; os encaminhamentos viraram tarefas.", atasAnteriores: "Reuniões anteriores", porLbl: "por",
+  atualizadoEm: "Atualizado em", semObjetivosProjeto: "Este projeto ainda não tem objetivos ligados.", todosObjetivos: "Ver todos os objetivos",
+  novaAtualizacao: "O que avançou?", publicar: "Publicar", semAtualizacoes: "Nenhuma atualização ainda.", concluidoLbl: "concluído", lerMais: "ver mais",
+  selecionarLbl: "Selecionar",
 };
 export type Dict = typeof pt;
 
@@ -329,6 +332,9 @@ const en: Dict = {
   agendarReuniao: "Add to the Agenda", ataLbl: "Minutes", presentes: "Present", decisoes: "Decisions",
   encaminhamentos: "Action items (one per line)", encaminhamentosAjuda: "Each line becomes a team task. Use @Name for the owner and “até 25/10” for the due date.",
   salvarAta: "Save minutes and create tasks", ataSalva: "Minutes saved; action items became tasks.", atasAnteriores: "Previous meetings", porLbl: "by",
+  atualizadoEm: "Updated on", semObjetivosProjeto: "This project has no linked objectives yet.", todosObjetivos: "See all objectives",
+  novaAtualizacao: "What moved forward?", publicar: "Post", semAtualizacoes: "No updates yet.", concluidoLbl: "done", lerMais: "see more",
+  selecionarLbl: "Select",
 };
 
 export async function getLang(): Promise<Lang> {

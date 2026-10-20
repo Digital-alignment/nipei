@@ -851,3 +851,16 @@ export async function salvarAtaAction(form: FormData) {
   revalidatePath("/", "layout");
   redirect(`/equipes/${e.id}/reuniao?salva=1`);
 }
+
+// ---------------------------------------------------------------- Projetos: updates
+
+/** Short progress note on a project ("## Atualizações"): gestão or a coordinator of one of its teams. */
+export async function anotarProjetoAction(form: FormData) {
+  const me = await requireUser();
+  const p = getProjetos().find((x) => x.id === String(form.get("projeto")));
+  const texto = String(form.get("texto") ?? "").trim().slice(0, 500);
+  if (!p || !texto || !(me.gestao || p.equipes.some((e) => me.coordena.includes(e)))) return;
+  const { anotarProjeto } = await import("@/lib/v2/data");
+  anotarProjeto(p.id, texto, actorName(me));
+  revalidatePath(`/projetos/${p.id}`);
+}

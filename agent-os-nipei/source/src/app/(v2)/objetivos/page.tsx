@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { Chip, Progress, Title } from "@/components/v2/ui";
 import { can, currentUser, getEquipes, getObjetivos, getProjetos, getTarefas, progresso } from "@/lib/v2/data";
 import { updateObjetivoAction } from "../actions";
@@ -16,11 +16,11 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
 
   return (
     <>
+      <Link href="/projetos" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.projetos}</Link>
       <Title>{t.objetivos}</Title>
-      <div className="flex flex-wrap gap-2 mb-3">
-        {[2026, 2027].map((a) => <Chip key={a} href={`/objetivos?ano=${a}`} on={ano === a}>{a}</Chip>)}
-      </div>
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 mb-5 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+        {[2026, 2027].map((a) => <Chip key={a} href={`/objetivos?ano=${a}${q.equipe ? `&equipe=${q.equipe}` : ""}`} on={ano === a}>{a}</Chip>)}
+        <span className="w-px bg-neutral-200 dark:bg-neutral-800 mx-1" />
         <Chip href={`/objetivos?ano=${ano}`} on={!q.equipe}>{t.todas}</Chip>
         {equipes.map((e) => <Chip key={e.id} href={`/objetivos?ano=${ano}&equipe=${e.id}`} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
       </div>
@@ -33,7 +33,12 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
               <p className="font-semibold">{o.titulo}
                 {!o.donoConfirmado && <span className="ml-2 align-middle text-[11px] font-normal text-amber-700 dark:text-amber-400">{t.donoProposto}</span>}
               </p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 whitespace-pre-line">{o.descricao}</p>
+              {o.descricao && (o.descricao.length > 200 ? (
+                <details className="mt-1 group">
+                  <summary className="list-none cursor-pointer text-sm text-neutral-600 dark:text-neutral-400"><span className="group-open:hidden line-clamp-2">{o.descricao}</span><span className="text-xs underline text-neutral-500 group-open:hidden">{t.lerMais}</span></summary>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">{o.descricao}</p>
+                </details>
+              ) : <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 whitespace-pre-line">{o.descricao}</p>)}
               <div className="flex flex-wrap gap-1.5 mt-3 text-xs">
                 {dono && <Chip cor={dono.cor}>{dono.nome}</Chip>}
                 {o.apoio.map((a) => { const e = eq(a); return e && <Chip key={a} cor={e.cor}>{t.apoio}: {e.nome}</Chip>; })}

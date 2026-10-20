@@ -5,7 +5,7 @@ import { Avatar, Card, Chip, Empty, Progress, TaskRow, Title } from "@/component
 import Abas from "@/components/v2/Abas";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import LoteBarra from "@/components/v2/LoteBarra";
+import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import { balancear } from "@/lib/v2/carga";
 import { can, currentUser, getAcessos, getEquipes, getObjetivos, getPessoas, getTarefas, novidadesPara, progresso, today, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { numerosDe } from "@/lib/v2/pessoasInfo";
@@ -77,11 +77,14 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const pessoaFiltro = q.pessoa && q.pessoa !== "sem" ? pessoas.find((p) => p.id === q.pessoa) : null;
   const tarefas = (
     <>
-      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 mt-3 mb-2 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+      <div className="flex items-center gap-2 mt-3 mb-2">
+      <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
         <Chip href={url({ pessoa: undefined })} on={!q.pessoa}>{t.todas}</Chip>
         {me.pessoa && ids.includes(me.pessoa.id) && <Chip href={url({ pessoa: me.pessoa.id })} on={q.pessoa === me.pessoa.id}>{t.minhasLbl}</Chip>}
         <Chip href={url({ pessoa: "sem" })} on={q.pessoa === "sem"}>{t.semDonoLbl} ({semDono})</Chip>
         {pessoaFiltro && pessoaFiltro.id !== me.pessoa?.id && <Chip href={url({ pessoa: undefined })} on>✕ {pessoaFiltro.name.split(" ")[0]}</Chip>}
+      </div>
+        {gerir && filtradas.length > 0 && <LoteToggle formId="lote-equipe" label={t.selecionarLbl} cancelar={t.cancelar} />}
       </div>
       {e.areas.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 mb-3 [&>*]:shrink-0 [&>*]:whitespace-nowrap">

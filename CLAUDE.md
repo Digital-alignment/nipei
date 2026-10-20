@@ -154,6 +154,14 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - **Equilibrar carga** (aba Pessoas, quem gere a equipe): `lib/v2/carga.ts` (sem IA, autoteste `node --experimental-strip-types src/lib/v2/carga.ts`) marca sobrecarga/folga e sugere mover tarefas (só de quem está sozinho na tarefa, não iniciadas, nunca urgentes; atrasadas primeiro; mesma área quando dá) e dar dono às sem responsável. Cada sugestão é um botão (`reatribuirAction`).
 - **Reunião da equipe** `/equipes/[id]/reuniao` (`lib/v2/reuniaoEquipe.ts`): pauta ao vivo desde a última ata (pendentes da última, feitas, atrasadas, próximos 7 dias, sem responsável), copiar para WhatsApp, marcar na Agenda (evento "Reunião <equipe>") e ata em `Reunioes/<equipe>/<data>.md`; cada linha de encaminhamento vira tarefa da equipe (`@Nome` = responsável, `até 25/10` = prazo).
 - Avisos: `avisos.py fila` espera 5 s e junta as atribuições por pessoa e autor numa só mensagem (lote, reunião).
+
+## 3.10 Projetos e navegação (v2.32)
+
+- Menu: 5 seções (Hoje, Agenda, Equipes, Projetos, Pessoas — Pessoas agora cabe na barra do celular). Objetivos saiu do menu: continua em `/objetivos` (nenhum link mudou), aparece como subitem recuado de Projetos no menu lateral (`SUB` em `components/v2/Nav.tsx`) e como botão no topo de `/projetos`; em `/objetivos` a seção Projetos fica ativa.
+- `/projetos`: cartões com equipes, abertas/atrasadas, objetivos, % concluído e última atualização.
+- `/projetos/[id]`: números (abertas, atrasadas, sem responsável → filtro, % concluído), botões (Nova tarefa, Visão holística, Objetivos, Diagnóstico p/ gestão) e abas: Tarefas (filtros sem responsável/pessoa/equipe, ordem inteligente, ações em lote), Objetivos (progresso, + tarefa), Pessoas (quem tem tarefa aberta no projeto → filtra) e Atualizações (linha do tempo; gestão/coordenação publica com `anotarProjetoAction`).
+- Seleção em lote escondida por padrão: chip "Selecionar" (`LoteToggle`) liga `html[data-lote]` e mostra as caixas `.lote-caixa` (CSS em `globals.css`). Linhas de chips/abas rolam sem barra visível (`.v2 .overflow-x-auto`).
+- Se uma mudança em `globals.css` não aparecer no `npm run dev`, apague `.next` (cache persistente do Turbopack).
 ---
 
 ## 4. Comandos Essenciais

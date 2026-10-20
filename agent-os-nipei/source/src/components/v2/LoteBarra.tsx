@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckSquare, X } from "lucide-react";
 import { loteAction } from "@/app/(v2)/actions";
 import BotaoEnviar from "./BotaoEnviar";
 
@@ -8,6 +9,27 @@ type Labels = {
   selecionadas: string; todas: string; limpar: string; aplicar: string; acao: string;
   atribuir: string; prazo: string; concluir: string; prioridade: string; mover: string; prioridades: Record<string, string>;
 };
+
+/** "Selecionar" chip: shows the row checkboxes (hidden by default so the lists stay clean). */
+export function LoteToggle({ formId, label, cancelar }: { formId: string; label: string; cancelar: string }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => () => { delete document.documentElement.dataset.lote; }, []);
+  const toggle = () => {
+    const v = !on;
+    setOn(v);
+    if (v) document.documentElement.dataset.lote = "1";
+    else {
+      delete document.documentElement.dataset.lote;
+      document.querySelectorAll<HTMLInputElement>(`input[type=checkbox][form="${formId}"]`).forEach((c) => { c.checked = false; });
+      document.dispatchEvent(new Event("change"));
+    }
+  };
+  return (
+    <button type="button" onClick={toggle} className={`shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${on ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"}`}>
+      {on ? <X size={12} /> : <CheckSquare size={12} />}{on ? cancelar : label}
+    </button>
+  );
+}
 
 /**
  * Bulk actions: the task rows carry `<input type="checkbox" name="ids" form={formId}>`, so the rows keep
