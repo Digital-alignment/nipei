@@ -43,7 +43,7 @@ Regras:
 - Responda APENAS com um objeto JSON, sem texto antes ou depois, com estas chaves:
 {"resumo": string, "descricao": string|null, "checklistAdicionar": string[], "checklistConcluir": string[], "proximoPasso": string|null, "status": "todo"|"doing"|"done"|null, "prazo": "AAAA-MM-DD"|null, "fontes": string[]}`;
 
-type Parte = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } } | { type: "file"; file: { filename: string; file_data: string } };
+export type Parte = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } } | { type: "file"; file: { filename: string; file_data: string } };
 
 export function contexto(id: string): { texto: string; anexos: Parte[] } {
   const det = getTarefaDetalhe(id);
@@ -107,37 +107,40 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
 
 const strArr = (v: unknown) => (Array.isArray(v) ? v.map(String).map((x) => x.trim()).filter(Boolean) : []);
 
-export async function proporIA(id: string, modo: ModoIA, quem: string): Promise<PropostaIA> {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error("IA não configurada no servidor (OPENROUTER_API_KEY)");
+/** Counts one AI use for this person today; throws past the daily limit. */
+export function contarUso(quem: string) {
   const dia = new Date().toISOString().slice(0, 10);
   const u = uso.get(quem);
   const n = u?.dia === dia ? u.n : 0;
   if (n >= LIMITE_DIA) throw new Error(`Limite diário de ${LIMITE_DIA} usos da IA atingido`);
   uso.set(quem, { dia, n: n + 1 });
+}
 
-  const { texto, anexos } = contexto(id);
+/** One OpenRouter call that must answer with a JSON object (shared by tasks and Conhecimento). */
+export async function chamarIA(sistema: string, conteudo: Parte[], maxTokens = 2500, timeoutMs = 90_000): Promise<{ o: Record<string, unknown>; modelo: string }> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("IA não configurada no servidor (OPENROUTER_API_KEY)");
   const modelo = MODELO();
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "HTTP-Referer": "https://os.nipeihu.app", "X-Title": "Nipei OS" },
-    body: JSON.stringify({
-      model: modelo,
-      temperature: 0.2,
-      max_tokens: 2500,
-      messages: [
-        { role: "system", content: SISTEMA },
-        { role: "user", content: [{ type: "text", text: `${INSTRUCOES[modo]}\n\n${texto}` }, ...anexos] },
-      ],
-    }),
-    signal: AbortSignal.timeout(90_000),
+    body: JSON.stringify({ model: modelo, temperature: 0.2, max_tokens: maxTokens, messages: [{ role: "system", content: sistema }, { role: "user", content: conteudo }] }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`IA indisponível (${res.status})`);
   const data = await res.json();
   const raw: string = data?.choices?.[0]?.message?.content ?? "";
-  const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
-  let o: Record<string, unknown>;
-  try { o = JSON.parse(json); } catch { throw new Error("A IA respondeu num formato inesperado; tente de novo"); }
+  try {
+    return { o: JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)), modelo };
+  } catch {
+    throw new Error("A IA respondeu num formato inesperado; tente de novo");
+  }
+}
+
+export async function proporIA(id: string, modo: ModoIA, quem: string): Promise<PropostaIA> {
+  contarUso(quem);
+  const { texto, anexos } = contexto(id);
+  const { o, modelo } = await chamarIA(SISTEMA, [{ type: "text", text: `${INSTRUCOES[modo]}\n\n${texto}` }, ...anexos]);
 
   const det = getTarefaDetalhe(id)!;
   const existentes = new Set(det.doc.checklist.map((c) => c.texto));

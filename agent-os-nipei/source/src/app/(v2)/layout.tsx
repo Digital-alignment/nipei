@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Library, LogOut, Wallet } from "lucide-react";
+import { Brain, Library, LogOut, Wallet } from "lucide-react";
 import Nav from "@/components/v2/Nav";
 import { Avatar } from "@/components/v2/ui";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
@@ -26,6 +26,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
         <Link href="/hoje" className="font-semibold tracking-tight">Nipëi</Link>
         <div className="flex items-center gap-2">
+          <Link href="/conhecimento" aria-label={t.conhecimento} title={t.conhecimento} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Brain size={18} /></Link>
           <Link href="/acervo" aria-label={t.acervo} title={t.acervo} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Library size={18} /></Link>
           {user.gestao && <Link href="/financas" aria-label={t.financas} title={t.financas} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Wallet size={18} /></Link>}
           <form action={toggleLangAction}>

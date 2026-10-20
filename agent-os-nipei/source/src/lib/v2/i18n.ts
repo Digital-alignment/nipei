@@ -70,6 +70,15 @@ const pt = {
   confirmarSalvar: "Confirmar e salvar", salvando: "Salvando…", privado: "só você e a gestão veem", dadosConfirmados: "Dados confirmados em",
   bannerConfirmar: "Confira e confirme seus dados do perfil.", bannerVerificar: "Verifique seu WhatsApp para continuar recebendo os avisos.",
   bannerAcao: "Abrir meu perfil", vazio: "—",
+  conhecimento: "Conhecimento", conhecimentoIntro: "Envie documentos, fotos, links ou textos. A IA separa em fatos curtos; a gestão (ou a coordenação da equipe) confirma o que está certo.",
+  enviarArquivoFonte: "Enviar arquivo ou foto", ouColeLink: "…ou cole um link", ouColeTexto: "…ou cole um texto (ata, mensagem, anotação)", tituloOpcional: "Título (opcional)",
+  enviar: "Enviar", paraRevisar: "Para revisar", fontesRecentes: "Fontes recentes", baseConfirmada: "Base confirmada",
+  processando: "A IA está lendo…", pronta: "Pronta", erroFonte: "Erro", reprocessar: "Ler de novo", fatosPropostos: "fatos para revisar",
+  fatos: "Fatos", confirmar: "Confirmar", descartar: "Descartar", confirmarTodos: "Confirmar todos", resumoFonte: "Resumo", textoFonte: "Texto extraído",
+  verOriginal: "Ver original", enviadoPor: "Enviado por", semFatos: "Nenhum fato encontrado nesta fonte.", aguardandoRevisao: "Aguardando revisão de quem coordena",
+  status_proposto: "Proposto", status_confirmado: "Confirmado", status_substituido: "Substituído", status_descartado: "Descartado",
+  tiposFato: { fato: "Fato", decisao: "Decisão", prazo: "Prazo", procedimento: "Procedimento", contato: "Contato", valor: "Valor" },
+  formatosFonte: "PDF, foto (JPG, PNG, WebP) ou texto (TXT, MD, CSV). Até 10 MB.",
 };
 export type Dict = typeof pt;
 
@@ -139,6 +148,15 @@ const en: Dict = {
   confirmarSalvar: "Confirm and save", salvando: "Saving…", privado: "only you and the management see this", dadosConfirmados: "Details confirmed on",
   bannerConfirmar: "Check and confirm your profile details.", bannerVerificar: "Verify your WhatsApp to keep getting notices.",
   bannerAcao: "Open my profile", vazio: "—",
+  conhecimento: "Knowledge", conhecimentoIntro: "Send documents, photos, links or texts. The AI splits them into short facts; management (or the team's leads) confirms what is right.",
+  enviarArquivoFonte: "Send file or photo", ouColeLink: "…or paste a link", ouColeTexto: "…or paste a text (minutes, message, note)", tituloOpcional: "Title (optional)",
+  enviar: "Send", paraRevisar: "To review", fontesRecentes: "Recent sources", baseConfirmada: "Confirmed base",
+  processando: "The AI is reading…", pronta: "Ready", erroFonte: "Error", reprocessar: "Read again", fatosPropostos: "facts to review",
+  fatos: "Facts", confirmar: "Confirm", descartar: "Discard", confirmarTodos: "Confirm all", resumoFonte: "Summary", textoFonte: "Extracted text",
+  verOriginal: "See original", enviadoPor: "Sent by", semFatos: "No facts found in this source.", aguardandoRevisao: "Waiting for a lead to review",
+  status_proposto: "Proposed", status_confirmado: "Confirmed", status_substituido: "Replaced", status_descartado: "Discarded",
+  tiposFato: { fato: "Fact", decisao: "Decision", prazo: "Deadline", procedimento: "Procedure", contato: "Contact", valor: "Amount" },
+  formatosFonte: "PDF, photo (JPG, PNG, WebP) or text (TXT, MD, CSV). Up to 10 MB.",
 };
 
 export async function getLang(): Promise<Lang> {

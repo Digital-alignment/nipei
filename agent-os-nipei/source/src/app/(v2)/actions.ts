@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
-import { proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
+import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
+import { criarFonte, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
@@ -342,4 +343,58 @@ export async function toggleLangAction() {
 export async function logoutAction() {
   (await cookies()).delete(SESSION_COOKIE);
   redirect("/login");
+}
+
+// ---------------------------------------------------------------- Conhecimento (K1)
+
+const fonteFeita = (id: string) => {
+  // the AI reads the source in the background (≈ 30 s); the page refreshes itself while "processando"
+  void processarFonte(id);
+  revalidatePath("/conhecimento", "layout");
+};
+
+export async function enviarFonteArquivoAction(form: FormData): Promise<{ error?: string }> {
+  const me = await requireUser();
+  const file = form.get("arquivo");
+  if (!(file instanceof File) || !file.size) return { error: "Nenhum arquivo" };
+  try {
+    contarUso(me.pessoa?.id ?? me.username);
+    fonteFeita(criarFonte({ tipo: "arquivo", titulo: file.name.replace(/\.[^.]+$/, ""), nome: file.name, bytes: Buffer.from(await file.arrayBuffer()), por: me.pessoa?.id ?? me.username }));
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  return {};
+}
+
+export async function enviarFonteAction(form: FormData) {
+  const me = await requireUser();
+  const url = String(form.get("url") ?? "").trim();
+  const texto = String(form.get("texto") ?? "");
+  const titulo = String(form.get("titulo") ?? "").trim();
+  if (!url && !texto.trim()) return;
+  contarUso(me.pessoa?.id ?? me.username);
+  const por = me.pessoa?.id ?? me.username;
+  const id = url ? criarFonte({ tipo: "link", url, titulo, por }) : criarFonte({ tipo: "texto", texto, titulo, por });
+  fonteFeita(id);
+  redirect(`/conhecimento/${id}`);
+}
+
+export async function reprocessarFonteAction(form: FormData) {
+  const me = await requireUser();
+  const f = getFontes().find((x) => x.id === String(form.get("id")));
+  if (!f || !(me.gestao || f.enviadoPor === (me.pessoa?.id ?? me.username))) return;
+  contarUso(me.pessoa?.id ?? me.username);
+  fonteFeita(f.id);
+}
+
+export async function revisarFatoAction(form: FormData) {
+  const me = await requireUser();
+  const acao = pick(form.get("acao"), ["confirmar", "descartar"]) as "confirmar" | "descartar" | "";
+  const ids = form.getAll("id").map(String);
+  const fatos = getFatos().filter((f) => ids.includes(f.id) && f.status === "proposto" && podeRevisar(me, f));
+  if (!acao) return;
+  // one fact may come with an edited text; "confirm all" sends several ids and no text
+  const texto = ids.length === 1 ? String(form.get("texto") ?? "") : undefined;
+  for (const f of fatos) revisarFato(f.id, acao, actorName(me), texto);
+  revalidatePath("/conhecimento", "layout");
 }

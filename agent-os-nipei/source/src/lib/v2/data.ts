@@ -36,15 +36,15 @@ export type Tarefa = {
   checklist: { feitos: number; total: number }; anexos: number; recorrencia: string;
 };
 
-const vault = () => {
+export const vault = () => {
   const v = defaultVault();
   if (!v) throw new Error("Vault não configurado (VAULT_PATH)");
   return v;
 };
 
-type Note = { file: string; fm: Record<string, unknown>; body: string };
+export type Note = { file: string; fm: Record<string, unknown>; body: string };
 
-function readDir(dir: string): Note[] {
+export function readDir(dir: string): Note[] {
   const full = path.join(vault(), dir);
   if (!fs.existsSync(full)) return [];
   return fs.readdirSync(full).filter((f) => f.endsWith(".md")).flatMap((file) => {
@@ -213,17 +213,17 @@ export function progresso(objetivoId: string, tarefas: Tarefa[]) {
 
 // ---------------------------------------------------------------- writes
 
-type FmValue = string | string[] | boolean | number;
+export type FmValue = string | string[] | boolean | number;
 
 function yamlValue(v: FmValue) {
   return Array.isArray(v) ? `[${v.map((x) => JSON.stringify(x)).join(", ")}]` : typeof v === "string" ? JSON.stringify(v) : String(v);
 }
 
 /** "Ligar p/ Melo — urgente" → "ligar_p_melo_urgente" (file names) */
-const slugify = (v: string) =>
+export const slugify = (v: string) =>
   v.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "_").slice(0, 40).replace(/^_|_$/g, "");
 
-const noteText = (fm: Record<string, FmValue>, body: string) =>
+export const noteText = (fm: Record<string, FmValue>, body: string) =>
   ["---", ...Object.entries(fm).map(([k, v]) => `${k}: ${yamlValue(v)}`), "---", "", "<!-- agente: nipei-os v2 -->", body, ""].join("\n");
 
 /** Sets single-line top-level frontmatter keys, leaving every other line untouched. */

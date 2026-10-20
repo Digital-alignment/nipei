@@ -107,6 +107,13 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - Privados (nascimento, nacionalidade, e-mail, contato de emergência): só a pessoa e gestão veem. Foto em `Miembros/_fotos/<id>.<ext>` (rota `/pessoas/[id]/foto`, exige login).
 - Testar sem enviar WhatsApp real: `.env.development.local` com `EVOLUTION_API_URL` apontando para um mock local.
 
+## 3.5 Conhecimento (K1, v2.12)
+
+- `/conhecimento`: qualquer membro envia arquivo (PDF, foto, txt/md/csv até 10 MB), link ou texto colado. `lib/v2/conhecimento.ts` grava `Conhecimento/Fontes/<id>.md` (+ original em `Fontes/arquivos/`) e, em segundo plano, a IA (`chamarIA` em `lib/v2/ia.ts`) gera resumo e até 40 fatos em `Conhecimento/Fatos/<id>.md`.
+- Fatos têm `status`: proposto → confirmado | descartado (| substituido, K2). Nunca apague fatos corrigidos: o auditor (K2) usa o histórico para detectar conteúdo já corrigido. Revisa: gestão, ou a coordenação da `equipe` do fato (`podeRevisar`).
+- Links: só http(s) públicos (redirects checados um a um, IPs internos bloqueados).
+- Próximos: K2 auditor + alertas, K3 busca única dos agentes só em fatos confirmados, K4 propostas sobre tarefas/projetos.
+
 ---
 
 ## 4. Comandos Essenciais
