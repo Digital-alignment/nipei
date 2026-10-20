@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Check, ChevronRight, Plus, Target } from "lucide-react";
 import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BomDia from "@/components/v2/BomDia";
@@ -15,6 +15,7 @@ import { agendaDoDia, bomDiaGuardado, pulso } from "@/lib/v2/hoje";
 import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
+import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 
 
 const PILULA = "inline-flex items-center gap-1 shrink-0 rounded-full border px-2.5 py-1 text-xs";
@@ -73,10 +74,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   // pending items as small pills (each opens its page)
   type Pilula = { href: string; icone: string; texto: string; tom: keyof typeof TOM; titulo: string };
   const pilulas: Pilula[] = [];
-  if (me && perfilPendente(me)) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "👤", texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
+  const passos = primeirosPassos(user);
+  const comPassos = passos.some((x) => !x.feito);
+  const missao = missaoDaSemana(user);
+  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "👤", texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
   for (const d of me ? diagnosticosAbertos(me) : []) {
     const pr = progresso(d, me!.id);
-    if (pr.respondidas < pr.total) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "📝", texto: `${pr.respondidas}/${pr.total}`, tom: "azul", titulo: t.bannerDiag });
+    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "📝", texto: `${pr.respondidas}/${pr.total}`, tom: "azul", titulo: t.bannerDiag });
     if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "🤝", texto: t.codigoAcordos, tom: "azul", titulo: t.bannerCodigo });
     const c = getColetivo(d.id);
     for (const x of secoesColetivas(d).filter((x) => c.responsaveis[x.id] === me!.id)) {
@@ -127,6 +131,59 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             <Link href="/pulso" title={t.pulso} className={`${PILULA} ${TOM.ambar}`}>📊 {p.atrasadas} {t.atrasadasLbl} · {p.semDono} {t.semDonoLbl}</Link>
           )}
         </div>
+      )}
+
+      {comPassos && (
+        <section aria-label={t.primeirosPassos} className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div className="flex items-baseline justify-between gap-3 mb-2">
+            <p className="text-sm font-semibold">{t.primeirosPassos}</p>
+            <p className="text-xs text-neutral-500 tabular-nums">{passos.filter((x) => x.feito).length} / {passos.length}</p>
+          </div>
+          <div className="h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden mb-2"><div className="h-full bg-green-500" style={{ width: `${(passos.filter((x) => x.feito).length / passos.length) * 100}%` }} /></div>
+          <ul className="grid sm:grid-cols-2 gap-x-4">
+            {passos.map((x) => (
+              <li key={x.id}>
+                <Link href={x.href} className={`flex items-center gap-2.5 py-2 text-sm ${x.feito ? "text-neutral-400" : "hover:underline"}`}>
+                  <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center ${x.feito ? "bg-green-600 text-white" : "border-2 border-neutral-300 dark:border-neutral-600"}`}>{x.feito && <Check size={12} strokeWidth={3} />}</span>
+                  <span className={`flex-1 min-w-0 ${x.feito ? "line-through" : ""}`}>{t.passos[x.id]}</span>
+                  {!x.feito && <ChevronRight size={15} className="text-neutral-400 shrink-0" />}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {missao && (
+        <details className="group mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          <summary className="list-none cursor-pointer p-4 grid gap-2">
+            <span className="flex items-center gap-2">
+              <Target size={16} className="text-green-600 dark:text-green-400 shrink-0" />
+              <span className="text-sm font-semibold flex-1 min-w-0">{t.missaoSemana}</span>
+              <span className="text-xs text-neutral-500 tabular-nums">{missao.diasRestantes ? t.diasRestantes.replace("{n}", String(missao.diasRestantes)) : t.ultimoDia}</span>
+              <ChevronRight size={16} className="text-neutral-400 transition-transform group-open:rotate-90 shrink-0" />
+            </span>
+            <span className="text-xs text-neutral-500 line-clamp-1">{lang === "en" ? missao.missao.titulo_en : missao.missao.titulo}</span>
+            <span className="flex items-center gap-2">
+              <span className="h-1.5 flex-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><span className="block h-full bg-green-500" style={{ width: `${missao.total}%` }} /></span>
+              <span className="text-xs font-semibold tabular-nums w-9 text-right">{missao.total}%</span>
+            </span>
+          </summary>
+          <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1 px-4 pb-4 border-t border-neutral-100 dark:border-neutral-800 pt-3">
+            {missao.metas.map((m) => (
+              <li key={m.id}>
+                <Link href={{ perfis: `/pessoas?equipe=${missao.missao.equipe}`, fatos: "/conhecimento", fontes: "/conhecimento", tarefas: "/pulso", atrasadas: "/pulso?ver=atrasadas", carga: `/equipes/${missao.missao.equipe}`, objetivos: "/objetivos", diagnostico: me ? `/pessoas/${me.id}/respostas` : "/hoje" }[m.id]}
+                  className="block py-1.5 group/m">
+                  <span className="flex items-baseline justify-between gap-2 text-sm">
+                    <span className="min-w-0 group-hover/m:underline">{t.metas[m.id]}</span>
+                    <span className={`text-xs tabular-nums shrink-0 ${m.pct >= 100 ? "text-green-700 dark:text-green-400 font-semibold" : "text-neutral-500"}`}>{m.pct >= 100 ? "✓" : m.texto}</span>
+                  </span>
+                  <span className="mt-1 block h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><span className={`block h-full ${m.pct >= 100 ? "bg-green-500" : "bg-neutral-400 dark:bg-neutral-500"}`} style={{ width: `${m.pct}%` }} /></span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <Assistente lang={lang} labels={{ placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, cancelar: t.cancelar, feito: t.feitoLbl, limpar: t.limpar, pensando: t.pensando, sugestoes: t.sugestoes, verConversa: t.verConversa }} />

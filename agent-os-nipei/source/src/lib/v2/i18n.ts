@@ -171,6 +171,9 @@ const pt = {
   recolherMenu: "Recolher menu", expandirMenu: "Expandir menu",
   idiomaPlataforma: "Idioma da plataforma",
   idiomaPlataformaAjuda: "Só para você, neste aparelho.",
+  primeirosPassos: "Primeiros passos", missaoSemana: "Missão da semana", diasRestantes: "faltam {n} dias", ultimoDia: "último dia",
+  passos: { dados: "Confirmar seus dados", whatsapp: "Verificar seu WhatsApp", foto: "Colocar sua foto", diagnostico: "Responder o diagnóstico", revisar: "Revisar um fato do Conhecimento", fonte: "Enviar uma fonte da sua área" },
+  metas: { perfis: "Perfis confirmados e WhatsApp verificado", fatos: "Fatos propostos revisados", fontes: "Novas fontes (3 por pessoa)", tarefas: "Tarefas sem responsável / sem equipe", atrasadas: "Atrasadas replanejadas", carga: "Pessoas com até 20 tarefas abertas", objetivos: "Objetivos com dono confirmado", diagnostico: "Diagnóstico individual respondido" },
 };
 export type Dict = typeof pt;
 
@@ -341,6 +344,9 @@ const en: Dict = {
   recolherMenu: "Collapse menu", expandirMenu: "Expand menu",
   idiomaPlataforma: "Platform language",
   idiomaPlataformaAjuda: "Just for you, on this device.",
+  primeirosPassos: "First steps", missaoSemana: "Mission of the week", diasRestantes: "{n} days left", ultimoDia: "last day",
+  passos: { dados: "Confirm your details", whatsapp: "Verify your WhatsApp", foto: "Add your photo", diagnostico: "Answer the assessment", revisar: "Review a fact in Knowledge", fonte: "Upload a source from your area" },
+  metas: { perfis: "Profiles confirmed and WhatsApp verified", fatos: "Proposed facts reviewed", fontes: "New sources (3 per person)", tarefas: "Tasks without owner / without team", atrasadas: "Overdue tasks re-planned", carga: "People with 20 open tasks or fewer", objetivos: "Objectives with a confirmed owner", diagnostico: "Individual assessment answered" },
 };
 
 export async function getLang(): Promise<Lang> {
