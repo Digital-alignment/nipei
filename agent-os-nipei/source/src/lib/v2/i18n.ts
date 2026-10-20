@@ -134,6 +134,8 @@ const pt = {
   seloUrgente: "urgente", seloAndamento: "em andamento", seloNovidade: "novidade", seloQuasePronta: "quase pronta", seloParada: "parada há meses",
   semanaLbl: "Semana", verTudo: "Ver tudo",
   sugestoes: ["O que tenho hoje?", "Resumo da minha semana", "Nova tarefa para amanhã: "], verConversa: "ver conversa",
+  agendaIntro: "Tarefas com prazo e eventos. Tarefas sem prazo ficam na Hoje.", minhas: "Minhas", minhaEquipe: "Minha equipe", todasEquipes: "Todas as equipes",
+  aDefinirData: "Eventos sem dia definido", definirData: "Definir data", livre: "Livre",
 };
 export type Dict = typeof pt;
 
@@ -267,6 +269,8 @@ const en: Dict = {
   seloUrgente: "urgent", seloAndamento: "in progress", seloNovidade: "news", seloQuasePronta: "almost done", seloParada: "stalled for months",
   semanaLbl: "Week", verTudo: "See all",
   sugestoes: ["What do I have today?", "Summary of my week", "New task for tomorrow: "], verConversa: "see conversation",
+  agendaIntro: "Tasks with a due date and events. Undated tasks live in Today.", minhas: "Mine", minhaEquipe: "My team", todasEquipes: "All teams",
+  aDefinirData: "Events without a set day", definirData: "Set the date", livre: "Free",
 };
 
 export async function getLang(): Promise<Lang> {
