@@ -5,7 +5,8 @@ import { requestSync } from "@/lib/tarefaNote";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { chamarIA } from "./ia";
 import { buscarConhecimento, criarFonte, formatarConhecimento, processarFonte } from "./conhecimento";
-import { createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, today, vault, type Me, type Pessoa } from "./data";
+import { createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, noteText, slugify, today, vault, type Lancamento, type Me, type Pessoa } from "./data";
+import { getAlertas } from "./auditor";
 
 // Diagnósticos (D0/D1): a questionnaire template (Diagnosticos/_modelos/<id>.md, e.g. Lynn's
 // "Team Development Agenda") applied to a project (Diagnosticos/<id>/diagnostico.md).
@@ -170,7 +171,16 @@ export async function rascunhoIA(d: Diagnostico, pessoaId: string, secaoId: stri
 // Gestão assigns the responsible; gestão and that person edit the section; every participant reads it.
 
 export type RespostaColetiva = Resposta & { por: string; fontes: string[]; falta: string; tarefa: string };
-export type Coletivo = { responsaveis: Record<string, string>; respostas: Record<string, RespostaColetiva>; enviadas: Record<string, string> };
+export type Item = { id: string; titulo: string; prioridade: "alta" | "media" | "baixa"; custo: number; requisitos: string; responsavel: string; tarefa: string };
+export type Entrada = { id: string; data: string; acao: string; responsavel: string; tarefa: string };
+export type Reuniao = { data: string; evento: string; pauta: string; geradaEm: string };
+export type Coletivo = {
+  responsaveis: Record<string, string>; respostas: Record<string, RespostaColetiva>; enviadas: Record<string, string>;
+  itens: Record<string, Item[]>; // D3: improvement items per "espaco" question
+  calendario: { dataRetiro: string; entradas: Entrada[] }; // D3: marketing calendar
+  periodo: { de: string; ate: string }; // D3: finance period of the retreat/dieta
+  reunioes: Record<string, Reuniao>; // D3: team meetings #1 and #2
+};
 
 const arquivoColetivo = (diagId: string) => path.join(vault(), DIR, diagId, "coletivo.md");
 export const secoesColetivas = (d: Diagnostico) => d.modelo.secoes.filter((x) => x.escopo === "coletivo");
@@ -181,6 +191,16 @@ export function getColetivo(diagId: string): Coletivo {
   return {
     responsaveis: Object.fromEntries(Object.entries((fm.responsaveis ?? {}) as Record<string, unknown>).map(([k, v]) => [k, s(v)])),
     enviadas: Object.fromEntries(Object.entries((fm.enviadas ?? {}) as Record<string, unknown>).map(([k, v]) => [k, s(v)])),
+    itens: Object.fromEntries(Object.entries((fm.itens ?? {}) as Record<string, unknown>).map(([k, v]) => [k, ((Array.isArray(v) ? v : []) as Record<string, unknown>[]).map((i) => ({
+      id: s(i.id), titulo: s(i.titulo), prioridade: (["alta", "media", "baixa"].includes(s(i.prioridade)) ? s(i.prioridade) : "media") as Item["prioridade"],
+      custo: Number(i.custo) || 0, requisitos: s(i.requisitos), responsavel: s(i.responsavel), tarefa: s(i.tarefa),
+    }))])),
+    calendario: (() => {
+      const c = (fm.calendario ?? {}) as Record<string, unknown>;
+      return { dataRetiro: s(c.dataRetiro), entradas: ((Array.isArray(c.entradas) ? c.entradas : []) as Record<string, unknown>[]).map((e) => ({ id: s(e.id), data: s(e.data), acao: s(e.acao), responsavel: s(e.responsavel), tarefa: s(e.tarefa) })) };
+    })(),
+    periodo: { de: s((fm.periodo as Record<string, unknown>)?.de), ate: s((fm.periodo as Record<string, unknown>)?.ate) },
+    reunioes: Object.fromEntries(Object.entries((fm.reunioes ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => [k, { data: s(v?.data), evento: s(v?.evento), pauta: s(v?.pauta), geradaEm: s(v?.geradaEm) }])),
     respostas: Object.fromEntries(Object.entries(r).map(([k, v]) => [k, {
       texto: s(v?.texto), status: s(v?.status) === "respondida" ? "respondida" : "rascunho", ia: v?.ia === true, em: s(v?.em),
       por: s(v?.por), fontes: arr(v?.fontes), falta: s(v?.falta), tarefa: s(v?.tarefa),
@@ -248,7 +268,7 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
   const base = buscarConhecimento(consulta, { projetos: d.projeto ? [d.projeto] : [], limite: 30, minimo: 0.12 });
   const rag = queryVaultGrounding(`${projeto?.nome ?? ""} retiro dieta ${sec.titulo}`.slice(0, 400));
   const tarefas = getTarefas().filter((t) => !d.projeto || t.projeto === d.projeto);
-  const lanc = secaoId === "financas" ? getLancamentos().filter((l) => !l.anulado && (!d.projeto || l.projeto === d.projeto)) : [];
+  const lanc = secaoId === "financas" ? lancamentosDoPeriodo(d, getColetivo(d.id).periodo) : [];
   const contexto = [
     `Hoje: ${today()} · Diagnóstico: ${d.titulo} · Evento: ${d.evento}`,
     projeto ? `Projeto: ${projeto.nome} — ${projeto.descricao}` : "",
@@ -318,4 +338,205 @@ export function enviarAoConhecimento(d: Diagnostico, secaoId: string, quem: stri
   escreverColetivo(d, c);
   void processarFonte(id);
   return id;
+}
+
+// ---------------------------------------------------------------- D3: lists that become work
+
+const novoItemId = () => Math.random().toString(36).slice(2, 9);
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const PRIORIDADE_TAREFA = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
+/** Which team carries out each improvement question (maintenance for the grounds; the office for services). */
+const EQUIPE_ITEM: Record<string, string> = { "espaco.shuhu": "equipe_4", "espaco.casa_cura": "equipe_4", "espaco.cura": "equipe_1" };
+
+/** First list for an improvement question: the items Lynn named (from the guide), ready to prioritise. */
+export function itensSugeridos(d: Diagnostico, perguntaId: string): Item[] {
+  const q = secoesColetivas(d).flatMap((x) => x.perguntas).find((x) => x.id === perguntaId);
+  return (q?.guia[0] ?? "").replace(/\.$/, "").split(/,\s*/).map((t) => t.trim()).filter(Boolean)
+    .map((t) => ({ id: novoItemId(), titulo: t.charAt(0).toUpperCase() + t.slice(1), prioridade: "media", custo: 0, requisitos: "", responsavel: "", tarefa: "" }));
+}
+
+export function salvarItens(d: Diagnostico, perguntaId: string, itens: Omit<Item, "tarefa">[]) {
+  const c = getColetivo(d.id);
+  const antes = new Map((c.itens[perguntaId] ?? []).map((i) => [i.id, i]));
+  c.itens[perguntaId] = itens.filter((i) => i.titulo.trim()).map((i) => ({
+    ...i, id: i.id || novoItemId(), titulo: i.titulo.trim().slice(0, 200), requisitos: i.requisitos.trim().slice(0, 500),
+    custo: Math.max(0, Math.round(Number(i.custo) || 0)), tarefa: antes.get(i.id)?.tarefa ?? "",
+  }));
+  escreverColetivo(d, c);
+}
+
+/** One task per item that has none yet (priority and estimated cost in the task). */
+export function criarTarefasItens(d: Diagnostico, perguntaId: string, quem: string): number {
+  const c = getColetivo(d.id);
+  const q = secoesColetivas(d).flatMap((x) => x.perguntas).find((x) => x.id === perguntaId);
+  let n = 0;
+  for (const i of c.itens[perguntaId] ?? []) {
+    if (i.tarefa) continue;
+    i.tarefa = createTarefa({
+      title: i.titulo, equipe: EQUIPE_ITEM[perguntaId] ?? d.equipes[0] ?? "", prazo: "", responsaveis: i.responsavel ? [i.responsavel] : [],
+      projeto: d.projeto, objetivo: "", recorrencia: "", priority: PRIORIDADE_TAREFA[i.prioridade],
+    }, quem, {
+      semAviso: true,
+      descricao: [`Melhoria levantada no diagnóstico **${d.titulo}** (${q?.texto ?? perguntaId}).`, "",
+        `- Prioridade: ${PRIORIDADE_TAREFA[i.prioridade]}`, `- Custo aproximado: ${i.custo ? `R$ ${i.custo.toLocaleString("pt-BR")}` : "a orçar"}`,
+        `- O que precisa: ${i.requisitos || "a definir"}`].join("\n"),
+    });
+    n++;
+  }
+  if (n) escreverColetivo(d, c);
+  return n;
+}
+
+/** Standard countdown to a retreat (days relative to its first day). Owners and dates stay editable before becoming tasks. */
+const CALENDARIO_PADRAO: [number, string][] = [
+  [-150, "Definir datas, preços e vagas; publicar a página do retiro no site"],
+  [-120, "Abrir inscrições e enviar e-mail de anúncio (save the date)"],
+  [-120, "Post de anúncio nas redes sociais"],
+  [-105, "Selecionar fotos e vídeos do acervo; fechar o calendário de posts"],
+  [-90, "E-mail: programa e facilitadores do retiro"],
+  [-75, "Contatar parceiros e colaboradores de divulgação"],
+  [-60, "Fim do early-bird: e-mail e post de lembrete"],
+  [-45, "E-mail e posts com depoimentos de participantes"],
+  [-30, "Última chamada (e-mail + redes)"],
+  [-21, "Revisão de inscrições: vagas, lista de espera, pagamentos pendentes"],
+  [-14, "Enviar orientações aos inscritos (PDF de boas-vindas, transfers, o que levar)"],
+  [-7, "Confirmações finais com cada participante"],
+  [7, "E-mail de agradecimento + formulário de feedback"],
+  [30, "Compartilhar fotos e depoimentos; abrir lista de interesse do próximo retiro"],
+];
+
+const somarDias = (iso: string, dias: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10);
+
+/** Fills the marketing calendar from the retreat date (entries already turned into tasks are kept). */
+export function gerarCalendario(d: Diagnostico, dataRetiro: string) {
+  if (!ISO.test(dataRetiro)) throw new Error("Data do retiro inválida");
+  const c = getColetivo(d.id);
+  const dono = c.responsaveis.marketing ?? "";
+  const feitas = c.calendario.entradas.filter((e) => e.tarefa);
+  c.calendario = {
+    dataRetiro,
+    entradas: [...feitas, ...CALENDARIO_PADRAO.filter(([, acao]) => !feitas.some((e) => e.acao === acao))
+      .map(([dias, acao]) => ({ id: novoItemId(), data: somarDias(dataRetiro, dias), acao, responsavel: dono, tarefa: "" }))]
+      .sort((a, b) => a.data.localeCompare(b.data)),
+  };
+  escreverColetivo(d, c);
+}
+
+export function salvarCalendario(d: Diagnostico, entradas: Omit<Entrada, "tarefa">[]) {
+  const c = getColetivo(d.id);
+  const antes = new Map(c.calendario.entradas.map((e) => [e.id, e]));
+  c.calendario.entradas = entradas.filter((e) => e.acao.trim() && ISO.test(e.data))
+    .map((e) => ({ ...e, id: e.id || novoItemId(), acao: e.acao.trim().slice(0, 200), tarefa: antes.get(e.id)?.tarefa ?? "" }))
+    .sort((a, b) => a.data.localeCompare(b.data));
+  escreverColetivo(d, c);
+}
+
+/** Calendar entries → tasks with due dates (they show in Agenda); plus one weekly registration check-in. */
+export function criarTarefasCalendario(d: Diagnostico, quem: string): number {
+  const c = getColetivo(d.id);
+  const projeto = d.projeto;
+  let n = 0;
+  for (const e of c.calendario.entradas) {
+    if (e.tarefa) continue;
+    e.tarefa = createTarefa({ title: `Marketing: ${e.acao}`.slice(0, 200), equipe: d.equipes[0] ?? "", prazo: e.data, responsaveis: e.responsavel ? [e.responsavel] : [], projeto, objetivo: "", recorrencia: "" },
+      quem, { semAviso: true, descricao: `Calendário de marketing do próximo grande retiro (início ${c.calendario.dataRetiro}), diagnóstico **${d.titulo}**.` });
+    n++;
+  }
+  const inicio = c.calendario.dataRetiro && somarDias(c.calendario.dataRetiro, -120);
+  const titulo = "Marketing: revisão semanal de inscrições e divulgação";
+  if (inicio && !getTarefas().some((t) => t.title === titulo && t.status !== "done")) {
+    createTarefa({ title: titulo, equipe: d.equipes[0] ?? "", prazo: inicio > today() ? inicio : today(), responsaveis: c.responsaveis.marketing ? [c.responsaveis.marketing] : [], projeto, objetivo: "", recorrencia: "semanal" },
+      quem, { semAviso: true, descricao: `Check-in semanal de inscrições e marketing até o retiro (${c.calendario.dataRetiro}). Ao concluir, a próxima é criada sozinha.` });
+    n++;
+  }
+  if (n) escreverColetivo(d, c);
+  return n;
+}
+
+export function lancamentosDoPeriodo(d: Diagnostico, p: { de: string; ate: string }): Lancamento[] {
+  return getLancamentos().filter((l) => !l.anulado && (!d.projeto || !l.projeto || l.projeto === d.projeto) && (!p.de || l.data >= p.de) && (!p.ate || l.data <= p.ate));
+}
+
+export function salvarPeriodo(d: Diagnostico, de: string, ate: string) {
+  const c = getColetivo(d.id);
+  c.periodo = { de: ISO.test(de) ? de : "", ate: ISO.test(ate) ? ate : "" };
+  escreverColetivo(d, c);
+}
+
+/** Totals for the finance section: income and expenses by category, and the result. */
+export function resumoFinanceiro(lanc: Lancamento[]) {
+  const por = (tipo: "entrada" | "despesa") => {
+    const m = new Map<string, number>();
+    for (const l of lanc.filter((x) => x.tipo === tipo)) m.set(l.categoria || "—", (m.get(l.categoria || "—") ?? 0) + l.valor);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  };
+  const entradas = por("entrada"), despesas = por("despesa");
+  const soma = (x: [string, number][]) => x.reduce((a, [, v]) => a + v, 0);
+  return { entradas, despesas, totalEntradas: soma(entradas), totalDespesas: soma(despesas), resultado: soma(entradas) - soma(despesas), n: lanc.length };
+}
+
+// ---------------------------------------------------------------- D3: team meetings
+
+/** Lynn's topics for each meeting. */
+export const TEMAS_REUNIAO: Record<string, string[]> = {
+  "1": ["Papéis e responsabilidades", "O que está funcionando bem", "O que está caindo no esquecimento", "Lições do retiro e da dieta",
+    "Desafios de comunicação", "Onde cada um precisa de mais apoio", "Prioridades operacionais imediatas"],
+  "2": ["Papéis e responsabilidades da equipe", "Expectativas de comunicação", "Código de acordos e ética", "Processo de decisão",
+    "Responsáveis e calendário de marketing", "Prioridades operacionais", "Melhorias do espaço e da experiência do convidado", "Necessidades de equipe", "Estrutura operacional"],
+};
+
+/** Schedules meeting #n as an event in the Agenda (Equipe 1). */
+export function agendarReuniao(d: Diagnostico, n: "1" | "2", data: string) {
+  if (!ISO.test(data)) throw new Error("Data inválida");
+  const c = getColetivo(d.id);
+  const titulo = `Reunião #${n} da equipe — ${d.titulo}`;
+  const base = `${data}_${slugify(`reuniao_${n}_${d.id}`)}`;
+  const id = `evt_${base}`;
+  const dir = path.join(vault(), "Eventos");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${base}.md`), noteText({ id, type: "evento", titulo, inicio: data, fim: "", status: "confirmado", equipe: d.equipes[0] ?? "", projeto: d.projeto, updated_at: new Date().toISOString() },
+    `# ${titulo}\n\nPauta: /diagnosticos/${d.id}/reuniao/${n}`), "utf-8");
+  // a new date replaces the previous event of this meeting
+  const antigo = c.reunioes[n]?.evento;
+  if (antigo && antigo !== id) for (const f of fs.readdirSync(dir)) if (f.endsWith(".md") && fs.readFileSync(path.join(dir, f), "utf-8").includes(`id: "${antigo}"`)) fs.unlinkSync(path.join(dir, f));
+  c.reunioes[n] = { ...(c.reunioes[n] ?? { pauta: "", geradaEm: "" }), data, evento: id };
+  escreverColetivo(d, c);
+}
+
+const SISTEMA_PAUTA = `Você prepara a pauta de uma reunião da equipe do Nipëi (Santuário Nipeihu) a partir das respostas do diagnóstico pedido pela Lynn. Responda em português do Brasil, em markdown.
+Para cada tema, em ordem: um título "## Tema", 2 a 5 pontos concretos levantados nas respostas (sem citar quem disse o quê em assuntos sensíveis como tensões e preocupações pessoais), e "Decidir:" com as perguntas que a reunião precisa fechar.
+Termine com "## Pendências" (lacunas e tarefas abertas do diagnóstico) e "## Próximos passos".
+Use só o contexto. Seja objetivo: a reunião tem 2 horas. Responda APENAS com JSON: {"pauta": "markdown"}`;
+
+/** AI agenda from the individual and team answers, open gaps and alerts. */
+export async function gerarPauta(d: Diagnostico, n: "1" | "2"): Promise<string> {
+  const pessoas = participantes(d);
+  const c = getColetivo(d.id);
+  const individuais = pessoas.map((p) => {
+    const r = getRespostas(d.id, p.id);
+    const linhas = secoesIndividuais(d).flatMap((sec) => sec.perguntas.filter((q) => r[q.id]?.texto).map((q) => `- [${sec.titulo}] ${q.texto}: ${r[q.id].texto.slice(0, 700)}`));
+    return linhas.length ? `### ${p.name}\n${linhas.join("\n")}` : "";
+  }).filter(Boolean);
+  const coletivas = secoesColetivas(d).map((sec) => `### ${sec.titulo}\n${sec.perguntas.map((q) => {
+    const r = c.respostas[q.id];
+    return `- ${q.texto}: ${r?.texto ? r.texto.slice(0, 500) : "(sem resposta)"}${r?.falta ? ` | FALTA: ${r.falta}` : ""}`;
+  }).join("\n")}`);
+  const abertas = getTarefas().filter((t) => t.status !== "done" && /^(Diagnóstico ·|Marketing:)/.test(t.title));
+  const contexto = [
+    `Reunião #${n} · ${d.titulo} · data ${c.reunioes[n]?.data || "a definir"}`, `Temas (da Lynn): ${TEMAS_REUNIAO[n].join("; ")}`,
+    "## Respostas individuais", individuais.join("\n\n") || "(ninguém respondeu ainda)",
+    "## Respostas coletivas", ...coletivas,
+    `## Tarefas abertas do diagnóstico (${abertas.length})`, ...abertas.slice(0, 40).map((t) => `- ${t.title}`),
+    `## Alertas de conhecimento abertos: ${getAlertas().filter((a) => a.status === "aberta").length}`,
+  ].join("\n");
+  let pauta = "";
+  try {
+    const { o } = await chamarIA(SISTEMA_PAUTA, [{ type: "text", text: contexto }], 5000, 150_000);
+    pauta = s(o.pauta);
+  } catch { /* fall back to the plain topic list */ }
+  if (!pauta) pauta = TEMAS_REUNIAO[n].map((t) => `## ${t}\n- \nDecidir: `).join("\n\n");
+  const c2 = getColetivo(d.id);
+  c2.reunioes[n] = { ...(c2.reunioes[n] ?? { data: "", evento: "" }), pauta, geradaEm: new Date().toISOString() };
+  escreverColetivo(d, c2);
+  return pauta;
 }

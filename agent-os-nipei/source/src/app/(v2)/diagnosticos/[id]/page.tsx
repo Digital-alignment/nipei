@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Avatar, Progress, Section, Title } from "@/components/v2/ui";
 import { currentUser, getProjetos } from "@/lib/v2/data";
-import { getColetivo, getDiagnostico, participantes, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
-import { definirResponsavelAction } from "../../actions";
+import { TEMAS_REUNIAO, getColetivo, getDiagnostico, participantes, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
+import { definirResponsavelAction, reuniaoAction } from "../../actions";
 import { getT } from "@/lib/v2/i18n";
 
 // Gestão overview of an assessment: who answered how much (the answers themselves are on each person's page).
@@ -59,6 +59,26 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
                     {quem.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                   <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1">{t.definir}</button>
+                </form>
+              </li>
+            );
+          })}
+        </ul>
+      </Section>
+
+      <Section title={t.reunioes}>
+        <ul className="grid gap-4">
+          {(["1", "2"] as const).map((n) => {
+            const r = c.reunioes[n];
+            return (
+              <li key={n} className="grid gap-1.5">
+                <p className="text-sm font-medium">{t.reuniao} #{n}{r?.data ? ` · ${r.data.split("-").reverse().join("/")}` : ""}</p>
+                <p className="text-xs text-neutral-500">{t.temas}: {TEMAS_REUNIAO[n].join(" · ")}</p>
+                <form action={reuniaoAction} className="flex flex-wrap items-center gap-2 text-xs">
+                  <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="n" value={n} />
+                  <input type="date" name="data" defaultValue={r?.data} required className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1" />
+                  <button name="acao" value="agendar" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1">{t.agendar}</button>
+                  <Link href={`/diagnosticos/${d.id}/reuniao/${n}`} className="underline text-neutral-500">{t.pauta} →</Link>
                 </form>
               </li>
             );

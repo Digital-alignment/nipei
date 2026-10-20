@@ -12,6 +12,7 @@ import { decidirProposta, getPropostas, podeDecidir, proporMudancas } from "@/li
 import {
   criarTarefasLacunas, definirResponsavel, enviarAoConhecimento, getColetivo, getDiagnostico, participa, participantes, podeEditarSecao,
   rascunhoColetivoIA, rascunhoIA, salvarColetivo, salvarRespostas, type Resposta,
+  agendarReuniao, criarTarefasCalendario, criarTarefasItens, gerarCalendario, gerarPauta, itensSugeridos, salvarCalendario, salvarItens, salvarPeriodo, type Item,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
@@ -519,5 +520,64 @@ export async function enviarConhecimentoAction(form: FormData) {
   const ok = await secaoEditavel(form);
   if (!ok) return;
   enviarAoConhecimento(ok.d, ok.secao, ok.me.pessoa?.id ?? ok.me.username);
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Diagnóstico (D3): lists that become work
+
+/** Rows posted as "<prefixo>:<i>:<campo>" → objects (row order kept). */
+function linhas(form: FormData, prefixo: string) {
+  const out: Record<string, Record<string, string>> = {};
+  for (const [k, v] of form.entries()) {
+    const m = k.match(new RegExp(`^${prefixo}:(\\d+):(\\w+)$`));
+    if (m) (out[m[1]] ??= {})[m[2]] = String(v);
+  }
+  return Object.keys(out).sort((a, b) => +a - +b).map((k) => out[k]);
+}
+
+export async function salvarItensAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  const pergunta = String(form.get("pergunta"));
+  const pessoas = new Set(getPessoas().map((p) => p.id));
+  if (form.get("acao") === "sugerir") {
+    if (!getColetivo(ok.d.id).itens[pergunta]?.length) salvarItens(ok.d, pergunta, itensSugeridos(ok.d, pergunta));
+  } else {
+    salvarItens(ok.d, pergunta, linhas(form, "i").map((r) => ({
+      id: r.id ?? "", titulo: r.titulo ?? "", prioridade: (["alta", "media", "baixa"].includes(r.prioridade) ? r.prioridade : "media") as Item["prioridade"],
+      custo: Number(r.custo) || 0, requisitos: r.requisitos ?? "", responsavel: pessoas.has(r.responsavel) ? r.responsavel : "",
+    })));
+    if (form.get("acao") === "tarefas") criarTarefasItens(ok.d, pergunta, actorName(ok.me));
+  }
+  revalidatePath("/", "layout");
+}
+
+export async function calendarioAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  const acao = String(form.get("acao"));
+  if (acao === "gerar") gerarCalendario(ok.d, String(form.get("dataRetiro")));
+  else {
+    const pessoas = new Set(getPessoas().map((p) => p.id));
+    salvarCalendario(ok.d, linhas(form, "e").map((r) => ({ id: r.id ?? "", data: r.data ?? "", acao: r.acao ?? "", responsavel: pessoas.has(r.responsavel) ? r.responsavel : "" })));
+    if (acao === "tarefas") criarTarefasCalendario(ok.d, actorName(ok.me));
+  }
+  revalidatePath("/", "layout");
+}
+
+export async function periodoAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  salvarPeriodo(ok.d, String(form.get("de") ?? ""), String(form.get("ate") ?? ""));
+  revalidatePath("/diagnosticos", "layout");
+}
+
+export async function reuniaoAction(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  const n = pick(form.get("n"), ["1", "2"]) as "1" | "2" | "";
+  if (!d || !me.gestao || !n) return;
+  if (form.get("acao") === "pauta") await gerarPauta(d, n);
+  else agendarReuniao(d, n, String(form.get("data")));
   revalidatePath("/", "layout");
 }

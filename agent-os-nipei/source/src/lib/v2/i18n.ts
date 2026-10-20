@@ -101,6 +101,15 @@ const pt = {
   enviarConhecimento: "Enviar respostas ao Conhecimento", enviadoConhecimento: "Enviado ao Conhecimento", tarefaLacuna: "Tarefa",
   rascunhoColetivoAviso: "A IA usa a base confirmada, as notas do vault, as tarefas do projeto e (em finanças) os lançamentos. Não sobrescreve respostas escritas; atualiza o que falta.",
   soResponsavel: "Só a gestão e o responsável desta seção editam.", tarefaConcluida: "tarefa concluída: revise a resposta",
+  itens: "Itens", prioridade: "Prioridade", custoAprox: "Custo aprox. (R$)", requisitos: "O que precisa", sugerirItens: "Começar pela lista da Lynn",
+  criarTarefasItens: "Salvar e criar tarefas", prio_alta: "Alta", prio_media: "Média", prio_baixa: "Baixa", totalEstimado: "Total estimado",
+  calendarioMkt: "Calendário de marketing", dataRetiro: "Data de início do retiro", gerarCalendario: "Gerar calendário",
+  gerarCalendarioAviso: "Cria a contagem regressiva padrão (inscrições, e-mails, redes, early-bird, orientações, feedback). Edite datas, ações e donos antes de criar as tarefas.",
+  acao: "Ação", criarTarefasCalendario: "Salvar e criar tarefas na agenda", periodo: "Período do retiro e da dieta", de: "De", ate: "Até",
+  lancamentosPeriodo: "lançamentos no período", semLancPeriodo: "Nenhum lançamento no período: registre em Finanças para a IA e o relatório usarem os números reais.",
+  resultado: "Resultado", reunioes: "Reuniões da equipe", reuniao: "Reunião", agendar: "Agendar",
+  pauta: "Pauta", gerarPauta: "Gerar pauta com a IA", pautaAviso: "A IA usa as respostas individuais e coletivas, as lacunas e as tarefas abertas do diagnóstico. Assuntos sensíveis não citam quem disse.",
+  semPauta: "Pauta ainda não gerada.", temas: "Temas",
 };
 export type Dict = typeof pt;
 
@@ -201,6 +210,15 @@ const en: Dict = {
   enviarConhecimento: "Send answers to Knowledge", enviadoConhecimento: "Sent to Knowledge", tarefaLacuna: "Task",
   rascunhoColetivoAviso: "The AI uses the confirmed base, vault notes, the project's tasks and (for finances) the ledger. It never overwrites written answers; it updates what is missing.",
   soResponsavel: "Only management and this section's owner edit.", tarefaConcluida: "task done: review the answer",
+  itens: "Items", prioridade: "Priority", custoAprox: "Approx. cost (R$)", requisitos: "What it needs", sugerirItens: "Start from Lynn's list",
+  criarTarefasItens: "Save and create tasks", prio_alta: "High", prio_media: "Medium", prio_baixa: "Low", totalEstimado: "Estimated total",
+  calendarioMkt: "Marketing calendar", dataRetiro: "Retreat start date", gerarCalendario: "Generate calendar",
+  gerarCalendarioAviso: "Creates the standard countdown (registration, e-mails, social, early-bird, orientation, feedback). Edit dates, actions and owners before creating the tasks.",
+  acao: "Action", criarTarefasCalendario: "Save and create tasks in the agenda", periodo: "Retreat and dieta period", de: "From", ate: "To",
+  lancamentosPeriodo: "entries in the period", semLancPeriodo: "No entries in the period: record them in Finances so the AI and the report use real numbers.",
+  resultado: "Result", reunioes: "Team meetings", reuniao: "Meeting", agendar: "Schedule",
+  pauta: "Agenda", gerarPauta: "Generate agenda with AI", pautaAviso: "The AI uses individual and team answers, gaps and open tasks of the assessment. Sensitive topics don't name who said what.",
+  semPauta: "No agenda yet.", temas: "Topics",
 };
 
 export async function getLang(): Promise<Lang> {

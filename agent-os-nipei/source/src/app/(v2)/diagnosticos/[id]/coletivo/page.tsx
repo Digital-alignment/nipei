@@ -8,6 +8,7 @@ import { currentUser, getPessoas, getTarefas } from "@/lib/v2/data";
 import { PALAVRAS_MINIMAS, getColetivo, getDiagnostico, participa, podeEditarSecao, secoesColetivas } from "@/lib/v2/diagnostico";
 import { getT } from "@/lib/v2/i18n";
 import { enviarConhecimentoAction, rascunhoColetivoAction, salvarColetivoAction, tarefasLacunasAction } from "../../../actions";
+import { Calendario, Financas, Itens } from "./listas";
 
 const btn = "rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm";
 const primario = "rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium";
@@ -30,6 +31,8 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
   const en = lang === "en";
   const feitas = (sid: string) => secoes.find((x) => x.id === sid)!.perguntas.filter((qq) => c.respostas[qq.id]?.status === "respondida").length;
   const lacunas = sec.perguntas.filter((qq) => c.respostas[qq.id]?.falta && c.respostas[qq.id]?.status !== "respondida" && !tarefas.some((x) => x.id === c.respostas[qq.id].tarefa && x.status !== "done")).length;
+  const comEquipe = pessoas.filter((p) => p.equipes.length);
+  const painel = { d, c, t, pode, pessoas: comEquipe, tarefas };
   const hidden = <><input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={sec.id} /></>;
 
   return (
@@ -61,6 +64,9 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
           {c.enviadas[sec.id] && <Link href={`/conhecimento/${c.enviadas[sec.id]}`} className="text-xs underline text-neutral-500 basis-full">{t.enviadoConhecimento} →</Link>}
         </div>
       )}
+
+      {sec.id === "marketing" && <Calendario {...painel} />}
+      {sec.id === "financas" && <Financas {...painel} />}
 
       <form action={salvarColetivoAction} className="grid gap-6">
         {hidden}
@@ -103,6 +109,17 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
           </div>
         )}
       </form>
+
+      {sec.id === "espaco" && (
+        <div className="grid gap-4 mt-8">
+          {sec.perguntas.map((qq) => (
+            <div key={qq.id}>
+              <p className="text-sm font-medium mb-2">{en ? qq.texto_en : qq.texto}</p>
+              <Itens {...painel} q={qq} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
