@@ -146,6 +146,12 @@ const pt = {
   tarefasSugeridas: "Tarefas sem responsável que combinam", atribuirA: "Atribuir a", atribuirTarefa: "Atribuir tarefa", proximasTarefas: "Próximas tarefas",
   concluidasRecentes: "Concluídas", contato: "Contato", privadoLbl: "Privado", maisCarga: "Mais carga", ordenar: "Ordenar",
   funcaoLbl: "Função", areaLbl: "Área", dispLbl: "Disponibilidade",
+  notificar: "Notificar", notifTipos: { livre: "Mensagem livre", resumo: "Resumo de tarefas", alerta: "Alerta / lembrete", cadastro: "Link de cadastro", acesso: "Link de acesso" },
+  pedidoIA: "O que a mensagem deve dizer? (a IA escreve no idioma da pessoa)", gerarMensagem: "Gerar com IA", montarTexto: "Montar mensagem",
+  mensagem: "Mensagem", previa: "Como vai chegar", enviarWhatsNipei: "Enviar pelo WhatsApp do Nipëi", confirmarEnvio: "Enviar agora para",
+  enviada: "Mensagem enviada", semWhatsNotif: "Esta pessoa não tem WhatsApp na ficha.", avisoNaoVerificado: "O número ainda não foi verificado: pode não chegar.",
+  avisoDesligou: "A pessoa desligou os avisos automáticos; esta é uma mensagem manual da gestão.", notificacoesEnviadas: "Notificações enviadas",
+  limitesNotif: "Até 3 mensagens por hora para a mesma pessoa e 30 por dia por remetente (protege o número).", ou: "ou",
 };
 export type Dict = typeof pt;
 
@@ -291,6 +297,12 @@ const en: Dict = {
   tarefasSugeridas: "Owner-less tasks that fit", atribuirA: "Assign to", atribuirTarefa: "Assign task", proximasTarefas: "Next tasks",
   concluidasRecentes: "Done", contato: "Contact", privadoLbl: "Private", maisCarga: "Most load", ordenar: "Sort",
   funcaoLbl: "Role", areaLbl: "Area", dispLbl: "Availability",
+  notificar: "Notify", notifTipos: { livre: "Free message", resumo: "Task summary", alerta: "Alert / reminder", cadastro: "Registration link", acesso: "Login link" },
+  pedidoIA: "What should the message say? (the AI writes in the person's language)", gerarMensagem: "Generate with AI", montarTexto: "Build message",
+  mensagem: "Message", previa: "How it will arrive", enviarWhatsNipei: "Send from the Nipëi WhatsApp", confirmarEnvio: "Send now to",
+  enviada: "Message sent", semWhatsNotif: "This person has no WhatsApp in the profile.", avisoNaoVerificado: "The number isn't verified yet: it may not arrive.",
+  avisoDesligou: "The person turned off automatic notices; this is a manual message from management.", notificacoesEnviadas: "Notifications sent",
+  limitesNotif: "Up to 3 messages per hour to the same person and 30 per day per sender (protects the number).", ou: "or",
 };
 
 export async function getLang(): Promise<Lang> {

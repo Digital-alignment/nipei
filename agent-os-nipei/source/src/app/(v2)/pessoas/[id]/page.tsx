@@ -7,6 +7,8 @@ import Abas from "@/components/v2/Abas";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Md from "@/components/v2/Md";
 import PrazoRapido from "@/components/v2/PrazoRapido";
+import Notificar from "@/components/v2/Notificar";
+import { historico } from "@/lib/v2/notificar";
 import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { getColetivo, getDiagnosticos, getRespostas, participa, progresso } from "@/lib/v2/diagnostico";
@@ -15,7 +17,7 @@ import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getEstudo, resumoPessoas } from "@/lib/v2/pessoasInfo";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { addToEquipeAction, atribuirAction, estudoAction, setAvisosPessoaAction } from "../../actions";
+import { addToEquipeAction, atribuirAction, enviarLinkAction, estudoAction, setAvisosPessoaAction } from "../../actions";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -65,11 +67,13 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const primeiro = p.name.split(" ")[0];
   const links = gerir ? [
-    { titulo: t.linkCadastro, url: `${origin}/cadastro?token=${signToken("cadastro", p.id, CADASTRO_TTL)}`, msg: t.msgCadastro },
-    ...(temAcesso ? [{ titulo: t.linkAcesso, url: `${origin}/entrar?token=${signToken("login-link", p.id, LOGIN_LINK_TTL)}`, msg: t.msgAcesso }] : []),
+    { tipo: "cadastro", titulo: t.linkCadastro, url: `${origin}/cadastro?token=${signToken("cadastro", p.id, CADASTRO_TTL)}`, msg: t.msgCadastro },
+    ...(temAcesso ? [{ tipo: "acesso", titulo: t.linkAcesso, url: `${origin}/entrar?token=${signToken("login-link", p.id, LOGIN_LINK_TTL)}`, msg: t.msgAcesso }] : []),
   ] : [];
   const podeAdicionar = equipes.filter((e) => !p.equipes.includes(e.id) && can.gerirEquipe(me, e.id));
   const part = n.participacao;
+  const podeNotificar = me.gestao || can.gerirPessoa(me, p);
+  const enviados = podeNotificar ? historico(p.id) : [];
   const semDono = todas.filter((x) => x.status !== "done" && !x.responsaveis.length);
 
   const Num = ({ v, label, alerta }: { v: string | number; label: string; alerta?: boolean }) => (
@@ -225,13 +229,33 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
         <div key={l.titulo} className={CARTAO}>
           <p className={ROTULO}>{l.titulo}</p>
           {p.whatsapp ? (
-            <a href={`https://wa.me/${digits(p.whatsapp)}?text=${encodeURIComponent(`${l.msg.replace("{nome}", primeiro)}\n${l.url}`)}`} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-green-600 text-white px-3 py-1.5 text-sm font-medium mb-2"><MessageCircle size={14} />{t.enviarWhats}</a>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <form action={enviarLinkAction}>
+                <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="tipo" value={l.tipo} />
+                <BotaoEnviar enviando="…" className="inline-flex items-center gap-2 rounded-lg bg-green-600 text-white px-3 py-1.5 text-sm font-medium">{t.enviarWhatsNipei}</BotaoEnviar>
+              </form>
+              <span className="text-xs text-neutral-400">{t.ou}</span>
+              <a href={`https://wa.me/${digits(p.whatsapp)}?text=${encodeURIComponent(`${l.msg.replace("{nome}", primeiro)}\n${l.url}`)}`} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm underline"><MessageCircle size={14} />{t.enviarWhats}</a>
+            </div>
           ) : <p className="text-xs text-neutral-500 mb-2">{t.semContato}</p>}
           <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 px-2 py-1.5 text-xs font-mono" />
         </div>
       ))}
       {gerir && !temAcesso && <p className="text-xs text-neutral-500">{t.equipeSemAcesso}</p>}
+      {enviados.length > 0 && (
+        <div className={CARTAO}>
+          <p className={ROTULO}>{t.notificacoesEnviadas}</p>
+          <ul className="grid gap-2">
+            {enviados.map((e, i) => (
+              <li key={i} className="text-sm">
+                <p className="text-xs text-neutral-500">{fmtDate(diaLocal(e.em), lang)} {new Date(e.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} · {e.por} · {t.notifTipos[e.tipo]}</p>
+                <p className="line-clamp-2 whitespace-pre-wrap">{e.texto}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {proprio && (
         <div className={CARTAO}>
           <p className={ROTULO}>{t.avisosWhats}</p>
@@ -271,6 +295,13 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
           <p className="text-sm text-neutral-500 truncate">{[p.apelido, p.nativeName, p.funcao].filter(Boolean).join(" · ") || p.nipeiId}</p>
         </div>
         <div className="flex gap-1.5">
+          {podeNotificar && (
+            <Notificar pessoaId={p.id} nome={primeiro} remetente={(me.pessoa?.name ?? me.username).split(/[\s(]/)[0]} temWhats={!!p.whatsapp}
+              verificado={p.whatsappVerificado} desligou={!p.avisosWhatsapp}
+              labels={{ notificar: t.notificar, tipos: t.notifTipos, pedidoIA: t.pedidoIA, gerar: t.gerarMensagem, montar: t.montarTexto, mensagem: t.mensagem, previa: t.previa,
+                enviar: t.enviarWhatsNipei, confirmar: t.confirmarEnvio, cancelar: t.cancelar, enviada: t.enviada, semWhats: t.semWhatsNotif,
+                naoVerificado: t.avisoNaoVerificado, desligou: t.avisoDesligou, limites: t.limitesNotif }} />
+          )}
           {p.whatsapp && <a href={`https://wa.me/${digits(p.whatsapp)}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center hover:text-green-600"><MessageCircle size={16} /></a>}
           {proprio && p.email && <a href={`mailto:${p.email}`} aria-label={t.email} className="w-9 h-9 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center"><Mail size={16} /></a>}
           {proprio && <Link href={`/pessoas/${p.id}/editar`} aria-label={t.editarPerfil} className="w-9 h-9 rounded-full border border-neutral-300 dark:border-neutral-700 flex items-center justify-center"><Pencil size={15} /></Link>}
@@ -293,7 +324,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
         { id: "resumo", label: t.resumoLbl, count: 0, conteudo: resumo },
         { id: "tarefas", label: t.tarefasLbl, count: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
         { id: "perfil", label: t.perfilLbl, count: 0, conteudo: perfil },
-        ...(gerir || proprio ? [{ id: "gestao", label: `🔒 ${t.gestaoLbl}`, count: 0, conteudo: gestao }] : []),
+        ...(gerir || proprio || enviados.length ? [{ id: "gestao", label: `🔒 ${t.gestaoLbl}`, count: 0, conteudo: gestao }] : []),
       ]} />
     </>
   );

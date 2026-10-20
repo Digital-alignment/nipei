@@ -736,3 +736,52 @@ export async function estudoAction(form: FormData) {
   await tentar(async () => { contarUso(me.pessoa?.id ?? me.username); await gerarEstudo(pessoa); });
   revalidatePath(`/pessoas/${pessoa}`);
 }
+
+// ---------------------------------------------------------------- Pessoas: Notificar (WhatsApp from the Nipëi number)
+
+async function podeNotificar(pessoaId: string) {
+  const me = await requireUser();
+  const p = getPessoas().find((x) => x.id === pessoaId);
+  if (!p || !(me.gestao || can.gerirPessoa(me, p))) throw new Error("Sem permissão");
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  return { me, p, origin: process.env.NEXT_PUBLIC_APP_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}` };
+}
+
+/** Draft for the panel: ready-made for resumo/links, AI for livre/alerta (always edited before sending). */
+export async function notificarRascunhoAction(pessoaId: string, tipo: string, pedido: string): Promise<{ texto?: string; error?: string }> {
+  try {
+    const { me, p, origin } = await podeNotificar(pessoaId);
+    const n = await import("@/lib/v2/notificar");
+    if (tipo === "resumo") return { texto: n.resumoTarefas(p, origin) };
+    if (tipo === "cadastro" || tipo === "acesso") return { texto: n.textoLink(p, tipo, origin) };
+    if (!pedido.trim()) return { error: "Escreva o que a IA deve dizer" };
+    contarUso(me.pessoa?.id ?? me.username);
+    return { texto: await n.rascunhoIA(p, pedido.slice(0, 600), (n.TIPOS as readonly string[]).includes(tipo) ? tipo as never : "livre", actorName(me)) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function notificarEnviarAction(pessoaId: string, tipo: string, texto: string): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const { me, p } = await podeNotificar(pessoaId);
+    const n = await import("@/lib/v2/notificar");
+    await n.enviar(p, texto, (n.TIPOS as readonly string[]).includes(tipo) ? tipo as never : "livre", actorName(me));
+    revalidatePath(`/pessoas/${p.id}`);
+    return { ok: true };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+/** Gestão tab: send the cadastro / login link from the Nipëi number in one tap. */
+export async function enviarLinkAction(form: FormData) {
+  const tipo = form.get("tipo") === "acesso" ? "acesso" : "cadastro";
+  await tentar(async () => {
+    const { me, p, origin } = await podeNotificar(String(form.get("pessoa")));
+    const n = await import("@/lib/v2/notificar");
+    await n.enviar(p, n.textoLink(p, tipo, origin), tipo, actorName(me));
+  });
+  revalidatePath("/pessoas", "layout");
+}
