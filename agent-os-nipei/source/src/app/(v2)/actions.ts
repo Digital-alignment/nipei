@@ -7,6 +7,7 @@ import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
+import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
@@ -29,6 +30,8 @@ const pick = (v: FormDataEntryValue | null, allowed: string[]) => {
   const s = String(v ?? "");
   return allowed.includes(s) ? s : "";
 };
+const recorrencia = (form: FormData) => pick(form.get("recorrencia"), [...RECORRENCIAS]);
+
 const safeBack = (v: FormDataEntryValue | null) => {
   const s = String(v ?? "");
   return s.startsWith("/") && !s.startsWith("//") ? s : "/hoje";
@@ -54,6 +57,7 @@ export async function createTarefaAction(form: FormData) {
   createTarefa({
     title,
     equipe,
+    recorrencia: recorrencia(form),
     projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
     objetivo: pick(form.get("objetivo"), getObjetivos().map((o) => o.id)),
     prazo: /^\d{4}-\d{2}-\d{2}$/.test(prazo) ? prazo : "",
@@ -109,6 +113,7 @@ export async function updateTarefaAction(form: FormData) {
     prazo: isDate(form.get("prazo")),
     responsaveis: form.getAll("responsaveis").map(String).filter((id) => pessoas.includes(id)),
     status: ["todo", "doing", "done"].includes(status) ? status : t.status,
+    recorrencia: form.has("recorrencia") ? recorrencia(form) : t.recorrencia,
   }, actorName(me));
   revalidatePath("/", "layout");
   redirect(safeBack(form.get("back")));

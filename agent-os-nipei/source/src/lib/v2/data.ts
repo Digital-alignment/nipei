@@ -27,7 +27,7 @@ export type Pessoa = {
 export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
   equipe: string; area: string; projeto: string; objetivo: string; responsaveis: string[]; responsible: string;
-  checklist: { feitos: number; total: number }; anexos: number;
+  checklist: { feitos: number; total: number }; anexos: number; recorrencia: string;
 };
 
 const vault = () => {
@@ -139,6 +139,7 @@ export function getTarefas(): Tarefa[] {
       responsible: s(fm.responsible),
       checklist: { feitos: itens.filter((i) => i[3] !== " ").length, total: itens.length },
       anexos: Array.isArray(fm.anexos) ? fm.anexos.length : 0,
+      recorrencia: s(fm.recorrencia),
     };
   });
 }
@@ -236,12 +237,13 @@ export function setTarefaStatus(id: string, status: Status, actor: string) {
   writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW[status]; });
 }
 
-export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string }, actor: string) {
+export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string }, actor: string) {
   const projeto = getProjetos().find((p) => p.id === input.projeto);
   createTarefaNote(vault(), {
     title: input.title, prazo: input.prazo, project: projeto?.nome ?? "Geral",
     responsible: input.responsaveis.map((r) => getPessoas().find((p) => p.id === r)?.name ?? r).join(", "),
     equipe: input.equipe, projeto: input.projeto, objetivo: input.objetivo, responsaveis: input.responsaveis,
+    ...(input.recorrencia ? { recorrencia: input.recorrencia } : {}),
   }, actor);
 }
 
@@ -363,7 +365,7 @@ export function createAcervo(input: Omit<AcervoItem, "id">, por: string) {
 
 // ---------------------------------------------------------------- edits (tarefa, evento, objetivo)
 
-export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status }, actor: string) {
+export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status; recorrencia: string }, actor: string) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");
   const pessoas = getPessoas();
@@ -374,7 +376,7 @@ export function updateTarefa(id: string, input: { title: string; equipe: string;
     if (normalizeDueDate(String(d.fm.prazo ?? "")) !== input.prazo) d.fm.prazo = input.prazo;
     Object.assign(d.fm, {
       title: input.title, equipe: input.equipe, area: input.area, projeto: input.projeto, objetivo: input.objetivo,
-      responsaveis: input.responsaveis,
+      responsaveis: input.responsaveis, recorrencia: input.recorrencia,
       // keep the v1 free-text owner in sync so the old kanban shows the same people
       responsible: input.responsaveis.map((r) => pessoas.find((p) => p.id === r)?.name ?? r).join(", "),
     });

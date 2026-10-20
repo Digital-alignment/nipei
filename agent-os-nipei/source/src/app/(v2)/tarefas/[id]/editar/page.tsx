@@ -59,6 +59,15 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
             <select name="objetivo" defaultValue={tarefa.objetivo} className={field}><option value="">{t.nenhum}</option>{objetivos.map((o) => <option key={o.id} value={o.id}>{o.ano} · {o.titulo}</option>)}</select>
           </label>
         </div>
+        <div className="grid grid-cols-2 gap-3 items-end">
+          <label className="grid gap-1 text-sm">{t.repetir}
+            <select name="recorrencia" defaultValue={tarefa.recorrencia} className={field}>
+              <option value="">{t.naoRepete}</option><option value="semanal">{t.semanal}</option>
+              <option value="quinzenal">{t.quinzenal}</option><option value="mensal">{t.mensal}</option>
+            </select>
+          </label>
+          <p className="text-[11px] text-neutral-500 pb-1">{t.repeteAviso}</p>
+        </div>
         <fieldset className="grid gap-1 text-sm">
           <legend className="mb-1">{t.responsaveis}</legend>
           <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">

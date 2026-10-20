@@ -54,6 +54,8 @@ const pt = {
   fazerAviso: "O Hermes trabalha em segundo plano (alguns minutos), só com pesquisa na web. Ele não envia mensagens nem muda a tarefa: entrega um documento nos anexos e avisa você.",
   hermesTrabalhando: "O Hermes está trabalhando nisso", pedidoPor: "pedido por", prontosIA: "Prontos do Hermes", verEntrega: "ver entrega",
   falhou: "não conseguiu concluir",
+  repetir: "Repetir", naoRepete: "Não repete", semanal: "Toda semana", quinzenal: "A cada 15 dias", mensal: "Todo mês",
+  repeteAviso: "Ao concluir, a próxima é criada sozinha com o prazo seguinte.",
 };
 type Dict = typeof pt;
 
@@ -107,6 +109,8 @@ const en: Dict = {
   fazerAviso: "Hermes works in the background (a few minutes), with web search only. It doesn't send messages or change the task: it delivers a document in the attachments and lets you know.",
   hermesTrabalhando: "Hermes is working on this", pedidoPor: "asked by", prontosIA: "Ready from Hermes", verEntrega: "see delivery",
   falhou: "could not finish",
+  repetir: "Repeat", naoRepete: "Doesn't repeat", semanal: "Every week", quinzenal: "Every 15 days", mensal: "Every month",
+  repeteAviso: "When done, the next one is created automatically with the next due date.",
 };
 
 export async function getLang(): Promise<Lang> {

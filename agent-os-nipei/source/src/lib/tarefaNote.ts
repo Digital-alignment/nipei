@@ -157,7 +157,7 @@ export function agora(d = new Date()) {
 // Labels avoid "key:" so no legacy regex (status:, prazo:, squad:…) ever matches activity text.
 const LABELS: Record<string, string> = {
   title: "Título", status: "Status", priority: "Prioridade", prazo: "Prazo", equipe: "Equipe", area: "Área",
-  projeto: "Projeto", objetivo: "Objetivo", responsaveis: "Responsáveis", agents: "Agentes",
+  projeto: "Projeto", objetivo: "Objetivo", responsaveis: "Responsáveis", agents: "Agentes", recorrencia: "Repetição",
 };
 /** id → display name for people, teams, projects and goals, so the log reads "Bruna", not "bruna_retiros". */
 export function nomesDoVault(vaultRoot: string): Record<string, string> {
@@ -239,6 +239,13 @@ export function writeTarefa(vaultRoot: string, relFile: string, actor: string, m
   const doc = parseTarefa(fs.readFileSync(abs, "utf-8"));
   mutate(doc);
   const linhas = [...diffLines(antes, doc, nomesDoVault(vaultRoot)), ...extra];
+  // A repeating task just marked done spawns its next occurrence — here, so every writer gets it.
+  // `proxima` guards against a second copy when someone reopens and closes the same task again.
+  if (!concluida(antes.fm.status) && concluida(doc.fm.status) && !doc.fm.proxima && RECORRENCIAS.includes(String(doc.fm.recorrencia ?? "") as Recorrencia)) {
+    const prox = criarProxima(vaultRoot, doc, actor);
+    doc.fm.proxima = prox.id;
+    linhas.push(`repetição criada: ${prox.id} (prazo ${prox.prazo})`);
+  }
   if (!linhas.length) return doc;
   doc.fm.updated_at = new Date().toISOString();
   doc.fm.updated_by = actor;
@@ -247,6 +254,41 @@ export function writeTarefa(vaultRoot: string, relFile: string, actor: string, m
   fs.writeFileSync(abs, renderTarefa(doc), "utf-8");
   requestSync(vaultRoot);
   return doc;
+}
+
+// ---------------------------------------------------------------- recurring tasks
+
+export const RECORRENCIAS = ["semanal", "quinzenal", "mensal"] as const;
+export type Recorrencia = (typeof RECORRENCIAS)[number];
+/** Done, not archived: archiving a repeating task stops the series. */
+const concluida = (v: unknown) => /conclu|done|feito/i.test(String(v ?? ""));
+
+export function proximoPrazo(prazo: string, rec: Recorrencia, hoje = new Date()): string {
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(prazo) ? new Date(prazo + "T12:00:00Z") : hoje;
+  const d = new Date(base);
+  if (rec === "mensal") {
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    if (d.getUTCDate() !== base.getUTCDate()) d.setUTCDate(0); // 31 Jan → 28/29 Feb, not 3 Mar
+  }
+  else d.setUTCDate(d.getUTCDate() + (rec === "semanal" ? 7 : 14));
+  return d.toISOString().slice(0, 10);
+}
+
+function criarProxima(vaultRoot: string, doc: TarefaDoc, actor: string) {
+  const fm = doc.fm;
+  const rec = String(fm.recorrencia) as Recorrencia;
+  const prazo = proximoPrazo(String(fm.prazo ?? ""), rec);
+  const copiar = ["priority", "project", "responsible", "equipe", "area", "projeto", "objetivo", "responsaveis", "squad", "agents"];
+  const { id } = createTarefaNote(vaultRoot, {
+    title: String(fm.title ?? "Tarefa"),
+    ...Object.fromEntries(copiar.filter((k) => k in fm).map((k) => [k, fm[k]])),
+    prazo, recorrencia: rec, recorrencia_de: String(fm.recorrencia_de ?? fm.id ?? ""),
+  }, actor, {
+    descricao: doc.descricao,
+    checklist: doc.checklist.map((c) => ({ ...c, feito: false })),
+    origem: `Repetição ${rec} de ${String(fm.id ?? "")}.`,
+  });
+  return { id, prazo };
 }
 
 /** Next sequential id (task_N) and a file name for it. */

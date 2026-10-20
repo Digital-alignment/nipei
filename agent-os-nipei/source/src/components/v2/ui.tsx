@@ -83,6 +83,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me }: { t: Tarefa } &
           {who && <span>{who}</span>}
           {t.checklist.total > 0 && <span>☑ {t.checklist.feitos}/{t.checklist.total}</span>}
           {t.anexos > 0 && <span>📎 {t.anexos}</span>}
+          {t.recorrencia && <span title={t.recorrencia}>🔁</span>}
         </p>
       </div>
     </li>

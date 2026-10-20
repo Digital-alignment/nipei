@@ -14,11 +14,15 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,
+  themeColor: "#166534",
 };
 
 export const metadata: Metadata = {
-  title: "Nipei OS — Mission Control",
-  description: "Your command center for Claude, OpenClaw, Hermes",
+  title: "Nipëi",
+  description: "Tarefas, agenda e equipes do Santuário Nipeihu",
+  // Installable app (see app/manifest.ts); iPhone reads the apple-* tags instead of the manifest.
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "Nipëi", statusBarStyle: "default" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

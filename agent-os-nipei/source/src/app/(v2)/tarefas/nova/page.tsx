@@ -36,6 +36,15 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
             <input type="date" name="prazo" className={field} />
           </label>
         </div>
+        <div className="grid grid-cols-2 gap-3 items-end">
+          <label className="grid gap-1 text-sm">{t.repetir}
+            <select name="recorrencia" defaultValue={""} className={field}>
+              <option value="">{t.naoRepete}</option><option value="semanal">{t.semanal}</option>
+              <option value="quinzenal">{t.quinzenal}</option><option value="mensal">{t.mensal}</option>
+            </select>
+          </label>
+          <p className="text-[11px] text-neutral-500 pb-1">{t.repeteAviso}</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1 text-sm">{t.projeto}
             <select name="projeto" defaultValue={q.projeto ?? ""} className={field}>

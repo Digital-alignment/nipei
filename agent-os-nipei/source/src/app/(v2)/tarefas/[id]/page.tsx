@@ -76,6 +76,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
               <button className={`rounded-full px-2.5 py-0.5 text-xs border ${tarefa.status === s ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white" : "border-neutral-300 dark:border-neutral-700"}`}>{label}</button>
             </form>
           )) : <Chip on>{STATUS.find(([s]) => s === tarefa.status)?.[1]}</Chip>}
+          {tarefa.recorrencia && <span className="text-xs text-neutral-500 ml-1">🔁 {t[tarefa.recorrencia as "semanal" | "quinzenal" | "mensal"] ?? tarefa.recorrencia}</span>}
           {tarefa.prazo && <span className={`text-xs ml-1 ${late ? "text-red-600 dark:text-red-400 font-medium" : "text-neutral-500"}`}>📅 {fmtDate(tarefa.prazo, lang)}</span>}
         </div>
         <div className="flex flex-wrap gap-1.5 mt-2">
