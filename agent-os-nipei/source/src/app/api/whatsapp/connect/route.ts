@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const EVOLUTION_URL = process.env.EVOLUTION_API_URL || "https://evolution.digital-alignment.com";
-const EVOLUTION_KEY = process.env.EVOLUTION_API_KEY || "3f91c0493c3f10458d59f094d4218d88d4a755a5e777bb846d44531cb65b35b4";
-const INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME || "nipei-santuario";
+const EVOLUTION_URL = process.env.EVOLUTION_API_URL?.trim().replace(/\/+$/, "");
+const EVOLUTION_KEY = process.env.EVOLUTION_API_KEY?.trim() ?? "";
+const INSTANCE_NAME = process.env.EVOLUTION_INSTANCE_NAME?.trim();
 
 export async function GET(req: Request) {
+  if (!EVOLUTION_URL || !EVOLUTION_KEY || !INSTANCE_NAME) {
+    return NextResponse.json(
+      { success: false, error: "Evolution API não configurada no servidor (EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE_NAME)." },
+      { status: 500 }
+    );
+  }
   try {
     const url = new URL(req.url);
     const phoneNumber = url.searchParams.get("number");

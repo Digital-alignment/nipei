@@ -6,13 +6,14 @@ import { gmailSend } from "@/lib/outreachBackends";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Default Evolution API config from env
-const DEFAULT_EVOLUTION_URL =
-  process.env.EVOLUTION_API_URL || "https://evolution.digital-alignment.com";
-const DEFAULT_EVOLUTION_KEY =
-  process.env.EVOLUTION_API_KEY || "3f91c0493c3f10458d59f094d4218d88d4a755a5e777bb846d44531cb65b35b4";
-const DEFAULT_EVOLUTION_INSTANCE =
-  process.env.EVOLUTION_INSTANCE_NAME || "nipei-santuario";
+// Evolution API config: server env only, never from the request (SSRF / key exfiltration).
+function evolutionConfig(): { url: string; key: string; instance: string } | null {
+  const url = process.env.EVOLUTION_API_URL?.trim().replace(/\/+$/, "");
+  const key = process.env.EVOLUTION_API_KEY?.trim();
+  const instance = process.env.EVOLUTION_INSTANCE_NAME?.trim();
+  return url && key && instance ? { url, key, instance } : null;
+}
+const EVOLUTION_MISSING = "Evolution API não configurada no servidor (EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE_NAME).";
 
 export interface DispatchRequestBody {
   taskId: string;
@@ -26,10 +27,6 @@ export interface DispatchRequestBody {
   deliverableId?: string;
   agentId?: string;
   simulate?: boolean;
-  customEvolutionUrl?: string;
-  customEvolutionKey?: string;
-  customEvolutionInstance?: string;
-  customSmtpFrom?: string;
 }
 
 // Clean and normalize Brazilian & International phone numbers for WhatsApp
@@ -53,9 +50,17 @@ export async function GET(req: NextRequest) {
 
     // 1. Check WhatsApp connection health
     if (checkTarget === "whatsapp") {
-      const evoUrl = searchParams.get("evoUrl") || DEFAULT_EVOLUTION_URL;
-      const evoKey = searchParams.get("evoKey") || DEFAULT_EVOLUTION_KEY;
-      const evoInstance = searchParams.get("evoInstance") || DEFAULT_EVOLUTION_INSTANCE;
+      const evo = evolutionConfig();
+      if (!evo) {
+        return NextResponse.json({
+          success: true,
+          channel: "whatsapp",
+          connected: false,
+          state: "not_configured",
+          error: EVOLUTION_MISSING,
+        });
+      }
+      const { url: evoUrl, key: evoKey, instance: evoInstance } = evo;
 
       try {
         const stateRes = await fetch(`${evoUrl}/instance/connectionState/${evoInstance}`, {
@@ -72,7 +77,6 @@ export async function GET(req: NextRequest) {
             connected: state === "open",
             state,
             instance: evoInstance,
-            serverUrl: evoUrl,
           });
         } else {
           return NextResponse.json({
@@ -81,7 +85,6 @@ export async function GET(req: NextRequest) {
             connected: false,
             state: "disconnected_or_not_found",
             instance: evoInstance,
-            serverUrl: evoUrl,
             error: `Evolution API respondeu com status ${stateRes.status}`,
           });
         }
@@ -92,7 +95,6 @@ export async function GET(req: NextRequest) {
           connected: false,
           state: "offline",
           instance: evoInstance,
-          serverUrl: evoUrl,
           error: err.message || "Não foi possível conectar ao servidor da Evolution API",
         });
       }
@@ -149,10 +151,11 @@ export async function executeDispatchCommunication(payload: DispatchRequestBody)
     if (payload.simulate) {
       status = "simulated";
       externalId = `sim-wa-${Date.now()}`;
+    } else if (!evolutionConfig()) {
+      status = "failed";
+      errorMessage = EVOLUTION_MISSING;
     } else {
-      const evoUrl = payload.customEvolutionUrl?.trim() || DEFAULT_EVOLUTION_URL;
-      const evoKey = payload.customEvolutionKey?.trim() || DEFAULT_EVOLUTION_KEY;
-      const evoInstance = payload.customEvolutionInstance?.trim() || DEFAULT_EVOLUTION_INSTANCE;
+      const { url: evoUrl, key: evoKey, instance: evoInstance } = evolutionConfig()!;
 
       try {
         // Send text message payload compatible with Evolution API v1 & v2

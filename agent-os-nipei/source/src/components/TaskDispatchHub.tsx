@@ -10,9 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
-  Sliders,
   ExternalLink,
-  ShieldCheck,
   Copy,
   Check,
   Clock,
@@ -75,11 +73,6 @@ export default function TaskDispatchHub({
     state: "desconhecido",
   });
 
-  // Settings / Custom Credentials toggle
-  const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [customEvoUrl, setCustomEvoUrl] = useState<string>("");
-  const [customEvoKey, setCustomEvoKey] = useState<string>("");
-  const [customEvoInstance, setCustomEvoInstance] = useState<string>("");
 
   // Load existing communications and connection status on mount
   useEffect(() => {
@@ -247,9 +240,6 @@ export default function TaskDispatchHub({
           deliverableId: selectedDeliverableId || undefined,
           agentId,
           simulate: isSimulated,
-          customEvolutionUrl: customEvoUrl.trim() || undefined,
-          customEvolutionKey: customEvoKey.trim() || undefined,
-          customEvolutionInstance: customEvoInstance.trim() || undefined,
         }),
       });
 
@@ -314,69 +304,7 @@ export default function TaskDispatchHub({
           </div>
         </div>
 
-        {/* Settings Toggle */}
-        <button
-          onClick={() => setShowSettings((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition border ${
-            showSettings
-              ? "bg-[#183818] border-[#22c55e] text-[#4ade80]"
-              : "bg-[#081208] border-[#142414] text-zinc-400 hover:text-white"
-          }`}
-        >
-          <Sliders size={13} />
-          <span>Configurar Conexões</span>
-        </button>
       </div>
-
-      {/* 2. Connection Settings Drawer (Expandable) */}
-      {showSettings && (
-        <div className="p-4 rounded-xl bg-[#081208] border border-[#1e381e] space-y-3">
-          <div className="flex items-center justify-between">
-            <h5 className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5 uppercase">
-              <ShieldCheck size={14} className="text-[#22c55e]" /> Gestão de Conexões & Credenciais
-            </h5>
-            <span className="text-[10px] font-mono text-zinc-500">
-              Instância padrão: <code className="text-emerald-300">nipei-santuario</code>
-            </span>
-          </div>
-          <p className="text-xs text-zinc-400">
-            Ajuste a URL e API Key da Evolution API ou defina parâmetros customizados de envio. Se os campos ficarem vazios, as credenciais padrão do servidor serão utilizadas.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            <div className="space-y-1">
-              <label className="block text-[10px] font-mono text-zinc-400">URL Evolution API</label>
-              <input
-                type="text"
-                placeholder="https://evolution.digital-alignment.com"
-                value={customEvoUrl}
-                onChange={(e) => setCustomEvoUrl(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[#050805] border border-[#1e381e] text-white text-xs font-mono focus:border-[#22c55e] focus:outline-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[10px] font-mono text-zinc-400">API Key / Token</label>
-              <input
-                type="password"
-                placeholder="Chave secreta da API"
-                value={customEvoKey}
-                onChange={(e) => setCustomEvoKey(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[#050805] border border-[#1e381e] text-white text-xs font-mono focus:border-[#22c55e] focus:outline-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="block text-[10px] font-mono text-zinc-400">Nome da Instância</label>
-              <input
-                type="text"
-                placeholder="nipei-santuario"
-                value={customEvoInstance}
-                onChange={(e) => setCustomEvoInstance(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded bg-[#050805] border border-[#1e381e] text-white text-xs font-mono focus:border-[#22c55e] focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 3. Main Dispatch Form */}
       <form onSubmit={handleDispatch} className="p-5 rounded-xl bg-gradient-to-b from-[#091509] to-[#050905] border border-[#1e381e] shadow-lg space-y-4">
