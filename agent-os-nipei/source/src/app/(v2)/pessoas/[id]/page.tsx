@@ -7,7 +7,7 @@ import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { addToEquipeAction, setAvisosPessoaAction } from "../../actions";
-import { getDiagnosticos, getRespostas, participa, progresso } from "@/lib/v2/diagnostico";
+import { getColetivo, getDiagnosticos, getRespostas, participa, progresso } from "@/lib/v2/diagnostico";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -95,6 +95,18 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
                 {!sec.perguntas.some((q) => r[q.id]?.texto) && <p className="text-sm text-neutral-400">{t.vazio}</p>}
               </div>
             ))}
+            {(() => {
+              const cod = getColetivo(d.id).codigo;
+              if (!cod.versao) return null;
+              const a = cod.aceites[p.id];
+              return (
+                <p className="text-sm mb-3">
+                  <Link href={`/diagnosticos/${d.id}/codigo`} className="underline">{t.codigoAcordos}</Link> ({t.versao} {cod.versao}):{" "}
+                  {a?.versao === cod.versao ? <span className="text-green-700 dark:text-green-400">✅ {t.aceitoEm} {a.em.slice(0, 10).split("-").reverse().join("/")}</span>
+                    : <span className="text-amber-700 dark:text-amber-400">⚠️ {t.pendenteAceite}</span>}
+                </p>
+              );
+            })()}
             <Link href={`/pessoas/${p.id}/respostas?d=${d.id}`} className="inline-flex rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm">
               {me.pessoa?.id === p.id ? t.responderDiag : t.verRespostas} →
             </Link>

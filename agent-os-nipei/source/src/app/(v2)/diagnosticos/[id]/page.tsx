@@ -66,6 +66,16 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
         </ul>
       </Section>
 
+      <Section title={t.consolidacao}>
+        <ul className="grid gap-2 text-sm">
+          <li><Link href={`/diagnosticos/${d.id}/consolidado/retiro`} className="underline">{t.relatorioRetiro}</Link>{c.consolidados.retiro ? " ✓" : ""}</li>
+          <li><Link href={`/diagnosticos/${d.id}/consolidado/matriz`} className="underline">{t.matrizResp}</Link>{c.consolidados.matriz ? " ✓" : ""}</li>
+          <li><Link href={`/diagnosticos/${d.id}/codigo`} className="underline">{t.codigoAcordos}</Link>
+            {c.codigo.versao ? ` · ${t.versao} ${c.codigo.versao} · ${Object.values(c.codigo.aceites).filter((a) => a.versao === c.codigo.versao).length}/${quem.length} ${t.aceites.toLowerCase()}` : ""}</li>
+          <li><Link href={`/diagnosticos/${d.id}/documento`} className="underline font-medium">{t.documentoFinal} (PT / EN)</Link></li>
+        </ul>
+      </Section>
+
       <Section title={t.reunioes}>
         <ul className="grid gap-4">
           {(["1", "2"] as const).map((n) => {

@@ -3,7 +3,7 @@ import path from "path";
 import yaml from "js-yaml";
 import { requestSync } from "@/lib/tarefaNote";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
-import { chamarIA } from "./ia";
+import { chamarIA, chamarIATexto } from "./ia";
 import { buscarConhecimento, criarFonte, formatarConhecimento, processarFonte } from "./conhecimento";
 import { createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, noteText, slugify, today, vault, type Lancamento, type Me, type Pessoa } from "./data";
 import { getAlertas } from "./auditor";
@@ -180,7 +180,10 @@ export type Coletivo = {
   calendario: { dataRetiro: string; entradas: Entrada[] }; // D3: marketing calendar
   periodo: { de: string; ate: string }; // D3: finance period of the retreat/dieta
   reunioes: Record<string, Reuniao>; // D3: team meetings #1 and #2
+  consolidados: Record<string, { texto: string; geradoEm: string }>; // D4: "retiro", "matriz"
+  codigo: Codigo; // D4: code of agreements
 };
+export type Codigo = { texto: string; versao: number; status: "rascunho" | "publicado"; publicadoEm: string; aceites: Record<string, { versao: number; em: string }> };
 
 const arquivoColetivo = (diagId: string) => path.join(vault(), DIR, diagId, "coletivo.md");
 export const secoesColetivas = (d: Diagnostico) => d.modelo.secoes.filter((x) => x.escopo === "coletivo");
@@ -201,6 +204,14 @@ export function getColetivo(diagId: string): Coletivo {
     })(),
     periodo: { de: s((fm.periodo as Record<string, unknown>)?.de), ate: s((fm.periodo as Record<string, unknown>)?.ate) },
     reunioes: Object.fromEntries(Object.entries((fm.reunioes ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => [k, { data: s(v?.data), evento: s(v?.evento), pauta: s(v?.pauta), geradaEm: s(v?.geradaEm) }])),
+    consolidados: Object.fromEntries(Object.entries((fm.consolidados ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => [k, { texto: s(v?.texto), geradoEm: s(v?.geradoEm) }])),
+    codigo: (() => {
+      const c = (fm.codigo ?? {}) as Record<string, unknown>;
+      return {
+        texto: s(c.texto), versao: Number(c.versao) || 0, status: s(c.status) === "publicado" ? "publicado" : "rascunho", publicadoEm: s(c.publicadoEm),
+        aceites: Object.fromEntries(Object.entries((c.aceites ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => [k, { versao: Number(v?.versao) || 0, em: s(v?.em) }])),
+      } as Codigo;
+    })(),
     respostas: Object.fromEntries(Object.entries(r).map(([k, v]) => [k, {
       texto: s(v?.texto), status: s(v?.status) === "respondida" ? "respondida" : "rascunho", ia: v?.ia === true, em: s(v?.em),
       por: s(v?.por), fontes: arr(v?.fontes), falta: s(v?.falta), tarefa: s(v?.tarefa),
@@ -506,7 +517,7 @@ export function agendarReuniao(d: Diagnostico, n: "1" | "2", data: string) {
 const SISTEMA_PAUTA = `Você prepara a pauta de uma reunião da equipe do Nipëi (Santuário Nipeihu) a partir das respostas do diagnóstico pedido pela Lynn. Responda em português do Brasil, em markdown.
 Para cada tema, em ordem: um título "## Tema", 2 a 5 pontos concretos levantados nas respostas (sem citar quem disse o quê em assuntos sensíveis como tensões e preocupações pessoais), e "Decidir:" com as perguntas que a reunião precisa fechar.
 Termine com "## Pendências" (lacunas e tarefas abertas do diagnóstico) e "## Próximos passos".
-Use só o contexto. Seja objetivo: a reunião tem 2 horas. Responda APENAS com JSON: {"pauta": "markdown"}`;
+Use só o contexto. Seja objetivo: a reunião tem 2 horas. Responda só com o markdown da pauta.`;
 
 /** AI agenda from the individual and team answers, open gaps and alerts. */
 export async function gerarPauta(d: Diagnostico, n: "1" | "2"): Promise<string> {
@@ -531,12 +542,207 @@ export async function gerarPauta(d: Diagnostico, n: "1" | "2"): Promise<string> 
   ].join("\n");
   let pauta = "";
   try {
-    const { o } = await chamarIA(SISTEMA_PAUTA, [{ type: "text", text: contexto }], 5000, 150_000);
-    pauta = s(o.pauta);
+    pauta = await chamarIATexto(SISTEMA_PAUTA, [{ type: "text", text: contexto }], 5000, 150_000);
   } catch { /* fall back to the plain topic list */ }
   if (!pauta) pauta = TEMAS_REUNIAO[n].map((t) => `## ${t}\n- \nDecidir: `).join("\n\n");
   const c2 = getColetivo(d.id);
   c2.reunioes[n] = { ...(c2.reunioes[n] ?? { data: "", evento: "" }), pauta, geradaEm: new Date().toISOString() };
   escreverColetivo(d, c2);
   return pauta;
+}
+
+// ---------------------------------------------------------------- D4: consolidated views
+
+/** Everyone's answers to the individual sections listed (text only, for AI synthesis). */
+function respostasDe(d: Diagnostico, secoes: string[]) {
+  return participantes(d).map((p) => {
+    const r = getRespostas(d.id, p.id);
+    const linhas = secoesIndividuais(d).filter((x) => secoes.includes(x.id)).flatMap((sec) => sec.perguntas.filter((q) => r[q.id]?.texto).map((q) => `- ${q.texto}: ${r[q.id].texto.slice(0, 1500)}`));
+    return linhas.length ? `### ${p.name} (${p.id})\n${linhas.join("\n")}` : "";
+  }).filter(Boolean);
+}
+
+const SISTEMAS_CONSOLIDADO: Record<string, string> = {
+  retiro: `Você consolida os relatórios individuais da equipe do Nipëi sobre o último retiro e a dieta, para a Lynn e a gestão. Português do Brasil, markdown.
+Para cada pergunta do relatório (o que funcionou, o que não funcionou, o que organizar diferente, bolas que caíram, responsabilidades pouco claras, comunicação, tensões, sucessos, o que os convidados valorizaram, feedback, repetir, mudar): um título "## ..." e os pontos em comum e divergentes, indicando quantas pessoas citaram cada ponto ("3 de 5").
+Tensões e preocupações pessoais: descreva o tema sem identificar quem disse. Use só as respostas e as anotações da gestão. Termine com "## Recomendações para o próximo retiro" (concretas, com dono sugerido quando der).
+Responda só com o markdown.`,
+  matriz: `Você monta a matriz de responsabilidades da equipe do Nipëi a partir das descrições de papel de cada pessoa, das tarefas atribuídas e dos responsáveis das seções do diagnóstico. Português do Brasil, markdown.
+Produza: "## Matriz" como tabela | Responsabilidade | Dono hoje | Recorrência | Situação | Sugestão |, onde Situação é "clara", "sobrecarregada", "sem dono" ou "cai no esquecimento". Depois "## Sem dono claro", "## Sobrecarga" e "## Onde cada pessoa precisa de apoio" (sem expor preocupações pessoais).
+Use só o contexto; quando faltar informação, diga. Responda só com o markdown.`,
+};
+
+export async function gerarConsolidado(d: Diagnostico, tipo: "retiro" | "matriz"): Promise<string> {
+  const c = getColetivo(d.id);
+  const pessoas = getPessoas();
+  let contexto: string;
+  if (tipo === "retiro") {
+    const sec = secoesIndividuais(d).find((x) => x.id === "retiro");
+    contexto = [`${d.titulo} · ${d.evento}`, "## Anotações da gestão (documento da Lynn)", ...(sec?.perguntas.flatMap((q) => q.guia) ?? []),
+      "## Relatórios individuais", respostasDe(d, ["retiro"]).join("\n\n") || "(nenhum relatório ainda)"].join("\n");
+  } else {
+    const tarefas = getTarefas().filter((t) => t.status !== "done");
+    contexto = [`${d.titulo}`, "## Descrições de papel", respostasDe(d, ["papel", "compromisso"]).join("\n\n") || "(nenhuma ainda)",
+      "## Responsáveis das seções do diagnóstico", ...Object.entries(c.responsaveis).map(([k, v]) => `- ${k}: ${pessoas.find((p) => p.id === v)?.name ?? v}`),
+      "## Tarefas abertas por pessoa", ...participantes(d).map((p) => `- ${p.name}: ${tarefas.filter((t) => t.responsaveis.includes(p.id)).map((t) => t.title).slice(0, 25).join("; ") || "(nenhuma)"}`),
+      `## Tarefas abertas sem responsável: ${tarefas.filter((t) => !t.responsaveis.length && (!d.projeto || t.projeto === d.projeto)).length}`].join("\n");
+  }
+  const texto = await chamarIATexto(SISTEMAS_CONSOLIDADO[tipo], [{ type: "text", text: contexto }], 6000, 180_000);
+  const c2 = getColetivo(d.id);
+  c2.consolidados[tipo] = { texto, geradoEm: new Date().toISOString() };
+  escreverColetivo(d, c2);
+  return texto;
+}
+
+// ---------------------------------------------------------------- D4: code of agreements
+
+const SISTEMA_CODIGO = `Você redige o rascunho do Código de Acordos e Valores da equipe do Nipëi (Santuário Nipeihu, povo Yawanawá), a partir das ideias de cada integrante e dos exemplos da Lynn. Português do Brasil, markdown.
+Estrutura: "## Nosso propósito e valores" (3 a 6 valores, cada um com uma frase de como aparece no dia a dia) e depois seções de acordos (Comunicação respeitosa, Conflitos, Pontualidade e comunicação a tempo, Limites profissionais, Decisões, Passagem de responsabilidades, Erros e feedback, Equipe e participantes, Segurança dos participantes, Queixas da equipe). Cada acordo é uma frase que dá para cumprir e verificar.
+Quando houver divergência entre as pessoas, escreva a opção mais apoiada e registre a alternativa em "> Para decidir: ...". Use só o contexto. Responda só com o markdown.`;
+
+const EXEMPLOS_LYNN = "Participantes em primeiro lugar; Ambiente seguro (físico, emocional, psicológico e espiritual); Comunicação gentil e respeitosa; Resolução direta de conflitos com a pessoa envolvida; Conversas sensíveis em privado; Mediador neutro acordado por ambos; Pontualidade; Responder comunicações num prazo combinado (24 h?); Avisar o quanto antes atrasos, ausências ou impedimentos.";
+
+export async function rascunhoCodigo(d: Diagnostico): Promise<string> {
+  const contexto = [`${d.titulo}`, `## Exemplos da Lynn\n${EXEMPLOS_LYNN}`, "## Ideias de cada integrante", respostasDe(d, ["acordos"]).join("\n\n") || "(ninguém respondeu ainda)"].join("\n");
+  const texto = await chamarIATexto(SISTEMA_CODIGO, [{ type: "text", text: contexto }], 5000, 150_000);
+  salvarCodigo(d, texto);
+  return texto;
+}
+
+/** Saving the text keeps it a draft (a published version stays accepted until a new one is published). */
+export function salvarCodigo(d: Diagnostico, texto: string) {
+  const c = getColetivo(d.id);
+  c.codigo = { ...c.codigo, texto: texto.trim().slice(0, 30000), status: "rascunho" };
+  escreverColetivo(d, c);
+}
+
+/** Publishes a new version: everyone is asked to accept it again in their profile. */
+export function publicarCodigo(d: Diagnostico) {
+  const c = getColetivo(d.id);
+  if (!c.codigo.texto) throw new Error("Código vazio");
+  c.codigo = { ...c.codigo, versao: c.codigo.versao + 1, status: "publicado", publicadoEm: new Date().toISOString() };
+  escreverColetivo(d, c);
+}
+
+export function aceitarCodigo(d: Diagnostico, pessoaId: string) {
+  const c = getColetivo(d.id);
+  if (c.codigo.status !== "publicado" && !c.codigo.versao) throw new Error("Nenhuma versão publicada");
+  c.codigo.aceites[pessoaId] = { versao: c.codigo.versao, em: new Date().toISOString() };
+  escreverColetivo(d, c);
+}
+
+/** The published version the person still has to accept (null when up to date or nothing published). */
+export function codigoPendente(d: Diagnostico, pessoaId: string) {
+  const c = getColetivo(d.id).codigo;
+  return c.versao > 0 && (c.aceites[pessoaId]?.versao ?? 0) < c.versao ? c : null;
+}
+
+// ---------------------------------------------------------------- D4: final document (PT, then EN)
+
+const ARQ_DOC = (diagId: string, lang: "pt" | "en") => path.join(vault(), DIR, diagId, `documento-${lang}.md`);
+const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+/** Private answers stay out of the document (they reach it only anonymised, through the consolidated report). */
+const PRIVADAS = new Set(["compromisso.necessidades", "retiro.tensoes"]);
+
+export function getDocumento(diagId: string, lang: "pt" | "en") {
+  const abs = ARQ_DOC(diagId, lang);
+  if (!fs.existsSync(abs)) return null;
+  const t = fs.readFileSync(abs, "utf-8");
+  const m = t.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  const fm = (m && (yaml.load(m[1]) as Record<string, unknown>)) || {};
+  return { texto: (m?.[2] ?? t).replace(/^<!--[\s\S]*?-->\s*/, ""), geradoEm: s(fm.gerado_em) };
+}
+
+function salvarDocumento(d: Diagnostico, lang: "pt" | "en", texto: string) {
+  const abs = ARQ_DOC(d.id, lang);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, `---\n${yaml.dump({ type: "documento_diagnostico", diagnostico: d.id, lang, gerado_em: new Date().toISOString(), confidencial: true })}---\n<!-- agente: nipei-os v2 (diagnóstico D4) -->\n${texto}\n`, "utf-8");
+  requestSync(vault());
+}
+
+/** Embedded reports start at "###" so they sit under the document's numbered "##" sections. */
+const rebaixar = (md: string) => md.replace(/^(#{1,5}) /gm, (_, h: string) => `${h}${h.length === 1 ? "##" : "#"} `);
+
+/** Compiles the Portuguese document from everything the assessment holds (no AI). */
+export function montarDocumento(d: Diagnostico): string {
+  const c = getColetivo(d.id);
+  const pessoas = getPessoas();
+  const nome = (id: string) => pessoas.find((p) => p.id === id)?.name ?? id;
+  const tarefas = getTarefas();
+  const projeto = getProjetos().find((p) => p.id === d.projeto);
+  const partes: string[] = [
+    `# ${d.titulo}`,
+    `**${d.modelo.titulo}** — pedido de ${d.modelo.autor}. Projeto: ${projeto?.nome ?? d.projeto}. Gerado em ${today().split("-").reverse().join("/")} pelo Nipëi OS.`,
+    "> Confidencial: equipe de gestão. Respostas pessoais sensíveis (preocupações e tensões) aparecem só de forma anônima no relatório consolidado.",
+    "## Sumário",
+    "1. Equipe: compromisso e papéis  \n2. Matriz de responsabilidades  \n3. Retiro e dieta  \n4. Revisão financeira  \n5. Plano de marketing  \n6. Código de acordos e valores  \n7. Espaço e experiência do convidado  \n8. Visão  \n9. Reuniões  \n10. Pendências",
+  ];
+  // 1. people
+  partes.push("## 1. Equipe: compromisso e papéis");
+  for (const p of participantes(d)) {
+    const r = getRespostas(d.id, p.id);
+    const qs = secoesIndividuais(d).filter((x) => x.id === "compromisso" || x.id === "papel").flatMap((x) => x.perguntas).filter((q) => !PRIVADAS.has(q.id) && r[q.id]?.texto);
+    partes.push(`### ${p.name}${p.funcao ? ` — ${p.funcao}` : ""}`, qs.length ? qs.map((q) => `**${q.texto}**\n${r[q.id].texto}`).join("\n\n") : "_Ainda não respondeu._");
+  }
+  partes.push("## 2. Matriz de responsabilidades", c.consolidados.matriz?.texto ? rebaixar(c.consolidados.matriz.texto) : "_Ainda não gerada._");
+  partes.push("## 3. Retiro e dieta", c.consolidados.retiro?.texto ? rebaixar(c.consolidados.retiro.texto) : "_Relatório consolidado ainda não gerado._");
+  // collective sections
+  const secao = (id: string) => secoesColetivas(d).find((x) => x.id === id);
+  const respostas = (id: string) => (secao(id)?.perguntas ?? []).map((q) => {
+    const r = c.respostas[q.id];
+    return `**${q.texto}**\n${r?.texto || "_Sem resposta._"}${r?.status === "respondida" ? "" : r?.texto ? " _(rascunho)_" : ""}${r?.falta && r.status !== "respondida" ? `\n> Falta: ${r.falta}` : ""}`;
+  }).join("\n\n");
+  const fin = resumoFinanceiro(lancamentosDoPeriodo(d, c.periodo));
+  partes.push("## 4. Revisão financeira",
+    fin.n ? [`Período: ${c.periodo.de || "…"} a ${c.periodo.ate || "…"} · ${fin.n} lançamentos.`, "", "| | Valor |", "|---|---:|",
+      ...fin.entradas.map(([k, v]) => `| Entrada · ${k} | ${brl(v)} |`), ...fin.despesas.map(([k, v]) => `| Despesa · ${k} | ${brl(v)} |`),
+      `| **Resultado** | **${brl(fin.resultado)}** |`].join("\n") : "_Sem lançamentos registrados no período._",
+    respostas("financas"));
+  partes.push("## 5. Plano de marketing", respostas("marketing"),
+    c.calendario.entradas.length ? ["### Calendário", `Início do retiro: ${c.calendario.dataRetiro}`, "", "| Data | Ação | Responsável |", "|---|---|---|",
+      ...c.calendario.entradas.map((e) => `| ${e.data} | ${e.acao} | ${e.responsavel ? nome(e.responsavel) : "—"} |`)].join("\n") : "");
+  partes.push("## 6. Código de acordos e valores",
+    c.codigo.texto ? `${c.codigo.versao ? `Versão ${c.codigo.versao}${c.codigo.status === "publicado" ? " (publicada)" : " (em revisão)"} · aceita por ${Object.values(c.codigo.aceites).filter((a) => a.versao === c.codigo.versao).length} de ${participantes(d).length}.` : "Rascunho."}\n\n${rebaixar(c.codigo.texto)}` : "_Ainda não redigido._");
+  partes.push("## 7. Espaço e experiência do convidado");
+  for (const q of secao("espaco")?.perguntas ?? []) {
+    const itens = c.itens[q.id] ?? [];
+    partes.push(`### ${q.texto}`, c.respostas[q.id]?.texto ?? "",
+      itens.length ? ["| Item | Prioridade | Custo aprox. | O que precisa | Responsável |", "|---|---|---:|---|---|",
+        ...itens.map((i) => `| ${i.titulo} | ${i.prioridade} | ${i.custo ? brl(i.custo) : "a orçar"} | ${i.requisitos || "—"} | ${i.responsavel ? nome(i.responsavel) : "—"} |`),
+        `| **Total** | | **${brl(itens.reduce((a, i) => a + i.custo, 0))}** | | |`].join("\n") : "_Sem itens._");
+  }
+  partes.push("## 8. Visão", ...secoesIndividuais(d).filter((x) => x.id === "visao").flatMap((sec) => sec.perguntas.map((q) => {
+    const vozes = participantes(d).map((p) => getRespostas(d.id, p.id)[q.id]?.texto).filter(Boolean) as string[];
+    return `**${q.texto}**\n${vozes.length ? vozes.map((v) => `- ${v.replace(/\s+/g, " ").slice(0, 600)}`).join("\n") : "_Sem respostas._"}`;
+  })));
+  partes.push("## 9. Reuniões", ...(["1", "2"] as const).map((n) => {
+    const r = c.reunioes[n];
+    return `### Reunião #${n}${r?.data ? ` — ${r.data.split("-").reverse().join("/")}` : ""}\n${r?.pauta ? rebaixar(rebaixar(r.pauta)) : "_Pauta ainda não gerada._"}`;
+  }));
+  const abertas = tarefas.filter((t) => t.status !== "done" && (t.title.startsWith("Diagnóstico ·") || t.title.startsWith("Marketing:") || Object.values(c.itens).flat().some((i) => i.tarefa === t.id)));
+  partes.push("## 10. Pendências", abertas.length ? abertas.map((t) => `- ${t.title}${t.responsaveis.length ? ` — ${t.responsaveis.map(nome).join(", ")}` : ""}${t.prazo ? ` (${t.prazo.split("-").reverse().join("/")})` : ""}`).join("\n") : "_Nenhuma._");
+  const texto = partes.filter(Boolean).join("\n\n");
+  salvarDocumento(d, "pt", texto);
+  return texto;
+}
+
+const SISTEMA_TRADUCAO = `Translate this Portuguese markdown document into clear, natural English for Lynn (an English speaker who leads the team's development). Keep the markdown structure, tables, names, numbers and dates exactly; translate "R$" amounts as they are. Keep these community words untranslated: dieta, Daime, Nipëi, Shuhu, Casa Cura, Yawa, Yawanawá, Guardiões, vekuxi, sharing. Do not summarise or add anything.
+Answer with the translated markdown only.`;
+
+/** English version: translated part by part (top-level sections) so long documents fit. */
+export async function traduzirDocumento(d: Diagnostico): Promise<string> {
+  const pt = getDocumento(d.id, "pt")?.texto ?? montarDocumento(d);
+  const blocos = pt.split(/\n(?=## )/);
+  const lotes: string[] = [];
+  for (const b of blocos) {
+    if (lotes.length && (lotes[lotes.length - 1] + b).length < 12000) lotes[lotes.length - 1] += `\n${b}`;
+    else lotes.push(b);
+  }
+  const en: string[] = [];
+  for (const l of lotes) {
+    en.push(await chamarIATexto(SISTEMA_TRADUCAO, [{ type: "text", text: l }], 8000, 180_000));
+  }
+  const texto = en.join("\n\n");
+  salvarDocumento(d, "en", texto);
+  return texto;
 }

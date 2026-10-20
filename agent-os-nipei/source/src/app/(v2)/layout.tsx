@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import ErroAviso from "@/components/v2/ErroAviso";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Brain, Library, LogOut, Wallet } from "lucide-react";
@@ -23,7 +25,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
 
   return (
     <div className="v2 min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
+      <header className="print:hidden sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
         <Link href="/hoje" className="font-semibold tracking-tight">Nipëi</Link>
         <div className="flex items-center gap-2">
           <Link href="/conhecimento" aria-label={t.conhecimento} title={t.conhecimento} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Brain size={18} /></Link>
@@ -40,7 +42,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       </header>
       <div className="flex">
         <Nav labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas }} />
-        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-28 md:pb-10 max-w-3xl">{children}</main>
+        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-28 md:pb-10 max-w-3xl"><Suspense><ErroAviso /></Suspense>{children}</main>
       </div>
     </div>
   );

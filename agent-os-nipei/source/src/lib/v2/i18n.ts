@@ -110,6 +110,14 @@ const pt = {
   resultado: "Resultado", reunioes: "Reuniões da equipe", reuniao: "Reunião", agendar: "Agendar",
   pauta: "Pauta", gerarPauta: "Gerar pauta com a IA", pautaAviso: "A IA usa as respostas individuais e coletivas, as lacunas e as tarefas abertas do diagnóstico. Assuntos sensíveis não citam quem disse.",
   semPauta: "Pauta ainda não gerada.", temas: "Temas",
+  consolidacao: "Consolidação e documento final", relatorioRetiro: "Relatório consolidado do retiro e da dieta", matrizResp: "Matriz de responsabilidades",
+  gerarIA: "Gerar com a IA", atualizarIA: "Atualizar com a IA", geradoEm: "Gerado em", naoGerado: "Ainda não gerado.",
+  consolidadoAviso: "A IA junta as respostas de todos (tensões e preocupações aparecem sem identificar quem disse). Gere de novo quando entrarem mais respostas.",
+  codigoAcordos: "Código de acordos e valores", codigoAviso: "A IA redige a partir das ideias de cada integrante e dos exemplos da Lynn. Edite à vontade; ao publicar, cada pessoa aceita no seu perfil.",
+  publicarVersao: "Salvar e publicar nova versão", versao: "Versão", publicado: "publicado", emRevisao: "em revisão",
+  aceitarCodigo: "Li e aceito o código", aceitoEm: "Aceito em", aceites: "Aceites", pendenteAceite: "falta aceitar", bannerCodigo: "Leia e aceite o código de acordos da equipe",
+  documentoFinal: "Documento final", montarPT: "Montar documento (PT)", traduzirEN: "Montar e traduzir para inglês", imprimir: "Imprimir / salvar PDF",
+  documentoAviso: "Junta tudo o que o diagnóstico tem: papéis, matriz, retiro, finanças, marketing, código, melhorias, visão, reuniões e pendências. Monte de novo quando houver mudanças.",
 };
 export type Dict = typeof pt;
 
@@ -219,6 +227,14 @@ const en: Dict = {
   resultado: "Result", reunioes: "Team meetings", reuniao: "Meeting", agendar: "Schedule",
   pauta: "Agenda", gerarPauta: "Generate agenda with AI", pautaAviso: "The AI uses individual and team answers, gaps and open tasks of the assessment. Sensitive topics don't name who said what.",
   semPauta: "No agenda yet.", temas: "Topics",
+  consolidacao: "Consolidation and final document", relatorioRetiro: "Consolidated retreat and dieta report", matrizResp: "Responsibility matrix",
+  gerarIA: "Generate with AI", atualizarIA: "Update with AI", geradoEm: "Generated on", naoGerado: "Not generated yet.",
+  consolidadoAviso: "The AI merges everyone's answers (tensions and concerns appear without saying who said them). Generate again when more answers come in.",
+  codigoAcordos: "Code of agreements and values", codigoAviso: "The AI drafts it from each member's ideas and Lynn's examples. Edit freely; once published, each person accepts it in their profile.",
+  publicarVersao: "Save and publish new version", versao: "Version", publicado: "published", emRevisao: "under review",
+  aceitarCodigo: "I have read and accept the code", aceitoEm: "Accepted on", aceites: "Acceptances", pendenteAceite: "not accepted yet", bannerCodigo: "Read and accept the team's code of agreements",
+  documentoFinal: "Final document", montarPT: "Build document (PT)", traduzirEN: "Build and translate to English", imprimir: "Print / save PDF",
+  documentoAviso: "Brings together everything in the assessment: roles, matrix, retreat, finances, marketing, code, improvements, vision, meetings and open items. Build again after changes.",
 };
 
 export async function getLang(): Promise<Lang> {

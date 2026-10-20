@@ -7,7 +7,7 @@ import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
-import { diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
+import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -55,6 +55,12 @@ export default async function Hoje() {
           </Link>
         );
       })}
+
+      {me && diagnosticosAbertos(me).filter((d) => codigoPendente(d, me.id)).map((d) => (
+        <Link key={`cod:${d.id}`} href={`/diagnosticos/${d.id}/codigo`} className="block rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 px-4 py-3 text-sm mb-5">
+          🤝 {t.bannerCodigo} · <span className="underline font-medium">{t.codigoAcordos}</span>
+        </Link>
+      ))}
 
       {me && diagnosticosAbertos(me).flatMap((d) => {
         const c = getColetivo(d.id);

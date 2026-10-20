@@ -13,6 +13,7 @@ import {
   criarTarefasLacunas, definirResponsavel, enviarAoConhecimento, getColetivo, getDiagnostico, participa, participantes, podeEditarSecao,
   rascunhoColetivoIA, rascunhoIA, salvarColetivo, salvarRespostas, type Resposta,
   agendarReuniao, criarTarefasCalendario, criarTarefasItens, gerarCalendario, gerarPauta, itensSugeridos, salvarCalendario, salvarItens, salvarPeriodo, type Item,
+  aceitarCodigo, gerarConsolidado, montarDocumento, publicarCodigo, rascunhoCodigo, salvarCodigo, traduzirDocumento,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
@@ -464,8 +465,7 @@ export async function rascunhoIAAction(form: FormData) {
   const me = await requireUser();
   const d = getDiagnostico(String(form.get("diagnostico")));
   if (!d || !me.pessoa || !participa(d, me.pessoa)) return;
-  contarUso(me.pessoa.id);
-  await rascunhoIA(d, me.pessoa.id, String(form.get("secao")));
+  await tentar(async () => { contarUso(me.pessoa!.id); await rascunhoIA(d, me.pessoa!.id, String(form.get("secao"))); });
   revalidatePath("/", "layout");
 }
 
@@ -504,8 +504,7 @@ export async function salvarColetivoAction(form: FormData) {
 export async function rascunhoColetivoAction(form: FormData) {
   const ok = await secaoEditavel(form);
   if (!ok) return;
-  contarUso(ok.me.pessoa?.id ?? ok.me.username);
-  await rascunhoColetivoIA(ok.d, ok.secao, actorName(ok.me));
+  await tentar(async () => { contarUso(ok.me.pessoa?.id ?? ok.me.username); await rascunhoColetivoIA(ok.d, ok.secao, actorName(ok.me)); });
   revalidatePath("/diagnosticos", "layout");
 }
 
@@ -577,7 +576,62 @@ export async function reuniaoAction(form: FormData) {
   const d = getDiagnostico(String(form.get("diagnostico")));
   const n = pick(form.get("n"), ["1", "2"]) as "1" | "2" | "";
   if (!d || !me.gestao || !n) return;
-  if (form.get("acao") === "pauta") await gerarPauta(d, n);
+  if (form.get("acao") === "pauta") await tentar(() => gerarPauta(d, n));
   else agendarReuniao(d, n, String(form.get("data")));
   revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Diagnóstico (D4): consolidation (gestão) and acceptance (each person)
+
+/** Runs a slow/AI step; on failure returns to the page it came from with the message in ?erro= (shown by ErroAviso). */
+async function tentar(fn: () => Promise<unknown>) {
+  try {
+    await fn();
+  } catch (e) {
+    const { headers } = await import("next/headers");
+    const ref = (await headers()).get("referer") ?? "";
+    let volta = "/hoje";
+    try { const u = new URL(ref); u.searchParams.set("erro", (e as Error).message.slice(0, 200)); volta = u.pathname + u.search; } catch { /* no referer */ }
+    redirect(volta);
+  }
+}
+
+async function diagGestao(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  return d && me.gestao ? { me, d } : null;
+}
+
+export async function consolidadoAction(form: FormData) {
+  const ok = await diagGestao(form);
+  const tipo = pick(form.get("tipo"), ["retiro", "matriz"]) as "retiro" | "matriz" | "";
+  if (!ok || !tipo) return;
+  await tentar(async () => { contarUso(ok.me.pessoa?.id ?? ok.me.username); await gerarConsolidado(ok.d, tipo); });
+  revalidatePath("/diagnosticos", "layout");
+}
+
+export async function codigoAction(form: FormData) {
+  const ok = await diagGestao(form);
+  if (!ok) return;
+  const acao = String(form.get("acao"));
+  if (acao === "ia") await tentar(async () => { contarUso(ok.me.pessoa?.id ?? ok.me.username); await rascunhoCodigo(ok.d); });
+  if (acao === "salvar" || acao === "publicar") salvarCodigo(ok.d, String(form.get("texto") ?? ""));
+  if (acao === "publicar") publicarCodigo(ok.d);
+  revalidatePath("/", "layout");
+}
+
+export async function aceitarCodigoAction(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  if (!d || !me.pessoa || !participa(d, me.pessoa)) return;
+  aceitarCodigo(d, me.pessoa.id);
+  revalidatePath("/", "layout");
+}
+
+export async function documentoAction(form: FormData) {
+  const ok = await diagGestao(form);
+  if (!ok) return;
+  montarDocumento(ok.d);
+  if (form.get("acao") === "traduzir") await tentar(async () => { contarUso(ok.me.pessoa?.id ?? ok.me.username); await traduzirDocumento(ok.d); });
+  revalidatePath("/diagnosticos", "layout");
 }

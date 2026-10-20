@@ -123,8 +123,8 @@ export function contarUso(quem: string) {
   uso.set(quem, { dia, n: n + 1 });
 }
 
-/** One OpenRouter call that must answer with a JSON object (shared by tasks and Conhecimento). */
-export async function chamarIA(sistema: string, conteudo: Parte[], maxTokens = 2500, timeoutMs = 90_000): Promise<{ o: Record<string, unknown>; modelo: string }> {
+/** One OpenRouter call → the model's raw answer. */
+async function chamarModelo(sistema: string, conteudo: Parte[], maxTokens: number, timeoutMs: number): Promise<{ raw: string; modelo: string }> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("IA não configurada no servidor (OPENROUTER_API_KEY)");
   const modelo = MODELO();
@@ -136,12 +136,25 @@ export async function chamarIA(sistema: string, conteudo: Parte[], maxTokens = 2
   });
   if (!res.ok) throw new Error(`IA indisponível (${res.status})`);
   const data = await res.json();
-  const raw: string = data?.choices?.[0]?.message?.content ?? "";
+  return { raw: data?.choices?.[0]?.message?.content ?? "", modelo };
+}
+
+/** One OpenRouter call that must answer with a JSON object (shared by tasks and Conhecimento). */
+export async function chamarIA(sistema: string, conteudo: Parte[], maxTokens = 2500, timeoutMs = 90_000): Promise<{ o: Record<string, unknown>; modelo: string }> {
+  const { raw, modelo } = await chamarModelo(sistema, conteudo, maxTokens, timeoutMs);
   try {
     return { o: JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)), modelo };
   } catch {
     throw new Error("A IA respondeu num formato inesperado; tente de novo");
   }
+}
+
+/** For long markdown (reports, agendas, translations): plain text is sturdier than markdown inside JSON. */
+export async function chamarIATexto(sistema: string, conteudo: Parte[], maxTokens = 6000, timeoutMs = 180_000): Promise<string> {
+  const { raw } = await chamarModelo(sistema, conteudo, maxTokens, timeoutMs);
+  const texto = raw.trim().replace(/^```(?:markdown|md)?\s*\n([\s\S]*?)\n```$/, "$1").trim();
+  if (!texto) throw new Error("A IA não devolveu texto; tente de novo");
+  return texto;
 }
 
 export async function proporIA(id: string, modo: ModoIA, quem: string): Promise<PropostaIA> {
