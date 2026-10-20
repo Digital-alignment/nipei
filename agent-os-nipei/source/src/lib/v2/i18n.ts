@@ -129,6 +129,7 @@ const pt = {
   novidades: "Novidades", amanha: "Amanhã", maisSemana: "+1 semana", estaSemana: "Esta semana", proximaSemana: "Próxima semana", esteMes: "Este mês", outraData: "Outra data",
   agora: "Agora", hora: "Hora", reprogramar: "Mudar prazo", pulso: "Pulso da equipe", pulsoIntro: "Tarefas abertas por equipe: o que está atrasado e o que não tem responsável. Resolva aqui mesmo.",
   semEquipeLbl: "Sem equipe", atribuirPessoa: "Atribuir", escolherPessoa: "Escolher pessoa", amanhaLbl: "amanhã", emBreve: "Em breve", prontoHermes: "do Hermes",
+  perguntePeca: "Pergunte ou peça algo…", ouvindoAssist: "Ouvindo…", feitoLbl: "Feito", limpar: "Limpar", pensando: "Pensando…",
 };
 export type Dict = typeof pt;
 
@@ -257,6 +258,7 @@ const en: Dict = {
   novidades: "News", amanha: "Tomorrow", maisSemana: "+1 week", estaSemana: "This week", proximaSemana: "Next week", esteMes: "This month", outraData: "Other date",
   agora: "Now", hora: "Time", reprogramar: "Change due date", pulso: "Team pulse", pulsoIntro: "Open tasks by team: what's overdue and what has no owner. Fix it right here.",
   semEquipeLbl: "No team", atribuirPessoa: "Assign", escolherPessoa: "Choose person", amanhaLbl: "tomorrow", emBreve: "Coming up", prontoHermes: "from Hermes",
+  perguntePeca: "Ask or tell me something…", ouvindoAssist: "Listening…", feitoLbl: "Done", limpar: "Clear", pensando: "Thinking…",
 };
 
 export async function getLang(): Promise<Lang> {

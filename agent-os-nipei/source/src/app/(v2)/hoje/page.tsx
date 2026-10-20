@@ -4,7 +4,7 @@ import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BomDia from "@/components/v2/BomDia";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import VoiceTask from "@/components/v2/VoiceTask";
+import Assistente from "@/components/v2/Assistente";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
@@ -110,8 +110,7 @@ export default async function Hoje() {
         </div>
       )}
 
-      {me && <VoiceTask lang={lang} equipe={me.equipes[0] ?? ""} me={me.id}
-        labels={{ falar: t.falar, ouvindo: t.ouvindo, vozIndisponivel: t.vozIndisponivel, criar: t.criar, cancelar: t.cancelar }} />}
+      <Assistente lang={lang} labels={{ placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, cancelar: t.cancelar, feito: t.feitoLbl, limpar: t.limpar, pensando: t.pensando }} />
 
       {me && (
         <Abas id="hoje" abas={[

@@ -698,3 +698,30 @@ export async function atribuirAction(form: FormData) {
   updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo: t.prazo, responsaveis: [...new Set([...t.responsaveis, pessoa])], status: t.status, recorrencia: t.recorrencia }, actorName(me));
   revalidatePath("/", "layout");
 }
+
+// ---------------------------------------------------------------- Hoje: assistant
+
+export async function assistenteAction(historico: { role: "user" | "assistant"; content: string }[]) {
+  const me = await requireUser();
+  const { conversar } = await import("@/lib/v2/assistente");
+  const { getLang } = await import("@/lib/v2/i18n");
+  try {
+    contarUso(me.pessoa?.id ?? me.username);
+    const limpo = historico.filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-10);
+    return await conversar(me, limpo, await getLang());
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function executarAcaoAction(acao: import("@/lib/v2/assistente").Acao): Promise<{ error?: string; id?: string }> {
+  const me = await requireUser();
+  const { executarAcao } = await import("@/lib/v2/assistente");
+  try {
+    const id = executarAcao(me, acao, actorName(me));
+    revalidatePath("/", "layout");
+    return { id };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
