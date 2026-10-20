@@ -26,7 +26,7 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
   const sel = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs max-w-36";
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Title sub={t.pulsoIntro}>{t.pulso}</Title>
 
       <table className="w-full text-sm mb-6">

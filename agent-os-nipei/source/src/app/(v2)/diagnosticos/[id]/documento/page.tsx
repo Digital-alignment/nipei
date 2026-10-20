@@ -25,7 +25,7 @@ export default async function Documento({ params, searchParams }: { params: Prom
   const doc = getDocumento(d.id, idioma);
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <div className="print:hidden">
         <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{d.titulo}</Link>
         <h1 className="text-2xl font-semibold tracking-tight">{t.documentoFinal}</h1>

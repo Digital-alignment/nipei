@@ -17,7 +17,7 @@ export default async function Reuniao({ params }: { params: Promise<{ id: string
   const r = getColetivo(d.id).reunioes[n];
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{d.titulo}</Link>
       <h1 className="text-2xl font-semibold tracking-tight">{t.reuniao} #{n}</h1>
       <p className="text-sm text-neutral-500 mt-1 mb-4">{r?.data ? r.data.split("-").reverse().join("/") : t.semData} · {t.temas}: {TEMAS_REUNIAO[n].join(" · ")}</p>

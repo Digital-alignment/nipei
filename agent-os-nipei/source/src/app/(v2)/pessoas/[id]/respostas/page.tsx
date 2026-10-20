@@ -32,7 +32,7 @@ export default async function Respostas({ params, searchParams }: { params: Prom
   const proxima = secoes[secoes.indexOf(sec) + 1];
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Link href={`/pessoas/${id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{p.name}</Link>
       <p className="text-xs uppercase tracking-wide text-neutral-500">{t.diagnostico} · {en ? d.modelo.titulo_en : d.modelo.titulo}</p>
       <h1 className="text-2xl font-semibold tracking-tight mt-1">{proprio ? t.minhasRespostas : p.name}</h1>

@@ -36,7 +36,7 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
   const hidden = <><input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={sec.id} /></>;
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{d.titulo}</Link>
       <p className="text-xs uppercase tracking-wide text-neutral-500">{t.diagnostico} · {t.parteColetiva}</p>
       <div className="flex flex-wrap gap-2 my-4">

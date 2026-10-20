@@ -64,7 +64,7 @@ export default async function Equipes() {
   const Grade = ({ titulo, lista }: { titulo?: string; lista: Equipe[] }) => lista.length ? (
     <>
       {titulo && <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">{titulo}</p>}
-      <ul className="grid gap-3 sm:grid-cols-2 mb-6">{lista.map((e) => <Cartao key={e.id} e={e} />)}</ul>
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 mb-6">{lista.map((e) => <Cartao key={e.id} e={e} />)}</ul>
     </>
   ) : null;
 

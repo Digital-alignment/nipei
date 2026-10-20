@@ -614,6 +614,7 @@ blockquote cite {
 /* v1 forces `nav, header { position: relative }` unlayered, which beats Tailwind's layered .fixed/.sticky */
 .v2 blockquote { margin: 0.75rem 0; padding: 0 0 0 0.75rem; font-family: inherit; font-size: inherit; border-left: 2px solid #fbbf24; } /* v1's quote style is for the landing pages */
 .v2 nav.fixed { position: fixed; z-index: 20; }
+.v2 nav.sticky { position: sticky; z-index: 30; } /* v1 forces nav/main to z-index 2; the rail flyouts must sit above the page */
 /* chip / tab / button rows scroll sideways on phones without showing a scrollbar */
 .v2 .overflow-x-auto { scrollbar-width: none; }
 .v2 .overflow-x-auto::-webkit-scrollbar { display: none; }

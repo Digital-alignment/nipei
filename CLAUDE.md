@@ -162,6 +162,9 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - `/projetos/[id]`: números (abertas, atrasadas, sem responsável → filtro, % concluído), botões (Nova tarefa, Visão holística, Objetivos, Diagnóstico p/ gestão) e abas: Tarefas (filtros sem responsável/pessoa/equipe, ordem inteligente, ações em lote), Objetivos (progresso, + tarefa), Pessoas (quem tem tarefa aberta no projeto → filtra) e Atualizações (linha do tempo; gestão/coordenação publica com `anotarProjetoAction`).
 - Seleção em lote escondida por padrão: chip "Selecionar" (`LoteToggle`) liga `html[data-lote]` e mostra as caixas `.lote-caixa` (CSS em `globals.css`). Linhas de chips/abas rolam sem barra visível (`.v2 .overflow-x-auto`).
 - Se uma mudança em `globals.css` não aparecer no `npm run dev`, apague `.next` (cache persistente do Turbopack).
+- **Menu lateral (v2.34, desktop)**: painel flutuante recolhível (`components/v2/Nav.tsx`). Aberto: ícone + nome, subitens numa linha em árvore. Fechado: só ícones; passar o mouse mostra o nome, ou um menu flutuante com os subitens. A escolha fica no cookie `nipei_menu` (lido no layout, sem salto ao carregar). A barra do celular não mudou.
+- Conteúdo: coluna central `max-w-6xl mx-auto` no layout; páginas estreitas (formulários, leitura) usam `max-w-* mx-auto`; listas de cartões ganham 3 colunas em `xl`.
+- O CSS antigo (v1) força `nav`/`main` com `position: relative; z-index: 2` sem camada; por isso há overrides `.v2 nav.fixed` / `.v2 nav.sticky` em `globals.css`.
 ---
 
 ## 4. Comandos Essenciais

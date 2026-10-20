@@ -14,7 +14,7 @@ export default async function EditarPerfil({ params }: { params: Promise<{ id: s
   const p = getPessoas().find((x) => x.id === id);
   if (!p || !(me.gestao || me.pessoa?.id === id)) notFound();
   return (
-    <div className="max-w-md">
+    <div className="max-w-md mx-auto">
       <Link href={`/pessoas/${id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{p.name}</Link>
       <h1 className="text-2xl font-semibold tracking-tight mb-5">{me.pessoa?.id === id ? t.meuPerfil : p.name}</h1>
       <PerfilForm inicial={inicialPerfil(p)} t={t} voltar={`/pessoas/${id}`} />

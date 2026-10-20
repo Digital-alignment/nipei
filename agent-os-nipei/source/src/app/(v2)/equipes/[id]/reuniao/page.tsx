@@ -44,7 +44,7 @@ export default async function ReuniaoEquipe({ params, searchParams }: { params: 
   );
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Link href={`/equipes/${id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{e.nome}</Link>
       <Title sub={proxima ? `📅 ${fmtDate(proxima.inicio, lang)}${proxima.hora ? ` · ${proxima.hora}` : ""}` : undefined}>{t.reuniaoEquipe}</Title>
       {q.salva && <p className="mb-3 rounded-lg bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-300">✓ {t.ataSalva}</p>}

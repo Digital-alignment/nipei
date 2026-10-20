@@ -19,7 +19,7 @@ export default async function Diagnosticos({ searchParams }: { searchParams: Pro
   const lista = getDiagnosticos().filter((d) => !q.projeto || d.projeto === q.projeto);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <Title sub={t.diagnosticosIntro}>{t.diagnosticos}</Title>
 
       <Section title={t.diagnosticos}>

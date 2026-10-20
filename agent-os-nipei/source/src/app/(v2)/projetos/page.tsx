@@ -19,7 +19,7 @@ export default async function Projetos() {
           <Target size={15} />{t.objetivos} <span className="text-neutral-400 tabular-nums">{doAno}</span>
         </Link>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {getProjetos().map((p) => {
           const ts = tarefas.filter((x) => x.projeto === p.id);
           const abertas = ts.filter((x) => x.status !== "done");

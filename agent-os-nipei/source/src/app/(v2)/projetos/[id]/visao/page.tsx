@@ -32,7 +32,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
   const prio = { alta: t.prio_alta, media: t.prio_media, baixa: t.prio_baixa };
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Link href={`/projetos/${id}`} className="print:hidden inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{v.projeto.nome}</Link>
       <Title sub={t.visaoIntro}>{t.visaoHolistica} · {v.projeto.nome}</Title>
 

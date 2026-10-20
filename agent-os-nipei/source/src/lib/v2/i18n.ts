@@ -168,6 +168,7 @@ const pt = {
   atualizadoEm: "Atualizado em", semObjetivosProjeto: "Este projeto ainda não tem objetivos ligados.", todosObjetivos: "Ver todos os objetivos",
   novaAtualizacao: "O que avançou?", publicar: "Publicar", semAtualizacoes: "Nenhuma atualização ainda.", concluidoLbl: "concluído", lerMais: "ver mais",
   selecionarLbl: "Selecionar",
+  recolherMenu: "Recolher menu", expandirMenu: "Expandir menu",
 };
 export type Dict = typeof pt;
 
@@ -335,6 +336,7 @@ const en: Dict = {
   atualizadoEm: "Updated on", semObjetivosProjeto: "This project has no linked objectives yet.", todosObjetivos: "See all objectives",
   novaAtualizacao: "What moved forward?", publicar: "Post", semAtualizacoes: "No updates yet.", concluidoLbl: "done", lerMais: "see more",
   selecionarLbl: "Select",
+  recolherMenu: "Collapse menu", expandirMenu: "Expand menu",
 };
 
 export async function getLang(): Promise<Lang> {

@@ -83,7 +83,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       )}
 
       <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">{t.membros} <span className="font-normal">({ativas.length})</span></p>
-      <ul className="grid gap-2 sm:grid-cols-2 mb-6">{ativas.map((p) => <Cartao key={p.id} p={p} />)}</ul>
+      <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 mb-6">{ativas.map((p) => <Cartao key={p.id} p={p} />)}</ul>
 
       {gerenciaveis.length > 0 && (
         <details className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">

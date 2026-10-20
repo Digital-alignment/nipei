@@ -19,7 +19,7 @@ export default async function Consolidado({ params }: { params: Promise<{ id: st
   const c = getColetivo(d.id).consolidados[tipo];
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{d.titulo}</Link>
       <h1 className="text-2xl font-semibold tracking-tight">{tipo === "retiro" ? t.relatorioRetiro : t.matrizResp}</h1>
       <p className="text-sm text-neutral-500 mt-1 mb-4">{c?.geradoEm ? `${t.geradoEm} ${fmtDate(diaLocal(c.geradoEm), lang)}` : t.naoGerado}</p>

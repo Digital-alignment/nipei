@@ -24,6 +24,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   if (user.pessoa) registrarAcesso(user.pessoa.id);
   const { t } = await getT();
   const name = user.pessoa?.name ?? user.username;
+  const menuFechado = (await cookies()).get("nipei_menu")?.value === "fechado"; // set by components/v2/Nav.tsx
 
   return (
     <div className="v2 min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
@@ -43,8 +44,10 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         </div>
       </header>
       <div className="flex">
-        <Nav labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas }} />
-        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-28 md:pb-10 max-w-3xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}</main>
+        <Nav fechadoInicial={menuFechado} labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas, recolher: t.recolherMenu, expandir: t.expandirMenu }} />
+        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-28 md:pb-10">
+          <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}</div>
+        </main>
       </div>
     </div>
   );

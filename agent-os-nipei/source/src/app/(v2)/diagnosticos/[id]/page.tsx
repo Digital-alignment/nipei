@@ -20,7 +20,7 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
   const quem = participantes(d);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       {projeto && <Link href={`/projetos/${projeto.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{projeto.nome}</Link>}
       <Title sub={`${en ? d.modelo.titulo_en : d.modelo.titulo} · ${d.modelo.autor} · ${d.status === "aberto" ? t.aberto : t.encerrado}`}>{d.titulo}</Title>
       <div className="flex flex-wrap gap-3 items-center mb-5 text-sm">
