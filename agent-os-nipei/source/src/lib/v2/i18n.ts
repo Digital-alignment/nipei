@@ -79,6 +79,12 @@ const pt = {
   status_proposto: "Proposto", status_confirmado: "Confirmado", status_substituido: "Substituído", status_descartado: "Descartado",
   tiposFato: { fato: "Fato", decisao: "Decisão", prazo: "Prazo", procedimento: "Procedimento", contato: "Contato", valor: "Valor" },
   formatosFonte: "PDF, foto (JPG, PNG, WebP) ou texto (TXT, MD, CSV). Até 10 MB.",
+  alertas: "Alertas", alertasIntro: "O auditor compara cada fato novo com a base. Decida o que está certo: nada muda sozinho.", semAlertas: "Nenhum alerta aberto.",
+  auditarAgora: "Auditar agora", auditando: "Auditoria iniciada; os alertas aparecem em alguns minutos.", resolvidas: "Resolvidos recentemente",
+  tiposAlerta: { contradicao: "Contradição", ja_corrigido: "Já corrigido antes", duplicado: "Duplicado", desatualizado: "Desatualizado" },
+  fatoNovo: "Fato", comparadoCom: "Na base", sugestaoIA: "Sugestão", alertaAberto: "Tem alerta: decida em Alertas",
+  acaoSubstituir: "O novo está certo (substitui)", acaoEliminar: "Eliminar o novo", acaoEditar: "Editar e confirmar", acaoManter: "Os dois valem",
+  acaoAindaVale: "Ainda vale", acaoEliminarFato: "Eliminar", acaoConfirmarMesmo: "Confirmar mesmo assim",
 };
 export type Dict = typeof pt;
 
@@ -157,6 +163,12 @@ const en: Dict = {
   status_proposto: "Proposed", status_confirmado: "Confirmed", status_substituido: "Replaced", status_descartado: "Discarded",
   tiposFato: { fato: "Fact", decisao: "Decision", prazo: "Deadline", procedimento: "Procedure", contato: "Contact", valor: "Amount" },
   formatosFonte: "PDF, photo (JPG, PNG, WebP) or text (TXT, MD, CSV). Up to 10 MB.",
+  alertas: "Alerts", alertasIntro: "The auditor compares each new fact with the base. Decide what is right: nothing changes by itself.", semAlertas: "No open alerts.",
+  auditarAgora: "Audit now", auditando: "Audit started; alerts show up in a few minutes.", resolvidas: "Recently resolved",
+  tiposAlerta: { contradicao: "Contradiction", ja_corrigido: "Already corrected", duplicado: "Duplicate", desatualizado: "Outdated" },
+  fatoNovo: "Fact", comparadoCom: "In the base", sugestaoIA: "Suggestion", alertaAberto: "Has an alert: decide in Alerts",
+  acaoSubstituir: "The new one is right (replaces)", acaoEliminar: "Remove the new one", acaoEditar: "Edit and confirm", acaoManter: "Both are valid",
+  acaoAindaVale: "Still valid", acaoEliminarFato: "Remove", acaoConfirmarMesmo: "Confirm anyway",
 };
 
 export async function getLang(): Promise<Lang> {

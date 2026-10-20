@@ -5,6 +5,7 @@ import VoiceTask from "@/components/v2/VoiceTask";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
+import { getAlertas } from "@/lib/v2/auditor";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -25,7 +26,12 @@ export default async function Hoje() {
   const eventos = getEventos().filter((e) => e.inicio >= hoje.slice(0, 7))
     .sort((a, b) => Number(a.inicio.length < 7) - Number(b.inicio.length < 7) || a.inicio.localeCompare(b.inicio)).slice(0, 3);
   const props = { equipes, pessoas, lang, hoje, me: user! };
-  const revisar = user ? getFatos().filter((f) => f.status === "proposto" && podeRevisar(user, f)).length : 0;
+  const fatosK = user ? getFatos() : [];
+  const revisar = user ? fatosK.filter((f) => f.status === "proposto" && podeRevisar(user, f)).length : 0;
+  const alertasK = user ? getAlertas().filter((a) => {
+    const f = fatosK.find((x) => x.id === a.fato);
+    return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
+  }).length : 0;
 
   return (
     <>
@@ -39,9 +45,9 @@ export default async function Hoje() {
         </Link>
       )}
 
-      {revisar > 0 && (
-        <Link href="/conhecimento" className="block rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 text-sm mb-5">
-          🧠 {revisar} {t.fatosPropostos} · <span className="underline font-medium">{t.conhecimento}</span>
+      {(revisar > 0 || alertasK > 0) && (
+        <Link href={alertasK ? "/conhecimento/alertas" : "/conhecimento"} className="block rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 text-sm mb-5">
+          🧠 {[revisar && `${revisar} ${t.fatosPropostos}`, alertasK && `⚠️ ${alertasK} ${t.alertas.toLowerCase()}`].filter(Boolean).join(" · ")} · <span className="underline font-medium">{t.conhecimento}</span>
         </Link>
       )}
 

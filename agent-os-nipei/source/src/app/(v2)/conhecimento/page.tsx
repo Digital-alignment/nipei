@@ -5,6 +5,7 @@ import AutoRefresh from "@/components/v2/AutoRefresh";
 import Upload from "@/components/v2/Upload";
 import { currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { diaLocal, getFatos, getFontes, podeRevisar } from "@/lib/v2/conhecimento";
+import { auditoriaSemanal, getAlertas } from "@/lib/v2/auditor";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { enviarFonteAction, enviarFonteArquivoAction } from "../actions";
 
@@ -19,6 +20,11 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? id;
   const pendentes = (fid: string) => fatos.filter((f) => f.fonte === fid && f.status === "proposto");
   const paraMim = fontes.filter((f) => pendentes(f.id).some((x) => podeRevisar(me, x)));
+  void auditoriaSemanal(); // at most once a week, in the background
+  const alertas = getAlertas().filter((a) => {
+    const f = fatos.find((x) => x.id === a.fato);
+    return a.status === "aberta" && (f ? podeRevisar(me, f) : me.gestao);
+  }).length;
   const busca = (q.q ?? "").toLowerCase().trim();
   const base = fatos.filter((f) => f.status === "confirmado" && (!q.equipe || f.equipe === q.equipe) && (!busca || f.texto.toLowerCase().includes(busca)))
     .sort((a, b) => b.revisadoEm.localeCompare(a.revisadoEm)).slice(0, 60);
@@ -43,6 +49,11 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
     <>
       <AutoRefresh ativo={fontes.some((f) => f.status === "processando")} />
       <Title sub={t.conhecimentoIntro}>{t.conhecimento}</Title>
+      {alertas > 0 && (
+        <Link href="/conhecimento/alertas" className="block rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm mb-5">
+          ⚠️ {alertas} {t.alertas.toLowerCase()} · <span className="underline font-medium">{t.alertas}</span>
+        </Link>
+      )}
 
       <Section title={t.enviar}>
         <div className="grid gap-3">

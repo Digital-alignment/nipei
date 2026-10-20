@@ -7,6 +7,7 @@ import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { criarFonte, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
+import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
@@ -391,10 +392,34 @@ export async function revisarFatoAction(form: FormData) {
   const me = await requireUser();
   const acao = pick(form.get("acao"), ["confirmar", "descartar"]) as "confirmar" | "descartar" | "";
   const ids = form.getAll("id").map(String);
-  const fatos = getFatos().filter((f) => ids.includes(f.id) && f.status === "proposto" && podeRevisar(me, f));
+  const alertas = getAlertas().filter((a) => a.status === "aberta");
+  const comAlerta = new Set(alertas.map((a) => a.fato));
+  // "confirm all" leaves out facts with an open alert: those are decided in the alert
+  const fatos = getFatos().filter((f) => ids.includes(f.id) && f.status === "proposto" && podeRevisar(me, f) && (ids.length === 1 || !comAlerta.has(f.id)));
   if (!acao) return;
   // one fact may come with an edited text; "confirm all" sends several ids and no text
   const texto = ids.length === 1 ? String(form.get("texto") ?? "") : undefined;
-  for (const f of fatos) revisarFato(f.id, acao, actorName(me), texto);
+  for (const f of fatos) {
+    revisarFato(f.id, acao, actorName(me), texto);
+    // discarding the fact settles its alerts
+    if (acao === "descartar") for (const a of alertas.filter((x) => x.fato === f.id)) resolverAlerta(a.id, "eliminar", actorName(me));
+  }
+  revalidatePath("/conhecimento", "layout");
+}
+
+export async function resolverAlertaAction(form: FormData) {
+  const me = await requireUser();
+  const a = getAlertas().find((x) => x.id === String(form.get("id")) && x.status === "aberta");
+  const fato = a && getFatos().find((f) => f.id === a.fato);
+  const acao = pick(form.get("acao"), [...ACOES]) as Acao | "";
+  if (!a || !acao || !(fato ? podeRevisar(me, fato) : me.gestao)) return;
+  resolverAlerta(a.id, acao, actorName(me), String(form.get("texto") ?? ""));
+  revalidatePath("/conhecimento", "layout");
+}
+
+export async function auditarAgoraAction() {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  void auditoriaSemanal(true);
   revalidatePath("/conhecimento", "layout");
 }

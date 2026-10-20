@@ -112,7 +112,8 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - `/conhecimento`: qualquer membro envia arquivo (PDF, foto, txt/md/csv até 10 MB), link ou texto colado. `lib/v2/conhecimento.ts` grava `Conhecimento/Fontes/<id>.md` (+ original em `Fontes/arquivos/`) e, em segundo plano, a IA (`chamarIA` em `lib/v2/ia.ts`) gera resumo e até 40 fatos em `Conhecimento/Fatos/<id>.md`.
 - Fatos têm `status`: proposto → confirmado | descartado (| substituido, K2). Nunca apague fatos corrigidos: o auditor (K2) usa o histórico para detectar conteúdo já corrigido. Revisa: gestão, ou a coordenação da `equipe` do fato (`podeRevisar`).
 - Links: só http(s) públicos (redirects checados um a um, IPs internos bloqueados).
-- Próximos: K2 auditor + alertas, K3 busca única dos agentes só em fatos confirmados, K4 propostas sobre tarefas/projetos.
+- **K2 auditor (v2.13)** `lib/v2/auditor.ts`: depois de cada fonte, os fatos novos são comparados (candidatos por palavras + equipe/projeto/pessoa, sem IA; depois a IA julga) com os confirmados e os já corrigidos → `Conhecimento/Alertas/<id>.md` (`contradicao`, `ja_corrigido`, `duplicado`, `desatualizado` = prazo confirmado vencido). Bandeja `/conhecimento/alertas`: substituir / eliminar / editar / manter (`resolverAlerta`). Auditoria semanal preguiçosa (`Conhecimento/.auditoria`, disparada ao abrir /conhecimento) + "Auditar agora" (gestão). Descarte por duplicado grava `descartado_motivo: duplicado` e não conta como correção.
+- Próximos: K3 busca única dos agentes só em fatos confirmados, K4 propostas sobre tarefas/projetos.
 
 ---
 

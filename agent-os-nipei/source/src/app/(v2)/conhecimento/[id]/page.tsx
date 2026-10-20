@@ -5,6 +5,7 @@ import { Section } from "@/components/v2/ui";
 import AutoRefresh from "@/components/v2/AutoRefresh";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
 import { diaLocal, getFatos, getFontes, podeRevisar, type StatusFato } from "@/lib/v2/conhecimento";
+import { getAlertas } from "@/lib/v2/auditor";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { reprocessarFonteAction, revisarFatoAction } from "../../actions";
 
@@ -21,7 +22,9 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
   const f = getFontes().find((x) => x.id === id);
   if (!f) notFound();
   const fatos = getFatos().filter((x) => x.fonte === id).sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
+  const comAlerta = new Map(getAlertas().filter((a) => a.status === "aberta").map((a) => [a.fato, a]));
   const meus = fatos.filter((x) => x.status === "proposto" && podeRevisar(me, x));
+  const semAlerta = meus.filter((x) => !comAlerta.has(x.id));
   const equipes = getEquipes(), projetos = getProjetos(), objetivos = getObjetivos(), pessoas = getPessoas();
   const nome = (pid: string) => pessoas.find((p) => p.id === pid)?.name.split(" (")[0] ?? pid;
   const podeReprocessar = f.status !== "processando" && (me.gestao || f.enviadoPor === (me.pessoa?.id ?? me.username));
@@ -54,10 +57,10 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
 
       {f.status === "pronta" && (
         <Section title={`${t.fatos} (${fatos.length})`}>
-          {meus.length > 1 && (
+          {semAlerta.length > 1 && (
             <form action={revisarFatoAction} className="mb-4">
-              {meus.map((x) => <input key={x.id} type="hidden" name="id" value={x.id} />)}
-              <button name="acao" value="confirmar" className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm">{t.confirmarTodos} ({meus.length})</button>
+              {semAlerta.map((x) => <input key={x.id} type="hidden" name="id" value={x.id} />)}
+              <button name="acao" value="confirmar" className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm">{t.confirmarTodos} ({semAlerta.length})</button>
             </form>
           )}
           {fatos.length === 0 && <p className="text-sm text-neutral-500">{t.semFatos}</p>}
@@ -68,6 +71,11 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
                   {t.tiposFato[x.tipo as keyof typeof t.tiposFato] ?? x.tipo} · <span className={STATUS_COR[x.status]}>{statusTxt[x.status]}</span>
                   {x.revisadoPor && ` · ${x.revisadoPor}`}
                 </p>
+                {comAlerta.has(x.id) && (
+                  <Link href="/conhecimento/alertas" className="block text-xs text-red-600 dark:text-red-400 mb-1">
+                    ⚠️ {t.tiposAlerta[comAlerta.get(x.id)!.tipo]}: {comAlerta.get(x.id)!.explicacao} — <span className="underline">{t.alertaAberto}</span>
+                  </Link>
+                )}
                 {x.status === "proposto" && podeRevisar(me, x) ? (
                   <form action={revisarFatoAction} className="grid gap-2">
                     <input type="hidden" name="id" value={x.id} />

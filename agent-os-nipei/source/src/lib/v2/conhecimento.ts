@@ -4,6 +4,7 @@ import { lookup } from "dns/promises";
 import { isIP } from "net";
 import { requestSync } from "@/lib/tarefaNote";
 import { chamarIA, type Parte } from "./ia";
+import { auditarFatos } from "./auditor";
 import { getEquipes, getObjetivos, getPessoas, getProjetos, noteText, readDir, slugify, updateNote, vault, type FmValue, type Me } from "./data";
 
 // Conhecimento (K1): someone uploads a source (file, link, pasted text) → the AI reads it and splits it
@@ -33,7 +34,8 @@ export type Fonte = {
 };
 export type Fato = {
   id: string; file: string; texto: string; tipo: string; fonte: string; equipe: string; projetos: string[]; objetivos: string[];
-  pessoas: string[]; dataReferencia: string; status: StatusFato; criadoEm: string; revisadoPor: string; revisadoEm: string;
+  pessoas: string[]; dataReferencia: string; status: StatusFato; criadoEm: string; revisadoPor: string; revisadoEm: string; substituidoPor: string;
+  motivo: string; // "duplicado" when discarded only for repeating a confirmed fact (not a correction)
 };
 
 const s = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -54,6 +56,7 @@ export function getFatos(): Fato[] {
     id: s(fm.id), file, texto: s(fm.texto), tipo: s(fm.tipo) || "fato", fonte: s(fm.fonte), equipe: s(fm.equipe),
     projetos: arr(fm.projetos), objetivos: arr(fm.objetivos), pessoas: arr(fm.pessoas), dataReferencia: s(fm.data_referencia),
     status: (s(fm.status) || "proposto") as StatusFato, criadoEm: s(fm.criado_em), revisadoPor: s(fm.revisado_por), revisadoEm: s(fm.revisado_em),
+    substituidoPor: s(fm.substituido_por), motivo: s(fm.descartado_motivo),
   }));
 }
 
@@ -193,6 +196,9 @@ export async function processarFonte(id: string) {
       fs.writeFileSync(path.join(vault(), FATOS, `${slugify(texto) || "fato"}_${fid.slice(4)}.md`), noteText(fmf, `${texto}\n\nFonte: [[${id}]]`), "utf-8");
     }
     escreverFonte(id, { ...fm("pronta"), titulo: f.titulo || s(o.titulo).slice(0, 150) || "Sem título" }, s(o.resumo), f.tipo === "texto" ? f.texto : s(o.texto));
+    // K2: check the new facts against what the base already knows (alerts show up during review)
+    const novos = getFatos().filter((x) => x.fonte === id && x.status === "proposto").map((x) => x.id);
+    await auditarFatos(novos).catch((e) => console.warn("[conhecimento] auditoria falhou:", (e as Error).message));
   } catch (e) {
     escreverFonte(id, fm("erro", (e as Error).message.slice(0, 200)), "", f.texto);
   }
