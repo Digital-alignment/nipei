@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { CalendarClock } from "lucide-react";
 import { prazoRapidoAction } from "@/app/(v2)/actions";
+import { enfileirar, offline } from "@/lib/v2/filaOffline";
 
 /** New due date in two taps: the calendar icon opens the options (keeps the list compact). */
 export default function PrazoRapido({ id, opcoes, outraData, rotulo }: { id: string; opcoes: { label: string; data: string }[]; outraData: string; rotulo: string }) {
@@ -10,6 +11,7 @@ export default function PrazoRapido({ id, opcoes, outraData, rotulo }: { id: str
   const [pending, start] = useTransition();
   const salvar = (prazo: string) => {
     if (!prazo) return;
+    if (offline()) { enfileirar({ tipo: "prazo", id, valor: prazo }); setAberto(false); return; }
     const f = new FormData();
     f.set("id", id);
     f.set("prazo", prazo);

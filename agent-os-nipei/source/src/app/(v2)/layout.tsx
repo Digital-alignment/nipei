@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import ErroAviso from "@/components/v2/ErroAviso";
+import Offline from "@/components/v2/Offline";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Brain, Library, LogOut, Wallet } from "lucide-react";
@@ -42,7 +43,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       </header>
       <div className="flex">
         <Nav labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas }} />
-        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-28 md:pb-10 max-w-3xl"><Suspense><ErroAviso /></Suspense>{children}</main>
+        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-28 md:pb-10 max-w-3xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}</main>
       </div>
     </div>
   );

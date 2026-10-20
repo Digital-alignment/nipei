@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { setStatusAction } from "@/app/(v2)/actions";
+import StatusBotao from "@/components/v2/StatusBotao";
 import { can, type Equipe, type Me, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, type Lang } from "@/lib/v2/i18n";
 
@@ -63,14 +63,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tar
   return (
     <li className="flex flex-wrap items-start gap-x-3 py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
       {can.editTarefa(me, t) ? (
-        <form action={setStatusAction}>
-          <input type="hidden" name="id" value={t.id} />
-          <input type="hidden" name="status" value={t.status === "done" ? "todo" : "done"} />
-          <button aria-label={t.status === "done" ? "Reabrir" : "Concluir"}
-            className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] ${t.status === "done" ? "bg-neutral-800 border-neutral-800 text-white dark:bg-neutral-200 dark:border-neutral-200 dark:text-neutral-900" : "border-neutral-400 hover:border-neutral-700"}`}>
-            {t.status === "done" ? "✓" : t.status === "doing" ? "•" : ""}
-          </button>
-        </form>
+        <StatusBotao id={t.id} status={t.status} />
       ) : (
         // Read-only: not yours and not your team's to coordinate.
         <span aria-hidden className="mt-0.5 w-5 h-5 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-700 shrink-0" />
