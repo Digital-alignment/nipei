@@ -65,7 +65,9 @@ function acharPessoa(q: string) {
   const ps = getPessoas();
   return ps.find((p) => p.id === q) ?? ps.find((p) => n(p.name).startsWith(n(q))) ?? ps.find((p) => p.apelido && n(p.apelido) === n(q)) ?? ps.find((p) => n(p.name).includes(n(q)));
 }
-const acharEquipe = (q: string) => getEquipes().find((e) => e.id === q || n(e.nome).includes(n(q)));
+// "Equipe 1" / "equipe 2" is how people name teams; the notes use ids equipe_1… and long names
+const acharEquipe = (q: string) => { const num = n(q).match(/^equipe\s*_?(\d+)$/)?.[1]; return getEquipes().find((e) => e.id === q || (!!num && e.id === `equipe_${num}`) || n(e.nome).includes(n(q))); };
+const dm = (iso: string) => (ISO.test(iso) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : iso);
 const acharProjeto = (q: string) => getProjetos().find((p) => p.id === q || n(p.nome).includes(n(q)));
 const abertasDe = (f: (t: Tarefa) => boolean) => getTarefas().filter((t) => t.status !== "done" && f(t));
 const contagem = (ts: Tarefa[], hoje = today()) => ({ abertas: ts.length, atrasadas: ts.filter((t) => t.prazo && t.prazo < hoje).length, sem_responsavel: ts.filter((t) => !t.responsaveis.length).length });
@@ -263,7 +265,7 @@ function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoProposta
     const nomes = responsaveis.map((r) => primeiro(getPessoas().find((p) => p.id === r)?.name ?? r)).join(", ");
     return {
       tipo: "criar_tarefa", titulo, prazo, equipe, responsaveis, projeto: pr?.id ?? "", prioridade, descricao: s(a.descricao).slice(0, 2000),
-      resumo: `Criar "${titulo}"`, detalhe: [prazo && `prazo ${prazo}`, nomes, getEquipes().find((e) => e.id === equipe)?.nome, pr?.nome, prioridade].filter(Boolean).join(" · "),
+      resumo: `Criar "${titulo}"`, detalhe: [prazo && `prazo ${dm(prazo)}`, nomes, getEquipes().find((e) => e.id === equipe)?.nome, pr?.nome, prioridade].filter(Boolean).join(" · "),
     };
   }
   if (nome === "criar_evento") {
@@ -272,7 +274,7 @@ function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoProposta
     if (!titulo || !ISO.test(inicio)) return { erro: "evento precisa de título e data AAAA-MM-DD" };
     if (!equipe || !can.gerirEquipe(me, equipe)) return { erro: "sem permissão para criar evento nessa equipe" };
     const fim = ISO.test(s(a.fim)) && s(a.fim) >= inicio ? s(a.fim) : "", hora = HORA.test(s(a.hora)) ? s(a.hora) : "";
-    return { tipo: "criar_evento", titulo, inicio, fim, hora, equipe, resumo: `Evento "${titulo}"`, detalhe: [inicio + (fim ? ` → ${fim}` : ""), hora, getEquipes().find((e) => e.id === equipe)?.nome].filter(Boolean).join(" · ") };
+    return { tipo: "criar_evento", titulo, inicio, fim, hora, equipe, resumo: `Evento "${titulo}"`, detalhe: [dm(inicio) + (fim ? ` → ${dm(fim)}` : ""), hora, getEquipes().find((e) => e.id === equipe)?.nome].filter(Boolean).join(" · ") };
   }
   if (nome === "nota_projeto") {
     const pr = acharProjeto(s(a.projeto)), texto = s(a.texto).slice(0, 500);
@@ -304,7 +306,7 @@ function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoProposta
   }
   if (nome === "mudar_prazo") {
     if (!ISO.test(s(a.prazo))) return { erro: "prazo deve ser AAAA-MM-DD" };
-    return { tipo: "mudar_prazo", id: t.id, prazo: s(a.prazo), resumo: `"${t.title}"`, detalhe: `prazo ${t.prazo || "sem data"} → ${s(a.prazo)}` };
+    return { tipo: "mudar_prazo", id: t.id, prazo: s(a.prazo), resumo: `"${t.title}"`, detalhe: `prazo ${t.prazo ? dm(t.prazo) : "sem data"} → ${dm(s(a.prazo))}` };
   }
   if (nome === "mudar_prioridade") {
     if (!PRIORIDADES.includes(s(a.prioridade))) return { erro: "prioridade inválida" };
@@ -364,6 +366,7 @@ const SISTEMA = (me: Me, lang: string, pagina: string) => {
   return `Você é o assistente do Nipëi OS (Santuário Nipeihu, povo Yawanawá, Aldeia Mutum, Inirau): conhece a plataforma inteira e ajuda a consultar, planejar e executar.
 Você fala com ${p ? primeiro(p.name) : me.username}${p?.funcao ? ` (${p.funcao})` : ""}${me.gestao ? ", da gestão (Equipe 1)" : ""}. Equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}${me.coordena.length ? `; coordena: ${me.coordena.map(nomeEq).join(", ")}` : ""}.
 Hoje é ${dia}, ${today()} (horário da Bahia). ${contextoPagina(me, pagina)}
+Equipes da plataforma (as pessoas dizem "Equipe 1", "Equipe 2"…): ${equipes.map((e) => `${e.id.replace("equipe_", "Equipe ")} = ${e.nome}`).join("; ")}.
 Responda no idioma da pessoa (padrão: ${lang === "en" ? "inglês" : "português do Brasil"}), curto e direto: 1 a 4 frases ou uma lista curta. Chame a pessoa pelo primeiro nome só de vez em quando.
 Regras:
 - Use as ferramentas para ler; nunca invente tarefas, datas, pessoas, valores ou fatos. Se não achar, diga.
