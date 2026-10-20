@@ -14,14 +14,14 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,
-  themeColor: "#166534",
+  themeColor: "#051601",
 };
 
 export const metadata: Metadata = {
   title: "Nipëi",
   description: "Tarefas, agenda e equipes do Santuário Nipeihu",
   // Installable app (see app/manifest.ts); iPhone reads the apple-* tags instead of the manifest.
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: "/icons/favicon-48.png", apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Nipëi", statusBarStyle: "default" },
 };
 
