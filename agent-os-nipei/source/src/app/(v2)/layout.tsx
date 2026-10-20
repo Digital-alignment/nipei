@@ -8,7 +8,7 @@ import { Brain, Library, LogOut, Wallet } from "lucide-react";
 import Nav from "@/components/v2/Nav";
 import { Avatar } from "@/components/v2/ui";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
-import { MEMBER_PURPOSE, currentUser } from "@/lib/v2/data";
+import { MEMBER_PURPOSE, currentUser, registrarAcesso } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
 
@@ -21,6 +21,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
     const token = (await cookies()).get(SESSION_COOKIE)?.value;
     redirect(verifyToken(token, MEMBER_PURPOSE) ? "/login?erro=acesso" : "/login");
   }
+  if (user.pessoa) registrarAcesso(user.pessoa.id);
   const { t } = await getT();
   const name = user.pessoa?.name ?? user.username;
 

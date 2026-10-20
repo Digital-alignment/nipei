@@ -55,7 +55,7 @@ function ordenar(ts: Tarefa[], ctx: Ctx, desempate: (a: Tarefa, b: Tarefa) => nu
 
 /** Self-check: node --experimental-strip-types src/lib/v2/ordem.ts */
 if (typeof process !== "undefined" && process.argv[1]?.endsWith("ordem.ts")) {
-  const base: Tarefa = { id: "", file: "", title: "", status: "todo", statusRaw: "", prazo: "", priority: "média", equipe: "", area: "", projeto: "", objetivo: "", responsaveis: [], responsible: "", checklist: { feitos: 0, total: 0 }, anexos: 0, recorrencia: "", atualizadoEm: "" };
+  const base: Tarefa = { id: "", file: "", title: "", status: "todo", statusRaw: "", prazo: "", priority: "média", equipe: "", area: "", projeto: "", objetivo: "", responsaveis: [], responsible: "", checklist: { feitos: 0, total: 0 }, anexos: 0, recorrencia: "", atualizadoEm: "", concluidoEm: "" };
   const t = (id: string, o: Partial<Tarefa>): Tarefa => ({ ...base, id, title: id, ...o });
   const ctx: Ctx = { hoje: "2026-10-20", comNovidade: new Set(["novidade"]) };
   const lista = [

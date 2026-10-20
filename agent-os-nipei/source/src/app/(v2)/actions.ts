@@ -725,3 +725,14 @@ export async function executarAcaoAction(acao: import("@/lib/v2/assistente").Aca
     return { error: (e as Error).message };
   }
 }
+
+// ---------------------------------------------------------------- Pessoas: AI study (gestão)
+
+export async function estudoAction(form: FormData) {
+  const me = await requireUser();
+  const pessoa = pick(form.get("pessoa"), getPessoas().map((p) => p.id));
+  if (!me.gestao || !pessoa) return;
+  const { gerarEstudo } = await import("@/lib/v2/pessoasInfo");
+  await tentar(async () => { contarUso(me.pessoa?.id ?? me.username); await gerarEstudo(pessoa); });
+  revalidatePath(`/pessoas/${pessoa}`);
+}

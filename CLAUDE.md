@@ -137,6 +137,13 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - Agenda (v2.26): vistas Semana (padrão, segunda→domingo, ‹ ›), Lista por dia (30 dias; depois meses recolhidos) e Mês (semana começa na segunda); filtro Minhas (padrão) / Minha equipe / Todas (+ equipe); bloco de atrasadas no topo; "Eventos sem dia definido" para eventos só com mês/ano; eventos com hora e cor da equipe; linhas com ordem inteligente e ícone de prazo.
 - Agenda (v2.27): grade do mês com número de tarefas por dia, dia cheio (≥5, `SOBRECARGA`) em âmbar e barras contínuas para eventos de vários dias; "+ tarefa / + evento" em cada dia (`/tarefas/nova?prazo=`, `/eventos/novo?inicio=`); arrastar tarefa para outro dia (`components/v2/ArrastarAgenda.tsx`: ouvintes no documento, linhas com `data-tarefa`, dias com `data-dia`; só mouse); Google Calendar em um toque (`render?cid=webcal://…`) + copiar; vista/quem lembrados no aparelho (`LembrarVista`).
 - Offline: `public/sw.js` (páginas network-first com cópia, estáticos cache-first, /login apaga a cópia) registrado por `components/v2/Offline.tsx` só em produção; status e prazo sem sinal entram na fila do aparelho (`lib/v2/filaOffline.ts`) e são reenviados pelas server actions ao voltar a conexão.
+
+## 3.8 Pessoas (v2.28)
+
+- Lista em cartões (função, equipes, abertas/atrasadas; gestão ordena por carga, atrasadas ou Participação). Ficha em abas: Resumo, Tarefas (ordem inteligente + "Atribuir tarefa" → `/tarefas/nova?responsavel=`), Perfil (contato, privado, papel do diagnóstico) e 🔒 Gestão (links, avisos, equipes).
+- Registro novo: `concluido_em` na tarefa quando vira concluída (escritor único, `lib/tarefaNote.ts`; reabrir limpa) e último uso por pessoa em `<vault>/.jobs/acessos.json` (`registrarAcesso` no layout v2, 1 vez por dia).
+- **Participação** (só gestão; `lib/v2/participacao.ts`, autoteste `node --experimental-strip-types src/lib/v2/participacao.ts`): média de Entrega (90 dias), Em dia (atrasadas), Ritmo (concluídas em 30 dias) e Uso (último uso, ações nos logs, perfil, WhatsApp, diagnóstico). Ritmo e tendência ficam vazios até 30/60 dias após `INICIO_REGISTRO` (2026-10-20); com menos de 2 partes mostra "dados insuficientes". Mede entrega e uso, não qualidade.
+- Estudo da IA (gestão; `gerarEstudo` em `lib/v2/pessoasInfo.ts`): pontos fortes, carga, riscos, como apoiar e até 5 tarefas sem responsável que combinam (botão "Atribuir a"), guardado em `<vault>/.jobs/estudos/` (fora do git).
 ---
 
 ## 4. Comandos Essenciais

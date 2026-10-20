@@ -138,6 +138,14 @@ const pt = {
   aDefinirData: "Eventos sem dia definido", definirData: "Definir data", livre: "Livre",
   dicaArrastar: "Dica: arraste uma tarefa para outro dia para mudar o prazo.", diaCheio: "dia cheio", tarefaLbl: "tarefa", eventoLbl: "evento",
   adicionarGoogle: "Adicionar ao Google Calendar", copiarLinkCal: "Copiar link", copiado: "Copiado",
+  abertasLbl: "abertas", feitas30: "feitas 30d", ultimoUso: "último uso", resumoLbl: "Resumo", tarefasLbl: "Tarefas", perfilLbl: "Perfil", gestaoLbl: "Gestão",
+  participacao: "Participação", soGestao: "só gestão", dadosInsuficientes: "Dados insuficientes: o indicador aparece depois de algumas semanas de uso da plataforma.",
+  nivelAlta: "alta", nivelMedia: "média", nivelBaixa: "baixa", pEntrega: "Entrega", pEmDia: "Em dia", pRitmo: "Ritmo", pUso: "Uso",
+  participacaoNota: "Mede entrega e uso da plataforma, não a qualidade do trabalho. Quem trabalha em campo sem sinal tende a pontuar menos.",
+  estudoIA: "Estudo da IA", estudarPessoa: "Estudar pessoa", atualizarEstudo: "Atualizar estudo", estudoAviso: "A IA analisa função, tarefas, o que a pessoa contou no diagnóstico e as tarefas sem responsável que combinam com ela.",
+  tarefasSugeridas: "Tarefas sem responsável que combinam", atribuirA: "Atribuir a", atribuirTarefa: "Atribuir tarefa", proximasTarefas: "Próximas tarefas",
+  concluidasRecentes: "Concluídas", contato: "Contato", privadoLbl: "Privado", maisCarga: "Mais carga", ordenar: "Ordenar",
+  funcaoLbl: "Função", areaLbl: "Área", dispLbl: "Disponibilidade",
 };
 export type Dict = typeof pt;
 
@@ -275,6 +283,14 @@ const en: Dict = {
   aDefinirData: "Events without a set day", definirData: "Set the date", livre: "Free",
   dicaArrastar: "Tip: drag a task to another day to change its due date.", diaCheio: "full day", tarefaLbl: "task", eventoLbl: "event",
   adicionarGoogle: "Add to Google Calendar", copiarLinkCal: "Copy link", copiado: "Copied",
+  abertasLbl: "open", feitas30: "done 30d", ultimoUso: "last use", resumoLbl: "Summary", tarefasLbl: "Tasks", perfilLbl: "Profile", gestaoLbl: "Management",
+  participacao: "Participation", soGestao: "management only", dadosInsuficientes: "Not enough data: the indicator appears after a few weeks of using the platform.",
+  nivelAlta: "high", nivelMedia: "medium", nivelBaixa: "low", pEntrega: "Delivery", pEmDia: "On time", pRitmo: "Pace", pUso: "Use",
+  participacaoNota: "Measures delivery and platform use, not the quality of the work. People working in the field without signal tend to score lower.",
+  estudoIA: "AI study", estudarPessoa: "Study person", atualizarEstudo: "Update study", estudoAviso: "The AI looks at role, tasks, what the person said in the assessment and owner-less tasks that fit them.",
+  tarefasSugeridas: "Owner-less tasks that fit", atribuirA: "Assign to", atribuirTarefa: "Assign task", proximasTarefas: "Next tasks",
+  concluidasRecentes: "Done", contato: "Contact", privadoLbl: "Private", maisCarga: "Most load", ordenar: "Sort",
+  funcaoLbl: "Role", areaLbl: "Area", dispLbl: "Availability",
 };
 
 export async function getLang(): Promise<Lang> {

@@ -17,7 +17,7 @@ export default function Abas({ id, abas }: { id: string; abas: { id: string; lab
         {abas.map((a) => (
           <button key={a.id} role="tab" type="button" aria-selected={a.id === aba?.id} onClick={() => escolher(a.id)}
             className={`shrink-0 px-2.5 py-2 text-sm -mb-px border-b-2 ${a.id === aba?.id ? "border-neutral-900 dark:border-white font-medium" : "border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"}`}>
-            {a.label} <span className={`text-xs tabular-nums ${a.alerta && a.count ? "text-red-600 dark:text-red-400" : "text-neutral-400"}`}>{a.count}</span>
+            {a.label} {a.count > 0 && <span className={`text-xs tabular-nums ${a.alerta ? "text-red-600 dark:text-red-400" : "text-neutral-400"}`}>{a.count}</span>}
           </button>
         ))}
       </div>

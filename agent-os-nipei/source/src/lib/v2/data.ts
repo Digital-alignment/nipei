@@ -35,6 +35,7 @@ export type Tarefa = {
   equipe: string; area: string; projeto: string; objetivo: string; responsaveis: string[]; responsible: string;
   checklist: { feitos: number; total: number }; anexos: number; recorrencia: string;
   atualizadoEm: string; // last write to the note (smart order: stale vs fresh)
+  concluidoEm: string; // when it was marked done (only since 2026-10-20; older tasks don't have it)
 };
 
 export const vault = () => {
@@ -157,6 +158,7 @@ export function getTarefas(): Tarefa[] {
       anexos: Array.isArray(fm.anexos) ? fm.anexos.length : 0,
       recorrencia: s(fm.recorrencia),
       atualizadoEm: s(fm.updated_at),
+      concluidoEm: s(fm.concluido_em),
     };
   });
 }
@@ -584,4 +586,27 @@ export function novidadesPara(me: Me, dias = 7, max = 12): Novidade[] {
     }
   }
   return out.sort((a, b) => b.quando.localeCompare(a.quando)).slice(0, max);
+}
+
+// ---------------------------------------------------------------- last use (Participação)
+// .jobs/acessos.json: person → last day they opened the app. Written at most once a day per person.
+
+const ACESSOS = () => path.join(vault(), ".jobs", "acessos.json");
+const vistosHoje = new Map<string, string>();
+
+export function getAcessos(): Record<string, string> {
+  try { return JSON.parse(fs.readFileSync(ACESSOS(), "utf-8")); } catch { return {}; }
+}
+
+export function registrarAcesso(pessoaId: string) {
+  const dia = today();
+  if (vistosHoje.get(pessoaId) === dia) return;
+  vistosHoje.set(pessoaId, dia);
+  try {
+    const a = getAcessos();
+    if (a[pessoaId] === dia) return;
+    a[pessoaId] = dia;
+    fs.mkdirSync(path.dirname(ACESSOS()), { recursive: true });
+    fs.writeFileSync(ACESSOS(), JSON.stringify(a), "utf-8");
+  } catch { /* never block a page for this */ }
 }

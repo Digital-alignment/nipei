@@ -247,6 +247,9 @@ export function writeTarefa(vaultRoot: string, relFile: string, actor: string, m
     linhas.push(`repetição criada: ${prox.id} (prazo ${prox.prazo})`);
   }
   if (!linhas.length) return doc;
+  // when it was finished (Participação, "done in the last 30 days"); reopening clears it
+  if (!concluida(antes.fm.status) && concluida(doc.fm.status)) doc.fm.concluido_em = new Date().toISOString();
+  else if (concluida(antes.fm.status) && !concluida(doc.fm.status)) doc.fm.concluido_em = "";
   doc.fm.updated_at = new Date().toISOString();
   doc.fm.updated_by = actor;
   avisarMudancas(vaultRoot, antes, doc, actor, extra);

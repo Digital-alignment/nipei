@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { ChevronRight, Mail, MessageCircle } from "lucide-react";
-import { Avatar, Chip, Section, Title } from "@/components/v2/ui";
+import { MessageCircle } from "lucide-react";
+import { Avatar, Chip, Title } from "@/components/v2/ui";
 import { can, currentUser, getEquipes, getPessoas, type Pessoa } from "@/lib/v2/data";
+import { resumoPessoas } from "@/lib/v2/pessoasInfo";
+import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getT } from "@/lib/v2/i18n";
 import { addToEquipeAction, createPessoaAction } from "../actions";
 
@@ -9,50 +11,79 @@ const waLink = (n: string) => `https://wa.me/${n.replace(/\D/g, "")}`;
 const small = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs";
 const btn = "rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs";
 
-export default async function Pessoas({ searchParams }: { searchParams: Promise<{ q?: string; equipe?: string }> }) {
+export default async function Pessoas({ searchParams }: { searchParams: Promise<{ q?: string; equipe?: string; ordem?: string }> }) {
   const q = await searchParams;
   const { t } = await getT();
   const me = (await currentUser())!;
   const equipes = getEquipes();
-  // Teams this person may add people to: all for gestão, their own for a coordinator, none for a member.
   const gerenciaveis = equipes.filter((e) => can.gerirEquipe(me, e.id));
+  const info = resumoPessoas(me.gestao); // Participação only for gestão
   const busca = (q.q ?? "").toLowerCase().trim();
-  const todas = getPessoas().filter((p) => !busca || p.name.toLowerCase().includes(busca) || p.nipeiId.toLowerCase().includes(busca));
-  const ativas = todas.filter((p) => p.equipes.length > 0 && (!q.equipe || p.equipes.includes(q.equipe)));
+  const todas = getPessoas().filter((p) => !busca || `${p.name} ${p.apelido} ${p.funcao} ${p.nipeiId}`.toLowerCase().includes(busca));
+  const ordem = me.gestao && ["carga", "atrasadas", "participacao"].includes(q.ordem ?? "") ? q.ordem! : "nome";
+  const ordenar = (ps: Pessoa[]) => [...ps].sort((a, b) => {
+    const A = info.get(a.id)!, B = info.get(b.id)!;
+    if (ordem === "carga") return B.abertas - A.abertas;
+    if (ordem === "atrasadas") return B.atrasadas - A.atrasadas;
+    if (ordem === "participacao") return (B.participacao?.total ?? -1) - (A.participacao?.total ?? -1);
+    return a.name.localeCompare(b.name, "pt");
+  });
+  const ativas = ordenar(todas.filter((p) => p.equipes.length > 0 && (!q.equipe || p.equipes.includes(q.equipe))));
   const inativas = todas.filter((p) => p.equipes.length === 0);
+  const link = (o: Record<string, string | undefined>) => "/pessoas?" + new URLSearchParams(Object.entries({ q: q.q, equipe: q.equipe, ordem: q.ordem, ...o }).filter(([, v]) => v) as [string, string][]);
 
-  const Row = ({ p }: { p: Pessoa }) => (
-    <li className="flex items-center gap-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-      <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 min-w-0 flex-1">
-        <Avatar name={p.name} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate">{p.name} <span className="text-xs font-normal font-mono text-neutral-400">{p.nipeiId}</span></p>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {p.equipes.map((id) => { const e = equipes.find((x) => x.id === id); return e && <Chip key={id} cor={e.cor}>{e.nome}</Chip>; })}
-            {p.incompleta && <span className="text-[11px] text-amber-700 dark:text-amber-400">{t.fichaIncompleta}</span>}
+  const Cartao = ({ p }: { p: Pessoa }) => {
+    const n = info.get(p.id)!;
+    const part = n.participacao;
+    return (
+      <li className="relative rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 hover:border-neutral-400 dark:hover:border-neutral-600">
+        <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 after:absolute after:inset-0">
+          <Avatar name={p.name} size={40} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">{p.name}</p>
+            <p className="text-xs text-neutral-500 truncate">{p.funcao || p.area || p.nipeiId}</p>
           </div>
+        </Link>
+        <div className="mt-2.5 flex items-center gap-2 text-xs">
+          <span className="flex gap-1">{p.equipes.map((id) => { const e = equipes.find((x) => x.id === id); return e && <span key={id} title={e.nome} className="w-2 h-2 rounded-full" style={{ background: e.cor }} />; })}</span>
+          <span className="text-neutral-500 tabular-nums">{n.abertas} {t.abertasLbl}</span>
+          {n.atrasadas > 0 && <span className="text-red-600 dark:text-red-400 tabular-nums">{n.atrasadas} {t.atrasadasLbl}</span>}
+          {part && <span title={t.participacao} className={`ml-auto tabular-nums font-medium ${NIVEL_COR[part.nivel]}`}>{part.total ?? "—"}</span>}
+          {p.whatsapp && <a href={waLink(p.whatsapp)} target="_blank" rel="noreferrer" aria-label="WhatsApp" className={`relative z-10 text-neutral-400 hover:text-green-600 ${part ? "" : "ml-auto"}`}><MessageCircle size={16} /></a>}
         </div>
-      </Link>
-      {p.whatsapp && <a href={waLink(p.whatsapp)} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="p-2 text-neutral-500 hover:text-green-600"><MessageCircle size={18} /></a>}
-      {me.gestao && p.email && <a href={`mailto:${p.email}`} aria-label="E-mail" className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Mail size={18} /></a>}
-    </li>
-  );
+      </li>
+    );
+  };
 
   return (
     <>
       <Title>{t.pessoas}</Title>
-      <form className="mb-4">
+      <form className="mb-3">
         {q.equipe && <input type="hidden" name="equipe" value={q.equipe} />}
+        {q.ordem && <input type="hidden" name="ordem" value={q.ordem} />}
         <input name="q" defaultValue={q.q} placeholder={t.buscar} type="search"
           className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm" />
       </form>
-      <div className="flex flex-wrap gap-2 mb-5">
-        <Chip href={`/pessoas${busca ? `?q=${encodeURIComponent(busca)}` : ""}`} on={!q.equipe}>{t.todas}</Chip>
-        {equipes.map((e) => <Chip key={e.id} href={`/pessoas?equipe=${e.id}`} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
+      <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
+        <Chip href={link({ equipe: undefined })} on={!q.equipe}>{t.todas}</Chip>
+        {equipes.map((e) => <Chip key={e.id} href={link({ equipe: e.id })} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
       </div>
+      {me.gestao && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs text-neutral-500">
+          {t.ordenar}:
+          {(["nome", "carga", "atrasadas", "participacao"] as const).map((o) => (
+            <Link key={o} href={link({ ordem: o === "nome" ? undefined : o })} className={`rounded-full px-2 py-0.5 ${ordem === o ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "border border-neutral-300 dark:border-neutral-700"}`}>
+              {o === "nome" ? t.nome : o === "carga" ? t.maisCarga : o === "atrasadas" ? t.atrasadas : t.participacao}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">{t.membros} <span className="font-normal">({ativas.length})</span></p>
+      <ul className="grid gap-2 sm:grid-cols-2 mb-6">{ativas.map((p) => <Cartao key={p.id} p={p} />)}</ul>
 
       {gerenciaveis.length > 0 && (
-        <details className="mb-6 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+        <details className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium">+ {t.novaPessoa}</summary>
           <form action={createPessoaAction} className="flex flex-wrap items-center gap-2 px-4 pb-4">
             <input name="name" required maxLength={120} placeholder={t.nome} className={`${small} flex-1 min-w-40 py-1.5 text-sm`} />
@@ -65,25 +96,17 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         </details>
       )}
 
-      <Section title={t.membros} count={ativas.length}>
-        <ul>{ativas.map((p) => <Row key={p.id} p={p} />)}</ul>
-      </Section>
-
       {inativas.length > 0 && (
         <details className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
           <summary className="cursor-pointer px-4 py-3 text-sm font-medium">{t.inativos} ({inativas.length})</summary>
           <ul className="px-4 pb-2">
             {inativas.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 py-2.5 border-t border-neutral-100 dark:border-neutral-800">
-                <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 flex-1 min-w-32">
-                  <Avatar name={p.name} size={28} /><span className="text-sm">{p.name}</span><ChevronRight size={14} className="text-neutral-400" />
-                </Link>
+                <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 flex-1 min-w-32"><Avatar name={p.name} size={28} /><span className="text-sm">{p.name}</span></Link>
                 {gerenciaveis.length > 0 && (
                   <form action={addToEquipeAction} className="flex items-center gap-2">
                     <input type="hidden" name="pessoa" value={p.id} />
-                    <select name="equipe" aria-label={t.ativarEm} className={small}>
-                      {gerenciaveis.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-                    </select>
+                    <select name="equipe" aria-label={t.ativarEm} className={small}>{gerenciaveis.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select>
                     <button className={btn}>{t.ativar}</button>
                   </form>
                 )}

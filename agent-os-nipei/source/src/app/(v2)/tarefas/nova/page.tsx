@@ -6,7 +6,7 @@ import { createTarefaAction } from "../../actions";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
 
-export default async function NovaTarefa({ searchParams }: { searchParams: Promise<{ equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string }> }) {
+export default async function NovaTarefa({ searchParams }: { searchParams: Promise<{ equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string }> }) {
   const q = await searchParams;
   const { t } = await getT();
   const user = (await currentUser())!;
@@ -64,7 +64,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
           <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
             {pessoas.map((p) => (
               <label key={p.id} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-1 has-[:checked]:bg-neutral-900 has-[:checked]:text-white dark:has-[:checked]:bg-white dark:has-[:checked]:text-neutral-900">
-                <input type="checkbox" name="responsaveis" value={p.id} defaultChecked={p.id === me?.id} className="sr-only" />
+                <input type="checkbox" name="responsaveis" value={p.id} defaultChecked={p.id === (q.responsavel ?? me?.id)} className="sr-only" />
                 {p.name}
               </label>
             ))}

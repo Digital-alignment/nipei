@@ -109,7 +109,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </div>
       </div>
       {quem === "todas" && (
-        <div className="flex gap-1.5 overflow-x-auto mb-4 -mx-1 px-1">
+        <div className="flex gap-1.5 overflow-x-auto mb-4 -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
           <Chip href={link({ equipe: undefined })} on={!equipe}>{t.todasEquipes}</Chip>
           {equipes.map((e) => <Chip key={e.id} href={link({ equipe: e.id })} cor={e.cor} on={equipe === e.id}>{e.nome}</Chip>)}
         </div>
