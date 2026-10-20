@@ -26,8 +26,10 @@ async function reduzir(file: File): Promise<File> {
   }
 }
 
-export default function Upload({ id, action, accept, labels }: {
+export default function Upload({ id, action, accept, labels, extra = {}, soFoto = false }: {
   id: string; action: (f: FormData) => Promise<{ error?: string }>; accept: string; labels: Labels;
+  extra?: Record<string, string>; // more fields for the action (e.g. the cadastro link token)
+  soFoto?: boolean; // profile photo: one button (the phone offers gallery or camera), no rear-camera shortcut
 }) {
   const arquivo = useRef<HTMLInputElement>(null), foto = useRef<HTMLInputElement>(null);
   const [erro, setErro] = useState("");
@@ -43,6 +45,7 @@ export default function Upload({ id, action, accept, labels }: {
     const fd = new FormData();
     fd.set("id", id);
     fd.set("arquivo", file);
+    for (const [k, v] of Object.entries(extra)) fd.set(k, v);
     start(async () => {
       const r = await action(fd).catch(() => ({ error: "Falha no envio" }));
       if (r.error) setErro(r.error);
@@ -54,8 +57,8 @@ export default function Upload({ id, action, accept, labels }: {
     <div className="flex flex-wrap items-center gap-2">
       <input ref={arquivo} type="file" accept={accept} className="hidden" onChange={() => enviar(arquivo.current)} />
       <input ref={foto} type="file" accept="image/*" capture="environment" className="hidden" onChange={() => enviar(foto.current)} />
-      <button type="button" disabled={pending} onClick={() => arquivo.current?.click()} className={btn}><Paperclip size={14} />{labels.arquivo}</button>
-      <button type="button" disabled={pending} onClick={() => foto.current?.click()} className={btn}><Camera size={14} />{labels.foto}</button>
+      <button type="button" disabled={pending} onClick={() => arquivo.current?.click()} className={btn}>{soFoto ? <Camera size={14} /> : <Paperclip size={14} />}{labels.arquivo}</button>
+      {!soFoto && <button type="button" disabled={pending} onClick={() => foto.current?.click()} className={btn}><Camera size={14} />{labels.foto}</button>}
       {pending && <span className="text-xs text-neutral-500">{labels.enviando}</span>}
       {erro && <span className="text-xs text-red-600 dark:text-red-400">{erro}</span>}
     </div>

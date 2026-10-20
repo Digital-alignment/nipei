@@ -7,7 +7,8 @@
   avisos.py diario --teste <pessoa_id>   build that person's reminder and print it (sends nothing)
 
 Who may receive: member of a team whose Equipes note has `avisos: true`, with `whatsapp` in their
-Miembros note and without `avisos_whatsapp: false`. The app (lib/tarefaNote.ts) only enqueues.
+Miembros note and without `avisos_whatsapp: false`. From FIM_TRANSICAO on, the number must also be
+verified in "Meu perfil" (`whatsapp_verificado: true`). The app (lib/tarefaNote.ts) only enqueues.
 """
 import glob, json, os, re, sys, time, unicodedata, urllib.request
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,7 @@ APP = "https://os.nipeihu.app"
 LOG = "/var/log/nipei-avisos.log"
 ESTADO = "/var/lib/nipei-avisos"
 TZ = timezone(timedelta(hours=-3))  # America/Bahia, no DST
+FIM_TRANSICAO = "2026-11-03"  # until then unverified numbers still get notices (2 weeks to verify)
 MESES = {m: i for i, m in enumerate(["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"], 1)}
 MESES.update({m: i for i, m in enumerate(["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"], 1)})
 
@@ -62,16 +64,20 @@ def prazo_iso(v):
     return ""
 
 
-def pessoas_que_recebem():
-    """id → {nome, fone} for people allowed to get notices."""
+def pessoas_que_recebem(hoje=None):
+    """id → {nome, fone, verificado} for people allowed to get notices."""
+    hoje = hoje or datetime.now(TZ).strftime("%Y-%m-%d")
     equipes_com_aviso = {str(fm.get("id")) for fm in map(frontmatter, glob.glob(f"{VAULT}/Equipes/*.md")) if fm.get("avisos") is True}
     out = {}
     for p in glob.glob(f"{VAULT}/Miembros/*.md"):
         fm = frontmatter(p)
         pid = str(fm.get("id") or os.path.basename(p)[:-3])
         fone = re.sub(r"\D", "", str(fm.get("whatsapp") or ""))
+        verificado = fm.get("whatsapp_verificado") is True
+        if not (verificado or hoje < FIM_TRANSICAO):
+            continue
         if fone and fm.get("avisos_whatsapp") is not False and set(map(str, fm.get("equipes") or [])) & equipes_com_aviso:
-            out[pid] = {"nome": str(fm.get("name") or pid).split(" (")[0], "fone": fone}
+            out[pid] = {"nome": str(fm.get("apelido") or fm.get("name") or pid).split(" (")[0], "fone": fone, "verificado": verificado}
     return out
 
 
@@ -137,7 +143,7 @@ def fila(cfg, teste=False):
             os.remove(f)  # notices are best effort: never resend old ones after a failure
 
 
-def lembrete(nome, tarefas, hoje):
+def lembrete(nome, tarefas, hoje, verificado=True):
     atrasadas = sorted([t for t in tarefas if t["prazo"] < hoje], key=lambda t: t["prazo"])
     de_hoje = [t for t in tarefas if t["prazo"] == hoje]
     if not atrasadas and not de_hoje:
@@ -150,7 +156,10 @@ def lembrete(nome, tarefas, hoje):
         partes += ["", f"📅 *Para hoje* ({len(de_hoje)}):", *linhas(de_hoje, False)]
     if atrasadas:
         partes += ["", f"⚠️ *Atrasadas* ({len(atrasadas)}):", *linhas(atrasadas, True)]
-    partes += ["", f"👉 {APP}/hoje", "", "_Para não receber mais, desligue os avisos na sua ficha em Pessoas._"]
+    partes += ["", f"👉 {APP}/hoje"]
+    if not verificado:
+        partes += ["", f"🔐 Confirme seu WhatsApp no seu perfil até {FIM_TRANSICAO[8:10]}/{FIM_TRANSICAO[5:7]} para continuar recebendo estes avisos: {APP}/hoje"]
+    partes += ["", "_Para não receber mais, desligue os avisos na sua ficha em Pessoas._"]
     return "\n".join(partes)
 
 
@@ -162,7 +171,7 @@ def diario(cfg, teste=None):
     recebem = pessoas_que_recebem()
     if teste:
         fm = frontmatter(f"{VAULT}/Miembros/{teste}.md")
-        recebem = {teste: {"nome": str(fm.get("name") or teste).split(" (")[0], "fone": ""}}
+        recebem = {teste: {"nome": str(fm.get("apelido") or fm.get("name") or teste).split(" (")[0], "fone": "", "verificado": fm.get("whatsapp_verificado") is True}}
     por_pessoa = {pid: [] for pid in recebem}
     for p in glob.glob(f"{VAULT}/Productivity/Tarefas/*.md"):
         fm = frontmatter(p)
@@ -175,7 +184,7 @@ def diario(cfg, teste=None):
             if pid in por_pessoa:
                 por_pessoa[pid].append({"titulo": str(fm.get("title") or ""), "prazo": prazo})
     for pid, tarefas in por_pessoa.items():
-        texto = lembrete(recebem[pid]["nome"], tarefas, hoje)
+        texto = lembrete(recebem[pid]["nome"], tarefas, hoje, recebem[pid]["verificado"])
         if teste:
             print(texto or f"(sem tarefas de hoje ou atrasadas para {pid}: nada seria enviado)")
             continue

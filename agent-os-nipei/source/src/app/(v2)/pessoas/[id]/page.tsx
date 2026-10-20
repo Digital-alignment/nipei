@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, MessageCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Mail, MessageCircle, Pencil } from "lucide-react";
 import { Avatar, Chip, Section, Title } from "@/components/v2/ui";
 import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
@@ -30,16 +30,17 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
     { titulo: t.linkCadastro, url: `${origin}/cadastro?token=${signToken("cadastro", p.id, CADASTRO_TTL)}`, msg: t.msgCadastro },
     ...(temAcesso ? [{ titulo: t.linkAcesso, url: `${origin}/entrar?token=${signToken("login-link", p.id, LOGIN_LINK_TTL)}`, msg: t.msgAcesso }] : []),
   ] : [];
+  const proprio = me.gestao || me.pessoa?.id === p.id; // private fields and "edit" only for the person and gestão
   const podeAdicionar = equipes.filter((e) => !p.equipes.includes(e.id) && can.gerirEquipe(me, e.id));
 
   return (
     <>
       <Link href="/pessoas" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.pessoas}</Link>
       <div className="flex items-center gap-4 mb-5">
-        <Avatar name={p.name} size={56} />
+        <Avatar name={p.name} size={56} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} />
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
-          <p className="text-sm text-neutral-500"><span className="font-mono">{p.nipeiId}</span>{p.nativeName && ` · ${p.nativeName}`}</p>
+          <p className="text-sm text-neutral-500"><span className="font-mono">{p.nipeiId}</span>{p.apelido && ` · ${p.apelido}`}{p.nativeName && ` · ${p.nativeName}`}</p>
         </div>
       </div>
 
@@ -48,14 +49,29 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
         {p.equipes.length === 0 && <span className="text-sm text-neutral-500">{t.semEquipe}</span>}
       </div>
 
+      {proprio && (
+        <Link href={`/pessoas/${p.id}/editar`} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm mb-5">
+          <Pencil size={14} />{me.pessoa?.id === p.id ? t.editarDados : t.editarPerfil}
+        </Link>
+      )}
+
       <Section title={t.cadastroTitulo}>
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          {p.whatsapp && <><dt className="text-neutral-500">WhatsApp</dt><dd><a className="inline-flex items-center gap-1 underline" href={`https://wa.me/${digits(p.whatsapp)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} />{p.whatsapp}</a></dd></>}
-          {p.email && <><dt className="text-neutral-500">{t.email}</dt><dd><a className="inline-flex items-center gap-1 underline" href={`mailto:${p.email}`}><Mail size={14} />{p.email}</a></dd></>}
+          {p.whatsapp && <><dt className="text-neutral-500">WhatsApp</dt><dd className="flex flex-wrap items-center gap-2">
+            <a className="inline-flex items-center gap-1 underline" href={`https://wa.me/${digits(p.whatsapp)}`} target="_blank" rel="noreferrer"><MessageCircle size={14} />{p.whatsapp}</a>
+            {p.whatsappVerificado ? <span className="inline-flex items-center gap-0.5 text-xs text-green-700 dark:text-green-400"><CheckCircle2 size={12} />{t.verificado}</span>
+              : <span className="inline-flex items-center gap-0.5 text-xs text-amber-700 dark:text-amber-400"><AlertTriangle size={12} />{t.naoVerificado}</span>}
+          </dd></>}
+          {proprio && p.email && <><dt className="text-neutral-500">{t.email}</dt><dd><a className="inline-flex items-center gap-1 underline" href={`mailto:${p.email}`}><Mail size={14} />{p.email}</a></dd></>}
+          {(p.cidade || p.pais) && <><dt className="text-neutral-500">{t.cidade}</dt><dd>{[p.cidade, p.pais].filter(Boolean).join(", ")}</dd></>}
+          {proprio && p.dataNascimento && <><dt className="text-neutral-500">{t.dataNascimento}</dt><dd>{p.dataNascimento.split("-").reverse().join("/")}</dd></>}
+          {proprio && p.nacionalidade && <><dt className="text-neutral-500">{t.nacionalidade}</dt><dd>{p.nacionalidade}</dd></>}
+          {proprio && (p.emergenciaNome || p.emergenciaWhatsapp) && <><dt className="text-neutral-500">{t.emergencia}</dt><dd>{[p.emergenciaNome, p.emergenciaWhatsapp].filter(Boolean).join(" · ")}</dd></>}
           {p.area && <><dt className="text-neutral-500">{t.area}</dt><dd>{p.area}</dd></>}
           {p.funcao && <><dt className="text-neutral-500">{t.funcao}</dt><dd>{p.funcao}</dd></>}
           {p.disponibilidade && <><dt className="text-neutral-500">{t.disponibilidade}</dt><dd>{p.disponibilidade}</dd></>}
-          {p.cadastroEm && <><dt className="text-neutral-500">{t.cadastradoEm}</dt><dd>{fmtDate(p.cadastroEm, lang)}</dd></>}
+          {p.dadosConfirmadosEm ? <><dt className="text-neutral-500">{t.dadosConfirmados}</dt><dd>{fmtDate(p.dadosConfirmadosEm, lang)}</dd></>
+            : p.cadastroEm && <><dt className="text-neutral-500">{t.cadastradoEm}</dt><dd>{fmtDate(p.cadastroEm, lang)}</dd></>}
         </dl>
         {p.incompleta && <p className="text-xs text-amber-700 dark:text-amber-400 mt-3">{t.fichaIncompleta}</p>}
       </Section>
@@ -72,7 +88,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
       ))}
       {gerir && !temAcesso && <p className="text-xs text-neutral-500 mb-6">{t.equipeSemAcesso}</p>}
 
-      {(me.gestao || me.pessoa?.id === p.id) && (
+      {proprio && (
         <Section title={t.avisosWhats}>
           {!p.equipes.some((e) => equipes.find((x) => x.id === e)?.avisos) ? <p className="text-sm text-neutral-500">{t.avisosSemEquipe}</p>
             : !p.whatsapp ? <p className="text-sm text-neutral-500">{t.avisosSemFone}</p> : (

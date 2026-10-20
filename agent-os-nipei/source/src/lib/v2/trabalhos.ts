@@ -4,6 +4,7 @@ import { defaultVault } from "@/lib/config";
 import { contexto } from "./ia";
 import { addArquivo, getPessoas, getTarefas } from "./data";
 import { writeTarefa } from "@/lib/tarefaNote";
+import { enviarWhatsApp } from "./whatsapp";
 
 // T3 "Fazer por mim": the app queues a job; a worker on the VPS host runs Hermes (web search only,
 // no terminal/files) and posts the result back to /api/tarefas/entregavel, which saves it here.
@@ -93,16 +94,10 @@ export async function receberEntrega(jobId: string, ok: boolean, resultado: stri
 
 /** WhatsApp notice to whoever asked (Evolution API). Best effort: the in-app notice always exists. */
 async function avisarWhatsApp(job: Trabalho, taskId: string) {
-  const { EVOLUTION_API_URL: url, EVOLUTION_API_KEY: key, EVOLUTION_INSTANCE_NAME: inst, NEXT_PUBLIC_APP_URL: app } = process.env;
-  const fone = getPessoas().find((p) => p.id === job.pedidoPor)?.whatsapp.replace(/\D/g, "");
-  if (!url || !key || !inst || !fone) return;
-  const text = job.estado === "ok"
-    ? `✅ O Hermes terminou: "${job.titulo}". Veja o documento: ${app ?? "https://os.nipeihu.app"}/tarefas/${taskId}`
-    : `⚠️ O Hermes não conseguiu concluir "${job.titulo}". Detalhes: ${app ?? "https://os.nipeihu.app"}/tarefas/${taskId}`;
-  try {
-    await fetch(`${url}/message/sendText/${inst}`, {
-      method: "POST", headers: { "Content-Type": "application/json", apikey: key },
-      body: JSON.stringify({ number: fone, text }), signal: AbortSignal.timeout(15_000),
-    });
-  } catch { /* instance offline: the notice on Hoje and in the task activity is enough */ }
+  const app = process.env.NEXT_PUBLIC_APP_URL ?? "https://os.nipeihu.app";
+  const fone = getPessoas().find((p) => p.id === job.pedidoPor)?.whatsapp ?? "";
+  // Best effort: the notice on Hoje and in the task activity always exists.
+  await enviarWhatsApp(fone, job.estado === "ok"
+    ? `✅ O Hermes terminou: "${job.titulo}". Veja o documento: ${app}/tarefas/${taskId}`
+    : `⚠️ O Hermes não conseguiu concluir "${job.titulo}". Detalhes: ${app}/tarefas/${taskId}`);
 }

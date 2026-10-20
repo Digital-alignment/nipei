@@ -98,7 +98,14 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 
 - O escritor único (`lib/tarefaNote.ts`) enfileira em `<vault>/.jobs/avisos/` quando entram responsáveis novos ou um comentário tem `@nome`; repetições automáticas não avisam.
 - Envio no host: `scripts/avisos/avisos.py` → `/opt/nipei-avisos/`; units `nipei-avisos-fila.{path,service}` (fila, na hora) e `nipei-avisos-diario.{timer,service}` (07:00 America/Bahia, tarefas de hoje e atrasadas). Log `/var/log/nipei-avisos.log`.
-- Quem recebe: membro de equipe com `avisos: true` (Equipes/), com `whatsapp` na ficha e sem `avisos_whatsapp: false`. Testar sem enviar: `python3 avisos.py fila --teste` / `python3 avisos.py diario --teste <pessoa_id>`.
+- Quem recebe: membro de equipe com `avisos: true` (Equipes/), com `whatsapp` na ficha e sem `avisos_whatsapp: false`; a partir de `FIM_TRANSICAO` (2026-11-03) também `whatsapp_verificado: true`. Testar sem enviar: `python3 avisos.py fila --teste` / `python3 avisos.py diario --teste <pessoa_id>`.
+
+## 3.4 Meu perfil (v2.11)
+
+- `/pessoas/[id]/editar` (a pessoa ou gestão) e o link público `/cadastro?token=` usam o mesmo `components/v2/PerfilForm.tsx` (2 passos: preencher → "Confira seus dados" + consentimento LGPD). Ações em `app/perfil-actions.ts`, lógica em `lib/v2/perfil.ts`, números em `lib/v2/whatsapp.ts` (`normalizarFone`, `enviarWhatsApp`).
+- WhatsApp verificado por código de 6 dígitos (token assinado só com o hash; 10 min, 5 tentativas, 1/min e 8/dia por pessoa). Grava `whatsapp_verificado(_em)`, `dados_confirmados_em`, `lgpd_consentimento_em`. Hoje mostra aviso se faltar confirmar (ou >1 ano) ou verificar.
+- Privados (nascimento, nacionalidade, e-mail, contato de emergência): só a pessoa e gestão veem. Foto em `Miembros/_fotos/<id>.<ext>` (rota `/pessoas/[id]/foto`, exige login).
+- Testar sem enviar WhatsApp real: `.env.development.local` com `EVOLUTION_API_URL` apontando para um mock local.
 
 ---
 

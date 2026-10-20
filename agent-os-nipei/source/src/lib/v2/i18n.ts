@@ -20,7 +20,7 @@ const pt = {
   lista: "Lista", mes: "Mês", semana: ["D", "S", "T", "Q", "Q", "S", "S"], nadaNoDia: "Nada neste dia.",
   googleTitulo: "Ver no Google Calendar", googleTexto: "No Google Calendar (computador): Outras agendas → + → Do URL, e cole este endereço. O Google atualiza a cada poucas horas. Eventos só com mês (sem dia) não entram até terem data.",
   falar: "Falar uma tarefa", ouvindo: "Ouvindo…", vozIndisponivel: "Este navegador não reconhece voz.",
-  cadastroTitulo: "Cadastro", cadastroIntro: "Confira e complete seus dados. Só a coordenação vê estas informações.",
+  cadastroTitulo: "Cadastro", cadastroIntro: "Confira e complete seus dados.",
   nome: "Nome", nomeNativo: "Nome na língua (opcional)", whatsapp: "WhatsApp (com DDD)", email: "E-mail", area: "Onde você atua",
   funcao: "O que você faz", disponibilidade: "Disponibilidade (dias / horários)", salvar: "Salvar", obrigado: "Obrigado! Seus dados foram salvos.",
   linkInvalido: "Este link expirou ou não é válido. Peça um novo para a coordenação.", semAcesso: "Sua equipe ainda não tem acesso à plataforma.",
@@ -59,8 +59,19 @@ const pt = {
   avisosWhats: "Avisos por WhatsApp", avisosLigados: "Ligados: resumo das tarefas às 7h e aviso quando te atribuem ou mencionam (@nome)",
   avisosDesligados: "Desligados", avisosEquipeLigado: "Membros desta equipe recebem avisos por WhatsApp", avisosEquipeDesligado: "Esta equipe ainda não recebe avisos",
   ligarAvisos: "Ligar avisos", desligarAvisos: "Desligar avisos", avisosSemEquipe: "A equipe desta pessoa ainda não recebe avisos.", avisosSemFone: "Sem WhatsApp na ficha.",
+  meuPerfil: "Meu perfil", editarDados: "Editar meus dados", editarPerfil: "Editar dados", apelido: "Como gosta de ser chamado(a)", dataNascimento: "Data de nascimento",
+  nacionalidade: "Nacionalidade", cidade: "Cidade", pais: "País onde mora", idiomaPref: "Idioma preferido", trocarFoto: "Escolher foto",
+  emergencia: "Contato de emergência", emergenciaNome: "Nome e parentesco", emergenciaWhats: "WhatsApp do contato", codigoPais: "País do número",
+  numero: "Número com DDD", enviarCodigo: "Enviar código", reenviarCodigo: "Reenviar código", codigoRecebido: "Código recebido no WhatsApp",
+  verificar: "Verificar", verificado: "Verificado", naoVerificado: "Não verificado", codigoEnviado: "Enviamos um código para",
+  semVerificarAviso: "Sem verificar, este número deixa de receber avisos a partir de 03/11.", continuar: "Continuar", corrigir: "Corrigir",
+  confiraDados: "Confira seus dados", confiraIntro: "Está tudo certo? Depois de confirmar, os dados ficam salvos na sua ficha.",
+  lgpd: "Autorizo o Nipëi a guardar estes dados para organizar o trabalho da comunidade. Nascimento, nacionalidade, e-mail e contato de emergência só são vistos por mim e pela gestão.",
+  confirmarSalvar: "Confirmar e salvar", salvando: "Salvando…", privado: "só você e a gestão veem", dadosConfirmados: "Dados confirmados em",
+  bannerConfirmar: "Confira e confirme seus dados do perfil.", bannerVerificar: "Verifique seu WhatsApp para continuar recebendo os avisos.",
+  bannerAcao: "Abrir meu perfil", vazio: "—",
 };
-type Dict = typeof pt;
+export type Dict = typeof pt;
 
 const en: Dict = {
   hoje: "Today", agenda: "Agenda", equipes: "Teams", projetos: "Projects", objetivos: "Goals", pessoas: "People",
@@ -78,7 +89,7 @@ const en: Dict = {
   lista: "List", mes: "Month", semana: ["S", "M", "T", "W", "T", "F", "S"], nadaNoDia: "Nothing on this day.",
   googleTitulo: "View in Google Calendar", googleTexto: "In Google Calendar (desktop): Other calendars → + → From URL, and paste this address. Google refreshes it every few hours. Events with only a month (no day) are left out until they get a date.",
   falar: "Say a task", ouvindo: "Listening…", vozIndisponivel: "This browser can't recognise speech.",
-  cadastroTitulo: "Registration", cadastroIntro: "Check and complete your details. Only the coordination sees this.",
+  cadastroTitulo: "Registration", cadastroIntro: "Check and complete your details.",
   nome: "Name", nomeNativo: "Name in your language (optional)", whatsapp: "WhatsApp (with area code)", email: "E-mail", area: "Where you work",
   funcao: "What you do", disponibilidade: "Availability (days / hours)", salvar: "Save", obrigado: "Thank you! Your details were saved.",
   linkInvalido: "This link has expired or is not valid. Ask the coordination for a new one.", semAcesso: "Your team does not have access to the platform yet.",
@@ -117,6 +128,17 @@ const en: Dict = {
   avisosWhats: "WhatsApp notices", avisosLigados: "On: task summary at 7 am and a notice when you're assigned or mentioned (@name)",
   avisosDesligados: "Off", avisosEquipeLigado: "Members of this team get WhatsApp notices", avisosEquipeDesligado: "This team doesn't get notices yet",
   ligarAvisos: "Turn notices on", desligarAvisos: "Turn notices off", avisosSemEquipe: "This person's team doesn't get notices yet.", avisosSemFone: "No WhatsApp in the profile.",
+  meuPerfil: "My profile", editarDados: "Edit my details", editarPerfil: "Edit details", apelido: "What you like to be called", dataNascimento: "Date of birth",
+  nacionalidade: "Nationality", cidade: "City", pais: "Country you live in", idiomaPref: "Preferred language", trocarFoto: "Choose photo",
+  emergencia: "Emergency contact", emergenciaNome: "Name and relationship", emergenciaWhats: "Contact's WhatsApp", codigoPais: "Number's country",
+  numero: "Number with area code", enviarCodigo: "Send code", reenviarCodigo: "Resend code", codigoRecebido: "Code received on WhatsApp",
+  verificar: "Verify", verificado: "Verified", naoVerificado: "Not verified", codigoEnviado: "We sent a code to",
+  semVerificarAviso: "Without verification, this number stops getting notices from Nov 3.", continuar: "Continue", corrigir: "Edit",
+  confiraDados: "Check your details", confiraIntro: "Is everything right? Once you confirm, the details are saved in your profile.",
+  lgpd: "I allow Nipëi to keep these details to organize the community's work. Birth date, nationality, e-mail and emergency contact are seen only by me and the management.",
+  confirmarSalvar: "Confirm and save", salvando: "Saving…", privado: "only you and the management see this", dadosConfirmados: "Details confirmed on",
+  bannerConfirmar: "Check and confirm your profile details.", bannerVerificar: "Verify your WhatsApp to keep getting notices.",
+  bannerAcao: "Open my profile", vazio: "—",
 };
 
 export async function getLang(): Promise<Lang> {

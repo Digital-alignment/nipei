@@ -24,7 +24,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const Row = ({ p }: { p: Pessoa }) => (
     <li className="flex items-center gap-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
       <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 min-w-0 flex-1">
-        <Avatar name={p.name} />
+        <Avatar name={p.name} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate">{p.name} <span className="text-xs font-normal font-mono text-neutral-400">{p.nipeiId}</span></p>
           <div className="flex flex-wrap gap-1 mt-1">
@@ -34,7 +34,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         </div>
       </Link>
       {p.whatsapp && <a href={waLink(p.whatsapp)} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="p-2 text-neutral-500 hover:text-green-600"><MessageCircle size={18} /></a>}
-      {p.email && <a href={`mailto:${p.email}`} aria-label="E-mail" className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Mail size={18} /></a>}
+      {me.gestao && p.email && <a href={`mailto:${p.email}`} aria-label="E-mail" className="p-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Mail size={18} /></a>}
     </li>
   );
 

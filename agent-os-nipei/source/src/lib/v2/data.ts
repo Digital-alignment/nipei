@@ -25,6 +25,10 @@ export type Pessoa = {
   id: string; nipeiId: string; name: string; nativeName: string; equipes: string[]; coordena: string[]; usuario: string;
   whatsapp: string; email: string; area: string; funcao: string; disponibilidade: string; incompleta: boolean; cadastroEm: string;
   avisosWhatsapp: boolean; // false = the person switched WhatsApp notices off
+  // "Meu perfil" (lib/v2/perfil.ts): private fields are shown only to the person and gestão.
+  apelido: string; dataNascimento: string; nacionalidade: string; cidade: string; pais: string; idioma: string;
+  emergenciaNome: string; emergenciaWhatsapp: string; foto: string;
+  whatsappVerificado: boolean; whatsappVerificadoEm: string; dadosConfirmadosEm: string;
 };
 export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
@@ -118,6 +122,11 @@ export function getPessoas(): Pessoa[] {
       incompleta: fm.has_missing_info === true,
       cadastroEm: s(fm.cadastro_em),
       avisosWhatsapp: fm.avisos_whatsapp !== false,
+      apelido: s(fm.apelido), dataNascimento: s(fm.data_nascimento), nacionalidade: s(fm.nacionalidade),
+      cidade: s(fm.cidade), pais: s(fm.pais), idioma: s(fm.idioma),
+      emergenciaNome: s(fm.emergencia_nome), emergenciaWhatsapp: s(fm.emergencia_whatsapp), foto: s(fm.foto),
+      whatsappVerificado: fm.whatsapp_verificado === true, whatsappVerificadoEm: s(fm.whatsapp_verificado_em),
+      dadosConfirmadosEm: s(fm.dados_confirmados_em),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
@@ -193,7 +202,8 @@ export const can = {
   usarIA: (me: Me, t: Tarefa) => me.gestao && (can.editTarefa(me, t) || can.assumir(me, t)),
 };
 
-export const today = () => new Date().toISOString().slice(0, 10);
+// The community lives in Bahia: "today" must not flip to tomorrow at 21:00 (UTC).
+export const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bahia" });
 
 /** Done / total of the tasks linked to an objective (null when none are linked yet). */
 export function progresso(objetivoId: string, tarefas: Tarefa[]) {
@@ -228,6 +238,10 @@ export function setFrontmatter(text: string, items: Record<string, FmValue>): st
   });
 }
 
+/** Vault-relative note file of a person (for lib/v2/perfil.ts). */
+export const arquivoPessoa = (pessoaId: string) =>
+  readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId)?.file ?? null;
+
 export function updateNote(relFile: string, items: Record<string, FmValue>) {
   const full = path.join(vault(), relFile);
   fs.writeFileSync(full, setFrontmatter(fs.readFileSync(full, "utf-8"), { ...items, updated_at: new Date().toISOString() }), "utf-8");
@@ -257,23 +271,6 @@ export function addToEquipe(pessoaId: string, equipeId: string) {
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
   updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])] });
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
-}
-
-/** Fields a person may fill in their own cadastro form. */
-export const CADASTRO_FIELDS = ["name", "native_name", "whatsapp", "email", "area", "funcao", "disponibilidade"] as const;
-
-export function saveCadastro(pessoaId: string, data: Partial<Record<(typeof CADASTRO_FIELDS)[number], string>>) {
-  const note = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
-  if (!note) throw new Error("Pessoa não encontrada");
-  const items: Record<string, string> = {};
-  for (const k of CADASTRO_FIELDS) if (data[k] != null) items[k] = String(data[k]).trim().slice(0, 300);
-  const faltam = [!items.email && !s(note.fm.email) && "email", !items.whatsapp && !s(note.fm.whatsapp) && "WhatsApp"].filter(Boolean);
-  updateNote(note.file, {
-    ...items,
-    has_missing_info: faltam.length > 0,
-    missing_info_details: faltam.length ? `Falta: ${faltam.join(", ")}.` : "",
-    cadastro_em: new Date().toISOString().slice(0, 10),
-  });
 }
 
 /** New person note with the next NIP id; optionally already in a team. Returns the new id. */

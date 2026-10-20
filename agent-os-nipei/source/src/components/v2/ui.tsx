@@ -98,7 +98,9 @@ export function initials(name: string) {
   return name.split(/\s+/).filter((w) => /^\p{L}/u.test(w)).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
-export function Avatar({ name, size = 32 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 32, src }: { name: string; size?: number; src?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  if (src) return <img src={src} alt={name} width={size} height={size} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />;
   return (
     <span className="inline-flex items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold shrink-0"
       style={{ width: size, height: size, fontSize: size * 0.38 }}>{initials(name)}</span>

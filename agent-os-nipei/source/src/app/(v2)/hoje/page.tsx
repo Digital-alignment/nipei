@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Card, Empty, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
 import VoiceTask from "@/components/v2/VoiceTask";
 import { prontosPara } from "@/lib/v2/trabalhos";
+import { perfilPendente } from "@/lib/v2/perfil";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -29,6 +30,12 @@ export default async function Hoje() {
       <Title sub={new Date().toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "long", day: "numeric", month: "long" })}>
         {t.ola}, {(me?.name ?? user?.username ?? "").split(" ")[0]}
       </Title>
+
+      {me && perfilPendente(me) && (
+        <Link href={`/pessoas/${me.id}/editar`} className="block rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm mb-5">
+          {perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar} <span className="underline font-medium">{t.bannerAcao}</span>
+        </Link>
+      )}
 
       {me && <VoiceTask lang={lang} equipe={me.equipes[0] ?? ""} me={me.id}
         labels={{ falar: t.falar, ouvindo: t.ouvindo, vozIndisponivel: t.vozIndisponivel, criar: t.criar, cancelar: t.cancelar }} />}
