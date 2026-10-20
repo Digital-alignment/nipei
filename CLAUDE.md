@@ -145,6 +145,11 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - **Participação** (só gestão; `lib/v2/participacao.ts`, autoteste `node --experimental-strip-types src/lib/v2/participacao.ts`): média de Entrega (90 dias), Em dia (atrasadas), Ritmo (concluídas em 30 dias) e Uso (último uso, ações nos logs, perfil, WhatsApp, diagnóstico). Ritmo e tendência ficam vazios até 30/60 dias após `INICIO_REGISTRO` (2026-10-20); com menos de 2 partes mostra "dados insuficientes". Mede entrega e uso, não qualidade.
 - Estudo da IA (gestão; `gerarEstudo` em `lib/v2/pessoasInfo.ts`): pontos fortes, carga, riscos, como apoiar e até 5 tarefas sem responsável que combinam (botão "Atribuir a"), guardado em `<vault>/.jobs/estudos/` (fora do git).
 - **Notificar (v2.29)** (gestão ou coordenação da pessoa, `can.gerirPessoa`): sino na ficha abre o painel (`components/v2/Notificar.tsx`): mensagem livre, resumo de tarefas, alerta, link de cadastro, link de acesso. Livre/alerta: rascunho da IA a partir do pedido, no idioma da pessoa; sempre editável, prévia com assinatura `— Nome · Nipëi`, confirmação antes de enviar pelo Evolution. Na aba Gestão os links também saem pelo número do Nipëi (wa.me continua como alternativa) e aparece o histórico. Lógica em `lib/v2/notificar.ts`; registro em `<vault>/.jobs/mensagens/<pessoa>.jsonl` (fora do git). Limites: 3/hora por pessoa, 30/dia por remetente, 1500 caracteres. Respostas não são tratadas. Testar só com `EVOLUTION_API_URL` apontando para um mock local.
+
+## 3.9 Equipes (v2.30)
+
+- Lista: cartões com barra da cor, avatares, coordenação, números (abertas, atrasadas, sem responsável, feitas 30d), barra "% em dia"; "Minhas equipes" primeiro; gestão vê cadeado (sem acesso) e sino (avisos).
+- Equipe (`/equipes/[id]`): números no topo (sem responsável leva ao filtro) e abas (`Abas` aceita `inicial`, que vence a memória): Tarefas (filtros Todas/Minhas/Sem responsável/pessoa `?pessoa=` e área `?area=`; Agora/Próximas/Sem data com ordem inteligente; quem gere a equipe atribui as sem responsável na linha; concluídas 30d), Pessoas (carga por pessoa nesta equipe, expande as tarefas dela; quem tem tarefa da equipe sem ser membro aparece "fora da equipe"), Objetivos e 🔒 Configuração (acesso, avisos).
 ---
 
 ## 4. Comandos Essenciais

@@ -2,13 +2,14 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-/** Tabs that show one panel at a time; the last tab opened is remembered on the device. */
-export default function Abas({ id, abas }: { id: string; abas: { id: string; label: string; count: number; alerta?: boolean; conteudo: ReactNode }[] }) {
+/** Tabs that show one panel at a time; the last tab opened is remembered on the device (`inicial` wins, e.g. a filtered link). */
+export default function Abas({ id, abas, inicial }: { id: string; inicial?: string; abas: { id: string; label: string; count: number; alerta?: boolean; conteudo: ReactNode }[] }) {
   const chave = `nipei:aba:${id}`;
-  const [atual, setAtual] = useState(abas[0]?.id ?? "");
+  const [atual, setAtual] = useState(inicial ?? abas[0]?.id ?? "");
   useEffect(() => {
+    if (inicial) return;
     try { const v = localStorage.getItem(chave); if (v && abas.some((a) => a.id === v)) setAtual(v); } catch { /* private mode */ }
-  }, [chave, abas]);
+  }, [chave, abas, inicial]);
   const escolher = (a: string) => { setAtual(a); try { localStorage.setItem(chave, a); } catch { /* private mode */ } };
   const aba = abas.find((a) => a.id === atual) ?? abas[0];
   return (

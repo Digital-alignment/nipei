@@ -152,6 +152,8 @@ const pt = {
   enviada: "Mensagem enviada", semWhatsNotif: "Esta pessoa não tem WhatsApp na ficha.", avisoNaoVerificado: "O número ainda não foi verificado: pode não chegar.",
   avisoDesligou: "A pessoa desligou os avisos automáticos; esta é uma mensagem manual da gestão.", notificacoesEnviadas: "Notificações enviadas",
   limitesNotif: "Até 3 mensagens por hora para a mesma pessoa e 30 por dia por remetente (protege o número).", ou: "ou",
+  emDiaLbl: "em dia", areasLbl: "áreas", minhasEquipes: "Minhas equipes", outrasEquipes: "Outras equipes", minhasLbl: "Minhas", todasAreas: "Todas as áreas",
+  coordLbl: "coord.", foraEquipe: "fora da equipe", verTodas: "Ver todas", verFicha: "Ver ficha", configuracao: "Configuração",
 };
 export type Dict = typeof pt;
 
@@ -303,6 +305,8 @@ const en: Dict = {
   enviada: "Message sent", semWhatsNotif: "This person has no WhatsApp in the profile.", avisoNaoVerificado: "The number isn't verified yet: it may not arrive.",
   avisoDesligou: "The person turned off automatic notices; this is a manual message from management.", notificacoesEnviadas: "Notifications sent",
   limitesNotif: "Up to 3 messages per hour to the same person and 30 per day per sender (protects the number).", ou: "or",
+  emDiaLbl: "on time", areasLbl: "areas", minhasEquipes: "My teams", outrasEquipes: "Other teams", minhasLbl: "Mine", todasAreas: "All areas",
+  coordLbl: "coord.", foraEquipe: "outside the team", verTodas: "See all", verFicha: "Open profile", configuracao: "Settings",
 };
 
 export async function getLang(): Promise<Lang> {
