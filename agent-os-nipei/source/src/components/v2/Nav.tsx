@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { CalendarDays, FolderKanban, PanelLeftClose, PanelLeftOpen, Sun, Target, Users, UsersRound } from "lucide-react";
 
@@ -28,8 +28,12 @@ type Labels = Record<(typeof ITEMS)[number]["key"] | "objetivos" | "pessoas" | "
 export default function Nav({ labels, fechadoInicial = false }: { labels: Labels; fechadoInicial?: boolean }) {
   const path = usePathname() ?? "";
   const [fechado, setFechado] = useState(fechadoInicial);
+  // Phone bar: light up the tapped section at once (optimistic), before the new page arrives.
+  const [destino, setDestino] = useState("");
+  useEffect(() => { setDestino(""); }, [path]);
   const em = (href: string) => path === href || path.startsWith(href + "/");
   const active = (href: string) => em(href) || (SUB[href] ?? []).some((s) => em(s.href));
+  const ativoBarra = (href: string) => (destino ? destino === href : active(href));
   const alternar = () => {
     const v = !fechado;
     setFechado(v);
@@ -88,13 +92,24 @@ export default function Nav({ labels, fechadoInicial = false }: { labels: Labels
           </div>
         </nav>
       </div>
-      <nav className="print:hidden md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-4 border-t border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-        {ITEMS.map(({ href, key, Icon }) => (
-          <Link key={href} href={href}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[11px] ${active(href) ? "text-neutral-900 dark:text-white font-semibold" : "text-neutral-500"}`}>
-            <Icon size={20} /> {labels[key]}
-          </Link>
-        ))}
+      <nav aria-label="Menu" className="print:hidden md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
+        <ul className="grid grid-cols-4 h-16 px-2">
+          {ITEMS.map(({ href, key, Icon }) => {
+            const on = ativoBarra(href);
+            return (
+              <li key={href} className="flex">
+                <Link href={href} aria-current={on ? "page" : undefined}
+                  onClick={() => { if (!em(href) || path !== href) setDestino(href); }}
+                  className="group flex-1 flex flex-col items-center justify-center gap-1 touch-manipulation select-none [-webkit-tap-highlight-color:transparent]">
+                  <span className={`flex items-center justify-center w-14 h-8 rounded-full transition-all duration-150 group-active:scale-90 ${on ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-500 dark:text-neutral-400"}`}>
+                    <Icon size={20} strokeWidth={on ? 2.25 : 1.75} />
+                  </span>
+                  <span className={`text-[11px] leading-none ${on ? "font-semibold text-neutral-900 dark:text-white" : "text-neutral-500 dark:text-neutral-400"}`}>{labels[key]}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
     </>
   );

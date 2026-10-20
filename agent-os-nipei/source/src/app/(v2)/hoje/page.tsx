@@ -186,7 +186,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       )}
 
       <Link href="/tarefas/nova" aria-label={t.novaTarefa}
-        className="fixed right-5 bottom-20 md:bottom-8 z-30 w-14 h-14 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg flex items-center justify-center">
+        className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-8 z-30 w-14 h-14 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg flex items-center justify-center">
         <Plus size={26} />
       </Link>
     </>

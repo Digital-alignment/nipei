@@ -53,7 +53,7 @@ export default function LoteBarra({ formId, pessoas, equipes, labels }: {
   const campo = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm";
   return (
     <form id={formId} action={async (f) => { await loteAction(f); marcar(false); }}
-      className="sticky bottom-20 sm:bottom-4 z-40 my-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-lg p-3 flex flex-wrap items-center gap-2">
+      className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4 z-40 my-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-lg p-3 flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium tabular-nums">{n} {labels.selecionadas}</span>
       <button type="button" onClick={() => marcar(true)} className="text-xs underline text-neutral-500">{labels.todas}</button>
       <button type="button" onClick={() => marcar(false)} className="text-xs underline text-neutral-500">{labels.limpar}</button>
