@@ -6,7 +6,7 @@ import { assistenteAction, executarAcaoAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
 import type { AcaoProposta, Msg } from "@/lib/v2/assistente";
 
-type Labels = { placeholder: string; ouvindo: string; confirmar: string; cancelar: string; feito: string; limpar: string; pensando: string };
+type Labels = { placeholder: string; ouvindo: string; confirmar: string; cancelar: string; feito: string; limpar: string; pensando: string; sugestoes: string[]; verConversa: string };
 type Recognition = {
   lang: string; interimResults: boolean; maxAlternatives: number; start(): void; stop(): void;
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
@@ -26,6 +26,8 @@ export default function Assistente({ lang, labels }: { lang: "pt" | "en"; labels
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [erro, setErro] = useState("");
   const [ouvindo, setOuvindo] = useState(false);
+  const [recolhido, setRecolhido] = useState(false);
+  const campo = useRef<HTMLInputElement>(null);
   const [pending, start] = useTransition();
   const rec = useRef<Recognition | null>(null);
 
@@ -43,6 +45,7 @@ export default function Assistente({ lang, labels }: { lang: "pt" | "en"; labels
     setMsgs(historico);
     setTexto("");
     setErro("");
+    setRecolhido(false);
     start(async () => {
       const r = await assistenteAction(historico).catch(() => ({ error: "Falha de conexão" } as { error: string }));
       if ("error" in r && r.error) return setErro(r.error);
@@ -74,7 +77,12 @@ export default function Assistente({ lang, labels }: { lang: "pt" | "en"; labels
     if (!confirmar) return setCartoes((cs) => cs.map((x, j) => (j === i ? { ...x, estado: "cancelado" } : x)));
     start(async () => {
       const r = await executarAcaoAction(c).catch(() => ({ error: "Falha de conexão" }));
-      setCartoes((cs) => cs.map((x, j) => (j === i ? { ...x, estado: r.error ? "erro" : "feito", erro: r.error } : x)));
+      setCartoes((cs) => {
+        const novos = cs.map((x, j) => (j === i ? { ...x, estado: r.error ? "erro" as const : "feito" as const, erro: r.error } : x));
+        // once nothing is waiting for a decision, fold the panel so the list comes back up
+        if (!r.error && !novos.some((x) => x.estado === "pendente")) setRecolhido(true);
+        return novos;
+      });
     });
   }
 
@@ -83,14 +91,33 @@ export default function Assistente({ lang, labels }: { lang: "pt" | "en"; labels
   return (
     <div className="mb-4">
       <form onSubmit={(e) => { e.preventDefault(); enviar(texto); }} className="flex items-center gap-1.5">
-        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={ouvindo ? labels.ouvindo : labels.placeholder} maxLength={500}
+        <input ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={ouvindo ? labels.ouvindo : labels.placeholder} maxLength={500}
           className="min-w-0 flex-1 h-10 rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 text-sm" />
         {texto.trim()
           ? <button aria-label="Enviar" disabled={pending} className="w-10 h-10 shrink-0 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center disabled:opacity-50"><Send size={16} /></button>
           : <button type="button" onClick={falar} aria-label={labels.ouvindo} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${ouvindo ? "bg-red-600 text-white animate-pulse" : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"}`}><Mic size={16} /></button>}
       </form>
 
-      {(ultimas.length > 0 || pending || erro || visiveis.length > 0) && (
+      {!msgs.length && !pending && !cartoes.length && (
+        <div className="flex gap-1.5 mt-2 overflow-x-auto -mx-1 px-1">
+          {labels.sugestoes.map((s) => (
+            <button key={s} type="button" onClick={() => (s.endsWith(": ") ? (setTexto(s), campo.current?.focus()) : enviar(s))}
+              className="shrink-0 rounded-full border border-neutral-200 dark:border-neutral-800 px-2.5 py-1 text-xs text-neutral-600 dark:text-neutral-300 hover:border-neutral-400">
+              {s.replace(/: $/, "…")}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {recolhido && (ultimas.length > 0 || visiveis.length > 0) && (
+        <button type="button" onClick={() => setRecolhido(false)} className="mt-2 flex w-full items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-300">
+          <span className="text-green-700 dark:text-green-400">✓</span>
+          <span className="min-w-0 flex-1 truncate text-left">{[...cartoes].reverse().find((c) => c.estado === "feito")?.resumo ?? ultimas[ultimas.length - 1]?.content}</span>
+          <span className="shrink-0 underline">{labels.verConversa}</span>
+        </button>
+      )}
+
+      {!recolhido && (ultimas.length > 0 || pending || erro || visiveis.length > 0) && (
         <div className="mt-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 grid gap-2 text-sm">
           {ultimas.map((m, i) => (
             m.role === "user" ? <p key={i} className="text-neutral-500 text-xs">› {m.content}</p> : <Md key={i}>{m.content}</Md>

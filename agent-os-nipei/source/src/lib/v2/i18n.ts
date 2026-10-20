@@ -131,6 +131,9 @@ const pt = {
   semEquipeLbl: "Sem equipe", atribuirPessoa: "Atribuir", escolherPessoa: "Escolher pessoa", amanhaLbl: "amanhã", emBreve: "Em breve", prontoHermes: "do Hermes",
   perguntePeca: "Pergunte ou peça algo…", ouvindoAssist: "Ouvindo…", feitoLbl: "Feito", limpar: "Limpar", pensando: "Pensando…",
   semConexao: "Sem conexão", dadosDe: "dados de", aEnviar: "Mudanças a enviar",
+  seloUrgente: "urgente", seloAndamento: "em andamento", seloNovidade: "novidade", seloQuasePronta: "quase pronta", seloParada: "parada há meses",
+  semanaLbl: "Semana", verTudo: "Ver tudo",
+  sugestoes: ["O que tenho hoje?", "Resumo da minha semana", "Nova tarefa para amanhã: "], verConversa: "ver conversa",
 };
 export type Dict = typeof pt;
 
@@ -261,6 +264,9 @@ const en: Dict = {
   semEquipeLbl: "No team", atribuirPessoa: "Assign", escolherPessoa: "Choose person", amanhaLbl: "tomorrow", emBreve: "Coming up", prontoHermes: "from Hermes",
   perguntePeca: "Ask or tell me something…", ouvindoAssist: "Listening…", feitoLbl: "Done", limpar: "Clear", pensando: "Thinking…",
   semConexao: "No connection", dadosDe: "data from", aEnviar: "Changes to send",
+  seloUrgente: "urgent", seloAndamento: "in progress", seloNovidade: "news", seloQuasePronta: "almost done", seloParada: "stalled for months",
+  semanaLbl: "Week", verTudo: "See all",
+  sugestoes: ["What do I have today?", "Summary of my week", "New task for tomorrow: "], verConversa: "see conversation",
 };
 
 export async function getLang(): Promise<Lang> {

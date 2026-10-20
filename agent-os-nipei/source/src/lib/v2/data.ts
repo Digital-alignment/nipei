@@ -34,6 +34,7 @@ export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
   equipe: string; area: string; projeto: string; objetivo: string; responsaveis: string[]; responsible: string;
   checklist: { feitos: number; total: number }; anexos: number; recorrencia: string;
+  atualizadoEm: string; // last write to the note (smart order: stale vs fresh)
 };
 
 export const vault = () => {
@@ -155,6 +156,7 @@ export function getTarefas(): Tarefa[] {
       checklist: { feitos: itens.filter((i) => i[3] !== " ").length, total: itens.length },
       anexos: Array.isArray(fm.anexos) ? fm.anexos.length : 0,
       recorrencia: s(fm.recorrencia),
+      atualizadoEm: s(fm.updated_at),
     };
   });
 }

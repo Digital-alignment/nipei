@@ -56,12 +56,18 @@ export function Empty({ children }: { children: ReactNode }) {
 /** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
-export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode } & RowProps) {
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[] } & RowProps) {
   const eq = equipes.find((e) => e.id === t.equipe);
-  const who = t.responsaveis.map((id) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id).join(", ") || t.responsible;
+  const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id;
+  const minha = !!me.pessoa && t.responsaveis.includes(me.pessoa.id);
+  const outros = t.responsaveis.filter((id) => id !== me.pessoa?.id);
+  // on my own tasks only the OTHER people matter ("+2"); elsewhere, who owns it
+  const who = minha ? (outros.length ? `+${outros.length}` : "") : t.responsaveis.map(nome).join(", ") || t.responsible;
   const late = t.prazo && t.prazo < hoje && t.status !== "done";
+  const marca = t.priority === "urgente" ? "text-red-600 dark:text-red-400" : t.priority === "alta" ? "text-amber-600 dark:text-amber-400" : "";
   return (
-    <li className="flex flex-wrap items-start gap-x-3 py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+    <li title={eq?.nome} className="flex flex-wrap items-start gap-x-3 py-2 pl-2.5 border-l-2 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0"
+      style={{ borderLeftColor: eq?.cor ?? "transparent" }}>
       {can.editTarefa(me, t) ? (
         <StatusBotao id={t.id} status={t.status} />
       ) : (
@@ -69,11 +75,13 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tar
         <span aria-hidden className="mt-0.5 w-5 h-5 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-700 shrink-0" />
       )}
       <div className="min-w-0 flex-1">
-        <Link href={`/tarefas/${t.id}`} className={`block text-sm leading-snug hover:underline ${t.status === "done" ? "line-through text-neutral-400" : ""}`}>{t.title}</Link>
+        <Link href={`/tarefas/${t.id}`} className={`block text-sm leading-snug hover:underline ${t.status === "done" ? "line-through text-neutral-400" : ""}`}>
+          {marca && <span className={`${marca} font-semibold mr-1`} aria-label={t.priority}>{t.priority === "urgente" ? "!!" : "!"}</span>}{t.title}
+        </Link>
         <p className="text-xs text-neutral-500 mt-0.5 flex flex-wrap items-center gap-x-2">
-          {eq && <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full" style={{ background: eq.cor }} />{eq.nome}</span>}
           {t.prazo && <span className={late ? "text-red-600 dark:text-red-400 font-medium" : ""}>{fmtDate(t.prazo, lang)}</span>}
-          {who && <span>{who}</span>}
+          {who && <span title={minha ? outros.map(nome).join(", ") : undefined}>{who}</span>}
+          {selos?.map((s) => <span key={s} className="rounded bg-neutral-100 dark:bg-neutral-800 px-1 text-[10px] text-neutral-600 dark:text-neutral-300">{s}</span>)}
           {t.checklist.total > 0 && <span>☑ {t.checklist.feitos}/{t.checklist.total}</span>}
           {t.anexos > 0 && <span>📎 {t.anexos}</span>}
           {t.recorrencia && <span title={t.recorrencia}>🔁</span>}
@@ -84,8 +92,8 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tar
   );
 }
 
-export function TaskList({ tarefas, ...rest }: { tarefas: Tarefa[]; extra?: (t: Tarefa) => ReactNode } & RowProps) {
-  return <ul>{tarefas.map((t) => <TaskRow key={t.id} t={t} {...rest} />)}</ul>;
+export function TaskList({ tarefas, selos, ...rest }: { tarefas: Tarefa[]; extra?: (t: Tarefa) => ReactNode; selos?: Record<string, string[]> } & RowProps) {
+  return <ul>{tarefas.map((t) => <TaskRow key={t.id} t={t} selos={selos?.[t.id]} {...rest} />)}</ul>;
 }
 
 export function initials(name: string) {

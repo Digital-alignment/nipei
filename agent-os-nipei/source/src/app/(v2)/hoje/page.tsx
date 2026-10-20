@@ -12,8 +12,10 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, bomDiaGuardado, pulso } from "@/lib/v2/hoje";
-import { can, currentUser, getEquipes, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
+import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
+
 
 const PILULA = "inline-flex items-center gap-1 shrink-0 rounded-full border px-2.5 py-1 text-xs";
 const TOM = {
@@ -24,7 +26,8 @@ const TOM = {
 
 // Hoje, compact: what matters today in three lines (Bom dia, agenda, pending pills), one place to ask,
 // and one task list at a time (tabs).
-export default async function Hoje() {
+export default async function Hoje({ searchParams }: { searchParams: Promise<{ dia?: string }> }) {
+  const q = await searchParams;
   const { t, lang } = await getT();
   const user = (await currentUser())!;
   const me = user.pessoa;
@@ -45,11 +48,25 @@ export default async function Hoje() {
   const comPrazo = (grupo: keyof typeof OPCOES) => (x: Tarefa) =>
     can.editTarefa(user, x) ? <PrazoRapido id={x.id} opcoes={OPCOES[grupo]} outraData={t.outraData} rotulo={t.reprogramar} /> : null;
 
-  const agora = minhas.filter((x) => x.prazo && x.prazo <= hoje);
-  const atrasadas = agora.filter((x) => x.prazo < hoje).length;
-  const proximas = minhas.filter((x) => x.prazo > hoje);
-  const semData = minhas.filter((x) => !x.prazo);
   const novidades = novidadesPara(user);
+  // smart order (lib/v2/ordem.ts) + the reasons shown as small badges
+  const ctx = { hoje, comNovidade: new Set(novidadesPara(user, 3, 50).map((n) => n.tarefaId)) };
+  const rotSelo: Record<Selo, string> = { urgente: t.seloUrgente, andamento: t.seloAndamento, novidade: t.seloNovidade, quasePronta: t.seloQuasePronta, parada: t.seloParada };
+  const legiveis = (s: Record<string, Selo[]>) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v.map((x) => rotSelo[x])]));
+  const oAgora = ordenarAgora(minhas.filter((x) => x.prazo && x.prazo <= hoje), ctx);
+  const oProx = ordenarProximas(minhas.filter((x) => x.prazo > hoje), ctx);
+  const oSem = ordenarSemData(minhas.filter((x) => !x.prazo), ctx);
+  const agora = oAgora.tarefas, proximas = oProx.tarefas, semData = oSem.tarefas;
+  const atrasadas = agora.filter((x) => x.prazo < hoje).length;
+
+  // mini week: today + 6 days, a dot per task due / event; a tap filters the list to that day
+  const semana = Array.from({ length: 7 }, (_, i) => {
+    const d = dia(i);
+    const tarefasDia = minhas.filter((x) => x.prazo === d).length;
+    const eventosDia = getEventos().filter((e) => e.inicio.length === 10 && (e.inicio === d || (!!e.fim && e.inicio <= d && d <= e.fim)) && (user.gestao || !e.equipe || user.equipes.includes(e.equipe))).length;
+    return { d, tarefasDia, eventosDia };
+  });
+  const diaSel = q.dia && semana.some((x) => x.d === q.dia) ? q.dia : "";
   const prontos = me ? prontosPara(me.id) : [];
   const { hoje: eventosHoje, proximos } = agendaDoDia(user);
 
@@ -77,7 +94,9 @@ export default async function Hoje() {
   if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "🤖", texto: `${prontos.length} ${t.prontoHermes}`, tom: "neutro", titulo: t.prontosIA });
   const p = user.gestao ? pulso() : null;
 
-  const linhaTarefas = (ts: Tarefa[], grupo: keyof typeof OPCOES) => ts.length ? <TaskList tarefas={ts} {...props} extra={comPrazo(grupo)} /> : <Empty>{t.nadaPendente}</Empty>;
+  const linhaTarefas = (ts: Tarefa[], grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
+    ts.length ? <TaskList tarefas={ts} {...props} extra={comPrazo(grupo)} selos={selos && legiveis(selos)} /> : <Empty>{t.nadaPendente}</Empty>;
+  const doDia = diaSel ? ordenarAgora(minhas.filter((x) => x.prazo === diaSel), ctx) : null;
 
   return (
     <>
@@ -110,13 +129,47 @@ export default async function Hoje() {
         </div>
       )}
 
-      <Assistente lang={lang} labels={{ placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, cancelar: t.cancelar, feito: t.feitoLbl, limpar: t.limpar, pensando: t.pensando }} />
+      <Assistente lang={lang} labels={{ placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, cancelar: t.cancelar, feito: t.feitoLbl, limpar: t.limpar, pensando: t.pensando, sugestoes: t.sugestoes, verConversa: t.verConversa }} />
 
       {me && (
+        <nav aria-label={t.semanaLbl} className="grid grid-cols-7 gap-1 mb-2 text-center">
+          {semana.map((x, i) => {
+            const data = new Date(`${x.d}T12:00:00Z`);
+            const sel = x.d === diaSel;
+            const pontos = Math.min(x.tarefasDia, 3);
+            return (
+              <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined}
+                className={`rounded-lg py-1.5 ${sel ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : i === 0 ? "bg-neutral-100 dark:bg-neutral-900" : "hover:bg-neutral-100 dark:hover:bg-neutral-900"}`}>
+                <span className={`block text-[10px] uppercase ${sel ? "" : "text-neutral-500"}`}>{data.toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
+                <span className="block text-sm font-medium tabular-nums">{data.getUTCDate()}</span>
+                <span className="flex justify-center gap-0.5 h-1.5 mt-0.5">
+                  {Array.from({ length: pontos }, (_, k) => <span key={k} className={`w-1 h-1 rounded-full ${sel ? "bg-current" : "bg-neutral-500"}`} />)}
+                  {x.eventosDia > 0 && <span className={`w-1 h-1 rounded-full ${sel ? "bg-current" : "bg-sky-500"}`} />}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+
+      {me && doDia && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 py-2">
+            <p className="text-sm font-medium first-letter:uppercase">{new Date(`${diaSel}T12:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</p>
+            <Link href="/hoje" scroll={false} className="text-xs text-neutral-500 underline">{t.verTudo}</Link>
+          </div>
+          {getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)).map((e) => (
+            <Link key={e.id} href={`/eventos/${e.id}`} className="flex gap-2 py-2 text-sm border-b border-neutral-100 dark:border-neutral-800"><span className="text-sky-600 dark:text-sky-400">🕒 {e.hora || "—"}</span>{e.titulo}</Link>
+          ))}
+          {linhaTarefas(doDia.tarefas, "datadas", doDia.selos)}
+        </div>
+      )}
+
+      {me && !doDia && (
         <Abas id="hoje" abas={[
-          { id: "agora", label: t.agora, count: agora.length, alerta: atrasadas > 0, conteudo: linhaTarefas(agora, "datadas") },
-          { id: "proximas", label: t.proximas, count: proximas.length, conteudo: linhaTarefas(proximas, "datadas") },
-          { id: "semdata", label: t.semData, count: semData.length, conteudo: linhaTarefas(semData, "semdata") },
+          { id: "agora", label: t.agora, count: agora.length, alerta: atrasadas > 0, conteudo: linhaTarefas(agora, "datadas", oAgora.selos) },
+          { id: "proximas", label: t.proximas, count: proximas.length, conteudo: linhaTarefas(proximas, "datadas", oProx.selos) },
+          { id: "semdata", label: t.semData, count: semData.length, conteudo: linhaTarefas(semData, "semdata", oSem.selos) },
           {
             id: "novidades", label: t.novidades, count: novidades.length, conteudo: novidades.length ? (
               <ul>
