@@ -4,7 +4,7 @@ import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BomDia from "@/components/v2/BomDia";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import Assistente from "@/components/v2/Assistente";
+import { CampoAssistente } from "@/components/v2/AssistenteGlobal";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
@@ -193,7 +193,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </details>
       )}
 
-      <Assistente lang={lang} labels={{ placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, cancelar: t.cancelar, feito: t.feitoLbl, limpar: t.limpar, pensando: t.pensando, sugestoes: t.sugestoes, verConversa: t.verConversa }} />
+      {user.gestao && <CampoAssistente placeholder={t.perguntePeca} sugestoes={t.sugestoesHoje} />}
 
       {me && (
         <nav aria-label={t.semanaLbl} className="grid grid-cols-7 gap-1 mb-2 text-center">
@@ -250,7 +250,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       )}
 
       <Link href="/tarefas/nova" aria-label={t.novaTarefa}
-        className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-8 z-30 w-14 h-14 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg flex items-center justify-center">
+        className={`fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] ${user.gestao ? "md:right-6 md:bottom-24" : "md:bottom-8"} z-30 w-14 h-14 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg flex items-center justify-center`}>
         <Plus size={26} />
       </Link>
     </>

@@ -699,28 +699,69 @@ export async function atribuirAction(form: FormData) {
   revalidatePath("/", "layout");
 }
 
-// ---------------------------------------------------------------- Hoje: assistant
+// ---------------------------------------------------------------- Assistant (global, Equipe 1)
+// The conversation is stored per person on the server; cards are decided by index and the STORED
+// proposal is executed (the browser never sends the action itself).
 
-export async function assistenteAction(historico: { role: "user" | "assistant"; content: string }[]) {
+async function assistenteDono() {
   const me = await requireUser();
-  const { conversar } = await import("@/lib/v2/assistente");
-  const { getLang } = await import("@/lib/v2/i18n");
+  if (!me.gestao) throw new Error("O assistente está disponível só para a Equipe 1 por enquanto");
+  return { me, id: me.pessoa?.id ?? me.username };
+}
+
+export async function assistenteConversaAction() {
   try {
-    contarUso(me.pessoa?.id ?? me.username);
-    const limpo = historico.filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string").slice(-10);
-    return await conversar(me, limpo, await getLang());
+    const { id } = await assistenteDono();
+    const { getConversa } = await import("@/lib/v2/assistente");
+    return { msgs: getConversa(id) };
   } catch (e) {
     return { error: (e as Error).message };
   }
 }
 
-export async function executarAcaoAction(acao: import("@/lib/v2/assistente").Acao): Promise<{ error?: string; id?: string }> {
-  const me = await requireUser();
-  const { executarAcao } = await import("@/lib/v2/assistente");
+export async function assistenteAction(texto: string, pagina: string) {
   try {
-    const id = executarAcao(me, acao, actorName(me));
-    revalidatePath("/", "layout");
-    return { id };
+    const { me, id } = await assistenteDono();
+    const q = String(texto ?? "").trim().slice(0, 2000);
+    if (!q) return { error: "Mensagem vazia" };
+    const { conversar, getConversa, paraModelo, salvarConversa } = await import("@/lib/v2/assistente");
+    const { getLang } = await import("@/lib/v2/i18n");
+    contarUso(id);
+    const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString() }];
+    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300));
+    msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
+    salvarConversa(id, msgs);
+    return { msgs };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function decidirCartaoAction(msg: number, cartao: number, confirmar: boolean) {
+  try {
+    const { me, id } = await assistenteDono();
+    const { executarAcao, getConversa, salvarConversa } = await import("@/lib/v2/assistente");
+    const msgs = getConversa(id);
+    const c = msgs[msg]?.cartoes?.[cartao];
+    if (!c || c.estado !== "pendente") return { msgs };
+    if (!confirmar) c.estado = "cancelado";
+    else {
+      try { c.link = await executarAcao(me, c, actorName(me)); c.estado = "feito"; } catch (e) { c.estado = "erro"; c.erro = (e as Error).message; }
+    }
+    salvarConversa(id, msgs);
+    if (c.estado === "feito") revalidatePath("/", "layout");
+    return { msgs };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function novaConversaAction() {
+  try {
+    const { id } = await assistenteDono();
+    const { salvarConversa } = await import("@/lib/v2/assistente");
+    salvarConversa(id, []);
+    return { msgs: [] };
   } catch (e) {
     return { error: (e as Error).message };
   }

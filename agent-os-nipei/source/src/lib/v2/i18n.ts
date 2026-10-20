@@ -175,6 +175,9 @@ const pt = {
   passos: { dados: "Confirmar seus dados", whatsapp: "Verificar seu WhatsApp", foto: "Colocar sua foto", diagnostico: "Responder o diagnóstico", revisar: "Revisar um fato do Conhecimento", fonte: "Enviar uma fonte da sua área" },
   metas: { perfis: "Perfis confirmados e WhatsApp verificado", fatos: "Fatos propostos revisados", fontes: "Novas fontes (3 por pessoa)", tarefas: "Tarefas sem responsável / sem equipe", atrasadas: "Atrasadas replanejadas", carga: "Pessoas com até 20 tarefas abertas", objetivos: "Objetivos com dono confirmado", diagnostico: "Diagnóstico individual respondido" },
   aRevisar: "a revisar", alertasLbl: "alertas",
+  assistente: "Assistente", confirmarTodas: "Confirmar todas", novaConversa: "Nova conversa", fechar: "Fechar", abrirAssistente: "Abrir assistente",
+  semVoz: "Voz indisponível neste navegador", sugestoesHoje: ["O que tenho hoje?", "Resumo da minha semana", "Como vai a missão da semana?"],
+  assistenteIntro: "Pergunte, peça ou planeje. Eu leio a plataforma inteira e sei em que página você está. Quando algo precisa mudar, eu proponho e você confirma: nada muda sem o seu toque.",
 };
 export type Dict = typeof pt;
 
@@ -349,6 +352,9 @@ const en: Dict = {
   passos: { dados: "Confirm your details", whatsapp: "Verify your WhatsApp", foto: "Add your photo", diagnostico: "Answer the assessment", revisar: "Review a fact in Knowledge", fonte: "Upload a source from your area" },
   metas: { perfis: "Profiles confirmed and WhatsApp verified", fatos: "Proposed facts reviewed", fontes: "New sources (3 per person)", tarefas: "Tasks without owner / without team", atrasadas: "Overdue tasks re-planned", carga: "People with 20 open tasks or fewer", objetivos: "Objectives with a confirmed owner", diagnostico: "Individual assessment answered" },
   aRevisar: "to review", alertasLbl: "alerts",
+  assistente: "Assistant", confirmarTodas: "Confirm all", novaConversa: "New conversation", fechar: "Close", abrirAssistente: "Open assistant",
+  semVoz: "Voice is not available in this browser", sugestoesHoje: ["What do I have today?", "Summary of my week", "How is the mission of the week going?"],
+  assistenteIntro: "Ask, request or plan. I read the whole platform and know which page you are on. When something needs to change, I propose it and you confirm: nothing changes without your tap.",
 };
 
 export async function getLang(): Promise<Lang> {

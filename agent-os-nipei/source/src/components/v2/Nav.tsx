@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { CalendarDays, FolderKanban, PanelLeftClose, PanelLeftOpen, Sun, Target, Users, UsersRound } from "lucide-react";
+import { BotMessageSquare, CalendarDays, FolderKanban, PanelLeftClose, PanelLeftOpen, Sun, Target, Users, UsersRound } from "lucide-react";
+import { ABRIR_ASSISTENTE } from "./AssistenteGlobal";
 
 const ITEMS = [
   { href: "/hoje", key: "hoje", Icon: Sun },
@@ -25,7 +26,7 @@ type Labels = Record<(typeof ITEMS)[number]["key"] | "objetivos" | "pessoas" | "
  * shows the label, or a flyout with the sub-items). The choice is kept in a cookie so the server renders
  * the right width on the next load. Phone: bottom bar with the 4 sections (unchanged).
  */
-export default function Nav({ labels, fechadoInicial = false }: { labels: Labels; fechadoInicial?: boolean }) {
+export default function Nav({ labels, fechadoInicial = false, assistente }: { labels: Labels; fechadoInicial?: boolean; assistente?: string }) {
   const path = usePathname() ?? "";
   const [fechado, setFechado] = useState(fechadoInicial);
   // Phone bar: light up the tapped section at once (optimistic), before the new page arrives.
@@ -93,10 +94,21 @@ export default function Nav({ labels, fechadoInicial = false }: { labels: Labels
         </nav>
       </div>
       <nav aria-label="Menu" className="print:hidden md:hidden fixed bottom-0 inset-x-0 z-20 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
-        <ul className="grid grid-cols-4 h-16 px-2">
-          {ITEMS.map(({ href, key, Icon }) => {
+        <ul className={`grid ${assistente ? "grid-cols-5" : "grid-cols-4"} h-16 px-2`}>
+          {ITEMS.map(({ href, key, Icon }, i) => {
             const on = ativoBarra(href);
-            return (
+            return [
+              ...(assistente && i === 2 ? [(
+                <li key="assistente" className="flex">
+                  <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE))} aria-label={assistente}
+                    className="group flex-1 flex flex-col items-center justify-center gap-1 touch-manipulation select-none [-webkit-tap-highlight-color:transparent]">
+                    <span className="flex items-center justify-center w-11 h-11 -mt-1 rounded-full bg-gradient-to-br from-green-600 to-emerald-800 text-white shadow-md ring-4 ring-white dark:ring-neutral-950 transition-transform duration-150 group-active:scale-90">
+                      <BotMessageSquare size={21} />
+                    </span>
+                    <span className="sr-only">{assistente}</span>
+                  </button>
+                </li>
+              )] : []),
               <li key={href} className="flex">
                 <Link href={href} aria-current={on ? "page" : undefined}
                   onClick={() => { if (!em(href) || path !== href) setDestino(href); }}
@@ -106,8 +118,8 @@ export default function Nav({ labels, fechadoInicial = false }: { labels: Labels
                   </span>
                   <span className={`text-[11px] leading-none ${on ? "font-semibold text-neutral-900 dark:text-white" : "text-neutral-500 dark:text-neutral-400"}`}>{labels[key]}</span>
                 </Link>
-              </li>
-            );
+              </li>,
+            ];
           })}
         </ul>
       </nav>
