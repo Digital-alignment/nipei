@@ -56,7 +56,7 @@ export function Empty({ children }: { children: ReactNode }) {
 /** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
-export function TaskRow({ t, equipes, pessoas, lang, hoje, me }: { t: Tarefa } & RowProps) {
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode } & RowProps) {
   const eq = equipes.find((e) => e.id === t.equipe);
   const who = t.responsaveis.map((id) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id).join(", ") || t.responsible;
   const late = t.prazo && t.prazo < hoje && t.status !== "done";
@@ -85,12 +85,13 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me }: { t: Tarefa } &
           {t.anexos > 0 && <span>📎 {t.anexos}</span>}
           {t.recorrencia && <span title={t.recorrencia}>🔁</span>}
         </p>
+        {extra?.(t)}
       </div>
     </li>
   );
 }
 
-export function TaskList({ tarefas, ...rest }: { tarefas: Tarefa[] } & RowProps) {
+export function TaskList({ tarefas, ...rest }: { tarefas: Tarefa[]; extra?: (t: Tarefa) => ReactNode } & RowProps) {
   return <ul>{tarefas.map((t) => <TaskRow key={t.id} t={t} {...rest} />)}</ul>;
 }
 

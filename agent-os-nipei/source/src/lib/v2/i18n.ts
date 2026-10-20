@@ -126,6 +126,7 @@ const pt = {
   sintese: "Síntese", gerarSintese: "Gerar síntese com a IA", atualizarSintese: "Atualizar síntese", sinteseAviso: "A IA junta objetivos, tarefas, finanças, conhecimento confirmado e as respostas do diagnóstico. Atualize quando houver mudanças.",
   numeros: "Números", membrosLbl: "pessoas", tarefasAbertasLbl: "tarefas abertas", atrasadasLbl: "atrasadas", semDonoLbl: "sem responsável", concluidasLbl: "concluídas",
   fatosConfirmados: "fatos confirmados", melhoriasLbl: "Melhorias do espaço", proximasAcoes: "Próximas ações de marketing", semDiagnosticoProjeto: "Este projeto ainda não tem diagnóstico.",
+  novidades: "Novidades", amanha: "Amanhã", maisSemana: "+1 semana", estaSemana: "Esta semana", proximaSemana: "Próxima semana", esteMes: "Este mês", outraData: "Outra data",
 };
 export type Dict = typeof pt;
 
@@ -251,6 +252,7 @@ const en: Dict = {
   sintese: "Synthesis", gerarSintese: "Generate synthesis with AI", atualizarSintese: "Update synthesis", sinteseAviso: "The AI brings together objectives, tasks, finances, confirmed knowledge and the assessment's answers. Update it after changes.",
   numeros: "Numbers", membrosLbl: "people", tarefasAbertasLbl: "open tasks", atrasadasLbl: "overdue", semDonoLbl: "without owner", concluidasLbl: "done",
   fatosConfirmados: "confirmed facts", melhoriasLbl: "Space improvements", proximasAcoes: "Next marketing actions", semDiagnosticoProjeto: "This project has no assessment yet.",
+  novidades: "News", amanha: "Tomorrow", maisSemana: "+1 week", estaSemana: "This week", proximaSemana: "Next week", esteMes: "This month", outraData: "Other date",
 };
 
 export async function getLang(): Promise<Lang> {

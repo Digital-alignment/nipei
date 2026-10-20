@@ -668,3 +668,13 @@ export async function visaoAction(form: FormData) {
   await tentar(async () => { contarUso(me.pessoa?.id ?? me.username); await gerarSintese(projeto); });
   revalidatePath(`/projetos/${projeto}/visao`);
 }
+
+/** Hoje: one-tap new due date (overdue / undated groups). */
+export async function prazoRapidoAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  const prazo = String(form.get("prazo") ?? "");
+  if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(prazo) || !can.editTarefa(me, t)) return;
+  updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo, responsaveis: t.responsaveis, status: t.status, recorrencia: t.recorrencia }, actorName(me));
+  revalidatePath("/", "layout");
+}

@@ -1,6 +1,6 @@
 {
   "name": "nipei-os",
-  "version": "2.20.1",
+  "version": "2.21.0",
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1",

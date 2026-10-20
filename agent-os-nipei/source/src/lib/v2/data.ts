@@ -551,3 +551,35 @@ export function setAvisosPessoa(pessoaId: string, ligado: boolean) {
   if (!note) throw new Error("Pessoa não encontrada");
   updateNote(note.file, { avisos_whatsapp: ligado });
 }
+
+// ---------------------------------------------------------------- Hoje: news
+
+export type Novidade = { tarefaId: string; titulo: string; quando: string; quem: string; oque: string };
+
+/**
+ * What other people (and Hermes) did lately on the tasks I'm responsible for, plus comments that
+ * @mention me anywhere. Read from each task's "## Atividade" log; newest first.
+ */
+export function novidadesPara(me: Me, dias = 7, max = 12): Novidade[] {
+  const p = me.pessoa;
+  if (!p) return [];
+  const primeiro = (n: string) => n.split(/[\s(]/)[0].toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  const eu = primeiro(p.name);
+  const mencao = new RegExp(`@(${eu}|${p.id})\\b`, "i");
+  const desde = new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 10);
+  const out: Novidade[] = [];
+  for (const { fm, body } of readDir(path.join("Productivity", "Tarefas"))) {
+    const minha = arr(fm.responsaveis).includes(p.id);
+    const log = body.match(/## Atividade\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "";
+    for (const l of log.split(/\r?\n/)) {
+      const m = l.match(/^- (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) · ([^·]+) · (.+)$/);
+      if (!m || m[1] < desde) continue;
+      const quem = m[3].trim();
+      // my own changes, the format migration and old v1 automations aren't news
+      if (primeiro(quem) === eu || /^migra/i.test(quem) || /\bv1\b/i.test(quem)) continue;
+      if (!minha && !mencao.test(m[4].normalize("NFD").replace(/\p{M}/gu, ""))) continue; // "@Jordão" matches "jordao"
+      out.push({ tarefaId: s(fm.id), titulo: s(fm.title), quando: `${m[1]} ${m[2]}`, quem, oque: m[4].replace(/\s+/g, " ").slice(0, 240) });
+    }
+  }
+  return out.sort((a, b) => b.quando.localeCompare(a.quando)).slice(0, max);
+}

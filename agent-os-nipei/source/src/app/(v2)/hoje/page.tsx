@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Card, Empty, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
 import VoiceTask from "@/components/v2/VoiceTask";
 import Grupo from "@/components/v2/Grupo";
+import PrazoRapido from "@/components/v2/PrazoRapido";
 
 const TOM = {
   ambar: "border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30",
@@ -15,7 +16,7 @@ import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
-import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
 export default async function Hoje() {
@@ -35,6 +36,19 @@ export default async function Hoje() {
   const eventos = getEventos().filter((e) => e.inicio >= hoje.slice(0, 7))
     .sort((a, b) => Number(a.inicio.length < 7) - Number(b.inicio.length < 7) || a.inicio.localeCompare(b.inicio)).slice(0, 3);
   const props = { equipes, pessoas, lang, hoje, me: user! };
+  // one-tap dates (Bahia calendar): overdue → today/tomorrow/+7; undated → end of this/next week, end of month
+  const dia = (n: number) => new Date(Date.parse(`${hoje}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+  const dow = new Date(`${hoje}T12:00:00Z`).getUTCDay(); // 0 = Sunday
+  const sexta = dia((5 - dow + 7) % 7);
+  const fimMes = new Date(Date.UTC(+hoje.slice(0, 4), +hoje.slice(5, 7), 0)).toISOString().slice(0, 10);
+  const OPCOES: Record<string, { label: string; data: string }[]> = {
+    atrasadas: [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }],
+    semdata: [{ label: t.estaSemana, data: sexta }, { label: t.proximaSemana, data: dia(((5 - dow + 7) % 7) + 7) }, { label: t.esteMes, data: fimMes }],
+  };
+  const comPrazo = (grupo: string) => OPCOES[grupo] && user
+    ? (x: Tarefa) => can.editTarefa(user, x) ? <PrazoRapido id={x.id} opcoes={OPCOES[grupo]} outraData={t.outraData} /> : null
+    : undefined;
+  const novidades = user ? novidadesPara(user) : [];
   const fatosK = user ? getFatos() : [];
   const revisar = user ? fatosK.filter((f) => f.status === "proposto" && podeRevisar(user, f)).length : 0;
   const alertasK = user ? getAlertas().filter((a) => {
@@ -106,9 +120,22 @@ export default async function Hoje() {
         </Section>
       )}
 
+      {novidades.length > 0 && (
+        <Grupo id="novidades" titulo={t.novidades} count={novidades.length}>
+          <ul className="grid">
+            {novidades.map((n, i) => (
+              <li key={`${n.tarefaId}${n.quando}${i}`} className="py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                <Link href={`/tarefas/${n.tarefaId}`} className="block text-sm leading-snug hover:underline">{n.titulo}</Link>
+                <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2"><span className="font-medium text-neutral-700 dark:text-neutral-300">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
+              </li>
+            ))}
+          </ul>
+        </Grupo>
+      )}
+
       {minhas.length === 0 && <Empty>{t.nadaPendente}</Empty>}
       {grupos.map(([id, titulo, ts]) => ts.length > 0 && (
-        <Grupo key={id} id={id} titulo={titulo} count={ts.length} alerta={id === "atrasadas"}><TaskList tarefas={ts} {...props} /></Grupo>
+        <Grupo key={id} id={id} titulo={titulo} count={ts.length} alerta={id === "atrasadas"} aberto={id !== "semdata" || ts.length <= 5}><TaskList tarefas={ts} {...props} extra={comPrazo(id)} /></Grupo>
       ))}
 
       {eventos.length > 0 && (
