@@ -8,6 +8,7 @@ import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { criarFonte, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
+import { decidirProposta, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
@@ -404,6 +405,8 @@ export async function revisarFatoAction(form: FormData) {
     // discarding the fact settles its alerts
     if (acao === "descartar") for (const a of alertas.filter((x) => x.fato === f.id)) resolverAlerta(a.id, "eliminar", actorName(me));
   }
+  // K4: newly confirmed facts may change tasks/projects → proposals (in the background, ≈ 20 s; after saving, so they read as confirmed)
+  if (acao === "confirmar" && fatos.length) void proporMudancas(fatos.map((f) => f.id)).catch((e) => console.warn("[propostas]", (e as Error).message));
   revalidatePath("/conhecimento", "layout");
 }
 
@@ -414,6 +417,7 @@ export async function resolverAlertaAction(form: FormData) {
   const acao = pick(form.get("acao"), [...ACOES]) as Acao | "";
   if (!a || !acao || !(fato ? podeRevisar(me, fato) : me.gestao)) return;
   resolverAlerta(a.id, acao, actorName(me), String(form.get("texto") ?? ""));
+  if (acao === "substituir" || acao === "editar") void proporMudancas([a.fato]).catch((e) => console.warn("[propostas]", (e as Error).message));
   revalidatePath("/conhecimento", "layout");
 }
 
@@ -422,4 +426,14 @@ export async function auditarAgoraAction() {
   if (!me.gestao) return;
   void auditoriaSemanal(true);
   revalidatePath("/conhecimento", "layout");
+}
+
+export async function decidirPropostaAction(form: FormData) {
+  const me = await requireUser();
+  const p = getPropostas().find((x) => x.id === String(form.get("id")) && x.status === "aberta");
+  if (!p || !podeDecidir(me, p)) return;
+  decidirProposta(p.id, form.get("acao") === "aplicar", actorName(me), {
+    prazo: String(form.get("prazo") ?? ""), titulo: String(form.get("titulo") ?? ""), texto: String(form.get("texto") ?? ""),
+  });
+  revalidatePath("/", "layout");
 }

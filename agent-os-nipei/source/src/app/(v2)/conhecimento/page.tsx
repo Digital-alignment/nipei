@@ -6,6 +6,7 @@ import Upload from "@/components/v2/Upload";
 import { currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { diaLocal, getFatos, getFontes, podeRevisar } from "@/lib/v2/conhecimento";
 import { auditoriaSemanal, getAlertas } from "@/lib/v2/auditor";
+import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { enviarFonteAction, enviarFonteArquivoAction } from "../actions";
 
@@ -24,7 +25,7 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   const alertas = getAlertas().filter((a) => {
     const f = fatos.find((x) => x.id === a.fato);
     return a.status === "aberta" && (f ? podeRevisar(me, f) : me.gestao);
-  }).length;
+  }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(me, p)).length;
   const busca = (q.q ?? "").toLowerCase().trim();
   const base = fatos.filter((f) => f.status === "confirmado" && (!q.equipe || f.equipe === q.equipe) && (!busca || f.texto.toLowerCase().includes(busca)))
     .sort((a, b) => b.revisadoEm.localeCompare(a.revisadoEm)).slice(0, 60);
@@ -51,7 +52,7 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
       <Title sub={t.conhecimentoIntro}>{t.conhecimento}</Title>
       {alertas > 0 && (
         <Link href="/conhecimento/alertas" className="block rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm mb-5">
-          ⚠️ {alertas} {t.alertas.toLowerCase()} · <span className="underline font-medium">{t.alertas}</span>
+          ⚠️ {alertas} · <span className="underline font-medium">{t.alertasEPropostas}</span>
         </Link>
       )}
 

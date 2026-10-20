@@ -18,7 +18,7 @@ export type Equipe = {
   gestao: boolean; // members of this team manage everything (full session, v1 included)
   avisos: boolean; // members get WhatsApp notices (scripts/avisos on the VPS)
 };
-export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string };
+export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[] };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
 export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string };
 export type Pessoa = {
@@ -85,7 +85,10 @@ export function getEquipes(): Equipe[] {
 }
 
 export function getProjetos(): Projeto[] {
-  return readDir("Projetos").map(({ fm, body }) => ({ id: s(fm.id), nome: s(fm.nome), equipes: arr(fm.equipes), descricao: desc(body) }));
+  return readDir("Projetos").map(({ fm, body }) => ({
+    id: s(fm.id), nome: s(fm.nome), equipes: arr(fm.equipes), descricao: desc(body.split(/\r?\n## /)[0]),
+    atualizacoes: (body.match(/## Atualizações\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "").split(/\r?\n/).filter((l) => l.startsWith("- ")).map((l) => l.slice(2)),
+  }));
 }
 
 export function getObjetivos(): Objetivo[] {
@@ -271,6 +274,18 @@ export function addToEquipe(pessoaId: string, equipeId: string) {
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
   updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])] });
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
+}
+
+/** K4: news line at the top of the project's "## Atualizações" section (created if missing). */
+export function anotarProjeto(projetoId: string, texto: string, quem: string) {
+  const note = readDir("Projetos").find(({ fm }) => s(fm.id) === projetoId);
+  if (!note) throw new Error("Projeto não encontrado");
+  const full = path.join(vault(), note.file);
+  const linha = `- ${today()} · ${quem} · ${texto.replace(/\s+/g, " ").trim()}`;
+  let t = fs.readFileSync(full, "utf-8");
+  t = /\n## Atualizações\r?\n/.test(t) ? t.replace(/(\n## Atualizações\r?\n)/, `$1${linha}\n`) : `${t.trimEnd()}\n\n## Atualizações\n${linha}\n`;
+  fs.writeFileSync(full, setFrontmatter(t, { updated_at: new Date().toISOString() }), "utf-8");
+  requestSync(vault());
 }
 
 /** New person note with the next NIP id; optionally already in a team. Returns the new id. */

@@ -26,6 +26,12 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         {p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={`/projetos/${id}?equipe=${eid}`} cor={e.cor} on={equipe === eid}>{e.nome}</Chip>; })}
       </div>
 
+      {p.atualizacoes.length > 0 && (
+        <Section title={t.atualizacoes} count={p.atualizacoes.length}>
+          <ul className="grid gap-1.5 text-sm">{p.atualizacoes.slice(0, 8).map((a, i) => <li key={i}>{a}</li>)}</ul>
+        </Section>
+      )}
+
       {objetivos.length > 0 && (
         <Section title={t.objetivos} count={objetivos.length}>
           <div className="grid gap-2">

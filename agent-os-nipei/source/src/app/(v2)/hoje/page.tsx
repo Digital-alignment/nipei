@@ -6,6 +6,7 @@ import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
+import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -31,7 +32,7 @@ export default async function Hoje() {
   const alertasK = user ? getAlertas().filter((a) => {
     const f = fatosK.find((x) => x.id === a.fato);
     return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
-  }).length : 0;
+  }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length : 0;
 
   return (
     <>
@@ -47,7 +48,7 @@ export default async function Hoje() {
 
       {(revisar > 0 || alertasK > 0) && (
         <Link href={alertasK ? "/conhecimento/alertas" : "/conhecimento"} className="block rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 text-sm mb-5">
-          🧠 {[revisar && `${revisar} ${t.fatosPropostos}`, alertasK && `⚠️ ${alertasK} ${t.alertas.toLowerCase()}`].filter(Boolean).join(" · ")} · <span className="underline font-medium">{t.conhecimento}</span>
+          🧠 {[revisar && `${revisar} ${t.fatosPropostos}`, alertasK && `⚠️ ${alertasK} ${t.alertasEPropostas.toLowerCase()}`].filter(Boolean).join(" · ")} · <span className="underline font-medium">{t.conhecimento}</span>
         </Link>
       )}
 

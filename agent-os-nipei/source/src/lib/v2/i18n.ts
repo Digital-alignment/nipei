@@ -85,6 +85,10 @@ const pt = {
   fatoNovo: "Fato", comparadoCom: "Na base", sugestaoIA: "Sugestão", alertaAberto: "Tem alerta: decida em Alertas",
   acaoSubstituir: "O novo está certo (substitui)", acaoEliminar: "Eliminar o novo", acaoEditar: "Editar e confirmar", acaoManter: "Os dois valem",
   acaoAindaVale: "Ainda vale", acaoEliminarFato: "Eliminar", acaoConfirmarMesmo: "Confirmar mesmo assim",
+  propostas: "Propostas de mudança", propostasIntro: "Com base nos fatos confirmados, a IA sugere o que mudar nas tarefas e projetos. Ajuste se precisar e aplique.",
+  semPropostas: "Nenhuma proposta aberta.", aplicar: "Aplicar", recusar: "Recusar", porque: "Por quê", atualizacoes: "Atualizações",
+  tiposProposta: { mudar_prazo: "Mudar prazo", nova_tarefa: "Nova tarefa", comentar_tarefa: "Informação para a tarefa", nota_projeto: "Novidade do projeto" },
+  alertasEPropostas: "Alertas e propostas",
 };
 export type Dict = typeof pt;
 
@@ -169,6 +173,10 @@ const en: Dict = {
   fatoNovo: "Fact", comparadoCom: "In the base", sugestaoIA: "Suggestion", alertaAberto: "Has an alert: decide in Alerts",
   acaoSubstituir: "The new one is right (replaces)", acaoEliminar: "Remove the new one", acaoEditar: "Edit and confirm", acaoManter: "Both are valid",
   acaoAindaVale: "Still valid", acaoEliminarFato: "Remove", acaoConfirmarMesmo: "Confirm anyway",
+  propostas: "Proposed changes", propostasIntro: "Based on confirmed facts, the AI suggests what to change in tasks and projects. Adjust if needed and apply.",
+  semPropostas: "No open proposals.", aplicar: "Apply", recusar: "Decline", porque: "Why", atualizacoes: "Updates",
+  tiposProposta: { mudar_prazo: "Change due date", nova_tarefa: "New task", comentar_tarefa: "Info for the task", nota_projeto: "Project news" },
+  alertasEPropostas: "Alerts and proposals",
 };
 
 export async function getLang(): Promise<Lang> {
