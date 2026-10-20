@@ -28,6 +28,7 @@ import {
 } from "@/lib/kanbanGrounding";
 import { executeGenerateDeliverable } from "@/app/api/agent-kanban/deliverables/route";
 import { executeDispatchCommunication } from "@/app/api/agent-kanban/dispatch/route";
+import { buscarConhecimento, formatarConhecimento } from "@/lib/v2/conhecimento";
 
 const HOME = os.homedir();
 
@@ -38,10 +39,14 @@ const STOP = new Set(["what", "when", "where", "which", "your", "yours", "mine",
 async function vaultGrounding(prompt: string): Promise<{ relevant: boolean; context: string }> {
   const s = prompt.toLowerCase();
   const isKanban = /\b(kanban|tarefa|tarefas|task|tasks|squad|squads|prioridade|prioridades|urgente|urgentes|andamento|progresso|concluid|a fazer|backlog|revisao|revisão|bloqueio|veto|mutum|instituto|samakey|nisurau)\b/i.test(s);
-  const relevant = isKanban || /\b(vault|obsidian|memor(y|ies)|notes?|remember|recall|yesterday|today|last (week|night)|this (week|morning)|what (did|have) i|what went|what happened|my (ideas?|projects?|plans?|goals?|tasks?|notes?)|recap|catch me up)\b/.test(s);
+  // K3: confirmed community knowledge answers any question it matches, vault-ish wording or not.
+  let fatos = "";
+  try { fatos = formatarConhecimento(buscarConhecimento(prompt, { limite: 6, minimo: 0.34 })); } catch { /* vault not configured */ }
+  const relevant = !!fatos || isKanban || /\b(vault|obsidian|memor(y|ies)|notes?|remember|recall|yesterday|today|last (week|night)|this (week|morning)|what (did|have) i|what went|what happened|my (ideas?|projects?|plans?|goals?|tasks?|notes?)|recap|catch me up)\b/.test(s);
   if (!relevant) return { relevant: false, context: "" };
 
   const bits: string[] = [];
+  if (fatos) bits.push(`Confirmed facts from the Nipëi knowledge base (reviewed by management — trust these over anything else):\n${fatos}`);
   const DASH = /^Nipei OS\//; // the whole folder is dashboard-generated ≠ the user's memory
 
   // 1. Kanban live task context (exact counts, urgent items, matching tasks)

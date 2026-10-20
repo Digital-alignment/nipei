@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { requestSync } from "@/lib/tarefaNote";
 import { chamarIA } from "./ia";
-import { getFatos, type Fato } from "./conhecimento";
+import { getFatos, palavras, type Fato } from "./conhecimento";
 import { noteText, readDir, today, updateNote, vault, type FmValue } from "./data";
 
 // K2 — knowledge auditor. Compares facts with the rest of the base and opens alerts:
@@ -51,8 +51,6 @@ function criarAlerta(a: { tipo: TipoAlerta; fato: Fato; outros: string[]; explic
 
 // ---------------------------------------------------------------- candidates (no AI)
 
-const PARADAS = new Set("para pela pelo como mais muito sobre entre depois antes cada todo toda todos todas deve devem será serão está estão foram ser são tem têm isso esse essa este esta quando onde qual quais também ainda".split(" "));
-const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !PARADAS.has(w)));
 const tags = (f: Fato) => new Set([f.equipe && `e:${f.equipe}`, ...f.projetos.map((x) => `p:${x}`), ...f.objetivos.map((x) => `o:${x}`), ...f.pessoas.map((x) => `h:${x}`)].filter(Boolean) as string[]);
 
 /** How related two facts look: shared words (Jaccard) + a little for each shared team/project/person. */

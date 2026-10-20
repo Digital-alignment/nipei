@@ -3,6 +3,7 @@ import path from "path";
 import { defaultVault } from "@/lib/config";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, type Status } from "./data";
+import { buscarConhecimento, formatarConhecimento } from "./conhecimento";
 
 // T2: the AI only *proposes*; a person reviews and applies (actions.ts aplicarIAAction).
 // Model via OpenRouter (key already on the server). Override with NIPEI_IA_MODEL.
@@ -37,7 +38,8 @@ const INSTRUCOES: Record<ModoIA, string> = {
 
 const SISTEMA = `Você é o assistente de tarefas do Nipëi OS (Santuário Nipeihu, Aldeia Mutum, Inirau). Responda SEMPRE em português do Brasil.
 Regras:
-- Zero alucinação: use só o que está no contexto (tarefa, notas do vault, anexos). Não invente nomes, datas, valores, contatos nem fatos.
+- Zero alucinação: use só o que está no contexto (tarefa, base de conhecimento, notas do vault, anexos). Não invente nomes, datas, valores, contatos nem fatos.
+- A "Base de conhecimento confirmada" prevalece sobre as notas antigas; se a tarefa contradiz a base, aponte isso em \`resumo\`.
 - Se faltar informação, diga em \`resumo\` o que falta e a quem perguntar.
 - Liste em \`fontes\` as notas/anexos/comentários que você usou.
 - Responda APENAS com um objeto JSON, sem texto antes ou depois, com estas chaves:
@@ -64,6 +66,9 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
     .filter((t) => t.id !== id && ((tarefa.projeto && t.projeto === tarefa.projeto) || (tarefa.objetivo && t.objetivo === tarefa.objetivo) || (tarefa.equipe && t.equipe === tarefa.equipe)))
     .slice(0, 15);
   const rag = queryVaultGrounding(`${tarefa.title} ${doc.descricao}`.slice(0, 500), "squad_1_ceo");
+  const base = buscarConhecimento(`${tarefa.title} ${doc.descricao} ${doc.checklist.map((c) => c.texto).join(" ")}`, {
+    equipe: tarefa.equipe, projetos: tarefa.projeto ? [tarefa.projeto] : [], objetivos: tarefa.objetivo ? [tarefa.objetivo] : [], pessoas: tarefa.responsaveis, limite: 15,
+  });
 
   const linhas = [
     `# Tarefa ${tarefa.id}: ${tarefa.title}`,
@@ -80,7 +85,9 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
     doc.origem ? `\n## Origem\n${doc.origem}` : "",
     "", "## Links anexados", ...(anexos.filter((a) => a.tipo === "link").map((a) => `- ${a.titulo}: ${a.url}`) || []),
     "", "## Tarefas relacionadas (mesmo projeto/objetivo/equipe)", ...relacionadas.map((t) => `- ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
-    "", "## Notas do vault que parecem relacionadas", ...(rag.citations ?? []).slice(0, 5).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
+    "", "## Base de conhecimento confirmada (fonte de verdade; revisada pela gestão)", base.length ? formatarConhecimento(base) : "(nada confirmado sobre este assunto)",
+    "", "## Notas antigas do vault (não revisadas; se contradizem a base confirmada, vale a base)",
+    ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 5).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
   ];
 
   // Attached files: photos and PDFs go to the model as they are; text files inline. Newest 6 only.

@@ -60,6 +60,38 @@ export function getFatos(): Fato[] {
   }));
 }
 
+const PARADAS = new Set("para pela pelo como mais muito sobre entre depois antes cada todo toda todos todas deve devem será serão está estão foram ser são tem têm isso esse essa este esta quando onde qual quais também ainda what with that this from have".split(" "));
+/** Significant words (≥4 letters, no accents, no stop words). */
+export const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !PARADAS.has(w)));
+
+// ---------------------------------------------------------------- K3: the one knowledge search
+
+export type Achado = { fato: Fato; fonte: string; score: number };
+
+/**
+ * The single knowledge search for every AI in the app (task AI, Hermes, Venu, /api RAG):
+ * ONLY confirmed facts. Scored by how many of the question's words the fact has, plus a boost
+ * for each shared team/project/objective/person; newest review first on ties.
+ */
+export function buscarConhecimento(pergunta: string, opts: { equipe?: string; projetos?: string[]; objetivos?: string[]; pessoas?: string[]; limite?: number; minimo?: number } = {}): Achado[] {
+  const q = palavras(pergunta);
+  const tags = new Set([opts.equipe && `e:${opts.equipe}`, ...(opts.projetos ?? []).map((x) => `p:${x}`), ...(opts.objetivos ?? []).map((x) => `o:${x}`), ...(opts.pessoas ?? []).map((x) => `h:${x}`)].filter(Boolean) as string[]);
+  const fontes = new Map(getFontes().map((f) => [f.id, f.titulo]));
+  return getFatos().filter((f) => f.status === "confirmado").map((f) => {
+    const w = palavras(f.texto);
+    const comuns = [...q].filter((x) => w.has(x)).length;
+    const ft = [f.equipe && `e:${f.equipe}`, ...f.projetos.map((x) => `p:${x}`), ...f.objetivos.map((x) => `o:${x}`), ...f.pessoas.map((x) => `h:${x}`)];
+    const score = (q.size ? comuns / Math.min(q.size, 8) : 0) + 0.15 * ft.filter((x) => x && tags.has(x)).length;
+    return { fato: f, fonte: fontes.get(f.fonte) ?? "", score };
+  }).filter((a) => a.score >= (opts.minimo ?? 0.2))
+    .sort((a, b) => b.score - a.score || b.fato.revisadoEm.localeCompare(a.fato.revisadoEm))
+    .slice(0, opts.limite ?? 12);
+}
+
+/** Facts as prompt lines: "- [prazo] texto (fonte: …, confirmado por X em AAAA-MM-DD)". */
+export const formatarConhecimento = (achados: Achado[]) =>
+  achados.map(({ fato: f, fonte }) => `- [${f.tipo}] ${f.texto} (fonte: ${fonte || f.fonte}; confirmado por ${f.revisadoPor || "?"} em ${diaLocal(f.revisadoEm)})`).join("\n");
+
 /** ISO timestamp → its day in Bahia ("2026-10-19"), for display. */
 export const diaLocal = (iso: string) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Bahia" }) : "");
 

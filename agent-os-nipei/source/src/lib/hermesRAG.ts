@@ -3,6 +3,7 @@ import path from "path";
 import crypto from "crypto";
 import { defaultVault } from "@/lib/config";
 import { extractAIDigest } from "@/lib/vaultDigest";
+import { buscarConhecimento } from "@/lib/v2/conhecimento";
 
 export interface VaultCitation {
   path: string;
@@ -133,7 +134,17 @@ export function queryVaultGrounding(
   // Sort citations by highest relevance score
   citations.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-  const topCitations = citations.slice(0, 3);
+  // K3: confirmed facts (Conhecimento) come first and count as fully grounded; old notes fill in after.
+  let fatos: VaultCitation[] = [];
+  try {
+    fatos = buscarConhecimento(userQuery, { limite: 5 }).map(({ fato, fonte }) => ({
+      path: fato.file.split(path.sep).join("/"), filename: path.basename(fato.file), title: `Fato confirmado${fonte ? ` · ${fonte}` : ""}`,
+      sha256: crypto.createHash("sha256").update(fato.texto).digest("hex"), relevanceScore: 1, snippet: fato.texto,
+    }));
+  } catch (e) {
+    console.warn("[hermesRAG] base de conhecimento indisponível:", (e as Error).message);
+  }
+  const topCitations = [...fatos, ...citations.slice(0, 3)];
   const highestScore = topCitations.length > 0 ? topCitations[0].relevanceScore : 0;
 
   // Threshold for Zero-Hallucination Policy
