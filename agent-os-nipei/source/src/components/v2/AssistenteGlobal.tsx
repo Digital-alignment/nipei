@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowLeft, BotMessageSquare, Brain, Check, CheckCheck, ExternalLink, Mic, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { ArrowLeft, BotMessageSquare, Brain, Check, CheckCheck, ExternalLink, Mic, RotateCcw, Send, Square, Trash2, Volume2, VolumeX, X } from "lucide-react";
 import { assistenteAction, assistenteConversaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
 import type { Lembranca, MsgSalva } from "@/lib/v2/assistente";
@@ -14,7 +14,19 @@ type Labels = {
   titulo: string; placeholder: string; ouvindo: string; confirmar: string; confirmarTodas: string; cancelar: string; feito: string;
   nova: string; pensando: string; fechar: string; intro: string; abrir: string; semVoz: string;
   memoria: string; memoriaIntro: string; memoriaVazia: string; esquecer: string; categorias: Record<Lembranca["categoria"], string>;
+  vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
 };
+
+const CHAVE_VOZ = "nipei:voz";
+const SILENCIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+
+/** What gets read aloud: plain sentences, no markdown, cut at a sentence near ~600 chars; cards are announced. */
+function paraFala(m: MsgSalva, propostasFala: string) {
+  let t = m.content.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/[*_`#>|]/g, "").replace(/^\s*[-•]\s+/gm, "").replace(/\n+/g, ". ").replace(/\s+/g, " ").replace(/\.\s*\./g, ".").trim();
+  if (t.length > 600) { const corte = t.slice(0, 600).lastIndexOf(". "); t = t.slice(0, corte > 200 ? corte + 1 : 600); }
+  const n = m.cartoes?.filter((c) => c.estado === "pendente").length ?? 0;
+  return n ? `${t} ${propostasFala.replace("{n}", String(n))}`.trim() : t;
+}
 type Recognition = {
   lang: string; interimResults: boolean; maxAlternatives: number; start(): void; stop(): void;
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
@@ -48,7 +60,58 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
   const [erro, setErro] = useState("");
   const [ouvindo, setOuvindo] = useState(false);
   const [memoria, setMemoria] = useState<Lembranca[] | null>(null); // null = chat view
+  const [voz, setVoz] = useState(false);          // read replies aloud (remembered on this device)
+  const [falando, setFalando] = useState(-1);     // index of the message being read
   const [pending, start] = useTransition();
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const vozRef = useRef(false);
+  const porVoz = useRef(false);                   // last question was spoken → keep the conversation going
+  const ouvirDeNovo = useRef<() => void>(() => {});
+  useEffect(() => { try { const v = localStorage.getItem(CHAVE_VOZ) === "1"; setVoz(v); vozRef.current = v; } catch { /* private mode */ } }, []);
+
+  // Phones only play audio started by a tap: unlock one <audio> element on the first tap and reuse it.
+  const desbloquear = () => {
+    if (!audio.current) audio.current = new Audio();
+    const a = audio.current;
+    if (!a.src) { a.src = SILENCIO; a.play().catch(() => {}); }
+  };
+  const pararFala = () => {
+    audio.current?.pause();
+    try { window.speechSynthesis?.cancel(); } catch { /* none */ }
+    setFalando(-1);
+  };
+  const falarMsg = useCallback(async (m: MsgSalva, idx: number) => {
+    const texto = paraFala(m, labels.propostasFala);
+    if (!texto) return;
+    pararFala();
+    setFalando(idx);
+    const fim = () => { setFalando(-1); if (porVoz.current && vozRef.current) ouvirDeNovo.current(); };
+    try {
+      const r = await fetch("/api/assistente/voz", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto, lang }) });
+      if (!r.ok) throw new Error();
+      const url = URL.createObjectURL(await r.blob());
+      if (!audio.current) audio.current = new Audio();
+      const a = audio.current;
+      a.onended = () => { URL.revokeObjectURL(url); fim(); };
+      a.src = url;
+      await a.play();
+    } catch {
+      // fallback: the device's own voice (instant, free, less natural)
+      try {
+        const u = new SpeechSynthesisUtterance(texto);
+        u.lang = lang === "en" ? "en-US" : "pt-BR";
+        u.onend = fim;
+        window.speechSynthesis.speak(u);
+      } catch { setFalando(-1); }
+    }
+  }, [lang, labels.propostasFala]);
+  const alternarVoz = () => {
+    desbloquear();
+    const v = !voz;
+    setVoz(v); vozRef.current = v;
+    try { localStorage.setItem(CHAVE_VOZ, v ? "1" : "0"); } catch { /* private mode */ }
+    if (!v) pararFala();
+  };
   const campo = useRef<HTMLTextAreaElement>(null);
   const fim = useRef<HTMLDivElement>(null);
   const rec = useRef<Recognition | null>(null);
@@ -67,9 +130,12 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
     start(async () => {
       const r = await assistenteAction(q, pagina).catch(() => ({ error: "Falha de conexão" } as { error: string }));
       if ("error" in r && r.error) return setErro(r.error);
-      setMsgs((r as { msgs: MsgSalva[] }).msgs);
+      const novas = (r as { msgs: MsgSalva[] }).msgs;
+      setMsgs(novas);
+      const ultima = novas.length - 1;
+      if (vozRef.current && novas[ultima]?.role === "assistant") void falarMsg(novas[ultima], ultima);
     });
-  }, [pagina]);
+  }, [pagina, falarMsg]);
 
   // open from anywhere (phone bar, Hoje's field), optionally with a first message
   useEffect(() => {
@@ -82,7 +148,7 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
     return () => window.removeEventListener(ABRIR_ASSISTENTE, abrir);
   }, [enviar]);
   useEffect(() => { if (aberto && msgs === null) carregar(); }, [aberto, msgs, carregar]);
-  useEffect(() => { if (aberto) setTimeout(() => campo.current?.focus(), 50); }, [aberto]);
+  useEffect(() => { if (aberto) setTimeout(() => campo.current?.focus(), 50); else { audio.current?.pause(); try { window.speechSynthesis?.cancel(); } catch { /* none */ } rec.current?.stop(); } }, [aberto]);
   useEffect(() => { fim.current?.scrollIntoView({ block: "end" }); }, [msgs, pending, aberto]);
   useEffect(() => {
     if (!aberto) return;
@@ -95,7 +161,10 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
     const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!SR) return setErro(labels.semVoz);
-    if (ouvindo) return rec.current?.stop();
+    if (ouvindo) { porVoz.current = false; return rec.current?.stop(); }
+    desbloquear();
+    pararFala();
+    porVoz.current = true;
     const r = new SR();
     r.lang = lang === "en" ? "en-US" : "pt-BR";
     r.interimResults = false;
@@ -107,6 +176,7 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
     setOuvindo(true);
     r.start();
   }
+  ouvirDeNovo.current = falar;
 
   const decidir = (mi: number, ci: number, confirmar: boolean) => start(async () => {
     const r = await decidirCartaoAction(mi, ci, confirmar).catch(() => ({ error: "Falha de conexão" } as { error: string }));
@@ -161,6 +231,12 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
                 ? <button type="button" onClick={() => setMemoria(null)} aria-label={labels.titulo} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-800"><ArrowLeft size={18} /></button>
                 : <span className="w-8 h-8 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center shrink-0"><BotMessageSquare size={16} /></span>}
               <p className="font-semibold text-sm flex-1">{memoria !== null ? labels.memoria : labels.titulo}</p>
+              {memoria === null && (
+                <button type="button" onClick={alternarVoz} aria-pressed={voz} title={voz ? labels.vozDesligar : labels.vozLigar} aria-label={voz ? labels.vozDesligar : labels.vozLigar}
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${voz ? "bg-green-600/15 text-green-700 dark:text-green-400" : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
+                  {voz ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                </button>
+              )}
               {memoria === null && <button type="button" onClick={verMemoria} disabled={pending} title={labels.memoria} aria-label={labels.memoria} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><Brain size={16} /></button>}
               {memoria === null && !vazio && <button type="button" onClick={nova} disabled={pending} title={labels.nova} aria-label={labels.nova} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><RotateCcw size={16} /></button>}
               <button type="button" onClick={() => setAberto(false)} title={labels.fechar} aria-label={labels.fechar} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><X size={18} /></button>
@@ -190,6 +266,12 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
               ) : (
                 <div key={mi} className="grid gap-2 max-w-[95%]">
                   {m.content && <div className="leading-relaxed"><Md>{m.content}</Md></div>}
+                  {m.content && (
+                    <button type="button" onClick={() => { desbloquear(); if (falando === mi) pararFala(); else { porVoz.current = false; void falarMsg(m, mi); } }}
+                      className={`justify-self-start inline-flex items-center gap-1 text-[11px] ${falando === mi ? "text-green-700 dark:text-green-400" : "text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"}`}>
+                      {falando === mi ? <><Square size={11} className="fill-current" />{labels.parar}</> : <><Volume2 size={12} />{labels.ouvir}</>}
+                    </button>
+                  )}
                   {m.cartoes?.map((c, ci) => (
                     <div key={ci} className={`rounded-xl border px-3 py-2.5 grid gap-1 ${c.estado === "pendente" ? "border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/30" : "border-neutral-200 dark:border-neutral-800"}`}>
                       <p className={`font-medium ${c.estado === "cancelado" ? "line-through text-neutral-400" : ""}`}>{c.resumo}</p>
@@ -226,9 +308,9 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
               </div>
             )}
 
-            <form onSubmit={(e) => { e.preventDefault(); if (!pending) enviar(texto); }} className="flex items-end gap-2 px-3 py-3 border-t border-neutral-100 dark:border-neutral-800 shrink-0">
+            <form onSubmit={(e) => { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); }} className="flex items-end gap-2 px-3 py-3 border-t border-neutral-100 dark:border-neutral-800 shrink-0">
               <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={1} maxLength={2000}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!pending) enviar(texto); } }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
                 placeholder={ouvindo ? labels.ouvindo : labels.placeholder}
                 className="min-w-0 flex-1 resize-none max-h-32 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-4 py-2.5 text-sm leading-snug" />
               {texto.trim()

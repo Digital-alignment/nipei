@@ -182,6 +182,7 @@ const pt = {
   memoriaIntro: "Só guardo o que você aprovou num cartão. Só você vê esta lista; apague o que não quiser.",
   memoriaVazia: "Ainda não sei nada sobre você. Diga, por exemplo, \"lembre que eu cuido das finanças do Inirau\" ou \"prefiro respostas em tópicos\". Quando eu notar algo útil, também vou propor guardar, e você decide.",
   memoriaCategorias: { preferencia: "Como você prefere", responsabilidade: "Do que você cuida", rotina: "Rotinas", contexto: "Contexto" },
+  vozLigar: "Responder em voz", vozDesligar: "Desligar a voz", ouvirLbl: "Ouvir", pararLbl: "Parar", propostasFala: "Deixei {n} propostas para você confirmar na tela.",
 };
 export type Dict = typeof pt;
 
@@ -363,6 +364,7 @@ const en: Dict = {
   memoriaIntro: "I only keep what you approved on a card. Only you see this list; delete anything you don't want.",
   memoriaVazia: "I don't know anything about you yet. Say, for example, \"remember that I handle Inirau's finances\" or \"I prefer answers in bullet points\". When I notice something useful I'll offer to keep it, and you decide.",
   memoriaCategorias: { preferencia: "How you like it", responsabilidade: "What you handle", rotina: "Routines", contexto: "Context" },
+  vozLigar: "Answer out loud", vozDesligar: "Turn voice off", ouvirLbl: "Listen", pararLbl: "Stop", propostasFala: "I left {n} proposals for you to confirm on screen.",
 };
 
 export async function getLang(): Promise<Lang> {
