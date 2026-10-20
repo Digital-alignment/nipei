@@ -28,7 +28,8 @@ self.addEventListener("fetch", (e) => {
     }
     e.respondWith(
       fetch(req).then((r) => {
-        if (r.ok && !r.redirected) caches.open(PAGINAS).then((c) => c.put(url.pathname + url.search, r.clone()));
+        // clone now: by the time the cache opens, the page may already be reading the body
+        if (r.ok && !r.redirected) { const copia = r.clone(); caches.open(PAGINAS).then((c) => c.put(url.pathname + url.search, copia)); }
         return r;
       }).catch(async () => {
         const c = await caches.open(PAGINAS);
