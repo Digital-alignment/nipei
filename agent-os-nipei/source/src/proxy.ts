@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, isValidApiToken, verifyToken } from "@/lib/auth";
+import { gestaoAgora } from "@/lib/v2/data";
 
 // Routes reachable without a session. Only add routes that verify their own secret
 // (or signed per-member token) inside the handler.
@@ -21,10 +22,13 @@ export function proxy(req: NextRequest) {
   if ((isApi ? PUBLIC_API : PUBLIC_PAGES).includes(pathname)) return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  if (verifyToken(token, "session")) return NextResponse.next();
+  // A full session counts only while its person is still in a gestão team (checked on every request):
+  // someone moved out of Equipe 1 keeps their login but falls back to the member pages at once.
+  const full = verifyToken(token, "session");
+  if (full && gestaoAgora(full) !== false) return NextResponse.next();
   if (isApi && isValidApiToken(req.headers.get("authorization"))) return NextResponse.next();
 
-  if (verifyToken(token, "member")) {
+  if (full || verifyToken(token, "member")) {
     if (!isApi && isMemberPage(pathname)) return NextResponse.next();
     if (isApi) return NextResponse.json({ ok: false, error: "Sem permissão" }, { status: 403 });
     return NextResponse.redirect(new URL("/hoje", req.url));

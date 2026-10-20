@@ -181,12 +181,21 @@ export async function currentUser(): Promise<Me | null> {
   if (!sub) return null;
   const pessoa = getPessoas().find((p) => p.usuario === sub || p.id === sub) ?? null;
   const equipes = getEquipes();
-  // A full session is only ever issued to gestão (NIPEI_OS_USERS passwords or a gestão login link).
-  // ponytail: it stays full until it expires even if the person leaves gestão; rotate NIPEI_AUTH_SECRET to cut all sessions.
-  const gestao = !!full || !!pessoa?.equipes.some((id) => equipes.find((e) => e.id === id)?.gestao);
+  // Gestão comes from the person's teams *now*, on every request: leaving Equipe 1 drops the admin
+  // views at once, whatever session they hold. Only a login with no person note (env-only) keeps
+  // gestão from the full session itself.
+  const gestao = pessoa ? !!pessoa.equipes.some((id) => equipes.find((e) => e.id === id)?.gestao) : !!full;
   const acesso = gestao || !!pessoa?.equipes.some((id) => equipes.find((e) => e.id === id)?.acesso);
   if (!acesso) return null;
   return { username: sub, pessoa, gestao, coordena: pessoa?.coordena ?? [], equipes: pessoa?.equipes ?? [] };
+}
+
+/** Is this session subject gestão right now? null when there is no person note for it (env-only login). */
+export function gestaoAgora(sub: string): boolean | null {
+  const pessoa = getPessoas().find((p) => p.usuario === sub || p.id === sub);
+  if (!pessoa) return null;
+  const equipes = getEquipes();
+  return pessoa.equipes.some((id) => equipes.find((e) => e.id === id)?.gestao);
 }
 
 /** Which session a person gets from a login link: full for gestão, v2-only for everyone else. */
