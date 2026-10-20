@@ -14,6 +14,8 @@ import { logoutAction, toggleLangAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+const ICONE = "flex items-center justify-center w-9 h-9 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:text-white dark:hover:bg-neutral-800 transition-colors";
+
 export default async function V2Layout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
   if (!user) {
@@ -29,18 +31,23 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   return (
     <div className="v2 min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
       <header className="print:hidden sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
-        <Link href="/hoje" className="font-semibold tracking-tight">Nipëi</Link>
-        <div className="flex items-center gap-2">
-          <Link href="/conhecimento" aria-label={t.conhecimento} title={t.conhecimento} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Brain size={18} /></Link>
-          <Link href="/acervo" aria-label={t.acervo} title={t.acervo} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Library size={18} /></Link>
-          {user.gestao && <Link href="/financas" aria-label={t.financas} title={t.financas} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Wallet size={18} /></Link>}
-          <form action={toggleLangAction}>
-            <button className="text-xs rounded-md px-2 py-1 border border-neutral-300 dark:border-neutral-700">{t.idioma}</button>
-          </form>
+        <Link href="/hoje" aria-label="Nipëi" className="shrink-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2">
+          {/* app icon (public/icons, generated from public/brand) — light, crisp up to 3× screens */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/icon-192.png" alt="Nipëi" width={36} height={36} className="w-9 h-9 rounded-xl ring-1 ring-black/5 dark:ring-white/10" />
+        </Link>
+        <div className="flex items-center gap-0.5 sm:gap-1">
+          <Link href="/conhecimento" aria-label={t.conhecimento} title={t.conhecimento} className={ICONE}><Brain size={19} /></Link>
+          <Link href="/acervo" aria-label={t.acervo} title={t.acervo} className={ICONE}><Library size={19} /></Link>
+          {user.gestao && <Link href="/financas" aria-label={t.financas} title={t.financas} className={ICONE}><Wallet size={19} /></Link>}
+          {!user.pessoa && (
+            // no profile to hold the language switch → keep it here
+            <form action={toggleLangAction}><button className="text-xs rounded-md px-2 py-1 border border-neutral-300 dark:border-neutral-700">{t.idioma}</button></form>
+          )}
+          <Link href={user.pessoa ? `/pessoas/${user.pessoa.id}` : "/pessoas"} aria-label={t.meuPerfil} title={t.meuPerfil} className="mx-1 sm:mx-1.5 rounded-full ring-2 ring-transparent hover:ring-neutral-300 dark:hover:ring-neutral-700 transition"><Avatar name={name} size={32} /></Link>
           <form action={logoutAction}>
-            <button aria-label={t.sair} title={t.sair} className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><LogOut size={18} /></button>
+            <button aria-label={t.sair} title={t.sair} className={ICONE}><LogOut size={19} /></button>
           </form>
-          <Link href={user.pessoa ? `/pessoas/${user.pessoa.id}` : "/pessoas"} aria-label={t.pessoas}><Avatar name={name} size={30} /></Link>
         </div>
       </header>
       <div className="flex">

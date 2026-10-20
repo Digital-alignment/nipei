@@ -169,6 +169,8 @@ const pt = {
   novaAtualizacao: "O que avançou?", publicar: "Publicar", semAtualizacoes: "Nenhuma atualização ainda.", concluidoLbl: "concluído", lerMais: "ver mais",
   selecionarLbl: "Selecionar",
   recolherMenu: "Recolher menu", expandirMenu: "Expandir menu",
+  idiomaPlataforma: "Idioma da plataforma",
+  idiomaPlataformaAjuda: "Só para você, neste aparelho.",
 };
 export type Dict = typeof pt;
 
@@ -337,6 +339,8 @@ const en: Dict = {
   novaAtualizacao: "What moved forward?", publicar: "Post", semAtualizacoes: "No updates yet.", concluidoLbl: "done", lerMais: "see more",
   selecionarLbl: "Select",
   recolherMenu: "Collapse menu", expandirMenu: "Expand menu",
+  idiomaPlataforma: "Platform language",
+  idiomaPlataformaAjuda: "Just for you, on this device.",
 };
 
 export async function getLang(): Promise<Lang> {

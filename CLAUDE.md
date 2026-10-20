@@ -165,6 +165,7 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - **Menu lateral (v2.34, desktop)**: painel flutuante recolhível (`components/v2/Nav.tsx`). Aberto: ícone + nome, subitens numa linha em árvore. Fechado: só ícones; passar o mouse mostra o nome, ou um menu flutuante com os subitens. A escolha fica no cookie `nipei_menu` (lido no layout, sem salto ao carregar). A barra do celular não mudou.
 - Conteúdo: coluna central `max-w-6xl mx-auto` no layout; páginas estreitas (formulários, leitura) usam `max-w-* mx-auto`; listas de cartões ganham 3 colunas em `xl`.
 - **Barra do celular (v2.35)**: 64 px + área segura do iPhone, pílula no item ativo (mesmo estilo do menu lateral), `touch-manipulation`, sem realce azul do toque. O item tocado acende na hora (estado otimista em `Nav.tsx`) e `app/(v2)/loading.tsx` mostra um esqueleto enquanto o servidor monta a página (sem ele, as páginas `force-dynamic` ficavam congeladas até chegar tudo). Botão "+" de Hoje, barra de lote e o padding do `main` usam `calc(... + env(safe-area-inset-bottom))`.
+- **Cabeçalho (v2.36)**: à esquerda o ícone do app (`/icons/icon-192.png`, 36 px); à direita Conhecimento, Acervo, Finanças (gestão), Meu perfil (avatar) e Sair por último; botões de 36 px, altura 56 px. O seletor de idioma saiu do cabeçalho: está na aba Perfil da própria ficha ("Idioma da plataforma", `toggleLangAction`); só quem não tem ficha o vê no cabeçalho.
 - O CSS antigo (v1) força `nav`/`main` com `position: relative; z-index: 2` sem camada; por isso há overrides `.v2 nav.fixed` / `.v2 nav.sticky` em `globals.css`.
 ---
 

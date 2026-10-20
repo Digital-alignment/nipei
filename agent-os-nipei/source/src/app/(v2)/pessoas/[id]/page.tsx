@@ -17,7 +17,7 @@ import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getEstudo, resumoPessoas } from "@/lib/v2/pessoasInfo";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { addToEquipeAction, atribuirAction, enviarLinkAction, estudoAction, setAvisosPessoaAction } from "../../actions";
+import { addToEquipeAction, atribuirAction, enviarLinkAction, estudoAction, setAvisosPessoaAction, toggleLangAction } from "../../actions";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -170,6 +170,19 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
 
   const perfil = (
     <div className="grid gap-3 pt-3">
+      {me.pessoa?.id === p.id && (
+        <div className={`${CARTAO} flex flex-wrap items-center justify-between gap-3`}>
+          <div>
+            <p className={ROTULO + " !mb-0.5"}>{t.idiomaPlataforma}</p>
+            <p className="text-xs text-neutral-500">{t.idiomaPlataformaAjuda}</p>
+          </div>
+          <form action={toggleLangAction} className="flex h-9 rounded-full border border-neutral-300 dark:border-neutral-700 p-0.5 text-sm font-medium">
+            {(["pt", "en"] as const).map((l) => l === lang
+              ? <span key={l} aria-current="true" className="flex items-center px-3 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">{l === "pt" ? "Português" : "English"}</span>
+              : <button key={l} className="flex items-center px-3 rounded-full text-neutral-500 hover:text-neutral-900 dark:hover:text-white">{l === "pt" ? "Português" : "English"}</button>)}
+          </form>
+        </div>
+      )}
       <div className={CARTAO}>
         <p className={ROTULO}>{t.contato}</p>
         <dl className="grid gap-3 sm:grid-cols-2">
