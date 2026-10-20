@@ -150,6 +150,10 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 
 - Lista: cartões com barra da cor, avatares, coordenação, números (abertas, atrasadas, sem responsável, feitas 30d), barra "% em dia"; "Minhas equipes" primeiro; gestão vê cadeado (sem acesso) e sino (avisos).
 - Equipe (`/equipes/[id]`): números no topo (sem responsável leva ao filtro) e abas (`Abas` aceita `inicial`, que vence a memória): Tarefas (filtros Todas/Minhas/Sem responsável/pessoa `?pessoa=` e área `?area=`; Agora/Próximas/Sem data com ordem inteligente; quem gere a equipe atribui as sem responsável na linha; concluídas 30d), Pessoas (carga por pessoa nesta equipe, expande as tarefas dela; quem tem tarefa da equipe sem ser membro aparece "fora da equipe"), Objetivos e 🔒 Configuração (acesso, avisos).
+- **Ações em lote (v2.31)**: quem gere a equipe marca tarefas (checkbox com `form="lote-equipe"`, as linhas mantêm seus próprios forms) e a barra fixa `components/v2/LoteBarra.tsx` aplica atribuir / prazo / prioridade / concluir / mover de equipe (`loteAction`, permissão checada por tarefa, escreve por `mudarTarefa` em `lib/v2/data.ts`).
+- **Equilibrar carga** (aba Pessoas, quem gere a equipe): `lib/v2/carga.ts` (sem IA, autoteste `node --experimental-strip-types src/lib/v2/carga.ts`) marca sobrecarga/folga e sugere mover tarefas (só de quem está sozinho na tarefa, não iniciadas, nunca urgentes; atrasadas primeiro; mesma área quando dá) e dar dono às sem responsável. Cada sugestão é um botão (`reatribuirAction`).
+- **Reunião da equipe** `/equipes/[id]/reuniao` (`lib/v2/reuniaoEquipe.ts`): pauta ao vivo desde a última ata (pendentes da última, feitas, atrasadas, próximos 7 dias, sem responsável), copiar para WhatsApp, marcar na Agenda (evento "Reunião <equipe>") e ata em `Reunioes/<equipe>/<data>.md`; cada linha de encaminhamento vira tarefa da equipe (`@Nome` = responsável, `até 25/10` = prazo).
+- Avisos: `avisos.py fila` espera 5 s e junta as atribuições por pessoa e autor numa só mensagem (lote, reunião).
 ---
 
 ## 4. Comandos Essenciais

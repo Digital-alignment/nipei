@@ -21,7 +21,7 @@ import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
-  updateEvento, updateObjetivo, updateTarefa, type Status,
+  updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today,
   addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos,
 } from "@/lib/v2/data";
 
@@ -784,4 +784,70 @@ export async function enviarLinkAction(form: FormData) {
     await n.enviar(p, n.textoLink(p, tipo, origin), tipo, actorName(me));
   });
   revalidatePath("/pessoas", "layout");
+}
+
+// ---------------------------------------------------------------- Equipes: bulk actions, load balancing, team meeting
+
+const PRIORIDADES = ["baixa", "média", "alta", "urgente"];
+
+/** One action on many tasks (checkboxes on the team page). Each task is checked on its own. */
+export async function loteAction(form: FormData) {
+  const me = await requireUser();
+  const ids = new Set(form.getAll("ids").map(String));
+  const acao = String(form.get("acao") ?? "");
+  const ts = getTarefas().filter((t) => ids.has(t.id) && (me.gestao || can.editTarefa(me, t))).slice(0, 100);
+  const pessoa = pick(form.get("pessoa"), getPessoas().map((p) => p.id));
+  const prazo = /^\d{4}-\d{2}-\d{2}$/.test(String(form.get("prazo"))) ? String(form.get("prazo")) : "";
+  const prioridade = pick(form.get("prioridade"), PRIORIDADES);
+  const equipe = pick(form.get("equipe"), getEquipes().map((e) => e.id));
+  await tentar(async () => {
+    if (!ts.length) throw new Error("Selecione ao menos uma tarefa");
+    if (acao === "atribuir" && !pessoa) throw new Error("Escolha a pessoa");
+    if (acao === "prazo" && !prazo) throw new Error("Escolha a data");
+    if (acao === "prioridade" && !prioridade) throw new Error("Escolha a prioridade");
+    if (acao === "equipe" && !(equipe && can.gerirEquipe(me, equipe))) throw new Error("Escolha uma equipe que você coordena");
+    for (const t of ts) {
+      if (acao === "atribuir") mudarTarefa(t.id, { responsaveis: [...new Set([...t.responsaveis, pessoa])] }, actorName(me));
+      else if (acao === "prazo") mudarTarefa(t.id, { prazo }, actorName(me));
+      else if (acao === "concluir") mudarTarefa(t.id, { status: "done" }, actorName(me));
+      else if (acao === "prioridade") mudarTarefa(t.id, { priority: prioridade }, actorName(me));
+      else if (acao === "equipe") mudarTarefa(t.id, { equipe }, actorName(me));
+    }
+  });
+  revalidatePath("/", "layout");
+}
+
+/** Load balancing: move one task from `de` (empty = owner-less) to `para`. */
+export async function reatribuirAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  const para = pick(form.get("para"), getPessoas().map((p) => p.id));
+  const de = String(form.get("de") ?? "");
+  if (!t || !para || !t.equipe || !can.gerirEquipe(me, t.equipe)) return;
+  mudarTarefa(t.id, { responsaveis: [...new Set([...t.responsaveis.filter((r) => r !== de), para])] }, actorName(me));
+  revalidatePath("/", "layout");
+}
+
+export async function agendarReuniaoEquipeAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(form.get("equipe")));
+  const data = String(form.get("data") ?? "");
+  const hora = /^\d{2}:\d{2}$/.test(String(form.get("hora"))) ? String(form.get("hora")) : "";
+  if (!e || !can.gerirEquipe(me, e.id) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
+  await tentar(async () => createEvento({ titulo: `Reunião ${e.nome}`, inicio: data, fim: "", status: "confirmado", equipe: e.id, hora }));
+  revalidatePath("/", "layout");
+}
+
+export async function salvarAtaAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(form.get("equipe")));
+  if (!e || !can.gerirEquipe(me, e.id)) return;
+  const data = /^\d{4}-\d{2}-\d{2}$/.test(String(form.get("data"))) ? String(form.get("data")) : today();
+  const { salvarAta } = await import("@/lib/v2/reuniaoEquipe");
+  await tentar(async () => salvarAta(e, {
+    data, presentes: form.getAll("presentes").map(String).slice(0, 60),
+    decisoes: String(form.get("decisoes") ?? "").slice(0, 5000), encaminhamentos: String(form.get("encaminhamentos") ?? "").slice(0, 5000),
+  }, actorName(me)));
+  revalidatePath("/", "layout");
+  redirect(`/equipes/${e.id}/reuniao?salva=1`);
 }

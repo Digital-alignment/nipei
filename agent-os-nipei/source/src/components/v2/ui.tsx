@@ -56,7 +56,7 @@ export function Empty({ children }: { children: ReactNode }) {
 /** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
-export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean } & RowProps) {
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string } & RowProps) {
   const eq = equipes.find((e) => e.id === t.equipe);
   const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id;
   const minha = !!me.pessoa && t.responsaveis.includes(me.pessoa.id);
@@ -68,6 +68,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arr
   return (
     <li title={eq?.nome} draggable={arrastavel || undefined} data-tarefa={arrastavel ? t.id : undefined} className="flex flex-wrap items-start gap-x-3 py-2 pl-2.5 border-l-2 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0"
       style={{ borderLeftColor: eq?.cor ?? "transparent" }}>
+      {selecionar && <input type="checkbox" name="ids" value={t.id} form={selecionar} aria-label={t.title} className="mt-1 w-4 h-4 shrink-0 accent-neutral-900 dark:accent-white" />}
       {can.editTarefa(me, t) ? (
         <StatusBotao id={t.id} status={t.status} />
       ) : (

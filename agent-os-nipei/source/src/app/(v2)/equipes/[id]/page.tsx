@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, CalendarDays, Plus, Scale } from "lucide-react";
 import { Avatar, Card, Chip, Empty, Progress, TaskRow, Title } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
+import LoteBarra from "@/components/v2/LoteBarra";
+import { balancear } from "@/lib/v2/carga";
 import { can, currentUser, getAcessos, getEquipes, getObjetivos, getPessoas, getTarefas, novidadesPara, progresso, today, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { numerosDe } from "@/lib/v2/pessoasInfo";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getT } from "@/lib/v2/i18n";
-import { atribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
+import { atribuirAction, reatribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
 const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 mb-3";
 const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2";
@@ -68,7 +70,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const grupo = (titulo: string, o: { tarefas: Tarefa[]; selos: Record<string, Selo[]> }, alerta = false) => o.tarefas.length > 0 && (
     <div className="mb-5">
       <p className={`${ROTULO} ${alerta ? "!text-red-600 dark:!text-red-400" : ""}`}>{titulo} <span className="font-normal">({o.tarefas.length})</span></p>
-      <ul>{o.tarefas.map((x) => <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]?.map((s) => rotSelo[s])} extra={extra} />)}</ul>
+      <ul>{o.tarefas.map((x) => <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]?.map((s) => rotSelo[s])} extra={extra} selecionar={gerir ? "lote-equipe" : undefined} />)}</ul>
     </div>
   );
 
@@ -95,6 +97,11 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           {grupo(t.semData, ordenarSemData(filtradas.filter((x) => !x.prazo), ctx))}
         </>
       )}
+      {gerir && <LoteBarra formId="lote-equipe" pessoas={membrosEq.map((p) => ({ id: p.id, nome: p.name }))}
+        equipes={equipes.filter((x) => can.gerirEquipe(me, x.id)).map((x) => ({ id: x.id, nome: x.nome }))}
+        labels={{ selecionadas: t.selecionadas, todas: t.selecionarTodas, limpar: t.limparSelecao, aplicar: t.aplicar, acao: t.acaoLote,
+          atribuir: t.atribuirA, prazo: t.mudarPrazo, concluir: t.marcarConcluidas, prioridade: t.prioridade, mover: t.moverEquipe,
+          prioridades: { urgente: t.prioUrgente, alta: t.prioAlta, "média": t.prioMedia, baixa: t.prioBaixa } }} />}
       {feitas30.length > 0 && (
         <details className="mt-2">
           <summary className="cursor-pointer text-sm text-neutral-500">{t.concluidasRecentes} ({feitas30.length})</summary>
@@ -104,7 +111,34 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
     </>
   );
 
+  const bal = gerir ? balancear(abertasEq, membrosEq, hoje) : null;
+  const estado = new Map(bal?.cargas.map((c) => [c.id, c.estado]) ?? []);
+  const titulo = (tid: string) => todas.find((x) => x.id === tid)?.title ?? tid;
+  const equilibrio = bal && (bal.sugestoes.length > 0 || bal.cargas.some((c) => c.estado === "sobrecarga")) && (
+    <div className={`${CARTAO} mt-3`}>
+      <p className={`${ROTULO} inline-flex items-center gap-1.5`}><Scale size={13} />{t.equilibrarCarga}</p>
+      <p className="text-xs text-neutral-500 mb-2">{t.equilibrarIntro.replace("{media}", bal.media.toFixed(1))}</p>
+      {bal.sugestoes.length === 0 ? <p className="text-sm text-neutral-500">{t.semSugestoesCarga}</p> : (
+        <ul>
+          {bal.sugestoes.map((s) => (
+            <li key={s.tarefa} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+              <div className="min-w-0 flex-1">
+                <Link href={`/tarefas/${s.tarefa}`} className="block text-sm leading-snug hover:underline">{titulo(s.tarefa)}</Link>
+                <p className="text-xs text-neutral-500">{s.de ? primeiro(s.de) : t.semDonoLbl} → <span className="text-neutral-800 dark:text-neutral-200 font-medium">{primeiro(s.para)}</span></p>
+              </div>
+              <form action={reatribuirAction}>
+                <input type="hidden" name="id" value={s.tarefa} /><input type="hidden" name="de" value={s.de} /><input type="hidden" name="para" value={s.para} />
+                <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2.5 py-1 text-xs">{s.de ? t.moverPara : t.atribuirA} {primeiro(s.para)}</BotaoEnviar>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
   const pessoasAba = (
+    <>
+    {equilibrio}
     <ul className="mt-3 grid gap-2">
       {gente.map(({ p, n, coord, fora }) => {
         const suas = ordenarAgora(abertasEq.filter((x) => x.responsaveis.includes(p.id)), ctx).tarefas;
@@ -117,6 +151,8 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
                   <p className="text-sm font-medium truncate">
                     {p.name}
                     {coord && <span className="ml-1.5 rounded bg-neutral-100 dark:bg-neutral-800 px-1 text-[10px] font-normal text-neutral-600 dark:text-neutral-300">{t.coordLbl}</span>}
+                    {estado.get(p.id) === "sobrecarga" && <span className="ml-1.5 rounded bg-red-50 dark:bg-red-950/40 px-1 text-[10px] font-normal text-red-700 dark:text-red-400">{t.sobrecarga}</span>}
+                    {estado.get(p.id) === "folga" && <span className="ml-1.5 rounded bg-green-50 dark:bg-green-950/40 px-1 text-[10px] font-normal text-green-700 dark:text-green-400">{t.temFolga}</span>}
                     {fora && <span className="ml-1.5 rounded bg-amber-50 dark:bg-amber-950/40 px-1 text-[10px] font-normal text-amber-700 dark:text-amber-400">{t.foraEquipe}</span>}
                   </p>
                   <div className="mt-1 flex items-center gap-2">
@@ -140,6 +176,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         );
       })}
     </ul>
+    </>
   );
 
   const objetivos = getObjetivos().filter((o) => o.equipe === id || o.apoio.includes(id));
@@ -194,6 +231,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       <Title sub={e.coordenadores.length > 0 && <span className="text-sm text-neutral-500">{t.coordenacao}: {e.coordenadores.map(primeiro).join(", ")}</span>}>
         <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ background: e.cor }} />{e.nome}</span>
       </Title>
+      <Link href={`/equipes/${id}/reuniao`} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm mb-4"><CalendarDays size={14} />{t.reuniaoEquipe}</Link>
       <div className="grid grid-cols-4 gap-2 mb-4">
         <Num v={abertasEq.length} label={t.abertasLbl} />
         <Num v={atrasadas} label={t.atrasadasLbl} cor="text-red-600 dark:text-red-400" />

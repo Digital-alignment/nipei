@@ -109,38 +109,61 @@ def mesmo(nome_pessoa, autor):
     return sem_acento(nome_pessoa).split(" ")[0] == sem_acento(autor).split(" ")[0]
 
 
+def texto_atribuicoes(autor, itens):
+    """One task → the usual notice; several from the same author (bulk action, meeting) → one list."""
+    if len(itens) == 1:
+        a = itens[0]
+        prazo = prazo_iso(a.get("prazo"))
+        return f"📌 {autor} atribuiu uma tarefa a você:\n*{a.get('titulo')}*" + (f"\n📅 Prazo: {prazo[8:10]}/{prazo[5:7]}" if prazo else "") + f"\n\n{APP}/tarefas/{a.get('tarefaId')}"
+    linhas = []
+    for a in itens[:10]:
+        prazo = prazo_iso(a.get("prazo"))
+        linhas.append(f"• {a.get('titulo')}" + (f" ({prazo[8:10]}/{prazo[5:7]})" if prazo else ""))
+    if len(itens) > 10:
+        linhas.append(f"…e mais {len(itens) - 10}")
+    return f"📌 {autor} atribuiu {len(itens)} tarefas a você:\n" + "\n".join(linhas) + f"\n\n{APP}/hoje"
+
+
 def fila(cfg, teste=False):
+    if not teste:
+        time.sleep(5)  # let a bulk action finish queueing, so it becomes one message per person
     recebem = pessoas_que_recebem()
     indice = todas_pessoas()
+    atribuicoes = {}  # (pid, autor) -> [aviso]
+
+    def mandar(pid, texto, rotulo, autor):
+        p = recebem.get(pid)
+        if not p or mesmo(p["nome"], autor):
+            if teste:
+                print(f"  (não envia para {pid}: {'não recebe avisos' if not p else 'é o autor'})")
+            return
+        if teste:
+            print(f"→ {pid} ({p['nome']}, {p['fone'][:4]}…):\n{texto}\n")
+            return
+        try:
+            ok = enviar(cfg, p["fone"], texto)
+            log(f"{rotulo} → {pid}: {'ok' if ok else 'falhou'}")
+        except Exception as e:
+            log(f"{rotulo} → {pid}: ERRO {e}")
+
     for f in sorted(glob.glob(f"{FILA}/*.json")):
         a = json.load(open(f))
         link = f"{APP}/tarefas/{a.get('tarefaId')}"
         para, texto = [], ""
         if a.get("tipo") == "atribuicao":
-            para = a.get("para") or []
-            prazo = prazo_iso(a.get("prazo"))
-            texto = f"📌 {a.get('autor')} atribuiu uma tarefa a você:\n*{a.get('titulo')}*" + (f"\n📅 Prazo: {prazo[8:10]}/{prazo[5:7]}" if prazo else "") + f"\n\n{link}"
+            for pid in a.get("para") or []:
+                atribuicoes.setdefault((pid, a.get("autor", "")), []).append(a)
         elif a.get("tipo") == "mencao":
             # "@Bruna." / "@bruna_retiros," → trailing punctuation is not part of the name
             tokens = (sem_acento(x).rstrip(".-") for x in re.findall(r"@([\wÀ-ÿ.-]+)", a.get("texto", "")))
             para = list(dict.fromkeys(indice[t] for t in tokens if t in indice))
             texto = f"💬 {a.get('autor')} mencionou você em *{a.get('titulo')}*:\n“{a.get('texto', '')[:500]}”\n\n{link}"
         for pid in para:
-            p = recebem.get(pid)
-            if not p or mesmo(p["nome"], a.get("autor", "")):
-                if teste:
-                    print(f"  (não envia para {pid}: {'não recebe avisos' if not p else 'é o autor'})")
-                continue
-            if teste:
-                print(f"→ {pid} ({p['nome']}, {p['fone'][:4]}…):\n{texto}\n")
-                continue
-            try:
-                ok = enviar(cfg, p["fone"], texto)
-                log(f"{a['id']} {a.get('tipo')} → {pid}: {'ok' if ok else 'falhou'}")
-            except Exception as e:
-                log(f"{a['id']} {a.get('tipo')} → {pid}: ERRO {e}")
+            mandar(pid, texto, f"{a['id']} {a.get('tipo')}", a.get("autor", ""))
         if not teste:
             os.remove(f)  # notices are best effort: never resend old ones after a failure
+    for (pid, autor), itens in atribuicoes.items():
+        mandar(pid, texto_atribuicoes(autor, itens), f"atribuicao x{len(itens)} ({itens[0]['id']})", autor)
 
 
 def lembrete(nome, tarefas, hoje, verificado=True):

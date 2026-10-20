@@ -610,3 +610,20 @@ export function registrarAcesso(pessoaId: string) {
     fs.writeFileSync(ACESSOS(), JSON.stringify(a), "utf-8");
   } catch { /* never block a page for this */ }
 }
+
+/** Partial change through the single writer (bulk actions, load balancing): only the fields given are touched. */
+export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo?: string; status?: Status; priority?: string; equipe?: string }, actor: string) {
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t) throw new Error("Tarefa não encontrada");
+  const pessoas = getPessoas();
+  writeTarefa(vault(), t.file, actor, (d) => {
+    if (campos.status && statusOf(String(d.fm.status ?? "")) !== campos.status) d.fm.status = STATUS_RAW[campos.status];
+    if (campos.prazo !== undefined) d.fm.prazo = campos.prazo;
+    if (campos.priority && String(d.fm.priority ?? "").toLowerCase() !== campos.priority) d.fm.priority = campos.priority;
+    if (campos.equipe) { d.fm.equipe = campos.equipe; if (campos.equipe !== t.equipe) d.fm.area = ""; }
+    if (campos.responsaveis) {
+      d.fm.responsaveis = campos.responsaveis;
+      d.fm.responsible = campos.responsaveis.map((r) => pessoas.find((p) => p.id === r)?.name ?? r).join(", ");
+    }
+  });
+}

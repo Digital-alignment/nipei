@@ -154,6 +154,17 @@ const pt = {
   limitesNotif: "Até 3 mensagens por hora para a mesma pessoa e 30 por dia por remetente (protege o número).", ou: "ou",
   emDiaLbl: "em dia", areasLbl: "áreas", minhasEquipes: "Minhas equipes", outrasEquipes: "Outras equipes", minhasLbl: "Minhas", todasAreas: "Todas as áreas",
   coordLbl: "coord.", foraEquipe: "fora da equipe", verTodas: "Ver todas", verFicha: "Ver ficha", configuracao: "Configuração",
+  selecionadas: "selecionadas", selecionarTodas: "Selecionar todas", limparSelecao: "Limpar", acaoLote: "Ação",
+  mudarPrazo: "Mudar prazo", marcarConcluidas: "Marcar como concluídas", moverEquipe: "Mover para equipe",
+  prioUrgente: "Urgente", prioAlta: "Alta", prioMedia: "Média", prioBaixa: "Baixa",
+  equilibrarCarga: "Equilibrar carga", equilibrarIntro: "Média da equipe: {media} tarefas abertas por pessoa. Sugestões (nada muda sem o seu toque):",
+  semSugestoesCarga: "Sem sugestões: quem tem folga não combina com as tarefas que poderiam sair.", moverPara: "Mover para",
+  sobrecarga: "sobrecarga", temFolga: "tem folga", reuniaoEquipe: "Reunião da equipe",
+  pautaLbl: "Pauta", desdeUltima: "Desde a última reunião", desdeDias: "Últimos 7 dias", pendentesUltima: "Pendentes da última reunião",
+  feitasDesde: "Feitas no período", proximos7: "Próximos 7 dias", copiarPauta: "Copiar pauta (WhatsApp)",
+  agendarReuniao: "Marcar na Agenda", ataLbl: "Ata", presentes: "Presentes", decisoes: "Decisões",
+  encaminhamentos: "Encaminhamentos (um por linha)", encaminhamentosAjuda: "Cada linha vira uma tarefa da equipe. Use @Nome para o responsável e “até 25/10” para o prazo.",
+  salvarAta: "Salvar ata e criar tarefas", ataSalva: "Ata salva; os encaminhamentos viraram tarefas.", atasAnteriores: "Reuniões anteriores", porLbl: "por",
 };
 export type Dict = typeof pt;
 
@@ -307,6 +318,17 @@ const en: Dict = {
   limitesNotif: "Up to 3 messages per hour to the same person and 30 per day per sender (protects the number).", ou: "or",
   emDiaLbl: "on time", areasLbl: "areas", minhasEquipes: "My teams", outrasEquipes: "Other teams", minhasLbl: "Mine", todasAreas: "All areas",
   coordLbl: "coord.", foraEquipe: "outside the team", verTodas: "See all", verFicha: "Open profile", configuracao: "Settings",
+  selecionadas: "selected", selecionarTodas: "Select all", limparSelecao: "Clear", acaoLote: "Action",
+  mudarPrazo: "Change due date", marcarConcluidas: "Mark as done", moverEquipe: "Move to team",
+  prioUrgente: "Urgent", prioAlta: "High", prioMedia: "Medium", prioBaixa: "Low",
+  equilibrarCarga: "Balance workload", equilibrarIntro: "Team average: {media} open tasks per person. Suggestions (nothing changes until you tap):",
+  semSugestoesCarga: "No suggestions: people with room don't match the tasks that could move.", moverPara: "Move to",
+  sobrecarga: "overloaded", temFolga: "has room", reuniaoEquipe: "Team meeting",
+  pautaLbl: "Agenda", desdeUltima: "Since the last meeting", desdeDias: "Last 7 days", pendentesUltima: "Open from the last meeting",
+  feitasDesde: "Done in the period", proximos7: "Next 7 days", copiarPauta: "Copy agenda (WhatsApp)",
+  agendarReuniao: "Add to the Agenda", ataLbl: "Minutes", presentes: "Present", decisoes: "Decisions",
+  encaminhamentos: "Action items (one per line)", encaminhamentosAjuda: "Each line becomes a team task. Use @Name for the owner and “até 25/10” for the due date.",
+  salvarAta: "Save minutes and create tasks", ataSalva: "Minutes saved; action items became tasks.", atasAnteriores: "Previous meetings", porLbl: "by",
 };
 
 export async function getLang(): Promise<Lang> {
