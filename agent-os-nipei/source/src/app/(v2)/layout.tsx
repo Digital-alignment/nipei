@@ -60,7 +60,8 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       {user.gestao && (
         <Suspense>
           <AssistenteGlobal lang={lang} labels={{ titulo: t.assistente, placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, confirmarTodas: t.confirmarTodas,
-            cancelar: t.cancelar, feito: t.feitoLbl, nova: t.novaConversa, pensando: t.pensando, fechar: t.fechar, intro: t.assistenteIntro, abrir: t.abrirAssistente, semVoz: t.semVoz }} />
+            cancelar: t.cancelar, feito: t.feitoLbl, nova: t.novaConversa, pensando: t.pensando, fechar: t.fechar, intro: t.assistenteIntro, abrir: t.abrirAssistente, semVoz: t.semVoz,
+            memoria: t.memoriaAssist, memoriaIntro: t.memoriaIntro, memoriaVazia: t.memoriaVazia, esquecer: t.esquecerLbl, categorias: t.memoriaCategorias }} />
         </Suspense>
       )}
     </div>

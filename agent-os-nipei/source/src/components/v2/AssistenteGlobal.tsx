@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { BotMessageSquare, Check, CheckCheck, ExternalLink, Mic, RotateCcw, Send, X } from "lucide-react";
-import { assistenteAction, assistenteConversaAction, decidirCartaoAction, novaConversaAction } from "@/app/(v2)/actions";
+import { ArrowLeft, BotMessageSquare, Brain, Check, CheckCheck, ExternalLink, Mic, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { assistenteAction, assistenteConversaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
-import type { MsgSalva } from "@/lib/v2/assistente";
+import type { Lembranca, MsgSalva } from "@/lib/v2/assistente";
 
 export const ABRIR_ASSISTENTE = "nipei:assistente"; // window event; detail: { texto?: string }
 
 type Labels = {
   titulo: string; placeholder: string; ouvindo: string; confirmar: string; confirmarTodas: string; cancelar: string; feito: string;
   nova: string; pensando: string; fechar: string; intro: string; abrir: string; semVoz: string;
+  memoria: string; memoriaIntro: string; memoriaVazia: string; esquecer: string; categorias: Record<Lembranca["categoria"], string>;
 };
 type Recognition = {
   lang: string; interimResults: boolean; maxAlternatives: number; start(): void; stop(): void;
@@ -46,6 +47,7 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [ouvindo, setOuvindo] = useState(false);
+  const [memoria, setMemoria] = useState<Lembranca[] | null>(null); // null = chat view
   const [pending, start] = useTransition();
   const campo = useRef<HTMLTextAreaElement>(null);
   const fim = useRef<HTMLDivElement>(null);
@@ -121,6 +123,15 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
     }
     if (ultimo) setMsgs(ultimo);
   });
+  const verMemoria = () => start(async () => {
+    const r = await memoriaAction().catch(() => ({ error: "Falha de conexão" } as { error: string }));
+    if ("error" in r && r.error) return setErro(r.error);
+    setMemoria((r as { itens: Lembranca[] }).itens);
+  });
+  const apagar = (item: string) => start(async () => {
+    const r = await esquecerMemoriaAction(item).catch(() => null);
+    if (r && "itens" in r && r.itens) setMemoria(r.itens);
+  });
   const nova = () => start(async () => {
     const r = await novaConversaAction();
     if ("msgs" in r && r.msgs) setMsgs(r.msgs);
@@ -146,12 +157,31 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
               inset-x-0 bottom-0 h-[88dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)]
               md:inset-auto md:right-6 md:bottom-6 md:w-[420px] md:h-[min(680px,calc(100dvh-7rem))] md:rounded-2xl md:pb-0">
             <header className="flex items-center gap-2 px-4 h-14 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
-              <span className="w-8 h-8 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center shrink-0"><BotMessageSquare size={16} /></span>
-              <p className="font-semibold text-sm flex-1">{labels.titulo}</p>
-              {!vazio && <button type="button" onClick={nova} disabled={pending} title={labels.nova} aria-label={labels.nova} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><RotateCcw size={16} /></button>}
+              {memoria !== null
+                ? <button type="button" onClick={() => setMemoria(null)} aria-label={labels.titulo} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-800"><ArrowLeft size={18} /></button>
+                : <span className="w-8 h-8 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center shrink-0"><BotMessageSquare size={16} /></span>}
+              <p className="font-semibold text-sm flex-1">{memoria !== null ? labels.memoria : labels.titulo}</p>
+              {memoria === null && <button type="button" onClick={verMemoria} disabled={pending} title={labels.memoria} aria-label={labels.memoria} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><Brain size={16} /></button>}
+              {memoria === null && !vazio && <button type="button" onClick={nova} disabled={pending} title={labels.nova} aria-label={labels.nova} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><RotateCcw size={16} /></button>}
               <button type="button" onClick={() => setAberto(false)} title={labels.fechar} aria-label={labels.fechar} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><X size={18} /></button>
             </header>
 
+            {memoria !== null ? (
+              <div className="flex-1 overflow-y-auto px-4 py-3 grid content-start gap-3 text-sm">
+                <p className="text-neutral-500 leading-relaxed">{memoria.length ? labels.memoriaIntro : labels.memoriaVazia}</p>
+                {(Object.keys(labels.categorias) as Lembranca["categoria"][]).filter((cat) => memoria.some((x) => x.categoria === cat)).map((cat) => (
+                  <div key={cat} className="grid gap-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{labels.categorias[cat]}</p>
+                    {memoria.filter((x) => x.categoria === cat).map((x) => (
+                      <div key={x.id} className="flex items-start gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 py-2">
+                        <p className="flex-1 min-w-0">{x.texto}</p>
+                        <button type="button" onClick={() => apagar(x.id)} disabled={pending} title={labels.esquecer} aria-label={`${labels.esquecer}: ${x.texto}`} className="shrink-0 text-neutral-400 hover:text-red-600 disabled:opacity-40"><Trash2 size={15} /></button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (<>
             <div className="flex-1 overflow-y-auto px-4 py-3 grid content-start gap-3 text-sm">
               {msgs === null && <p className="text-xs text-neutral-500 animate-pulse">{labels.pensando}</p>}
               {vazio && <p className="text-neutral-500 leading-relaxed">{labels.intro}</p>}
@@ -205,6 +235,7 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
                 ? <button aria-label="Enviar" disabled={pending} className="w-10 h-10 shrink-0 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center disabled:opacity-50"><Send size={16} /></button>
                 : <button type="button" onClick={falar} aria-label={labels.ouvindo} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${ouvindo ? "bg-red-600 text-white animate-pulse" : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"}`}><Mic size={16} /></button>}
             </form>
+            </>)}
           </section>
         </>
       )}

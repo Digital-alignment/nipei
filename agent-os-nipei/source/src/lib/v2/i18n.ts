@@ -178,6 +178,10 @@ const pt = {
   assistente: "Assistente", confirmarTodas: "Confirmar todas", novaConversa: "Nova conversa", fechar: "Fechar", abrirAssistente: "Abrir assistente",
   semVoz: "Voz indisponível neste navegador", sugestoesHoje: ["O que tenho hoje?", "Resumo da minha semana", "Como vai a missão da semana?"],
   assistenteIntro: "Pergunte, peça ou planeje. Eu leio a plataforma inteira e sei em que página você está. Quando algo precisa mudar, eu proponho e você confirma: nada muda sem o seu toque.",
+  memoriaAssist: "O que o assistente sabe sobre você", esquecerLbl: "Esquecer",
+  memoriaIntro: "Só guardo o que você aprovou num cartão. Só você vê esta lista; apague o que não quiser.",
+  memoriaVazia: "Ainda não sei nada sobre você. Diga, por exemplo, \"lembre que eu cuido das finanças do Inirau\" ou \"prefiro respostas em tópicos\". Quando eu notar algo útil, também vou propor guardar, e você decide.",
+  memoriaCategorias: { preferencia: "Como você prefere", responsabilidade: "Do que você cuida", rotina: "Rotinas", contexto: "Contexto" },
 };
 export type Dict = typeof pt;
 
@@ -355,6 +359,10 @@ const en: Dict = {
   assistente: "Assistant", confirmarTodas: "Confirm all", novaConversa: "New conversation", fechar: "Close", abrirAssistente: "Open assistant",
   semVoz: "Voice is not available in this browser", sugestoesHoje: ["What do I have today?", "Summary of my week", "How is the mission of the week going?"],
   assistenteIntro: "Ask, request or plan. I read the whole platform and know which page you are on. When something needs to change, I propose it and you confirm: nothing changes without your tap.",
+  memoriaAssist: "What the assistant knows about you", esquecerLbl: "Forget",
+  memoriaIntro: "I only keep what you approved on a card. Only you see this list; delete anything you don't want.",
+  memoriaVazia: "I don't know anything about you yet. Say, for example, \"remember that I handle Inirau's finances\" or \"I prefer answers in bullet points\". When I notice something useful I'll offer to keep it, and you decide.",
+  memoriaCategorias: { preferencia: "How you like it", responsabilidade: "What you handle", rotina: "Routines", contexto: "Context" },
 };
 
 export async function getLang(): Promise<Lang> {

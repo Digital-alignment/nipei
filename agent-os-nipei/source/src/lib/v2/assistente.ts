@@ -28,7 +28,9 @@ export type Acao =
   | { tipo: "criar_evento"; titulo: string; inicio: string; fim?: string; hora?: string; equipe: string }
   | { tipo: "nota_projeto"; projeto: string; texto: string }
   | { tipo: "revisar_fato"; id: string; decisao: "confirmar" | "descartar" }
-  | { tipo: "enviar_whatsapp"; pessoa: string; texto: string };
+  | { tipo: "enviar_whatsapp"; pessoa: string; texto: string }
+  | { tipo: "lembrar"; texto: string; categoria: Categoria }
+  | { tipo: "esquecer"; id: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
 export type MsgSalva = Msg & { em: string; cartoes?: Cartao[] };
@@ -53,6 +55,28 @@ export function salvarConversa(id: string, msgs: MsgSalva[]) {
   fs.mkdirSync(path.dirname(ARQ(id)), { recursive: true });
   fs.writeFileSync(ARQ(id), JSON.stringify(msgs.slice(-MAX_SALVAS)), "utf-8");
 }
+
+// ---------------------------------------------------------------- memory (one per person)
+// What the assistant knows about the person: ONLY items the person approved on a card (or asked for).
+// <vault>/.jobs/assistente/memoria/<pessoa>.json — private (outside git); the person sees and deletes
+// each item in the panel. Never health, passwords, personal money or opinions about other people.
+
+export const CATEGORIAS = ["preferencia", "responsabilidade", "rotina", "contexto"] as const;
+export type Categoria = (typeof CATEGORIAS)[number];
+export type Lembranca = { id: string; texto: string; categoria: Categoria; em: string };
+const MAX_MEMORIA = 30;
+const ARQ_MEM = (id: string) => path.join(vault(), ".jobs", "assistente", "memoria", `${id.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`);
+export function getMemoria(id: string): Lembranca[] {
+  try { return JSON.parse(fs.readFileSync(ARQ_MEM(id), "utf-8")); } catch { return []; }
+}
+function salvarMemoria(id: string, itens: Lembranca[]) {
+  fs.mkdirSync(path.dirname(ARQ_MEM(id)), { recursive: true });
+  fs.writeFileSync(ARQ_MEM(id), JSON.stringify(itens.slice(-MAX_MEMORIA), null, 1), "utf-8");
+}
+export function esquecer(id: string, item: string) {
+  salvarMemoria(id, getMemoria(id).filter((x) => x.id !== item));
+}
+const donoMemoria = (me: Me) => me.pessoa?.id ?? me.username;
 
 // ---------------------------------------------------------------- helpers
 
@@ -144,8 +168,12 @@ const TOOLS = [
   fn("nota_projeto", "PROPÕE publicar uma atualização na linha do tempo de um projeto.", { projeto: { type: "string" }, texto: { type: "string" } }, ["projeto", "texto"]),
   fn("revisar_fato", "PROPÕE confirmar ou descartar um fato proposto do Conhecimento (id de conhecimento_pendente).", { id: { type: "string" }, decisao: { type: "string", enum: ["confirmar", "descartar"] } }, ["id", "decisao"]),
   fn("enviar_whatsapp", "PROPÕE enviar uma mensagem de WhatsApp pelo número do Nipëi a uma pessoa (a pessoa vê o texto antes).", { pessoa: { type: "string" }, texto: { type: "string" } }, ["pessoa", "texto"]),
+  fn("lembrar", "PROPÕE guardar na sua memória algo estável sobre a pessoa que fala com você (preferência de resposta, do que ela cuida, rotina, contexto). Uma frase curta na 3ª pessoa.", {
+    texto: { type: "string", description: "ex.: \"Prefere respostas curtas, em tópicos\"" }, categoria: { type: "string", enum: [...CATEGORIAS] },
+  }, ["texto", "categoria"]),
+  fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "revisar_fato", "enviar_whatsapp"]);
+const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "revisar_fato", "enviar_whatsapp", "lembrar", "esquecer"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
@@ -296,6 +324,20 @@ function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoProposta
     if (!p.whatsapp) return { erro: `${primeiro(p.name)} não tem WhatsApp na ficha` };
     return { tipo: "enviar_whatsapp", pessoa: p.id, texto, resumo: `WhatsApp para ${primeiro(p.name)}`, detalhe: texto };
   }
+  if (nome === "lembrar") {
+    const texto = s(a.texto).replace(/\s+/g, " ").slice(0, 200);
+    const categoria = (CATEGORIAS as readonly string[]).includes(s(a.categoria)) ? s(a.categoria) as Categoria : "contexto";
+    if (texto.length < 4) return { erro: "texto curto demais" };
+    if (/senha|password|cpf|cart[aã]o de cr[eé]dito|doen[cç]a|diagn[oó]stico m[eé]dico/i.test(texto)) return { erro: "não guarde dados sensíveis" };
+    const mem = getMemoria(donoMemoria(me));
+    if (mem.some((x) => n(x.texto) === n(texto))) return { erro: "isso já está na memória" };
+    return { tipo: "lembrar", texto, categoria, resumo: "Lembrar sobre você", detalhe: texto };
+  }
+  if (nome === "esquecer") {
+    const item = getMemoria(donoMemoria(me)).find((x) => x.id === s(a.id));
+    if (!item) return { erro: "item não encontrado na memória" };
+    return { tipo: "esquecer", id: item.id, resumo: "Esquecer", detalhe: item.texto };
+  }
   const t = getTarefas().find((x) => x.id === s(a.id));
   if (!t) return { erro: "tarefa não encontrada: use buscar_tarefas para achar o id" };
   if (!can.editTarefa(me, t)) return { erro: "sem permissão para mudar essa tarefa" };
@@ -340,6 +382,12 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     if (v.decisao === "confirmar") { const { proporMudancas } = await import("./propostas"); void proporMudancas([v.id]).catch(() => {}); }
     return "/conhecimento";
   }
+  if (v.tipo === "lembrar") {
+    const dono = donoMemoria(me);
+    salvarMemoria(dono, [...getMemoria(dono), { id: `m${Date.now().toString(36)}`, texto: v.texto, categoria: v.categoria, em: new Date().toISOString() }]);
+    return "";
+  }
+  if (v.tipo === "esquecer") { esquecer(donoMemoria(me), v.id); return ""; }
   if (v.tipo === "enviar_whatsapp") {
     const p = getPessoas().find((x) => x.id === v.pessoa)!;
     const { enviar } = await import("./notificar");
@@ -367,7 +415,8 @@ const SISTEMA = (me: Me, lang: string, pagina: string) => {
 Você fala com ${p ? primeiro(p.name) : me.username}${p?.funcao ? ` (${p.funcao})` : ""}${me.gestao ? ", da gestão (Equipe 1)" : ""}. Equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}${me.coordena.length ? `; coordena: ${me.coordena.map(nomeEq).join(", ")}` : ""}.
 Hoje é ${dia}, ${today()} (horário da Bahia). ${contextoPagina(me, pagina)}
 Equipes da plataforma (as pessoas dizem "Equipe 1", "Equipe 2"…): ${equipes.map((e) => `${e.id.replace("equipe_", "Equipe ")} = ${e.nome}`).join("; ")}.
-Responda no idioma da pessoa (padrão: ${lang === "en" ? "inglês" : "português do Brasil"}), curto e direto: 1 a 4 frases ou uma lista curta. Chame a pessoa pelo primeiro nome só de vez em quando.
+${(() => { const mem = getMemoria(donoMemoria(me)); return mem.length ? `O que você sabe sobre ${p ? primeiro(p.name) : "a pessoa"} (aprovado por ela; siga isto):\n${mem.map((x) => `- [${x.id}] (${x.categoria}) ${x.texto}`).join("\n")}` : "Você ainda não tem memória sobre esta pessoa."; })()}
+Responda no idioma da pessoa (padrão: ${lang === "en" ? "inglês" : "português do Brasil"}), curto e direto: 1 a 4 frases ou uma lista curta, a menos que a memória diga outra preferência. Chame a pessoa pelo primeiro nome só de vez em quando.
 Regras:
 - Use as ferramentas para ler; nunca invente tarefas, datas, pessoas, valores ou fatos. Se não achar, diga.
 - Nunca mostre ids internos (task_…, evt_…) para a pessoa: fale pelos títulos e nomes. Os ids são só para as ferramentas.
@@ -376,7 +425,8 @@ Regras:
 - Antes de mudar uma tarefa, ache o id. Datas relativas ("sexta", "amanhã") viram AAAA-MM-DD a partir de hoje.
 - "Esta tarefa / este projeto / esta equipe / esta pessoa" = o que está na página atual.
 - WhatsApp: escreva a mensagem completa no idioma de quem recebe; ela só sai depois da confirmação.
-- Sobre o santuário, retiros, regras e projetos, use buscar_conhecimento e diga se é confirmado ou de notas antigas.`;
+- Sobre o santuário, retiros, regras e projetos, use buscar_conhecimento e diga se é confirmado ou de notas antigas.
+- Memória: quando a pessoa pedir ("lembre que…", "sempre…", "prefiro…") ou quando você perceber algo estável e útil (como ela gosta das respostas, do que cuida, uma rotina), proponha lembrar (no máximo 1 por resposta, sem repetir o que já sabe). Uma ideia por item, na categoria certa: se a pessoa disser duas coisas, proponha dois cartões. Nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas. Para corrigir algo da memória, proponha esquecer e depois lembrar.`;
 };
 
 type ToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };

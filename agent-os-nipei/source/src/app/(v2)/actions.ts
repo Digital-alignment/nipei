@@ -756,6 +756,27 @@ export async function decidirCartaoAction(msg: number, cartao: number, confirmar
   }
 }
 
+export async function memoriaAction() {
+  try {
+    const { id } = await assistenteDono();
+    const { getMemoria } = await import("@/lib/v2/assistente");
+    return { itens: getMemoria(id) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+export async function esquecerMemoriaAction(item: string) {
+  try {
+    const { id } = await assistenteDono();
+    const { esquecer, getMemoria } = await import("@/lib/v2/assistente");
+    esquecer(id, String(item));
+    return { itens: getMemoria(id) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
 export async function novaConversaAction() {
   try {
     const { id } = await assistenteDono();
