@@ -136,6 +136,7 @@ const eventoInput = (form: FormData) => {
     inicio, fim: fim && inicio && fim >= inicio ? fim : "",
     status: form.get("status") === "confirmado" ? "confirmado" : "a_confirmar",
     equipe: pick(form.get("equipe"), getEquipes().map((e) => e.id)),
+    hora: /^\d{2}:\d{2}$/.test(String(form.get("hora") ?? "")) ? String(form.get("hora")) : "",
   };
 };
 
@@ -676,5 +677,24 @@ export async function prazoRapidoAction(form: FormData) {
   const prazo = String(form.get("prazo") ?? "");
   if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(prazo) || !can.editTarefa(me, t)) return;
   updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo, responsaveis: t.responsaveis, status: t.status, recorrencia: t.recorrencia }, actorName(me));
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Hoje: Bom dia, pulso
+
+export async function bomDiaAction(): Promise<string> {
+  const me = await requireUser();
+  const { getLang } = await import("@/lib/v2/i18n");
+  const { gerarBomDia } = await import("@/lib/v2/hoje");
+  try { return await gerarBomDia(me, await getLang()); } catch (e) { console.warn("[bomDia]", (e as Error).message); return ""; }
+}
+
+/** Pulso: give an owner-less task an owner (gestão or the task's coordinator). */
+export async function atribuirAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  const pessoa = pick(form.get("pessoa"), getPessoas().map((p) => p.id));
+  if (!t || !pessoa || !(me.gestao || can.editTarefa(me, t))) return;
+  updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo: t.prazo, responsaveis: [...new Set([...t.responsaveis, pessoa])], status: t.status, recorrencia: t.recorrencia }, actorName(me));
   revalidatePath("/", "layout");
 }

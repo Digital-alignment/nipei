@@ -31,6 +31,7 @@ export default async function EventoForm({ params }: { params: Promise<{ id: str
           <label className="grid gap-1 text-sm">{t.inicio}<input type="date" name="inicio" defaultValue={e && isDay(e.inicio) ? e.inicio : ""} required={novo} className={field} /></label>
           <label className="grid gap-1 text-sm">{t.fim}<input type="date" name="fim" defaultValue={e?.fim} className={field} /></label>
         </div>
+        <label className="grid gap-1 text-sm max-w-40">{t.hora}<input type="time" name="hora" defaultValue={e?.hora} className={field} /></label>
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1 text-sm">{t.equipe}
             <select name="equipe" defaultValue={e?.equipe ?? equipes[0].id} className={field}>{equipes.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}</select>

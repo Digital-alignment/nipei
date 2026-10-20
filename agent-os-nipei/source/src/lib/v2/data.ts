@@ -20,7 +20,7 @@ export type Equipe = {
 };
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[] };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
-export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string };
+export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string; hora: string };
 export type Pessoa = {
   id: string; nipeiId: string; name: string; nativeName: string; equipes: string[]; coordena: string[]; usuario: string;
   whatsapp: string; email: string; area: string; funcao: string; disponibilidade: string; incompleta: boolean; cadastroEm: string;
@@ -102,7 +102,7 @@ export function getObjetivos(): Objetivo[] {
 
 export function getEventos(): Evento[] {
   return readDir("Eventos")
-    .map(({ fm, file }) => ({ id: s(fm.id), file, titulo: s(fm.titulo), inicio: s(fm.inicio), fim: s(fm.fim), status: s(fm.status), equipe: s(fm.equipe) }))
+    .map(({ fm, file }) => ({ id: s(fm.id), file, titulo: s(fm.titulo), inicio: s(fm.inicio), fim: s(fm.fim), status: s(fm.status), equipe: s(fm.equipe), hora: s(fm.hora) }))
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
@@ -399,7 +399,7 @@ export function updateTarefa(id: string, input: { title: string; equipe: string;
   });
 }
 
-export function createEvento(input: { titulo: string; inicio: string; fim: string; status: string; equipe: string }) {
+export function createEvento(input: { titulo: string; inicio: string; fim: string; status: string; equipe: string; hora?: string }) {
   const dir = path.join(vault(), "Eventos");
   const base = `${input.inicio || "sem_data"}_${slugify(input.titulo) || "evento"}`;
   const fm: Record<string, FmValue> = { id: `evt_${base}`, type: "evento", ...input, projeto: "santuario", updated_at: new Date().toISOString() };
@@ -407,7 +407,7 @@ export function createEvento(input: { titulo: string; inicio: string; fim: strin
   requestSync(vault());
 }
 
-export function updateEvento(id: string, input: { titulo: string; inicio: string; fim: string; status: string; equipe: string }) {
+export function updateEvento(id: string, input: { titulo: string; inicio: string; fim: string; status: string; equipe: string; hora?: string }) {
   const e = getEventos().find((x) => x.id === id);
   if (!e) throw new Error("Evento não encontrado");
   updateNote(e.file, input);

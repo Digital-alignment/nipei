@@ -61,7 +61,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tar
   const who = t.responsaveis.map((id) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id).join(", ") || t.responsible;
   const late = t.prazo && t.prazo < hoje && t.status !== "done";
   return (
-    <li className="flex items-start gap-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+    <li className="flex flex-wrap items-start gap-x-3 py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
       {can.editTarefa(me, t) ? (
         <form action={setStatusAction}>
           <input type="hidden" name="id" value={t.id} />
@@ -85,8 +85,8 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra }: { t: Tar
           {t.anexos > 0 && <span>📎 {t.anexos}</span>}
           {t.recorrencia && <span title={t.recorrencia}>🔁</span>}
         </p>
-        {extra?.(t)}
       </div>
+      {extra?.(t)}
     </li>
   );
 }

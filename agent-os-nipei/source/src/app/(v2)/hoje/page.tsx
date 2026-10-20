@@ -1,154 +1,136 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { Card, Empty, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
-import VoiceTask from "@/components/v2/VoiceTask";
-import Grupo from "@/components/v2/Grupo";
+import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
+import Abas from "@/components/v2/Abas";
+import BomDia from "@/components/v2/BomDia";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-
-const TOM = {
-  ambar: "border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30",
-  azul: "border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/30",
-  neutro: "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900",
-} as const;
+import VoiceTask from "@/components/v2/VoiceTask";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
-import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
+import { agendaDoDia, bomDiaGuardado, pulso } from "@/lib/v2/hoje";
+import { can, currentUser, getEquipes, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
+const PILULA = "inline-flex items-center gap-1 shrink-0 rounded-full border px-2.5 py-1 text-xs";
+const TOM = {
+  azul: "border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200",
+  ambar: "border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200",
+  neutro: "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900",
+} as const;
+
+// Hoje, compact: what matters today in three lines (Bom dia, agenda, pending pills), one place to ask,
+// and one task list at a time (tabs).
 export default async function Hoje() {
   const { t, lang } = await getT();
-  const user = await currentUser();
-  const me = user?.pessoa;
+  const user = (await currentUser())!;
+  const me = user.pessoa;
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas();
   const minhas = getTarefas().filter((x) => x.status !== "done" && me && x.responsaveis.includes(me.id)).sort(byPrazo);
-  const grupos = [
-    ["atrasadas", t.atrasadas, minhas.filter((x) => x.prazo && x.prazo < hoje)],
-    ["hoje", t.paraHoje, minhas.filter((x) => x.prazo === hoje)],
-    ["proximas", t.proximas, minhas.filter((x) => x.prazo > hoje)],
-    ["semdata", t.semData, minhas.filter((x) => !x.prazo)],
-  ] as const;
-  // dated events first ("2027-01"), then the ones with only a year ("2027")
-  const eventos = getEventos().filter((e) => e.inicio >= hoje.slice(0, 7))
-    .sort((a, b) => Number(a.inicio.length < 7) - Number(b.inicio.length < 7) || a.inicio.localeCompare(b.inicio)).slice(0, 3);
-  const props = { equipes, pessoas, lang, hoje, me: user! };
-  // one-tap dates (Bahia calendar): overdue → today/tomorrow/+7; undated → end of this/next week, end of month
+  const props = { equipes, pessoas, lang, hoje, me: user };
+
+  // one-tap dates (Bahia calendar)
   const dia = (n: number) => new Date(Date.parse(`${hoje}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
   const dow = new Date(`${hoje}T12:00:00Z`).getUTCDay(); // 0 = Sunday
-  const sexta = dia((5 - dow + 7) % 7);
+  const ateSexta = (5 - dow + 7) % 7;
   const fimMes = new Date(Date.UTC(+hoje.slice(0, 4), +hoje.slice(5, 7), 0)).toISOString().slice(0, 10);
-  const OPCOES: Record<string, { label: string; data: string }[]> = {
-    atrasadas: [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }],
-    semdata: [{ label: t.estaSemana, data: sexta }, { label: t.proximaSemana, data: dia(((5 - dow + 7) % 7) + 7) }, { label: t.esteMes, data: fimMes }],
+  const OPCOES = {
+    datadas: [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }],
+    semdata: [{ label: t.estaSemana, data: dia(ateSexta) }, { label: t.proximaSemana, data: dia(ateSexta + 7) }, { label: t.esteMes, data: fimMes }],
   };
-  const comPrazo = (grupo: string) => OPCOES[grupo] && user
-    ? (x: Tarefa) => can.editTarefa(user, x) ? <PrazoRapido id={x.id} opcoes={OPCOES[grupo]} outraData={t.outraData} /> : null
-    : undefined;
-  const novidades = user ? novidadesPara(user) : [];
-  const fatosK = user ? getFatos() : [];
-  const revisar = user ? fatosK.filter((f) => f.status === "proposto" && podeRevisar(user, f)).length : 0;
-  const alertasK = user ? getAlertas().filter((a) => {
-    const f = fatosK.find((x) => x.id === a.fato);
-    return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
-  }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length : 0;
+  const comPrazo = (grupo: keyof typeof OPCOES) => (x: Tarefa) =>
+    can.editTarefa(user, x) ? <PrazoRapido id={x.id} opcoes={OPCOES[grupo]} outraData={t.outraData} rotulo={t.reprogramar} /> : null;
 
-  // Everything that waits on this person, as one compact list (profile, assessment, knowledge).
-  type Aviso = { href: string; icone: string; texto: string; acao: string; tom: keyof typeof TOM; progresso?: [number, number] };
-  const avisos: Aviso[] = [];
-  if (me && perfilPendente(me)) avisos.push({ href: `/pessoas/${me.id}/editar`, icone: "👤", texto: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar, acao: t.bannerAcao, tom: "ambar" });
+  const agora = minhas.filter((x) => x.prazo && x.prazo <= hoje);
+  const atrasadas = agora.filter((x) => x.prazo < hoje).length;
+  const proximas = minhas.filter((x) => x.prazo > hoje);
+  const semData = minhas.filter((x) => !x.prazo);
+  const novidades = novidadesPara(user);
+  const prontos = me ? prontosPara(me.id) : [];
+  const { hoje: eventosHoje, proximos } = agendaDoDia(user);
+
+  // pending items as small pills (each opens its page)
+  type Pilula = { href: string; icone: string; texto: string; tom: keyof typeof TOM; titulo: string };
+  const pilulas: Pilula[] = [];
+  if (me && perfilPendente(me)) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "👤", texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
   for (const d of me ? diagnosticosAbertos(me) : []) {
     const pr = progresso(d, me!.id);
-    if (pr.respondidas < pr.total) avisos.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "📝", texto: t.bannerDiag, acao: t.responderDiag, tom: "azul", progresso: [pr.respondidas, pr.total] });
-    if (codigoPendente(d, me!.id)) avisos.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "🤝", texto: t.bannerCodigo, acao: t.codigoAcordos, tom: "azul" });
+    if (pr.respondidas < pr.total) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "📝", texto: `${pr.respondidas}/${pr.total}`, tom: "azul", titulo: t.bannerDiag });
+    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "🤝", texto: t.codigoAcordos, tom: "azul", titulo: t.bannerCodigo });
     const c = getColetivo(d.id);
     for (const x of secoesColetivas(d).filter((x) => c.responsaveis[x.id] === me!.id)) {
       const feitas = x.perguntas.filter((q) => c.respostas[q.id]?.status === "respondida").length;
-      if (feitas < x.perguntas.length) avisos.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "📋", texto: `${t.parteColetiva}: ${lang === "en" ? x.titulo_en : x.titulo}`, acao: t.responderDiag, tom: "azul", progresso: [feitas, x.perguntas.length] });
+      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "📋", texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, tom: "azul", titulo: t.parteColetiva });
     }
   }
-  if (revisar > 0 || alertasK > 0) avisos.push({
-    href: alertasK ? "/conhecimento/alertas" : "/conhecimento", icone: "🧠", tom: "neutro", acao: t.conhecimento,
-    texto: [revisar && `${revisar} ${t.fatosPropostos}`, alertasK && `${alertasK} ${t.alertasEPropostas.toLowerCase()}`].filter(Boolean).join(" · "),
-  });
+  const fatos = getFatos();
+  const revisar = fatos.filter((f) => f.status === "proposto" && podeRevisar(user, f)).length;
+  const alertas = getAlertas().filter((a) => {
+    const f = fatos.find((x) => x.id === a.fato);
+    return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
+  }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
+  if (revisar || alertas) pilulas.push({ href: alertas ? "/conhecimento/alertas" : "/conhecimento", icone: "🧠", texto: [revisar, alertas && `⚠ ${alertas}`].filter(Boolean).join(" · "), tom: "neutro", titulo: t.conhecimento });
+  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "🤖", texto: `${prontos.length} ${t.prontoHermes}`, tom: "neutro", titulo: t.prontosIA });
+  const p = user.gestao ? pulso() : null;
+
+  const linhaTarefas = (ts: Tarefa[], grupo: keyof typeof OPCOES) => ts.length ? <TaskList tarefas={ts} {...props} extra={comPrazo(grupo)} /> : <Empty>{t.nadaPendente}</Empty>;
 
   return (
     <>
-      <Title sub={new Date().toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "long", day: "numeric", month: "long" })}>
-        {t.ola}, {(me?.name ?? user?.username ?? "").split(" ")[0]}
-      </Title>
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <h1 className="text-xl font-semibold tracking-tight">{t.ola}, {(me?.name ?? user.username).split(/[\s(]/)[0]}</h1>
+        <p className="text-xs text-neutral-500 first-letter:uppercase">{new Date().toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Bahia" })}</p>
+      </div>
 
-      {avisos.length > 0 && (
-        <ul className="mb-6 grid gap-1.5">
-          {avisos.map((a) => (
-            <li key={a.href + a.texto}>
-              <Link href={a.href} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm hover:shadow-sm ${TOM[a.tom]}`}>
-                <span aria-hidden className="text-base leading-none">{a.icone}</span>
-                <span className="min-w-0 flex-1 truncate">{a.texto}</span>
-                {a.progresso && (
-                  <span className="flex items-center gap-1.5 text-xs text-neutral-500 tabular-nums">
-                    <span className="hidden sm:block w-16 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
-                      <span className="block h-full bg-sky-600 dark:bg-sky-400" style={{ width: `${Math.round((a.progresso[0] / a.progresso[1]) * 100)}%` }} />
-                    </span>
-                    {a.progresso[0]}/{a.progresso[1]}
-                  </span>
-                )}
-                <span className="shrink-0 text-xs font-medium underline underline-offset-2">{a.acao}</span>
-              </Link>
-            </li>
+      {me && <BomDia inicial={bomDiaGuardado(user)} />}
+
+      {(eventosHoje.length > 0 || proximos.length > 0) && (
+        <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1" aria-label={t.agenda}>
+          {eventosHoje.map((e) => (
+            <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.azul}`}>🕒 {e.hora && <b className="font-medium">{e.hora}</b>} {e.titulo}</Link>
           ))}
-        </ul>
+          {proximos.map((e) => (
+            <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.neutro} text-neutral-600 dark:text-neutral-300`}>
+              {e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {(pilulas.length > 0 || p) && (
+        <div className="flex gap-1.5 overflow-x-auto mb-4 -mx-1 px-1">
+          {pilulas.map((x) => <Link key={x.href + x.texto} href={x.href} title={x.titulo} className={`${PILULA} ${TOM[x.tom]}`}><span aria-hidden>{x.icone}</span>{x.texto}</Link>)}
+          {p && (p.atrasadas > 0 || p.semDono > 0) && (
+            <Link href="/pulso" title={t.pulso} className={`${PILULA} ${TOM.ambar}`}>📊 {p.atrasadas} {t.atrasadasLbl} · {p.semDono} {t.semDonoLbl}</Link>
+          )}
+        </div>
       )}
 
       {me && <VoiceTask lang={lang} equipe={me.equipes[0] ?? ""} me={me.id}
         labels={{ falar: t.falar, ouvindo: t.ouvindo, vozIndisponivel: t.vozIndisponivel, criar: t.criar, cancelar: t.cancelar }} />}
 
-      {me && prontosPara(me.id).length > 0 && (
-        <Section title={t.prontosIA}>
-          <ul className="grid gap-2">
-            {prontosPara(me.id).map((j) => (
-              <li key={j.id}>
-                <Link href={`/tarefas/${j.taskId}`} className="block rounded-lg border border-violet-200 dark:border-violet-900 p-3 text-sm hover:underline">
-                  {j.estado === "ok" ? "✅" : "⚠️"} {j.titulo} <span className="text-xs text-neutral-500">· {j.estado === "ok" ? t.verEntrega : t.falhou}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {novidades.length > 0 && (
-        <Grupo id="novidades" titulo={t.novidades} count={novidades.length}>
-          <ul className="grid">
-            {novidades.map((n, i) => (
-              <li key={`${n.tarefaId}${n.quando}${i}`} className="py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-                <Link href={`/tarefas/${n.tarefaId}`} className="block text-sm leading-snug hover:underline">{n.titulo}</Link>
-                <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2"><span className="font-medium text-neutral-700 dark:text-neutral-300">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
-              </li>
-            ))}
-          </ul>
-        </Grupo>
-      )}
-
-      {minhas.length === 0 && <Empty>{t.nadaPendente}</Empty>}
-      {grupos.map(([id, titulo, ts]) => ts.length > 0 && (
-        <Grupo key={id} id={id} titulo={titulo} count={ts.length} alerta={id === "atrasadas"} aberto={id !== "semdata" || ts.length <= 5}><TaskList tarefas={ts} {...props} extra={comPrazo(id)} /></Grupo>
-      ))}
-
-      {eventos.length > 0 && (
-        <Section title={t.proximosEventos}>
-          <div className="grid gap-2">
-            {eventos.map((e) => (
-              <Card key={e.id}>
-                <p className="text-sm font-medium">{e.titulo}</p>
-                <p className="text-xs text-neutral-500">{fmtDate(e.inicio, lang)} · {e.status === "confirmado" ? t.confirmado : t.aConfirmar}</p>
-              </Card>
-            ))}
-          </div>
-        </Section>
+      {me && (
+        <Abas id="hoje" abas={[
+          { id: "agora", label: t.agora, count: agora.length, alerta: atrasadas > 0, conteudo: linhaTarefas(agora, "datadas") },
+          { id: "proximas", label: t.proximas, count: proximas.length, conteudo: linhaTarefas(proximas, "datadas") },
+          { id: "semdata", label: t.semData, count: semData.length, conteudo: linhaTarefas(semData, "semdata") },
+          {
+            id: "novidades", label: t.novidades, count: novidades.length, conteudo: novidades.length ? (
+              <ul>
+                {novidades.map((n, i) => (
+                  <li key={`${n.tarefaId}${n.quando}${i}`} className="py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                    <Link href={`/tarefas/${n.tarefaId}`} className="block text-sm leading-snug hover:underline">{n.titulo}</Link>
+                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2"><span className="font-medium text-neutral-700 dark:text-neutral-300">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : <Empty>{t.nadaPendente}</Empty>,
+          },
+        ]} />
       )}
 
       <Link href="/tarefas/nova" aria-label={t.novaTarefa}

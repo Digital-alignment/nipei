@@ -127,6 +127,8 @@ const pt = {
   numeros: "Números", membrosLbl: "pessoas", tarefasAbertasLbl: "tarefas abertas", atrasadasLbl: "atrasadas", semDonoLbl: "sem responsável", concluidasLbl: "concluídas",
   fatosConfirmados: "fatos confirmados", melhoriasLbl: "Melhorias do espaço", proximasAcoes: "Próximas ações de marketing", semDiagnosticoProjeto: "Este projeto ainda não tem diagnóstico.",
   novidades: "Novidades", amanha: "Amanhã", maisSemana: "+1 semana", estaSemana: "Esta semana", proximaSemana: "Próxima semana", esteMes: "Este mês", outraData: "Outra data",
+  agora: "Agora", hora: "Hora", reprogramar: "Mudar prazo", pulso: "Pulso da equipe", pulsoIntro: "Tarefas abertas por equipe: o que está atrasado e o que não tem responsável. Resolva aqui mesmo.",
+  semEquipeLbl: "Sem equipe", atribuirPessoa: "Atribuir", escolherPessoa: "Escolher pessoa", amanhaLbl: "amanhã", emBreve: "Em breve", prontoHermes: "do Hermes",
 };
 export type Dict = typeof pt;
 
@@ -253,6 +255,8 @@ const en: Dict = {
   numeros: "Numbers", membrosLbl: "people", tarefasAbertasLbl: "open tasks", atrasadasLbl: "overdue", semDonoLbl: "without owner", concluidasLbl: "done",
   fatosConfirmados: "confirmed facts", melhoriasLbl: "Space improvements", proximasAcoes: "Next marketing actions", semDiagnosticoProjeto: "This project has no assessment yet.",
   novidades: "News", amanha: "Tomorrow", maisSemana: "+1 week", estaSemana: "This week", proximaSemana: "Next week", esteMes: "This month", outraData: "Other date",
+  agora: "Now", hora: "Time", reprogramar: "Change due date", pulso: "Team pulse", pulsoIntro: "Open tasks by team: what's overdue and what has no owner. Fix it right here.",
+  semEquipeLbl: "No team", atribuirPessoa: "Assign", escolherPessoa: "Choose person", amanhaLbl: "tomorrow", emBreve: "Coming up", prontoHermes: "from Hermes",
 };
 
 export async function getLang(): Promise<Lang> {
