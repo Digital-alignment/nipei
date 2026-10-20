@@ -76,7 +76,9 @@ def main():
         shutil.move(src, dst)
         job = json.load(open(dst))
         log(f"{job['id']} começou ({job['taskId']}, pedido por {job['pedidoPor']})")
-        cmd = ["docker", "exec", CONTAINER, "hermes", "chat", "-Q", "-t", "web", "--provider", "openrouter",
+        # PYTHONPATH: Hermes's web search runs in a child process that doesn't load the durable
+        # package dir where `ddgs` (DuckDuckGo search) is installed.
+        cmd = ["docker", "exec", "-e", "PYTHONPATH=/opt/data/lazy-packages", CONTAINER, "hermes", "chat", "-Q", "-t", "web", "--provider", "openrouter",
                "-m", MODEL, "--max-turns", "25", "-q", job["prompt"]]
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT)
