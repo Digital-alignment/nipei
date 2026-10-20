@@ -94,6 +94,12 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - **T2** `src/lib/v2/ia.ts`: proposta via OpenRouter (`NIPEI_IA_MODEL`, padrão `anthropic/claude-haiku-5.5`); só Equipe 1; nada é gravado sem "Aplicar" (`aplicarSugestao`).
 - **T3** "Fazer por mim": `src/lib/v2/trabalhos.ts` enfileira em `<vault>/.jobs/` (gitignored); o worker do host (`scripts/hermes-worker/`, units systemd `nipei-hermes-worker.{path,service,timer}`, log `/var/log/nipei-hermes-worker.log`) roda o Hermes do contêiner `hermes-agent-upmh` **só com `-t web`** e devolve em `POST /api/tarefas/entregavel` (token). Nunca libere terminal/arquivos para o Hermes nesse fluxo: o texto vem dos usuários. Busca web: `ddgs` (DuckDuckGo) instalado em `/opt/data/lazy-packages` do contêiner (`web.search_backend: ddgs`); o worker passa `PYTHONPATH=/opt/data/lazy-packages` porque a busca roda num processo filho. Só busca (sem extração de páginas).
 
+## 3.3 Avisos por WhatsApp
+
+- O escritor único (`lib/tarefaNote.ts`) enfileira em `<vault>/.jobs/avisos/` quando entram responsáveis novos ou um comentário tem `@nome`; repetições automáticas não avisam.
+- Envio no host: `scripts/avisos/avisos.py` → `/opt/nipei-avisos/`; units `nipei-avisos-fila.{path,service}` (fila, na hora) e `nipei-avisos-diario.{timer,service}` (07:00 America/Bahia, tarefas de hoje e atrasadas). Log `/var/log/nipei-avisos.log`.
+- Quem recebe: membro de equipe com `avisos: true` (Equipes/), com `whatsapp` na ficha e sem `avisos_whatsapp: false`. Testar sem enviar: `python3 avisos.py fila --teste` / `python3 avisos.py diario --teste <pessoa_id>`.
+
 ---
 
 ## 4. Comandos Essenciais
