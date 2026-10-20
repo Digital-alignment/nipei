@@ -4,7 +4,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { Avatar, Card, Chip, Empty, Progress, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, progresso, today } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
-import { setEquipeAcessoAction } from "../../actions";
+import { setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
 export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string }> }) {
   const { id } = await params;
@@ -57,6 +57,18 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
               <input type="hidden" name="equipe" value={e.id} />
               <input type="hidden" name="acesso" value={String(!e.acesso)} />
               <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs">{e.acesso ? t.desligar : t.ligar}</button>
+            </form>
+          )}
+        </div>
+      </Section>
+
+      <Section title={t.avisosWhats}>
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className={e.avisos ? "text-green-700 dark:text-green-400" : "text-neutral-500"}>{e.avisos ? t.avisosEquipeLigado : t.avisosEquipeDesligado}</span>
+          {me.gestao && (
+            <form action={setEquipeAvisosAction}>
+              <input type="hidden" name="equipe" value={e.id} /><input type="hidden" name="avisos" value={String(!e.avisos)} />
+              <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs">{e.avisos ? t.desligarAvisos : t.ligarAvisos}</button>
             </form>
           )}
         </div>

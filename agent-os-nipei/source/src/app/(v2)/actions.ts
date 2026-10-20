@@ -12,7 +12,7 @@ import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
   updateEvento, updateObjetivo, updateTarefa, type Status,
-  addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setDescricao,
+  addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos,
 } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
@@ -315,6 +315,22 @@ export async function createAcervoAction(form: FormData) {
     descricao: String(form.get("descricao") ?? "").trim().slice(0, 300),
   }, me.pessoa?.id ?? me.username);
   revalidatePath("/acervo");
+}
+
+export async function setEquipeAvisosAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  setEquipeAvisos(String(form.get("equipe")), form.get("avisos") === "true");
+  revalidatePath("/", "layout");
+}
+
+/** A person switches their own WhatsApp notices; gestão can do it for anyone. */
+export async function setAvisosPessoaAction(form: FormData) {
+  const me = await requireUser();
+  const id = String(form.get("pessoa"));
+  if (!(me.gestao || me.pessoa?.id === id)) return;
+  setAvisosPessoa(id, form.get("ligado") === "true");
+  revalidatePath(`/pessoas/${id}`);
 }
 
 export async function toggleLangAction() {

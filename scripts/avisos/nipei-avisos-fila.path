@@ -1,0 +1,12 @@
+# Sends assignment/@mention notices as soon as the app queues them (lib/tarefaNote.ts → .jobs/avisos).
+# Install: avisos.py → /opt/nipei-avisos/, units → /etc/systemd/system/, then
+#   systemctl daemon-reload && systemctl enable --now nipei-avisos-fila.path nipei-avisos-diario.timer
+[Unit]
+Description=Nipei WhatsApp notices queue
+
+[Path]
+DirectoryNotEmpty=/opt/nipei-vault/.jobs/avisos
+MakeDirectory=yes
+
+[Install]
+WantedBy=multi-user.target

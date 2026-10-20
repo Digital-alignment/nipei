@@ -1,0 +1,8 @@
+[Unit]
+Description=Nipei WhatsApp notices (queue)
+
+[Service]
+Type=oneshot
+# A few seconds so a burst (e.g. several owners added at once) goes out in one run.
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/bin/python3 /opt/nipei-avisos/avisos.py fila

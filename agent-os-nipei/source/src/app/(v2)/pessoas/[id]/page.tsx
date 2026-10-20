@@ -6,7 +6,7 @@ import { Avatar, Chip, Section, Title } from "@/components/v2/ui";
 import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { addToEquipeAction } from "../../actions";
+import { addToEquipeAction, setAvisosPessoaAction } from "../../actions";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -71,6 +71,21 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
         </Section>
       ))}
       {gerir && !temAcesso && <p className="text-xs text-neutral-500 mb-6">{t.equipeSemAcesso}</p>}
+
+      {(me.gestao || me.pessoa?.id === p.id) && (
+        <Section title={t.avisosWhats}>
+          {!p.equipes.some((e) => equipes.find((x) => x.id === e)?.avisos) ? <p className="text-sm text-neutral-500">{t.avisosSemEquipe}</p>
+            : !p.whatsapp ? <p className="text-sm text-neutral-500">{t.avisosSemFone}</p> : (
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className={p.avisosWhatsapp ? "text-green-700 dark:text-green-400" : "text-neutral-500"}>{p.avisosWhatsapp ? t.avisosLigados : t.avisosDesligados}</span>
+              <form action={setAvisosPessoaAction}>
+                <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="ligado" value={String(!p.avisosWhatsapp)} />
+                <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs">{p.avisosWhatsapp ? t.desligarAvisos : t.ligarAvisos}</button>
+              </form>
+            </div>
+          )}
+        </Section>
+      )}
 
       {podeAdicionar.length > 0 && (
         <Section title={t.ativarEm}>

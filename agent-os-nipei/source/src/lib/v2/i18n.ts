@@ -43,7 +43,7 @@ const pt = {
   descricaoTitulo: "Descrição", semDescricao: "Ainda sem descrição. O que precisa ser feito?", editarDescricao: "Editar descrição",
   checklist: "Checklist", novoItem2: "Novo item…", anexos: "Anexos", semAnexos: "Nenhum anexo.", adicionarLink: "Adicionar link",
   tituloLink: "Nome (opcional)", arquivo: "Arquivo", foto: "Foto", enviando: "Enviando…", maximo: "Máximo 10 MB. Para vídeos e arquivos grandes, use um link do Drive.",
-  remover: "Remover", atividade: "Atividade", comentar: "Comentar", escreverComentario: "Escrever um comentário…", origem: "Origem",
+  remover: "Remover", atividade: "Atividade", comentar: "Comentar", escreverComentario: "Escrever um comentário… (use @nome para avisar alguém)", origem: "Origem",
   verMais: "ver histórico completo",
   iaTitulo: "IA", iaDetalhar: "Explicar e detalhar", iaProximo: "O que fazer agora?", iaAtualizar: "Atualizar com anexos",
   iaPensando: "A IA está lendo a tarefa, as notas e os anexos…", iaAplicar: "Aplicar selecionados", iaDescartar: "Descartar",
@@ -56,6 +56,9 @@ const pt = {
   falhou: "não conseguiu concluir",
   repetir: "Repetir", naoRepete: "Não repete", semanal: "Toda semana", quinzenal: "A cada 15 dias", mensal: "Todo mês",
   repeteAviso: "Ao concluir, a próxima é criada sozinha com o prazo seguinte.",
+  avisosWhats: "Avisos por WhatsApp", avisosLigados: "Ligados: resumo das tarefas às 7h e aviso quando te atribuem ou mencionam (@nome)",
+  avisosDesligados: "Desligados", avisosEquipeLigado: "Membros desta equipe recebem avisos por WhatsApp", avisosEquipeDesligado: "Esta equipe ainda não recebe avisos",
+  ligarAvisos: "Ligar avisos", desligarAvisos: "Desligar avisos", avisosSemEquipe: "A equipe desta pessoa ainda não recebe avisos.", avisosSemFone: "Sem WhatsApp na ficha.",
 };
 type Dict = typeof pt;
 
@@ -98,7 +101,7 @@ const en: Dict = {
   descricaoTitulo: "Description", semDescricao: "No description yet. What needs to be done?", editarDescricao: "Edit description",
   checklist: "Checklist", novoItem2: "New item…", anexos: "Attachments", semAnexos: "No attachments.", adicionarLink: "Add link",
   tituloLink: "Name (optional)", arquivo: "File", foto: "Photo", enviando: "Uploading…", maximo: "Max 10 MB. For videos and large files, use a Drive link.",
-  remover: "Remove", atividade: "Activity", comentar: "Comment", escreverComentario: "Write a comment…", origem: "Origin",
+  remover: "Remove", atividade: "Activity", comentar: "Comment", escreverComentario: "Write a comment… (use @name to notify someone)", origem: "Origin",
   verMais: "see full history",
   iaTitulo: "AI", iaDetalhar: "Explain and detail", iaProximo: "What to do now?", iaAtualizar: "Update from attachments",
   iaPensando: "The AI is reading the task, notes and attachments…", iaAplicar: "Apply selected", iaDescartar: "Discard",
@@ -111,6 +114,9 @@ const en: Dict = {
   falhou: "could not finish",
   repetir: "Repeat", naoRepete: "Doesn't repeat", semanal: "Every week", quinzenal: "Every 15 days", mensal: "Every month",
   repeteAviso: "When done, the next one is created automatically with the next due date.",
+  avisosWhats: "WhatsApp notices", avisosLigados: "On: task summary at 7 am and a notice when you're assigned or mentioned (@name)",
+  avisosDesligados: "Off", avisosEquipeLigado: "Members of this team get WhatsApp notices", avisosEquipeDesligado: "This team doesn't get notices yet",
+  ligarAvisos: "Turn notices on", desligarAvisos: "Turn notices off", avisosSemEquipe: "This person's team doesn't get notices yet.", avisosSemFone: "No WhatsApp in the profile.",
 };
 
 export async function getLang(): Promise<Lang> {

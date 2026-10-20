@@ -1,0 +1,10 @@
+# Morning reminder at 07:00 Bahia time (UTC-3).
+[Unit]
+Description=Nipei daily WhatsApp reminder
+
+[Timer]
+OnCalendar=*-*-* 07:00:00 America/Bahia
+Persistent=false
+
+[Install]
+WantedBy=timers.target

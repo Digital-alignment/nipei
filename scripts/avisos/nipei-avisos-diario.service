@@ -1,0 +1,6 @@
+[Unit]
+Description=Nipei daily WhatsApp reminder
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/nipei-avisos/avisos.py diario

@@ -249,11 +249,39 @@ export function writeTarefa(vaultRoot: string, relFile: string, actor: string, m
   if (!linhas.length) return doc;
   doc.fm.updated_at = new Date().toISOString();
   doc.fm.updated_by = actor;
+  avisarMudancas(vaultRoot, antes, doc, actor, extra);
   const quando = agora();
   doc.atividade.unshift(...linhas.map((l) => `- ${quando} · ${actor} · ${l}`));
   fs.writeFileSync(abs, renderTarefa(doc), "utf-8");
   requestSync(vaultRoot);
   return doc;
+}
+
+// ---------------------------------------------------------------- WhatsApp notices (queue)
+// Writers only enqueue; the sender on the VPS host (nipei-control/scripts/avisos/) decides who may
+// receive (team with `avisos: true`, WhatsApp in the person's note, no `avisos_whatsapp: false`) and sends.
+
+function enfileirarAviso(vaultRoot: string, aviso: Record<string, unknown>) {
+  try {
+    const dir = path.join(vaultRoot, ".jobs", "avisos");
+    fs.mkdirSync(dir, { recursive: true });
+    const id = `av_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const tmp = path.join(vaultRoot, ".jobs", `${id}.tmp`);
+    fs.writeFileSync(tmp, JSON.stringify({ id, criado: new Date().toISOString(), ...aviso }), "utf-8");
+    fs.renameSync(tmp, path.join(dir, `${id}.json`)); // the sender never sees a half-written file
+  } catch { /* a notice must never break a task write */ }
+}
+
+/** New owners → "atribuicao"; a comment with "@Nome" → "mencao". */
+function avisarMudancas(vaultRoot: string, antes: TarefaDoc, depois: TarefaDoc, actor: string, extra: string[]) {
+  const base = { tarefaId: String(depois.fm.id ?? ""), titulo: String(depois.fm.title ?? ""), prazo: String(depois.fm.prazo ?? ""), autor: actor };
+  const ids = (d: TarefaDoc) => (Array.isArray(d.fm.responsaveis) ? (d.fm.responsaveis as unknown[]).map(String) : []);
+  const novos = ids(depois).filter((x) => !ids(antes).includes(x));
+  if (novos.length) enfileirarAviso(vaultRoot, { tipo: "atribuicao", para: novos, ...base });
+  for (const l of extra) {
+    const c = l.match(/^comentou “([\s\S]*)”$/);
+    if (c && c[1].includes("@")) enfileirarAviso(vaultRoot, { tipo: "mencao", texto: c[1], ...base });
+  }
 }
 
 // ---------------------------------------------------------------- recurring tasks
@@ -287,6 +315,7 @@ function criarProxima(vaultRoot: string, doc: TarefaDoc, actor: string) {
     descricao: doc.descricao,
     checklist: doc.checklist.map((c) => ({ ...c, feito: false })),
     origem: `Repetição ${rec} de ${String(fm.id ?? "")}.`,
+    semAviso: true, // the same people already own the series; the morning reminder covers it
   });
   return { id, prazo };
 }
@@ -310,7 +339,7 @@ export function createTarefaNote(
   vaultRoot: string,
   fm: Record<string, unknown> & { title: string },
   actor: string,
-  opts: { descricao?: string; checklist?: ChecklistItem[]; origem?: string } = {},
+  opts: { descricao?: string; checklist?: ChecklistItem[]; origem?: string; semAviso?: boolean } = {},
 ) {
   const { id, relFile } = novoTarefaId(vaultRoot, fm.title);
   const now = new Date().toISOString();
@@ -330,6 +359,7 @@ export function createTarefaNote(
   doc.fm.id = id;
   fs.writeFileSync(path.join(vaultRoot, relFile), renderTarefa(doc), { encoding: "utf-8", flag: "wx" });
   requestSync(vaultRoot);
+  if (!opts.semAviso) avisarMudancas(vaultRoot, { ...doc, fm: { ...doc.fm, responsaveis: [] } }, doc, actor, []);
   return { id, relFile, doc };
 }
 

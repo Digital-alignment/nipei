@@ -16,6 +16,7 @@ export type Equipe = {
   id: string; nome: string; cor: string; areas: string[]; coordenadores: string[]; membros: string[];
   acesso: boolean; // members of this team can log in
   gestao: boolean; // members of this team manage everything (full session, v1 included)
+  avisos: boolean; // members get WhatsApp notices (scripts/avisos on the VPS)
 };
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
@@ -23,6 +24,7 @@ export type Evento = { id: string; file: string; titulo: string; inicio: string;
 export type Pessoa = {
   id: string; nipeiId: string; name: string; nativeName: string; equipes: string[]; coordena: string[]; usuario: string;
   whatsapp: string; email: string; area: string; funcao: string; disponibilidade: string; incompleta: boolean; cadastroEm: string;
+  avisosWhatsapp: boolean; // false = the person switched WhatsApp notices off
 };
 export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
@@ -73,7 +75,7 @@ export function getEquipes(): Equipe[] {
   return readDir("Equipes")
     .map(({ fm }) => ({
       id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), coordenadores: arr(fm.coordenadores),
-      membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true,
+      membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true, avisos: fm.avisos === true,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -115,6 +117,7 @@ export function getPessoas(): Pessoa[] {
       disponibilidade: s(fm.disponibilidade),
       incompleta: fm.has_missing_info === true,
       cadastroEm: s(fm.cadastro_em),
+      avisosWhatsapp: fm.avisos_whatsapp !== false,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
@@ -524,3 +527,14 @@ export function aplicarSugestao(id: string, actor: string, sug: {
   }, extra);
 }
 
+export function setEquipeAvisos(equipeId: string, avisos: boolean) {
+  const note = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
+  if (!note) throw new Error("Equipe não encontrada");
+  updateNote(note.file, { avisos });
+}
+
+export function setAvisosPessoa(pessoaId: string, ligado: boolean) {
+  const note = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
+  if (!note) throw new Error("Pessoa não encontrada");
+  updateNote(note.file, { avisos_whatsapp: ligado });
+}
