@@ -116,6 +116,14 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - **K3 busca única (v2.14)** `buscarConhecimento()` em `lib/v2/conhecimento.ts`: só fatos `confirmado`, por palavras + equipe/projeto/objetivo/pessoa. Usada pela IA de tarefas e pelo Hermes "Fazer por mim" (`contexto()` em `ia.ts`, seção "Base de conhecimento confirmada", que prevalece sobre notas antigas), por todo chamador de `queryVaultGrounding` (`lib/hermesRAG.ts`: webhook do Hermes, memory/ask, consult, deliverables) e pelo Venu (`lib/hermesApollo.ts`). `Conhecimento/` fica fora de `listNotes` (`SKIP_DIRS`) para nenhum fato não confirmado vazar.
 - **K4 propostas (v2.15)** `lib/v2/propostas.ts`: ao confirmar fatos (revisão ou alerta substituir/editar), a IA propõe `mudar_prazo`, `nova_tarefa`, `comentar_tarefa` ou `nota_projeto` em `Conhecimento/Propostas/`. Nada se aplica sozinho: na bandeja `/conhecimento/alertas` quem pode editar a tarefa (ou gestão, para projetos) ajusta e aplica pelos escritores normais (`updateTarefa`, `createTarefa`, `comentar`, `anotarProjeto` → "## Atualizações" do projeto).
 
+
+## 3.6 Diagnósticos (D0/D1, v2.16)
+
+- Modelo de questionário no vault: `Diagnosticos/_modelos/<id>.md` (YAML com `secoes[]`: `escopo` individual|coletivo, `destino` perfil|evento|diagnostico, `perguntas[]` com `texto`, `texto_en`, `guia`). O primeiro é `team-development` (documento da Lynn, 60 perguntas).
+- Aplicação a um projeto: `Diagnosticos/<id>/diagnostico.md` (`modelo`, `projeto`, `equipes`). Para Inirau ou outro projeto, basta criar outro com o mesmo modelo.
+- `lib/v2/diagnostico.ts`: parte individual respondida em `/pessoas/[id]/respostas` (só a própria pessoa edita; a pessoa e a gestão veem) → `Diagnosticos/<id>/individuais/<pessoa>.md` (YAML + markdown legível). Guia por pergunta, aviso abaixo de 40 palavras, rascunho da IA (`rascunhoIA`, só seções `papel` e `retiro`, nunca sobrescreve). Seções `destino: perfil` aparecem na ficha ("Meu papel e compromisso"); aviso em Hoje; progresso para a gestão em `/diagnosticos/[id]`.
+- Próximos: D2 parte coletiva + lacunas → tarefas, D3 listas (melhorias, marketing, finanças, reuniões), D4 documento final EN/PT, D5 visão holística do projeto.
+
 ---
 
 ## 4. Comandos Essenciais

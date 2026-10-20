@@ -7,6 +7,7 @@ import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { addToEquipeAction, setAvisosPessoaAction } from "../../actions";
+import { getDiagnosticos, getRespostas, participa, progresso } from "@/lib/v2/diagnostico";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -75,6 +76,31 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
         </dl>
         {p.incompleta && <p className="text-xs text-amber-700 dark:text-amber-400 mt-3">{t.fichaIncompleta}</p>}
       </Section>
+
+      {proprio && getDiagnosticos().filter((d) => participa(d, p)).map((d) => {
+        const r = getRespostas(d.id, p.id);
+        const pr = progresso(d, p.id);
+        const perfil = d.modelo.secoes.filter((x) => x.destino === "perfil");
+        return (
+          <Section key={d.id} title={t.meuPapel}>
+            <p className="text-xs text-neutral-500 mb-3">{d.titulo} · {pr.respondidas}/{pr.total} {t.respondidas} · {t.privadoDiag}</p>
+            {perfil.map((sec) => (
+              <div key={sec.id} className="mb-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">{lang === "en" ? sec.titulo_en : sec.titulo}</p>
+                <dl className="grid gap-2 text-sm">
+                  {sec.perguntas.filter((q) => r[q.id]?.texto).map((q) => (
+                    <div key={q.id}><dt className="text-neutral-500">{lang === "en" ? q.texto_en : q.texto}</dt><dd className="whitespace-pre-wrap">{r[q.id].texto}</dd></div>
+                  ))}
+                </dl>
+                {!sec.perguntas.some((q) => r[q.id]?.texto) && <p className="text-sm text-neutral-400">{t.vazio}</p>}
+              </div>
+            ))}
+            <Link href={`/pessoas/${p.id}/respostas?d=${d.id}`} className="inline-flex rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm">
+              {me.pessoa?.id === p.id ? t.responderDiag : t.verRespostas} →
+            </Link>
+          </Section>
+        );
+      })}
 
       {links.map((l) => (
         <Section key={l.titulo} title={l.titulo}>

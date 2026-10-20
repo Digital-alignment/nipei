@@ -7,6 +7,7 @@ import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
+import { diagnosticosAbertos, progresso } from "@/lib/v2/diagnostico";
 import { currentUser, getEquipes, getEventos, getPessoas, getTarefas, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 
@@ -45,6 +46,15 @@ export default async function Hoje() {
           {perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar} <span className="underline font-medium">{t.bannerAcao}</span>
         </Link>
       )}
+
+      {me && diagnosticosAbertos(me).map((d) => {
+        const pr = progresso(d, me.id);
+        return pr.respondidas < pr.total && (
+          <Link key={d.id} href={`/pessoas/${me.id}/respostas?d=${d.id}`} className="block rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 px-4 py-3 text-sm mb-5">
+            📝 {t.bannerDiag}: {pr.respondidas}/{pr.total} {t.respondidas} · <span className="underline font-medium">{t.responderDiag}</span>
+          </Link>
+        );
+      })}
 
       {(revisar > 0 || alertasK > 0) && (
         <Link href={alertasK ? "/conhecimento/alertas" : "/conhecimento"} className="block rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 text-sm mb-5">

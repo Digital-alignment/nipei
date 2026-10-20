@@ -12,7 +12,7 @@ const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro"]; // /entrar and /cadastr
 
 // A "member" session (non-gestão teams) only reaches the v2 pages; v1 and the internal API
 // (agents, dispatch, vault writes…) stay gestão-only. Keep in sync with V2_PATHS in Shell.tsx.
-const MEMBER_PAGES = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/acervo", "/eventos", "/conhecimento"]; // not /financas: gestão only
+const MEMBER_PAGES = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos"]; // not /financas: gestão only
 const isMemberPage = (p: string) => p === "/" || MEMBER_PAGES.some((m) => p === m || p.startsWith(m + "/"));
 
 export function proxy(req: NextRequest) {

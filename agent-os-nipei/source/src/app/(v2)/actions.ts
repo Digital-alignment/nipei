@@ -9,6 +9,7 @@ import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { criarFonte, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
 import { decidirProposta, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
+import { getDiagnostico, participa, rascunhoIA, salvarRespostas, type Resposta } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
@@ -435,5 +436,31 @@ export async function decidirPropostaAction(form: FormData) {
   decidirProposta(p.id, form.get("acao") === "aplicar", actorName(me), {
     prazo: String(form.get("prazo") ?? ""), titulo: String(form.get("titulo") ?? ""), texto: String(form.get("texto") ?? ""),
   });
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Diagnóstico (D1): only the person writes their own answers
+
+export async function salvarRespostasAction(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  if (!d || !me.pessoa || !participa(d, me.pessoa)) return;
+  const responder = form.get("acao") === "responder";
+  const novas: Record<string, Partial<Resposta>> = {};
+  for (const [k, v] of form.entries()) {
+    if (!k.startsWith("r:")) continue;
+    const texto = String(v).trim();
+    novas[k.slice(2)] = { texto, ...(responder && texto ? { status: "respondida" as const } : {}) };
+  }
+  salvarRespostas(d, me.pessoa.id, novas);
+  revalidatePath("/", "layout");
+}
+
+export async function rascunhoIAAction(form: FormData) {
+  const me = await requireUser();
+  const d = getDiagnostico(String(form.get("diagnostico")));
+  if (!d || !me.pessoa || !participa(d, me.pessoa)) return;
+  contarUso(me.pessoa.id);
+  await rascunhoIA(d, me.pessoa.id, String(form.get("secao")));
   revalidatePath("/", "layout");
 }

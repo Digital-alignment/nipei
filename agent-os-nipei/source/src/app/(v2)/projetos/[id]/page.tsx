@@ -4,6 +4,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { Card, Chip, Empty, Progress, Section, TaskList, Title, byPrazo } from "@/components/v2/ui";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, progresso, today } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
+import { getDiagnosticos } from "@/lib/v2/diagnostico";
 
 export default async function ProjetoDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ equipe?: string }> }) {
   const { id } = await params;
@@ -25,6 +26,12 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         <Chip href={`/projetos/${id}`} on={!equipe}>{t.todas}</Chip>
         {p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={`/projetos/${id}?equipe=${eid}`} cor={e.cor} on={equipe === eid}>{e.nome}</Chip>; })}
       </div>
+
+      {me.gestao && getDiagnosticos().filter((d) => d.projeto === id).map((d) => (
+        <Link key={d.id} href={`/diagnosticos/${d.id}`} className="block rounded-lg border border-neutral-200 dark:border-neutral-800 px-4 py-3 text-sm mb-5">
+          📝 {t.diagnostico}: {d.titulo} →
+        </Link>
+      ))}
 
       {p.atualizacoes.length > 0 && (
         <Section title={t.atualizacoes} count={p.atualizacoes.length}>

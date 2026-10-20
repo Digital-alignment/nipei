@@ -89,6 +89,13 @@ const pt = {
   semPropostas: "Nenhuma proposta aberta.", aplicar: "Aplicar", recusar: "Recusar", porque: "Por quê", atualizacoes: "Atualizações",
   tiposProposta: { mudar_prazo: "Mudar prazo", nova_tarefa: "Nova tarefa", comentar_tarefa: "Informação para a tarefa", nota_projeto: "Novidade do projeto" },
   alertasEPropostas: "Alertas e propostas",
+  diagnostico: "Diagnóstico", minhasRespostas: "Minhas respostas", respondidas: "respondidas", rascunhos: "rascunhos",
+  guiaResposta: "Para uma resposta completa", palavras: "palavras", respostaCurta: "resposta curta: veja o guia e aprofunde",
+  salvarRascunho: "Salvar rascunho", salvarResponder: "Salvar e marcar como respondidas", rascunhoIA: "Preparar rascunho com a IA",
+  rascunhoIAAviso: "A IA usa sua ficha, suas tarefas e a base confirmada. Não sobrescreve o que você já escreveu: revise e complete.",
+  statusRascunho: "Rascunho", statusRascunhoIA: "Rascunho da IA", statusRespondida: "Respondida", privadoDiag: "Privado: só você e a gestão veem estas respostas.",
+  meuPapel: "Meu papel e compromisso", responderDiag: "Responder", bannerDiag: "Responda o diagnóstico da equipe", participantes: "Participantes",
+  verRespostas: "Ver respostas", soLeitura: "Somente leitura: só a própria pessoa edita as respostas.",
 };
 export type Dict = typeof pt;
 
@@ -177,6 +184,13 @@ const en: Dict = {
   semPropostas: "No open proposals.", aplicar: "Apply", recusar: "Decline", porque: "Why", atualizacoes: "Updates",
   tiposProposta: { mudar_prazo: "Change due date", nova_tarefa: "New task", comentar_tarefa: "Info for the task", nota_projeto: "Project news" },
   alertasEPropostas: "Alerts and proposals",
+  diagnostico: "Assessment", minhasRespostas: "My answers", respondidas: "answered", rascunhos: "drafts",
+  guiaResposta: "For a complete answer", palavras: "words", respostaCurta: "short answer: see the guide and go deeper",
+  salvarRascunho: "Save draft", salvarResponder: "Save and mark as answered", rascunhoIA: "Draft with AI",
+  rascunhoIAAviso: "The AI uses your profile, your tasks and the confirmed base. It never overwrites what you wrote: review and complete.",
+  statusRascunho: "Draft", statusRascunhoIA: "AI draft", statusRespondida: "Answered", privadoDiag: "Private: only you and management see these answers.",
+  meuPapel: "My role and commitment", responderDiag: "Answer", bannerDiag: "Answer the team assessment", participantes: "Participants",
+  verRespostas: "See answers", soLeitura: "Read only: only the person edits their answers.",
 };
 
 export async function getLang(): Promise<Lang> {
