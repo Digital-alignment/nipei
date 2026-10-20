@@ -127,6 +127,13 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 - **D4 consolidação (v2.19)**: `gerarConsolidado` (retiro e matriz de responsabilidades, IA a partir das respostas individuais; tensões anônimas), código de acordos (`rascunhoCodigo` → editar → `publicarCodigo` cria versão; cada participante aceita em `/diagnosticos/[id]/codigo`, estado na ficha e aviso em Hoje até aceitar) e documento final (`montarDocumento` compila tudo em `Diagnosticos/<id>/documento-pt.md`, sem as respostas privadas; `traduzirDocumento` → `documento-en.md`; página imprimível `/diagnosticos/[id]/documento`). Textos longos da IA usam `chamarIATexto` (markdown puro, não JSON). Ações lentas usam `tentar()`: se falharem, voltam à mesma página com `?erro=` (mostrado por `ErroAviso` no layout) em vez de cair em Hoje.
 - **D5 (v2.20)**: `/diagnosticos` (gestão) lista os diagnósticos e cria um novo a partir de qualquer modelo para qualquer projeto (`criarDiagnostico`; abrir/encerrar com `encerrarDiagnostico`). `/projetos/[id]/visao` (`lib/v2/visao.ts`): números ao vivo (pessoas, tarefas abertas/atrasadas/sem dono, fatos confirmados, finanças, melhorias, código), objetivos, melhorias, próximas ações de marketing, eventos, links do diagnóstico e uma síntese da IA guardada em `Projetos/_visao/<projeto>.md` (gestão gera/atualiza; imprimível).
 
+
+## 3.7 Hoje (v2.22–2.24)
+
+- Compacta: "Bom dia" da IA (`lib/v2/hoje.ts` `gerarBomDia`, 1 vez por dia por pessoa, cache em `<vault>/.jobs/bomdia/`, fora do git), agenda do dia (eventos têm `hora` opcional), pendências como pílulas, abas Agora/Próximas/Sem data/Novidades (`components/v2/Abas.tsx`, lembra a última), mudar prazo atrás do ícone (`PrazoRapido`).
+- `/pulso` (gestão): abertas/atrasadas/sem responsável por equipe; atribuir e mudar prazo na própria lista.
+- Assistente (`lib/v2/assistente.ts` + `components/v2/Assistente.tsx`): loop de tool-calling no OpenRouter sobre os getters da plataforma (minhas tarefas, busca, detalhe, agenda, `buscarConhecimento` + notas antigas, pessoas, pulso). Mudanças (criar, status, prazo, comentar, atribuir) só viram PROPOSTA; a pessoa confirma no cartão e `executarAcao` revalida permissões e grava pelos escritores normais. Não dê ao assistente escrita direta.
+- Offline: `public/sw.js` (páginas network-first com cópia, estáticos cache-first, /login apaga a cópia) registrado por `components/v2/Offline.tsx` só em produção; status e prazo sem sinal entram na fila do aparelho (`lib/v2/filaOffline.ts`) e são reenviados pelas server actions ao voltar a conexão.
 ---
 
 ## 4. Comandos Essenciais
