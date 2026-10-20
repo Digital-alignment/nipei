@@ -118,6 +118,14 @@ const pt = {
   aceitarCodigo: "Li e aceito o código", aceitoEm: "Aceito em", aceites: "Aceites", pendenteAceite: "falta aceitar", bannerCodigo: "Leia e aceite o código de acordos da equipe",
   documentoFinal: "Documento final", montarPT: "Montar documento (PT)", traduzirEN: "Montar e traduzir para inglês", imprimir: "Imprimir / salvar PDF",
   documentoAviso: "Junta tudo o que o diagnóstico tem: papéis, matriz, retiro, finanças, marketing, código, melhorias, visão, reuniões e pendências. Monte de novo quando houver mudanças.",
+  diagnosticos: "Diagnósticos", diagnosticosIntro: "Um modelo de questionário (como o da Lynn) aplicado a um projeto. Use o mesmo modelo para Inirau ou para projetos novos.",
+  novoDiagnostico: "Novo diagnóstico", modelo: "Modelo", projetoLbl: "Projeto", tituloLbl: "Título", eventoRef: "Evento de referência (opcional)",
+  quemResponde: "Quem responde (equipes)", criar_: "Criar diagnóstico", encerrar: "Encerrar", reabrir: "Reabrir", aberto: "aberto", encerrado: "encerrado",
+  semDiagnosticos: "Nenhum diagnóstico ainda.", modeloAviso: "Para adaptar as perguntas, copie o modelo em Diagnosticos/_modelos no vault e edite no Obsidian.",
+  visaoHolistica: "Visão holística", visaoIntro: "O projeto inteiro numa página: o que a plataforma sabe hoje e o que o diagnóstico trouxe.",
+  sintese: "Síntese", gerarSintese: "Gerar síntese com a IA", atualizarSintese: "Atualizar síntese", sinteseAviso: "A IA junta objetivos, tarefas, finanças, conhecimento confirmado e as respostas do diagnóstico. Atualize quando houver mudanças.",
+  numeros: "Números", membrosLbl: "pessoas", tarefasAbertasLbl: "tarefas abertas", atrasadasLbl: "atrasadas", semDonoLbl: "sem responsável", concluidasLbl: "concluídas",
+  fatosConfirmados: "fatos confirmados", melhoriasLbl: "Melhorias do espaço", proximasAcoes: "Próximas ações de marketing", semDiagnosticoProjeto: "Este projeto ainda não tem diagnóstico.",
 };
 export type Dict = typeof pt;
 
@@ -235,6 +243,14 @@ const en: Dict = {
   aceitarCodigo: "I have read and accept the code", aceitoEm: "Accepted on", aceites: "Acceptances", pendenteAceite: "not accepted yet", bannerCodigo: "Read and accept the team's code of agreements",
   documentoFinal: "Final document", montarPT: "Build document (PT)", traduzirEN: "Build and translate to English", imprimir: "Print / save PDF",
   documentoAviso: "Brings together everything in the assessment: roles, matrix, retreat, finances, marketing, code, improvements, vision, meetings and open items. Build again after changes.",
+  diagnosticos: "Assessments", diagnosticosIntro: "A questionnaire template (like Lynn's) applied to a project. Use the same template for Inirau or new projects.",
+  novoDiagnostico: "New assessment", modelo: "Template", projetoLbl: "Project", tituloLbl: "Title", eventoRef: "Reference event (optional)",
+  quemResponde: "Who answers (teams)", criar_: "Create assessment", encerrar: "Close", reabrir: "Reopen", aberto: "open", encerrado: "closed",
+  semDiagnosticos: "No assessments yet.", modeloAviso: "To adapt the questions, copy the template in Diagnosticos/_modelos in the vault and edit it in Obsidian.",
+  visaoHolistica: "Holistic view", visaoIntro: "The whole project on one page: what the platform knows today and what the assessment brought.",
+  sintese: "Synthesis", gerarSintese: "Generate synthesis with AI", atualizarSintese: "Update synthesis", sinteseAviso: "The AI brings together objectives, tasks, finances, confirmed knowledge and the assessment's answers. Update it after changes.",
+  numeros: "Numbers", membrosLbl: "people", tarefasAbertasLbl: "open tasks", atrasadasLbl: "overdue", semDonoLbl: "without owner", concluidasLbl: "done",
+  fatosConfirmados: "confirmed facts", melhoriasLbl: "Space improvements", proximasAcoes: "Next marketing actions", semDiagnosticoProjeto: "This project has no assessment yet.",
 };
 
 export async function getLang(): Promise<Lang> {

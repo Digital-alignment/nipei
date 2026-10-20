@@ -14,6 +14,7 @@ import {
   rascunhoColetivoIA, rascunhoIA, salvarColetivo, salvarRespostas, type Resposta,
   agendarReuniao, criarTarefasCalendario, criarTarefasItens, gerarCalendario, gerarPauta, itensSugeridos, salvarCalendario, salvarItens, salvarPeriodo, type Item,
   aceitarCodigo, gerarConsolidado, montarDocumento, publicarCodigo, rascunhoCodigo, salvarCodigo, traduzirDocumento,
+  criarDiagnostico, encerrarDiagnostico,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
@@ -634,4 +635,36 @@ export async function documentoAction(form: FormData) {
   montarDocumento(ok.d);
   if (form.get("acao") === "traduzir") await tentar(async () => { contarUso(ok.me.pessoa?.id ?? ok.me.username); await traduzirDocumento(ok.d); });
   revalidatePath("/diagnosticos", "layout");
+}
+
+// ---------------------------------------------------------------- D5: apply a template / holistic view (gestão)
+
+export async function criarDiagnosticoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  let id = "";
+  await tentar(async () => {
+    id = criarDiagnostico({
+      modelo: String(form.get("modelo") ?? ""), projeto: String(form.get("projeto") ?? ""), titulo: String(form.get("titulo") ?? ""),
+      evento: String(form.get("evento") ?? ""), equipes: form.getAll("equipes").map(String),
+    });
+  });
+  revalidatePath("/", "layout");
+  if (id) redirect(`/diagnosticos/${id}`);
+}
+
+export async function estadoDiagnosticoAction(form: FormData) {
+  const ok = await diagGestao(form);
+  if (!ok) return;
+  encerrarDiagnostico(ok.d, form.get("aberto") === "true");
+  revalidatePath("/", "layout");
+}
+
+export async function visaoAction(form: FormData) {
+  const me = await requireUser();
+  const projeto = pick(form.get("projeto"), getProjetos().map((p) => p.id));
+  if (!me.gestao || !projeto) return;
+  const { gerarSintese } = await import("@/lib/v2/visao");
+  await tentar(async () => { contarUso(me.pessoa?.id ?? me.username); await gerarSintese(projeto); });
+  revalidatePath(`/projetos/${projeto}/visao`);
 }

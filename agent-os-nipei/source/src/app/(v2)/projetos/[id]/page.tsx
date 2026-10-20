@@ -27,6 +27,11 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         {p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={`/projetos/${id}?equipe=${eid}`} cor={e.cor} on={equipe === eid}>{e.nome}</Chip>; })}
       </div>
 
+      <div className="flex flex-wrap gap-2 mb-5">
+        <Link href={`/projetos/${id}/visao`} className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm">🧭 {t.visaoHolistica}</Link>
+        {me.gestao && <Link href={`/diagnosticos?projeto=${id}`} className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm">📝 {t.diagnosticos}</Link>}
+      </div>
+
       {me.gestao && getDiagnosticos().filter((d) => d.projeto === id).map((d) => (
         <Link key={d.id} href={`/diagnosticos/${d.id}`} className="block rounded-lg border border-neutral-200 dark:border-neutral-800 px-4 py-3 text-sm mb-5">
           📝 {t.diagnostico}: {d.titulo} →

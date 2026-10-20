@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Avatar, Progress, Section, Title } from "@/components/v2/ui";
 import { currentUser, getProjetos } from "@/lib/v2/data";
 import { TEMAS_REUNIAO, getColetivo, getDiagnostico, participantes, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
-import { definirResponsavelAction, reuniaoAction } from "../../actions";
+import { definirResponsavelAction, estadoDiagnosticoAction, reuniaoAction } from "../../actions";
 import { getT } from "@/lib/v2/i18n";
 
 // Gestão overview of an assessment: who answered how much (the answers themselves are on each person's page).
@@ -22,7 +22,15 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
   return (
     <div className="max-w-2xl">
       {projeto && <Link href={`/projetos/${projeto.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{projeto.nome}</Link>}
-      <Title sub={`${en ? d.modelo.titulo_en : d.modelo.titulo} · ${d.modelo.autor}`}>{d.titulo}</Title>
+      <Title sub={`${en ? d.modelo.titulo_en : d.modelo.titulo} · ${d.modelo.autor} · ${d.status === "aberto" ? t.aberto : t.encerrado}`}>{d.titulo}</Title>
+      <div className="flex flex-wrap gap-3 items-center mb-5 text-sm">
+        <Link href="/diagnosticos" className="underline text-neutral-500">{t.diagnosticos}</Link>
+        <Link href={`/projetos/${d.projeto}/visao`} className="underline text-neutral-500">{t.visaoHolistica}</Link>
+        <form action={estadoDiagnosticoAction}>
+          <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="aberto" value={String(d.status !== "aberto")} />
+          <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1 text-xs">{d.status === "aberto" ? t.encerrar : t.reabrir}</button>
+        </form>
+      </div>
 
       <Section title={t.participantes}>
         <ul className="grid gap-3">

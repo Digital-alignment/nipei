@@ -746,3 +746,34 @@ export async function traduzirDocumento(d: Diagnostico): Promise<string> {
   salvarDocumento(d, "en", texto);
   return texto;
 }
+
+// ---------------------------------------------------------------- D5: apply a template to another project
+
+export function getModelos(): Modelo[] {
+  const dir = path.join(vault(), DIR, "_modelos");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => getModelo(f.slice(0, -3))).filter((m): m is Modelo => !!m);
+}
+
+/** New assessment for a project from a template (e.g. Lynn's team-development for Inirau). Returns its id. */
+export function criarDiagnostico(input: { modelo: string; projeto: string; titulo: string; evento: string; equipes: string[] }): string {
+  if (!getModelo(input.modelo)) throw new Error("Modelo não encontrado");
+  if (!getProjetos().some((p) => p.id === input.projeto)) throw new Error("Projeto não encontrado");
+  const titulo = input.titulo.trim().slice(0, 150);
+  if (!titulo) throw new Error("Informe o título");
+  const equipes = input.equipes.filter((e) => getEquipes().some((x) => x.id === e));
+  if (!equipes.length) throw new Error("Escolha ao menos uma equipe");
+  let id = `${input.projeto}-${today().slice(0, 4)}`.replace(/[^a-z0-9-]/gi, "-").toLowerCase();
+  for (let i = 2; fs.existsSync(path.join(vault(), DIR, id)); i++) id = `${input.projeto}-${today().slice(0, 4)}-${i}`;
+  const fm = { id, type: "diagnostico", modelo: input.modelo, projeto: input.projeto, titulo, evento: input.evento.trim().slice(0, 150), equipes, status: "aberto", criado_em: today() };
+  fs.mkdirSync(path.join(vault(), DIR, id), { recursive: true });
+  fs.writeFileSync(path.join(vault(), DIR, id, "diagnostico.md"), `---\n${yaml.dump(fm, { lineWidth: -1 })}---\n<!-- agente: nipei-os v2 (diagnóstico) -->\n# ${titulo}\n`, "utf-8");
+  requestSync(vault());
+  return id;
+}
+
+export function encerrarDiagnostico(d: Diagnostico, aberto: boolean) {
+  const abs = path.join(vault(), DIR, d.id, "diagnostico.md");
+  fs.writeFileSync(abs, fs.readFileSync(abs, "utf-8").replace(/^status: .*$/m, `status: ${aberto ? "aberto" : "encerrado"}`), "utf-8");
+  requestSync(vault());
+}
