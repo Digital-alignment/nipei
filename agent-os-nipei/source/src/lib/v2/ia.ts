@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { defaultVault } from "@/lib/config";
+import { motorIA } from "./motorIA";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, type Status } from "./data";
 import { buscarConhecimento, formatarConhecimento } from "./conhecimento";
@@ -22,7 +23,6 @@ export type PropostaIA = {
   fontes: string[];
 };
 
-const MODELO = () => process.env.NIPEI_IA_MODEL || "anthropic/claude-haiku-5.5";
 const LIMITE_DIA = 60;
 // ponytail: per-process daily counter (resets on deploy); move to the vault or a DB if cost needs real tracking.
 const uso = new Map<string, { dia: string; n: number }>();
@@ -125,12 +125,10 @@ export function contarUso(quem: string) {
 
 /** One OpenRouter call → the model's raw answer. */
 async function chamarModelo(sistema: string, conteudo: Parte[], maxTokens: number, timeoutMs: number): Promise<{ raw: string; modelo: string }> {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error("IA não configurada no servidor (OPENROUTER_API_KEY)");
-  const modelo = MODELO();
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const m = motorIA(), modelo = m.modelo;
+  const res = await fetch(m.url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "HTTP-Referer": "https://os.nipeihu.app", "X-Title": "Nipei OS" },
+    headers: m.headers,
     body: JSON.stringify({ model: modelo, temperature: 0.2, max_tokens: maxTokens, messages: [{ role: "system", content: sistema }, { role: "user", content: conteudo }] }),
     signal: AbortSignal.timeout(timeoutMs),
   });

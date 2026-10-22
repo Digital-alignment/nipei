@@ -9,6 +9,7 @@ import { currentUser, getPessoas } from "@/lib/v2/data";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { coletarVisao, getSintese } from "@/lib/v2/visao";
 import { fmtDate, getT } from "@/lib/v2/i18n";
+import ExportarGoogle from "@/components/v2/ExportarGoogle";
 import { visaoAction } from "../../../actions";
 
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
@@ -60,6 +61,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
             <p className="text-xs text-neutral-500 basis-full">{t.sinteseAviso}</p>
           </form>
         )}
+        {sintese && <div className="print:hidden mb-3"><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "visao", id }} formatos={[{ formato: "doc", label: t.cx.exportarDoc }, { formato: "slides", label: t.cx.exportarSlides }]} /></div>}
         {sintese
           ? <><p className="text-xs text-neutral-500 mb-2">{t.geradoEm} {fmtDate(diaLocal(sintese.geradaEm), lang)}</p><Md>{sintese.texto}</Md></>
           : <p className="text-sm text-neutral-500">{t.naoGerado}</p>}

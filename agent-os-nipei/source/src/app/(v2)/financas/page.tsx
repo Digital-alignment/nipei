@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, Empty, Section, Title } from "@/components/v2/ui";
 import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
+import ExportarGoogle from "@/components/v2/ExportarGoogle";
 import { anularLancamentoAction, createLancamentoAction } from "../actions";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
@@ -55,7 +56,10 @@ export default async function Financas({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <Title>{t.financas}</Title>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <Title>{t.financas}</Title>
+        <ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} />
+      </div>
       <div className="flex items-center justify-between mb-4">
         <Link href={`/financas?m=${addMonths(mes, -1)}`} aria-label="‹" className="p-2"><ChevronLeft size={20} /></Link>
         <p className="font-semibold first-letter:uppercase">{fmtDate(mes, lang)}</p>

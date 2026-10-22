@@ -21,6 +21,7 @@ import { atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, exte
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 import EscolherEquipes from "@/components/v2/EscolherEquipes";
 import NotasInternas from "@/components/v2/NotasInternas";
+import Conexoes from "@/components/v2/Conexoes";
 import { getNotas } from "@/lib/v2/notasInternas";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
@@ -31,8 +32,9 @@ const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500 
 
 // A person's profile in tabs: Resumo (numbers, and for gestão Participação + AI study), Tarefas,
 // Perfil (details, role from the assessment) and Gestão (links, notices, teams).
-export default async function PessoaDetalhe({ params }: { params: Promise<{ id: string }> }) {
+export default async function PessoaDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; google?: string }> }) {
   const { id } = await params;
+  const q = await searchParams;
   const { t, lang } = await getT();
   const me = (await currentUser())!;
   const p = getPessoas().find((x) => x.id === id);
@@ -403,11 +405,13 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
         <Num v={n.ultimoUso ? (n.ultimoUso === hoje ? t.hoje : fmtDate(n.ultimoUso, lang)) : "—"} label={t.ultimoUso} />
       </div>
 
-      <Abas id="pessoa" abas={[
+      <Abas id="pessoa" inicial={q.aba === "conexoes" && me.pessoa?.id === p.id ? "conexoes" : undefined} abas={[
         { id: "resumo", label: t.resumoLbl, count: 0, conteudo: resumo },
         { id: "tarefas", label: t.tarefasLbl, count: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
         { id: "perfil", label: t.perfilLbl, count: 0, conteudo: perfil },
         ...(gerir || proprio || enviados.length ? [{ id: "gestao", label: `🔒 ${t.gestaoLbl}`, count: 0, conteudo: gestao }] : []),
+        // only on one's own profile: nobody sees or touches someone else's connections
+        ...(me.pessoa?.id === p.id ? [{ id: "conexoes", label: t.cx.aba, count: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} /> }] : []),
       ]} />
     </>
   );

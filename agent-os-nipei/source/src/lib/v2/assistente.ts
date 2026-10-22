@@ -5,6 +5,9 @@ import { buscarConhecimento, formatarConhecimento, getFatos, podeRevisar, revisa
 import { getAlertas } from "./auditor";
 import { agendaDoDia, pulso } from "./hoje";
 import { missaoDaSemana } from "./missaoDados";
+import { motorIA } from "./motorIA";
+import { getConexoes } from "./conexoes";
+import { criarEventoGoogle, eventosGoogle } from "./google";
 import { getNotas, podeNotasInternas } from "./notasInternas";
 import {
   STATUS_RAW, anotarProjeto, can, comentar, createEvento, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
@@ -30,6 +33,7 @@ export type Acao =
   | { tipo: "nota_projeto"; projeto: string; texto: string }
   | { tipo: "revisar_fato"; id: string; decisao: "confirmar" | "descartar" }
   | { tipo: "enviar_whatsapp"; pessoa: string; texto: string }
+  | { tipo: "evento_google"; titulo: string; dia: string; hora?: string; duracaoMin?: number; descricao?: string; convidados?: string[] }
   | { tipo: "lembrar"; texto: string; categoria: Categoria }
   | { tipo: "esquecer"; id: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
@@ -39,7 +43,6 @@ export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: strin
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^\d{2}:\d{2}$/;
 const PRIORIDADES = ["baixa", "média", "alta", "urgente"];
-const MODELO = () => process.env.NIPEI_IA_MODEL || "anthropic/claude-haiku-5.5";
 const s = (v: unknown) => (v == null ? "" : String(v).trim());
 const n = (x: string) => x.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 const primeiro = (nome: string) => nome.split(" (")[0];
@@ -156,6 +159,7 @@ const TOOLS = [
   }),
   fn("ver_tarefa", "Detalhes de uma tarefa: descrição, checklist e atividade recente.", { id: { type: "string" } }, ["id"]),
   fn("agenda", "Eventos dos próximos dias (com hora quando houver).", { dias: { type: "number" } }),
+  fn("google_agenda", "Agenda PESSOAL do Google Calendar de quem fala com você (reuniões, compromissos), para ver disponibilidade. Só se a pessoa conectou a conta Google.", { dias: { type: "number", description: "padrão 7, máx. 31" } }),
   fn("buscar_conhecimento", "Base de conhecimento (fatos confirmados + notas antigas). Para perguntas sobre o santuário, retiros, regras, valores, pessoas, projetos, empresas.", { pergunta: { type: "string" } }, ["pergunta"]),
   fn("conhecimento_pendente", "Fatos propostos esperando revisão (com id) e alertas do auditor abertos.", { equipe: { type: "string" }, texto: { type: "string" } }),
   fn("pessoas", "Pessoas da comunidade: nome, id, equipes, função e carga de tarefas.", { texto: { type: "string" }, equipe: { type: "string" } }),
@@ -180,18 +184,29 @@ const TOOLS = [
   fn("criar_evento", "PROPÕE criar um evento na Agenda.", { titulo: { type: "string" }, inicio: DATA, fim: DATA, hora: { type: "string", description: "HH:MM" }, equipe: { type: "string" } }, ["titulo", "inicio", "equipe"]),
   fn("nota_projeto", "PROPÕE publicar uma atualização na linha do tempo de um projeto.", { projeto: { type: "string" }, texto: { type: "string" } }, ["projeto", "texto"]),
   fn("revisar_fato", "PROPÕE confirmar ou descartar um fato proposto do Conhecimento (id de conhecimento_pendente).", { id: { type: "string" }, decisao: { type: "string", enum: ["confirmar", "descartar"] } }, ["id", "decisao"]),
+  fn("evento_google", "PROPÕE criar um compromisso no Google Calendar PESSOAL de quem fala com você (reunião, lembrete). Convidados por e-mail recebem o convite.", {
+    titulo: { type: "string" }, dia: DATA, hora: { type: "string", description: "HH:MM; vazio = dia inteiro" }, duracao_min: { type: "number" }, descricao: { type: "string" },
+    convidados: { type: "array", items: { type: "string" }, description: "e-mails" },
+  }, ["titulo", "dia"]),
   fn("enviar_whatsapp", "PROPÕE enviar uma mensagem de WhatsApp pelo número do Nipëi a uma pessoa (a pessoa vê o texto antes).", { pessoa: { type: "string" }, texto: { type: "string" } }, ["pessoa", "texto"]),
   fn("lembrar", "PROPÕE guardar na sua memória algo estável sobre a pessoa que fala com você (preferência de resposta, do que ela cuida, rotina, contexto). Uma frase curta na 3ª pessoa.", {
     texto: { type: "string", description: "ex.: \"Prefere respostas curtas, em tópicos\"" }, categoria: { type: "string", enum: [...CATEGORIAS] },
   }, ["texto", "categoria"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "revisar_fato", "enviar_whatsapp", "lembrar", "esquecer"]);
+const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "revisar_fato", "enviar_whatsapp", "evento_google", "lembrar", "esquecer"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
   const hoje = today();
   const pessoas = getPessoas(), equipes = getEquipes();
+  if (nome === "google_agenda") {
+    if (!me.pessoa || !getConexoes(me.pessoa.id).google) return { erro: "a pessoa não conectou a conta Google; ela conecta na própria ficha, aba Conexões" };
+    const dias = Math.min(31, Math.max(1, Number(a.dias) || 7));
+    return eventosGoogle(me.pessoa.id, hoje, new Date(Date.parse(`${hoje}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10))
+      .then((evs) => ({ de: hoje, dias, eventos: evs.map((e) => `${e.dia} ${e.hora || "dia inteiro"}${e.fim ? `–${e.fim}` : ""} ${e.titulo}`) }))
+      .catch((e: Error) => ({ erro: e.message }));
+  }
   if (nome === "minhas_tarefas") {
     const ts = abertasDe((t) => !!me.pessoa && t.responsaveis.includes(me.pessoa.id));
     const f = s(a.filtro) || "todas";
@@ -340,6 +355,15 @@ function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoProposta
     if (!podeRevisar(me, f)) return { erro: "sem permissão para revisar esse fato" };
     return { tipo: "revisar_fato", id: f.id, decisao, resumo: `${decisao === "confirmar" ? "Confirmar" : "Descartar"} fato`, detalhe: f.texto.slice(0, 240) };
   }
+  if (nome === "evento_google") {
+    if (!me.pessoa || !getConexoes(me.pessoa.id).google) return { erro: "conta Google não conectada (ficha da pessoa → Conexões)" };
+    const titulo = s(a.titulo).slice(0, 200), dia = s(a.dia), hora = HORA.test(s(a.hora)) ? s(a.hora) : "";
+    if (!titulo || !ISO.test(dia)) return { erro: "título ou dia inválido" };
+    const convidados = (Array.isArray(a.convidados) ? a.convidados : []).map((x) => s(x).toLowerCase()).filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)).slice(0, 20);
+    const duracaoMin = Math.min(600, Math.max(15, Number(a.duracao_min ?? a.duracaoMin) || 60)); // card re-validation uses the stored camelCase
+    return { tipo: "evento_google", titulo, dia, hora: hora || undefined, duracaoMin, descricao: s(a.descricao).slice(0, 2000) || undefined, convidados,
+      resumo: `Google Calendar: "${titulo}"`, detalhe: [dm(dia), hora ? `${hora} (${duracaoMin} min)` : "dia inteiro", convidados.length && `convida ${convidados.join(", ")}`].filter(Boolean).join(" · ") };
+  }
   if (nome === "enviar_whatsapp") {
     const p = acharPessoa(s(a.pessoa)), texto = s(a.texto).slice(0, 1500);
     if (!p || !texto) return { erro: "pessoa ou texto inválido" };
@@ -411,6 +435,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     return "";
   }
   if (v.tipo === "esquecer") { esquecer(donoMemoria(me), v.id); return ""; }
+  if (v.tipo === "evento_google") return await criarEventoGoogle(me.pessoa!.id, v);
   if (v.tipo === "enviar_whatsapp") {
     const p = getPessoas().find((x) => x.id === v.pessoa)!;
     const { enviar } = await import("./notificar");
@@ -449,6 +474,7 @@ Regras:
 - Antes de mudar uma tarefa, ache o id. Datas relativas ("sexta", "amanhã") viram AAAA-MM-DD a partir de hoje.
 - "Esta tarefa / este projeto / esta equipe / esta pessoa" = o que está na página atual.
 - WhatsApp: escreva a mensagem completa no idioma de quem recebe; ela só sai depois da confirmação.
+- Google: google_agenda é a agenda pessoal (para disponibilidade e "o que eu tenho"); a Agenda do Nipëi (agenda) é a da comunidade. Para marcar um compromisso pessoal ou com convidados de fora, use evento_google; para um evento da comunidade, criar_evento.
 - Notas internas (notas_internas) são confidenciais da gestão: use para responder à gestão, mas nunca as coloque em mensagens, comentários de tarefa, notas de projeto ou na memória.
 - Sobre o santuário, retiros, regras e projetos, use buscar_conhecimento e diga se é confirmado ou de notas antigas.
 - Memória: quando a pessoa pedir ("lembre que…", "sempre…", "prefiro…") ou quando você perceber algo estável e útil (como ela gosta das respostas, do que cuida, uma rotina), proponha lembrar (no máximo 1 por resposta, sem repetir o que já sabe). Uma ideia por item, na categoria certa: se a pessoa disser duas coisas, proponha dois cartões. Nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas. Para corrigir algo da memória, proponha esquecer e depois lembrar.`;
@@ -468,16 +494,15 @@ export function paraModelo(salvas: MsgSalva[]): Msg[] {
 
 /** One assistant turn: the model may read several times; changes come back as proposals to confirm. */
 export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje"): Promise<{ resposta: string; acoes: AcaoProposta[]; consultas: string[] }> {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error("IA não configurada no servidor (OPENROUTER_API_KEY)");
+  const motor = motorIA(me.pessoa?.id);
   const msgs: ApiMsg[] = [{ role: "system", content: SISTEMA(me, lang, pagina) }, ...historico.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))];
   const acoes: AcaoProposta[] = [];
   const consultas = new Set<string>();
   for (let volta = 0; volta < 8; volta++) {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetch(motor.url, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "HTTP-Referer": "https://os.nipeihu.app", "X-Title": "Nipei OS" },
-      body: JSON.stringify({ model: MODELO(), temperature: 0.2, max_tokens: 2000, tools: TOOLS, messages: msgs }),
+      headers: motor.headers,
+      body: JSON.stringify({ model: motor.modelo, temperature: 0.2, max_tokens: 2000, tools: TOOLS, messages: msgs }),
       signal: AbortSignal.timeout(60_000),
     });
     if (!res.ok) throw new Error(`IA indisponível (${res.status})`);
@@ -496,7 +521,7 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
         else { acoes.push(v); saida = { proposta: v.resumo, aguardando_confirmacao: true }; }
       } else {
         consultas.add(c.function.name);
-        try { saida = ler(me, c.function.name, args); } catch (e) { saida = { erro: (e as Error).message }; }
+        try { saida = await ler(me, c.function.name, args); } catch (e) { saida = { erro: (e as Error).message }; }
       }
       msgs.push({ role: "tool", tool_call_id: c.id, content: JSON.stringify(saida).slice(0, 12000) });
     }

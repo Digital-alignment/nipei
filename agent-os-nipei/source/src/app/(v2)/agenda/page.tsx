@@ -13,6 +13,8 @@ import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novid
 import { ordenarAgora, type Selo } from "@/lib/v2/ordem";
 import { fmtDate, getT, type Lang } from "@/lib/v2/i18n";
 import { loteAction } from "../actions";
+import { getConexoes } from "@/lib/v2/conexoes";
+import { eventosGoogle, type EventoGoogle } from "@/lib/v2/google";
 
 const ICS_TTL = 60 * 60 * 24 * 365 * 3;
 type T = Awaited<ReturnType<typeof getT>>["t"];
@@ -107,6 +109,13 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   // events with only a month or a year: shown as "to be scheduled" (they don't fit a day)
   const semDia = eventos.filter((e) => e.inicio.length < 10 && e.inicio >= hoje.slice(0, e.inicio.length)).sort((a, b) => a.inicio.localeCompare(b.inicio));
 
+  // the person's own Google Calendar (read-only here), for the range on screen
+  const semanaIni = /^\d{4}-\d{2}-\d{2}$/.test(q.s ?? "") ? segunda(q.s!) : segunda(hoje);
+  const mesSel = /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7);
+  const [gDe, gAte] = vista === "semana" ? [semanaIni, somar(semanaIni, 6)] : vista === "mes" ? [`${mesSel}-01`, `${addMonths(mesSel, 1)}-01`] : [hoje, somar(hoje, 30)];
+  let gevs: EventoGoogle[] = [], gErro = "";
+  if (me && getConexoes(me.id).google) gevs = await eventosGoogle(me.id, gDe, gAte).catch((e: Error) => { gErro = e.message; return []; });
+
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const icsUrl = `${origin}/api/agenda/ics?token=${signToken("ics", user.username, ICS_TTL)}${equipe ? `&equipe=${equipe}` : ""}`;
@@ -175,11 +184,12 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </details>
       )}
 
+      {gErro && <p className="mb-3 text-xs text-amber-700 dark:text-amber-400">{t.cx.doGoogle}: {gErro}</p>}
       <Suspense><LembrarVista chave="agenda" params={["vista", "quem"]} /></Suspense>
       {vista !== "lista" && <ArrastarAgenda dica={t.dicaArrastar} />}
-      {vista === "semana" && <Semana {...{ inicio: /^\d{4}-\d{2}-\d{2}$/.test(q.s ?? "") ? segunda(q.s!) : segunda(hoje), hoje, comPrazo, eventos, linhas, cor, link, t, lang, podeEvento }} />}
-      {vista === "lista" && <Lista {...{ hoje, comPrazo, eventos, linhas, cor, t, lang, podeEvento }} />}
-      {vista === "mes" && <Mes {...{ mes: /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7), dia: q.dia, hoje, comPrazo, eventos, linhas, cor, link, t, lang, podeEvento }} />}
+      {vista === "semana" && <Semana {...{ inicio: semanaIni, hoje, comPrazo, eventos, gevs, linhas, cor, link, t, lang, podeEvento }} />}
+      {vista === "lista" && <Lista {...{ hoje, comPrazo, eventos, gevs, linhas, cor, t, lang, podeEvento }} />}
+      {vista === "mes" && <Mes {...{ mes: mesSel, dia: q.dia, hoje, comPrazo, eventos, gevs, linhas, cor, link, t, lang, podeEvento }} />}
 
       <section id="sem-prazo" className={`${CARTAO} mt-8 scroll-mt-20`}>
         <div className="px-4 pt-3 pb-1 flex flex-wrap items-baseline gap-x-3">
@@ -226,24 +236,25 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   );
 }
 
-type Comum = { hoje: string; comPrazo: Tarefa[]; eventos: Evento[]; linhas: (ts: Tarefa[]) => React.ReactNode[]; cor: (id: string) => string; t: T; lang: Lang; podeEvento: boolean };
+type Comum = { hoje: string; comPrazo: Tarefa[]; eventos: Evento[]; gevs: EventoGoogle[]; linhas: (ts: Tarefa[]) => React.ReactNode[]; cor: (id: string) => string; t: T; lang: Lang; podeEvento: boolean };
 
 const rotuloDia = (d: string, hoje: string, t: T, lang: Lang) =>
   d === hoje ? t.hoje : d === somar(hoje, 1) ? t.amanha
     : new Date(`${d}T12:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 
 /** One day block: events by time, then tasks in smart order. Past days only show events (late tasks are in "Atrasadas"). */
-function Dia({ d, hoje, comPrazo, eventos, linhas, cor, t, lang, podeEvento, vazio = true }: Comum & { d: string; vazio?: boolean }) {
+function Dia({ d, hoje, comPrazo, eventos, gevs, linhas, cor, t, lang, podeEvento, vazio = true }: Comum & { d: string; vazio?: boolean }) {
   const evs = eventos.filter((e) => noDia(e, d)).sort(porHora);
+  const gs = gevs.filter((e) => e.dia === d);
   const ts = d < hoje ? [] : comPrazo.filter((x) => x.prazo === d);
-  if ((!vazio || d < hoje) && !evs.length && !ts.length) return null;
+  if ((!vazio || d < hoje) && !evs.length && !ts.length && !gs.length) return null;
   const acoes = d >= hoje && (
     <span className="ml-auto flex gap-3 text-xs font-normal text-neutral-500">
       <Link href={`/tarefas/nova?prazo=${d}&back=/agenda`} className="hover:underline">+ {t.tarefaLbl}</Link>
       {podeEvento && <Link href={`/eventos/novo?inicio=${d}`} className="hover:underline">+ {t.eventoLbl}</Link>}
     </span>
   );
-  if (!evs.length && !ts.length) {
+  if (!evs.length && !ts.length && !gs.length) {
     return (
       <section id={`d-${d}`} data-dia={d} className="scroll-mt-20 flex items-baseline gap-2 py-2 text-sm border-b border-dashed border-neutral-200 dark:border-neutral-800">
         <span className="first-letter:uppercase text-neutral-500">{rotuloDia(d, hoje, t, lang)}</span>
@@ -255,11 +266,19 @@ function Dia({ d, hoje, comPrazo, eventos, linhas, cor, t, lang, podeEvento, vaz
     <section id={`d-${d}`} data-dia={d} className={`scroll-mt-20 my-2 rounded-lg ${d === hoje ? "ring-1 ring-neutral-300 dark:ring-neutral-700 px-2" : ""}`}>
       <h2 className={`flex items-baseline gap-2 py-1.5 text-sm border-b border-neutral-200 dark:border-neutral-800 ${d === hoje ? "font-semibold" : "font-medium"} ${d < hoje ? "text-neutral-400" : ""}`}>
         <span className="first-letter:uppercase">{rotuloDia(d, hoje, t, lang)}</span>
-        <span className={`text-xs font-normal tabular-nums ${ts.length >= SOBRECARGA ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}`}>{evs.length + ts.length}{ts.length >= SOBRECARGA ? ` · ${t.diaCheio}` : ""}</span>
+        <span className={`text-xs font-normal tabular-nums ${ts.length >= SOBRECARGA ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}`}>{evs.length + ts.length + gs.length}{ts.length >= SOBRECARGA ? ` · ${t.diaCheio}` : ""}</span>
         {acoes}
       </h2>
       <ul>
-        {evs.map((e) => <EventoRow key={e.id} e={e} lang={lang} t={t} cor={cor(e.equipe)} mostrarData={false} />)}
+        {[...evs.map((e) => ({ hora: e.hora, el: <EventoRow key={e.id} e={e} lang={lang} t={t} cor={cor(e.equipe)} mostrarData={false} /> })),
+          ...gs.map((e) => ({ hora: e.hora, el: (
+          <li key={e.id} className="flex items-start gap-3 py-2 pl-2.5 border-l-2 border-dashed border-l-neutral-400 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0">
+            <span className={`mt-0.5 shrink-0 text-xs tabular-nums w-11 ${e.hora ? "text-neutral-600 dark:text-neutral-300" : "text-neutral-400"}`}>{e.hora || "—"}</span>
+            <a href={e.link || undefined} target="_blank" rel="noreferrer" className="min-w-0 flex-1 text-sm text-neutral-600 dark:text-neutral-300 hover:underline">
+              {e.titulo}<span className="ml-1.5 text-[10px] rounded border border-neutral-300 dark:border-neutral-700 px-1 text-neutral-500">{t.cx.doGoogle}{e.fim ? ` · até ${e.fim}` : ""}</span>
+            </a>
+          </li>
+        ) }))].sort((a, b) => (a.hora || "99").localeCompare(b.hora || "99")).map((x) => x.el)}
         {linhas(ts)}
       </ul>
     </section>
@@ -292,7 +311,10 @@ function Semana({ inicio, link, ...c }: Comum & { inicio: string; link: (p: Reco
               className={`rounded-lg border px-1 py-1.5 text-center flex flex-col items-center gap-1 ${d === c.hoje ? "border-neutral-900 dark:border-white" : "border-neutral-200 dark:border-neutral-800"} ${n >= SOBRECARGA ? "bg-amber-50 dark:bg-amber-950/30" : ""} ${passado ? "opacity-50" : ""}`}>
               <span className="text-[10px] uppercase text-neutral-500">{new Date(`${d}T12:00:00Z`).toLocaleDateString(loc, { weekday: "short", timeZone: "UTC" }).replace(".", "")}</span>
               <span className={`text-sm tabular-nums ${d === c.hoje ? "font-bold" : ""}`}>{Number(d.slice(8))}</span>
-              <span className="flex gap-0.5 h-1.5">{evs.slice(0, 3).map((e) => <span key={e.id} className="w-1.5 h-1.5 rounded-full" style={{ background: c.cor(e.equipe) }} />)}</span>
+              <span className="flex gap-0.5 h-1.5">
+                {evs.slice(0, 3).map((e) => <span key={e.id} className="w-1.5 h-1.5 rounded-full" style={{ background: c.cor(e.equipe) }} />)}
+                {c.gevs.filter((e) => e.dia === d).slice(0, 2).map((e) => <span key={e.id} title={e.titulo} className="w-1.5 h-1.5 rounded-full border border-neutral-400" />)}
+              </span>
               <span className={`min-w-5 rounded-full px-1 text-[10px] leading-4 tabular-nums ${n >= SOBRECARGA ? "bg-amber-500 text-white" : n ? "bg-neutral-200 dark:bg-neutral-800" : "text-neutral-400"}`}>{n || "·"}</span>
             </a>
           );
@@ -309,6 +331,7 @@ function Lista(c: Comum) {
   const dias = [...new Set([
     ...comPrazo.filter((x) => x.prazo >= hoje).map((x) => x.prazo),
     ...eventos.filter((e) => e.inicio.length === 10 && (e.fim || e.inicio) >= hoje).map((e) => (e.inicio < hoje ? hoje : e.inicio)),
+    ...c.gevs.filter((e) => e.dia >= hoje).map((e) => e.dia),
   ])].sort();
   if (!dias.length) return <Empty>{t.semTarefas}</Empty>;
   const limite = somar(hoje, 30);

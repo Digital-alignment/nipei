@@ -8,6 +8,7 @@ import CopiarBotao from "@/components/v2/CopiarBotao";
 import { can, currentUser, getEquipes, getEventos, getPessoas, today, type Tarefa } from "@/lib/v2/data";
 import { atas, pauta, textoPauta } from "@/lib/v2/reuniaoEquipe";
 import { fmtDate, getT } from "@/lib/v2/i18n";
+import ExportarGoogle from "@/components/v2/ExportarGoogle";
 import { agendarReuniaoEquipeAction, salvarAtaAction } from "../../../actions";
 
 const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 mb-3";
@@ -109,6 +110,7 @@ export default async function ReuniaoEquipe({ params, searchParams }: { params: 
                   {a.encaminhamentos.map((x) => <li key={x.tarefa}><Link href={`/tarefas/${x.tarefa}`} className="hover:underline">{x.texto}</Link></li>)}
                 </ul>
               )}
+              <div className="mt-2"><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "ata", id: a.file, equipe: id }} formatos={[{ formato: "doc", label: t.cx.exportarDoc }]} /></div>
             </details>
           ))}
         </div>

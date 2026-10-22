@@ -10,6 +10,7 @@ import AssistenteGlobal from "@/components/v2/AssistenteGlobal";
 import { Avatar } from "@/components/v2/ui";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { MEMBER_PURPOSE, currentUser, registrarAcesso } from "@/lib/v2/data";
+import { backupsPendentes } from "@/lib/v2/backup";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
 
@@ -25,6 +26,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
     redirect(verifyToken(token, MEMBER_PURPOSE) ? "/login?erro=acesso" : "/login");
   }
   if (user.pessoa) registrarAcesso(user.pessoa.id);
+  backupsPendentes(); // daily Drive copy for whoever connected Google (background, at most hourly)
   const { t, lang } = await getT();
   const name = user.pessoa?.name ?? user.username;
   const menuFechado = (await cookies()).get("nipei_menu")?.value === "fechado"; // set by components/v2/Nav.tsx

@@ -876,7 +876,7 @@ export async function decidirCartaoAction(msg: number, cartao: number, confirmar
     if (!c || c.estado !== "pendente") return { msgs };
     if (!confirmar) c.estado = "cancelado";
     else {
-      try { c.link = await executarAcao(me, c, actorName(me)); c.estado = "feito"; } catch (e) { c.estado = "erro"; c.erro = (e as Error).message; }
+      try { c.link = await executarAcao(me, c, `${actorName(me)} (via assistente)`); c.estado = "feito"; } catch (e) { c.estado = "erro"; c.erro = (e as Error).message; }
     }
     salvarConversa(id, msgs);
     if (c.estado === "feito") revalidatePath("/", "layout");
@@ -1055,4 +1055,69 @@ export async function anotarProjetoAction(form: FormData) {
   const { anotarProjeto } = await import("@/lib/v2/data");
   anotarProjeto(p.id, texto, actorName(me));
   revalidatePath(`/projetos/${p.id}`);
+}
+
+// ---------------------------------------------------------------- each person's own Google account
+
+async function minhaConexao() {
+  const me = await requireUser();
+  if (!me.pessoa) throw new Error("Só quem tem ficha conecta uma conta Google");
+  return { me, pessoaId: me.pessoa.id };
+}
+
+export async function desconectarGoogleAction() {
+  await tentar(async () => {
+    const { pessoaId } = await minhaConexao();
+    const { desconectarGoogle } = await import("@/lib/v2/google");
+    await desconectarGoogle(pessoaId);
+  });
+  revalidatePath("/", "layout");
+}
+
+export async function backupAgoraAction() {
+  await tentar(async () => {
+    const { pessoaId } = await minhaConexao();
+    const { backupPessoa } = await import("@/lib/v2/backup");
+    await backupPessoa(pessoaId);
+  });
+  revalidatePath("/", "layout");
+}
+
+/** Exports a page to the person's Google Drive (Doc, Sheet or Slides) and opens it. */
+export async function exportarGoogleAction(form: FormData) {
+  let link = "";
+  await tentar(async () => {
+    const { me, pessoaId } = await minhaConexao();
+    const g = await import("@/lib/v2/google");
+    const tipo = String(form.get("tipo")), id = String(form.get("id") ?? "");
+    if (tipo === "visao") {
+      const { coletarVisao, getSintese } = await import("@/lib/v2/visao");
+      const v = coletarVisao(id), s = getSintese(id);
+      if (!v) throw new Error("Projeto não encontrado");
+      if (!s?.texto) throw new Error("Gere a síntese da visão antes de exportar");
+      const numeros = `Tarefas: ${v.tarefas.abertas} abertas, ${v.tarefas.atrasadas} atrasadas, ${v.tarefas.semDono} sem responsável, ${v.tarefas.concluidas} concluídas · ${v.membros} pessoas · ${v.fatos.length} fatos confirmados`;
+      if (form.get("formato") === "slides") {
+        const secoes = s.texto.split(/^## /m).filter((x) => x.trim()).map((b) => { const [t, ...r] = b.split("\n"); return { titulo: t.trim(), texto: r.join("\n").replace(/^[-*]\s+/gm, "").replace(/\*\*/g, "").trim() }; });
+        link = await g.criarApresentacao(pessoaId, `Visão · ${v.projeto.nome}`, [{ titulo: "Números", texto: numeros.replace(/ · /g, "\n") }, ...secoes]);
+      } else {
+        link = (await g.salvarArquivo(pessoaId, { nome: `Visão · ${v.projeto.nome} · ${today()}`, conteudo: `# Visão holística · ${v.projeto.nome}\n\n${numeros}\n\n${s.texto}\n`, tipo: "text/markdown", converter: true })).link;
+      }
+    } else if (tipo === "ata") {
+      const { atas } = await import("@/lib/v2/reuniaoEquipe");
+      const e = getEquipes().find((x) => x.id === String(form.get("equipe")));
+      const a = e && atas(e.id).find((x) => x.file === id);
+      if (!e || !a) throw new Error("Ata não encontrada");
+      const nome = (pid: string) => getPessoas().find((p) => p.id === pid)?.name ?? pid;
+      const md = `# Reunião · ${e.nome} · ${a.data}\n\nAta por ${a.por}. Presentes: ${a.presentes.map(nome).join(", ") || "-"}\n\n## Decisões\n\n${a.decisoes || "-"}\n\n## Encaminhamentos\n\n${a.encaminhamentos.map((x) => `- ${x.texto}`).join("\n") || "-"}\n`;
+      link = (await g.salvarArquivo(pessoaId, { nome: `Reunião ${e.nome} · ${a.data}`, conteudo: md, tipo: "text/markdown", converter: true })).link;
+    } else if (tipo === "financas") {
+      if (!me.gestao) throw new Error("Só a gestão exporta as finanças");
+      const { getLancamentos } = await import("@/lib/v2/data");
+      const cel = (x: unknown) => `"${String(x ?? "").replace(/"/g, '""')}"`;
+      const linhas = getLancamentos().filter((l) => !l.anulado).sort((a, b) => a.data.localeCompare(b.data))
+        .map((l) => [l.data, l.tipo, l.valor, l.categoria, l.descricao, getProjetos().find((p) => p.id === l.projeto)?.nome ?? l.projeto, getEquipes().find((e) => e.id === l.equipe)?.nome ?? l.equipe, l.registradoPor].map(cel).join(","));
+      link = (await g.salvarArquivo(pessoaId, { nome: `Finanças Nipëi · ${today()}`, conteudo: ["Data,Tipo,Valor,Categoria,Descrição,Projeto,Equipe,Registrado por", ...linhas].join("\n"), tipo: "text/csv", converter: true })).link;
+    } else throw new Error("Exportação desconhecida");
+  });
+  if (link) redirect(link);
 }
