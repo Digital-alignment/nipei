@@ -206,6 +206,8 @@ const pt = {
   suspenderAcesso: "Suspender acesso", reativarAcesso: "Reativar acesso", ehContatoExterno: "Contato externo (fora das equipes)",
   suspensoAjuda: "Suspender não tira das equipes: a pessoa continua aparecendo para receber tarefas.", suspensoCurto: "suspenso",
   coordenacaoGeral: "coordenação geral (não é membro)", geralCurto: "geral", adicionarCoordenacao: "Adicionar coordenação…", historicoPessoa: "Histórico",
+  notaInterna: "Nota interna", notasInternasTitulo: "Notas internas", notaPlaceholder: "Só a Equipe 1 vai ver esta nota…", salvarNota: "Salvar nota",
+  soEquipe1: "só Equipe 1", comentarPlaceholder: "Comentário…", notaEditada: "editada por", semNotas: "Nenhuma nota ainda.", marqueEquipes: "Marque uma ou mais equipes",
 };
 export type Dict = typeof pt;
 
@@ -411,6 +413,8 @@ const en: Dict = {
   suspenderAcesso: "Suspend access", reativarAcesso: "Restore access", ehContatoExterno: "Outside contact (not in teams)",
   suspensoAjuda: "Suspending doesn't remove them from teams: they still show up to receive tasks.", suspensoCurto: "suspended",
   coordenacaoGeral: "general lead (not a member)", geralCurto: "general", adicionarCoordenacao: "Add lead…", historicoPessoa: "History",
+  notaInterna: "Internal note", notasInternasTitulo: "Internal notes", notaPlaceholder: "Only Team 1 will see this note…", salvarNota: "Save note",
+  soEquipe1: "Team 1 only", comentarPlaceholder: "Comment…", notaEditada: "edited by", semNotas: "No notes yet.", marqueEquipes: "Tick one or more teams",
 };
 
 export async function getLang(): Promise<Lang> {

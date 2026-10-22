@@ -77,12 +77,44 @@ export async function createTarefaAction(form: FormData) {
   redirect(safeBack(form.get("back")));
 }
 
+/** Adds a person to one or more teams (checkboxes send several `equipe`). */
 export async function addToEquipeAction(form: FormData) {
   const me = await requireUser();
-  const equipe = pick(form.get("equipe"), getEquipes().map((e) => e.id));
-  // a management team gives full access to everything: only management can add people to it
-  if (!equipe || !can.gerirEquipe(me, equipe) || (getEquipes().find((e) => e.id === equipe)?.gestao && !me.gestao)) return;
-  addToEquipe(String(form.get("pessoa")), equipe, actorName(me));
+  const todas = getEquipes();
+  const escolhidas = [...new Set(form.getAll("equipe").map(String))].filter((id) => {
+    const e = todas.find((x) => x.id === id);
+    // a management team gives full access to everything: only management can add people to it
+    return !!e && can.gerirEquipe(me, id) && !(e.gestao && !me.gestao);
+  });
+  await tentar(async () => {
+    if (!escolhidas.length) throw new Error("Escolha pelo menos uma equipe");
+    for (const id of escolhidas) addToEquipe(String(form.get("pessoa")), id, actorName(me));
+  });
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- internal notes about a person (management only)
+
+async function notasGestao(form: FormData) {
+  const me = await requireUser();
+  const { podeNotasInternas } = await import("@/lib/v2/notasInternas");
+  if (!podeNotasInternas(me)) throw new Error("Só a gestão vê as notas internas");
+  const pessoa = getPessoas().find((p) => p.id === String(form.get("pessoa")));
+  if (!pessoa) throw new Error("Pessoa não encontrada");
+  return { me, pessoa };
+}
+
+export async function notaInternaAction(form: FormData) {
+  await tentar(async () => {
+    const { me, pessoa } = await notasGestao(form);
+    const n = await import("@/lib/v2/notasInternas");
+    const texto = String(form.get("texto") ?? "");
+    const nota = String(form.get("nota") ?? "");
+    const modo = String(form.get("modo") ?? "nova");
+    if (modo === "editar") n.editarNota(pessoa.id, nota, texto, actorName(me));
+    else if (modo === "comentar") n.comentarNota(pessoa.id, nota, texto, actorName(me));
+    else n.addNota(pessoa.id, texto, actorName(me));
+  });
   revalidatePath("/", "layout");
 }
 
@@ -814,7 +846,7 @@ export async function assistenteAction(texto: string, pagina: string) {
     contarUso(id);
     const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString() }];
     const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300));
-    msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
+    msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), ...(r.consultas.length ? { consultas: r.consultas } : {}), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
     salvarConversa(id, msgs);
     return { msgs };
   } catch (e) {

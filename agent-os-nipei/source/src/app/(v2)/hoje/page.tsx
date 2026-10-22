@@ -18,7 +18,7 @@ import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 import { organizacao } from "@/lib/v2/organizacao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { addToEquipeAction } from "../actions";
+import EscolherEquipes from "@/components/v2/EscolherEquipes";
 
 
 const PILULA = "inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap rounded-full border h-8 px-3 text-xs font-medium transition-colors";
@@ -183,16 +183,9 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           {org.semEquipe.length > 0 && (
             <ul className="grid gap-1.5 mb-3">
               {org.semEquipe.slice(0, 3).map((p) => (
-                <li key={p.id} className="flex flex-wrap items-center gap-2">
-                  <Link href={`/pessoas/${p.id}`} className="text-sm flex-1 min-w-28 truncate hover:underline">{p.name}</Link>
-                  <form action={addToEquipeAction} className="flex items-center gap-1.5">
-                    <input type="hidden" name="pessoa" value={p.id} />
-                    <select name="equipe" required defaultValue="" aria-label={t.ativarEm} className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs max-w-40">
-                      <option value="" disabled>{t.adicionarEm}</option>
-                      {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}{e.gestao ? ` (${t.gestaoCompleta})` : ""}</option>)}
-                    </select>
-                    <BotaoEnviar enviando="…" className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs">{t.adicionar}</BotaoEnviar>
-                  </form>
+                <li key={p.id} className="grid gap-1.5 py-1">
+                  <Link href={`/pessoas/${p.id}`} className="text-sm truncate hover:underline">{p.name}</Link>
+                  <EscolherEquipes pessoaId={p.id} equipes={equipes} t={t} />
                 </li>
               ))}
             </ul>

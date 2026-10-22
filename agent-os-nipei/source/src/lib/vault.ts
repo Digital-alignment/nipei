@@ -12,7 +12,8 @@ export const VAULT_AVAILABLE = Boolean(VAULT_ROOT);
 export const isRawUpload = (relPath: string) => relPath.split(path.sep).join("/").startsWith("Raw_Uploads/");
 
 // Conhecimento: facts reach the AIs only through buscarConhecimento (confirmed ones), never as raw notes.
-const SKIP_DIRS = new Set([".obsidian", ".trash", "node_modules", ".git", "Archive_Deprecados", "Ingestion_Inbox", "Conhecimento"]);
+// Gestao_Interna: management-only notes about people (lib/v2/notasInternas.ts) — never fed to any AI.
+const SKIP_DIRS = new Set([".obsidian", ".trash", "node_modules", ".git", "Archive_Deprecados", "Ingestion_Inbox", "Conhecimento", "Gestao_Interna"]);
 
 import { isWithinNipeiDomain } from "./nipeiDomainGuard";
 

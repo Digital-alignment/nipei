@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Lock, UserX } from "lucide-react";
 import { Avatar, Title } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import EscolherEquipes from "@/components/v2/EscolherEquipes";
+import { contagemNotas } from "@/lib/v2/notasInternas";
 import { currentUser, getEquipes, getPessoas, type Pessoa } from "@/lib/v2/data";
 import { organizacao } from "@/lib/v2/organizacao";
 import { getT } from "@/lib/v2/i18n";
@@ -22,14 +24,9 @@ export default async function OrganizarEquipes() {
   if (!me.gestao) notFound();
   const equipes = getEquipes(), pessoas = getPessoas();
   const o = organizacao();
+  const notas = contagemNotas();
   const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(/[\s(]/)[0] ?? id;
   const foto = (p: Pessoa) => (p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined);
-  const opcoesEquipe = (excluir: string[] = []) => (
-    <>
-      <option value="" disabled>{t.adicionarEm}</option>
-      {equipes.filter((e) => !excluir.includes(e.id)).map((e) => <option key={e.id} value={e.id}>{e.nome}{e.gestao ? ` (${t.gestaoCompleta})` : ""}</option>)}
-    </>
-  );
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -61,11 +58,7 @@ export default async function OrganizarEquipes() {
                   <Avatar name={p.name} size={30} src={foto(p)} />
                   <span className="text-sm">{p.name}</span>
                 </Link>
-                <form action={addToEquipeAction} className="flex items-center gap-1.5 w-full sm:w-auto">
-                  <input type="hidden" name="pessoa" value={p.id} />
-                  <select name="equipe" required defaultValue="" aria-label={t.ativarEm} className={`${campo} flex-1 min-w-0 sm:flex-none sm:w-52`}>{opcoesEquipe()}</select>
-                  <BotaoEnviar enviando="…" className={btn}>{t.adicionar}</BotaoEnviar>
-                </form>
+                <EscolherEquipes pessoaId={p.id} equipes={equipes} t={t} notas={notas[p.id]} />
                 <form action={externoAction}>
                   <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="externo" value="true" />
                   <BotaoEnviar enviando="…" className={`${sec} inline-flex items-center gap-1`}><UserX size={13} />{t.marcarExterno}</BotaoEnviar>

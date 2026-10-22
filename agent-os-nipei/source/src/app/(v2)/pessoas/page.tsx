@@ -7,7 +7,8 @@ import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getT } from "@/lib/v2/i18n";
 import CadastroLote from "@/components/v2/CadastroLote";
 import { LoteToggle } from "@/components/v2/LoteBarra";
-import { addToEquipeAction, createPessoaAction } from "../actions";
+import { createPessoaAction } from "../actions";
+import EscolherEquipes from "@/components/v2/EscolherEquipes";
 
 const waLink = (n: string) => `https://wa.me/${n.replace(/\D/g, "")}`;
 const small = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs";
@@ -144,14 +145,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
               <li key={p.id} className="flex flex-wrap items-center gap-3 py-2.5 border-t border-neutral-100 dark:border-neutral-800">
                 <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 flex-1 min-w-32"><Avatar name={p.name} size={28} /><span className="text-sm">{p.name}</span></Link>
                 {gerenciaveis.length > 0 && (
-                  <form action={addToEquipeAction} className="flex items-center gap-2">
-                    <input type="hidden" name="pessoa" value={p.id} />
-                    <select name="equipe" required defaultValue="" aria-label={t.ativarEm} className={small}>
-                      <option value="" disabled>{t.adicionarEm}</option>
-                      {gerenciaveis.filter((e) => !e.gestao || me.gestao).map((e) => <option key={e.id} value={e.id}>{e.nome}{e.gestao ? ` (${t.gestaoCompleta})` : ""}</option>)}
-                    </select>
-                    <button className={btn}>{t.ativar}</button>
-                  </form>
+                  <EscolherEquipes pessoaId={p.id} equipes={gerenciaveis.filter((e) => !e.gestao || me.gestao)} t={t} comNota={me.gestao} />
                 )}
               </li>
             ))}

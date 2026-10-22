@@ -5,6 +5,7 @@ import { buscarConhecimento, formatarConhecimento, getFatos, podeRevisar, revisa
 import { getAlertas } from "./auditor";
 import { agendaDoDia, pulso } from "./hoje";
 import { missaoDaSemana } from "./missaoDados";
+import { getNotas, podeNotasInternas } from "./notasInternas";
 import {
   STATUS_RAW, anotarProjeto, can, comentar, createEvento, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
   getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault,
@@ -33,7 +34,7 @@ export type Acao =
   | { tipo: "esquecer"; id: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
-export type MsgSalva = Msg & { em: string; cartoes?: Cartao[] };
+export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[] };
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^\d{2}:\d{2}$/;
@@ -117,7 +118,8 @@ export function contextoPagina(me: Me, pagina: string): string {
   }
   if (p[0] === "pessoas" && p[1]) {
     const pe = getPessoas().find((x) => x.id === p[1]);
-    if (pe) return `Ficha de ${pe.name} (id ${pe.id}, função ${pe.funcao || "-"}): ${JSON.stringify(contagem(abertasDe((t) => t.responsaveis.includes(pe.id))))}. "Esta pessoa" = ${pe.id}.`;
+    const notas = pe && podeNotasInternas(me) ? getNotas(pe.id).length : 0;
+    if (pe) return `Ficha de ${pe.name} (id ${pe.id}, função ${pe.funcao || "-"}): ${JSON.stringify(contagem(abertasDe((t) => t.responsaveis.includes(pe.id))))}. "Esta pessoa" = ${pe.id}.${notas ? ` Tem ${notas} nota(s) interna(s) da gestão (ferramenta notas_internas).` : ""}`;
   }
   if (p[0] === "eventos" && p[1]) {
     const ev = getEventos().find((x) => x.id === p[1]);
@@ -152,6 +154,7 @@ const TOOLS = [
   fn("equipe", "Saúde de uma equipe: números, carga por membro, tarefas sem responsável.", { equipe: { type: "string" } }, ["equipe"]),
   fn("objetivos", "Objetivos do ano com progresso e equipe dona.", { ano: { type: "number" } }),
   fn("pulso_equipes", "Tarefas abertas, atrasadas e sem responsável por equipe.", {}),
+  fn("notas_internas", "Notas internas da gestão (Equipe 1) sobre uma pessoa, com comentários. Só para a gestão; nunca repita para outras pessoas.", { pessoa: { type: "string", description: "nome ou id" } }, ["pessoa"]),
   fn("missao_semana", "Progresso da Missão da semana da Equipe 1 (metas e números).", {}),
   fn("financas_resumo", "Resumo de entradas e despesas (por categoria e projeto) num período.", { de: DATA, ate: DATA }),
   // propose (the person confirms each card)
@@ -263,6 +266,13 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     return getObjetivos().filter((o) => o.ano === ano).map((o) => ({ titulo: o.titulo, equipe: equipes.find((e) => e.id === o.equipe)?.nome ?? null, dono_confirmado: o.donoConfirmado, projeto: o.projeto || null, progresso: progresso(o.id, getTarefas()) }));
   }
   if (nome === "pulso_equipes") return me.gestao ? pulso().linhas : { erro: "só a gestão vê o pulso" };
+  if (nome === "notas_internas") {
+    if (!podeNotasInternas(me)) return { erro: "só a gestão vê as notas internas" };
+    const p = acharPessoa(s(a.pessoa));
+    if (!p) return { erro: "pessoa não encontrada" };
+    const notas = getNotas(p.id);
+    return notas.length ? { pessoa: p.name, notas: notas.map((n) => ({ em: n.em.slice(0, 10), por: n.por, texto: n.texto, ...(n.editadoPor ? { editada_por: n.editadoPor } : {}), comentarios: n.comentarios.map((c) => `${c.em.slice(0, 10)} ${c.por}: ${c.texto}`) })) } : { pessoa: p.name, notas: [], aviso: "nenhuma nota interna" };
+  }
   if (nome === "missao_semana") {
     const m = missaoDaSemana(me);
     return m ? { titulo: m.missao.titulo, fim: m.missao.fim, dias_restantes: m.diasRestantes, total: `${m.total}%`, metas: m.metas.map((x) => ({ meta: x.id, valor: x.texto, progresso: `${x.pct}%` })) } : { erro: "nenhuma missão ativa" };
@@ -428,6 +438,7 @@ Regras:
 - Antes de mudar uma tarefa, ache o id. Datas relativas ("sexta", "amanhã") viram AAAA-MM-DD a partir de hoje.
 - "Esta tarefa / este projeto / esta equipe / esta pessoa" = o que está na página atual.
 - WhatsApp: escreva a mensagem completa no idioma de quem recebe; ela só sai depois da confirmação.
+- Notas internas (notas_internas) são confidenciais da gestão: use para responder à gestão, mas nunca as coloque em mensagens, comentários de tarefa, notas de projeto ou na memória.
 - Sobre o santuário, retiros, regras e projetos, use buscar_conhecimento e diga se é confirmado ou de notas antigas.
 - Memória: quando a pessoa pedir ("lembre que…", "sempre…", "prefiro…") ou quando você perceber algo estável e útil (como ela gosta das respostas, do que cuida, uma rotina), proponha lembrar (no máximo 1 por resposta, sem repetir o que já sabe). Uma ideia por item, na categoria certa: se a pessoa disser duas coisas, proponha dois cartões. Nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas. Para corrigir algo da memória, proponha esquecer e depois lembrar.`;
 };
@@ -439,16 +450,18 @@ type ApiMsg = { role: "system" | "user" | "assistant" | "tool"; content: string 
 export function paraModelo(salvas: MsgSalva[]): Msg[] {
   return salvas.map((m) => ({
     role: m.role,
-    content: m.content + (m.cartoes?.length ? `\n[propostas: ${m.cartoes.map((c) => `${c.resumo} (${c.estado})`).join("; ")}]` : ""),
+    // past tool calls are not replayed, so say which reads backed the answer (else the model doubts it)
+    content: m.content + (m.consultas?.length ? `\n[consultou: ${m.consultas.join(", ")}]` : "") + (m.cartoes?.length ? `\n[propostas: ${m.cartoes.map((c) => `${c.resumo} (${c.estado})`).join("; ")}]` : ""),
   }));
 }
 
 /** One assistant turn: the model may read several times; changes come back as proposals to confirm. */
-export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje"): Promise<{ resposta: string; acoes: AcaoProposta[] }> {
+export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje"): Promise<{ resposta: string; acoes: AcaoProposta[]; consultas: string[] }> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("IA não configurada no servidor (OPENROUTER_API_KEY)");
   const msgs: ApiMsg[] = [{ role: "system", content: SISTEMA(me, lang, pagina) }, ...historico.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))];
   const acoes: AcaoProposta[] = [];
+  const consultas = new Set<string>();
   for (let volta = 0; volta < 8; volta++) {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -460,7 +473,7 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
     const m = (await res.json())?.choices?.[0]?.message as ApiMsg | undefined;
     if (!m) throw new Error("A IA não respondeu");
     const calls = m.tool_calls ?? [];
-    if (!calls.length) return { resposta: s(m.content), acoes };
+    if (!calls.length) return { resposta: s(m.content).replace(/\n?\[(consultou|propostas):[^\]]*\]/g, "").trim(), acoes, consultas: [...consultas] };
     msgs.push({ role: "assistant", content: m.content ?? null, tool_calls: calls });
     for (const c of calls) {
       let args: Record<string, unknown> = {};
@@ -471,10 +484,11 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
         if ("erro" in v) saida = v;
         else { acoes.push(v); saida = { proposta: v.resumo, aguardando_confirmacao: true }; }
       } else {
+        consultas.add(c.function.name);
         try { saida = ler(me, c.function.name, args); } catch (e) { saida = { erro: (e as Error).message }; }
       }
       msgs.push({ role: "tool", tool_call_id: c.id, content: JSON.stringify(saida).slice(0, 12000) });
     }
   }
-  return { resposta: acoes.length ? "" : "Não consegui concluir; tente perguntar de outro jeito.", acoes };
+  return { resposta: acoes.length ? "" : "Não consegui concluir; tente perguntar de outro jeito.", acoes, consultas: [...consultas] };
 }

@@ -17,8 +17,11 @@ import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getEstudo, resumoPessoas } from "@/lib/v2/pessoasInfo";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { addToEquipeAction, atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, externoAction, removerDaEquipeAction, setAvisosPessoaAction, suspensoAction, toggleLangAction } from "../../actions";
+import { atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, externoAction, removerDaEquipeAction, setAvisosPessoaAction, suspensoAction, toggleLangAction } from "../../actions";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
+import EscolherEquipes from "@/components/v2/EscolherEquipes";
+import NotasInternas from "@/components/v2/NotasInternas";
+import { getNotas } from "@/lib/v2/notasInternas";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -342,14 +345,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
             })}
           </ul>
           {podeAdicionar.length > 0 && (
-            <form action={addToEquipeAction} className="flex flex-wrap items-center gap-2">
-              <input type="hidden" name="pessoa" value={p.id} />
-              <select name="equipe" required defaultValue="" aria-label={t.ativarEm} className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm">
-                <option value="" disabled>{t.adicionarEm}</option>
-                {podeAdicionar.filter((e) => !e.gestao || me.gestao).map((e) => <option key={e.id} value={e.id}>{e.nome}{e.gestao ? ` (${t.gestaoCompleta})` : ""}</option>)}
-              </select>
-              <button className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm">{t.adicionar}</button>
-            </form>
+            <EscolherEquipes pessoaId={p.id} equipes={podeAdicionar.filter((e) => !e.gestao || me.gestao)} t={t} comNota={false} />
           )}
         </div>
       )}
@@ -367,6 +363,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
           </ul>
         </div>
       )}
+      {me.gestao && <NotasInternas pessoaId={p.id} notas={getNotas(p.id)} t={t} />}
     </div>
   );
 
