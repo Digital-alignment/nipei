@@ -111,7 +111,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
       {envolvidos.map((x) => (
         <li key={x.id}>
           <Link href={url({ pessoa: x.id, equipe: undefined })} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-900">
-            <Avatar name={x.pessoa?.name ?? x.id} size={32} src={x.pessoa?.foto ? `/pessoas/${x.id}/foto?v=${encodeURIComponent(x.pessoa.dadosConfirmadosEm)}` : undefined} />
+            <Avatar name={x.pessoa?.name ?? x.id} size={32} src={x.pessoa?.foto ? `/pessoas/${x.id}/foto?v=${encodeURIComponent(x.pessoa.fotoEm || x.pessoa.dadosConfirmadosEm)}` : undefined} />
             <span className="text-sm flex-1 min-w-0 truncate">{x.pessoa?.name ?? x.id}</span>
             <div className="hidden sm:block h-1.5 w-24 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><div className="h-full bg-neutral-400 dark:bg-neutral-500" style={{ width: `${(x.n / maxN) * 100}%` }} /></div>
             <span className="text-xs text-neutral-500 tabular-nums w-16 text-right">{x.n} {t.abertasLbl}</span>

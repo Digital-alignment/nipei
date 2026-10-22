@@ -17,7 +17,8 @@ import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getEstudo, resumoPessoas } from "@/lib/v2/pessoasInfo";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { addToEquipeAction, atribuirAction, enviarLinkAction, estudoAction, setAvisosPessoaAction, toggleLangAction } from "../../actions";
+import { addToEquipeAction, atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, removerDaEquipeAction, setAvisosPessoaAction, toggleLangAction } from "../../actions";
+import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -284,14 +285,49 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
           )}
         </div>
       )}
-      {podeAdicionar.length > 0 && (
+      {(me.gestao || podeAdicionar.length > 0) && (
         <div className={CARTAO}>
-          <p className={ROTULO}>{t.ativarEm}</p>
-          <form action={addToEquipeAction} className="flex items-center gap-2">
-            <input type="hidden" name="pessoa" value={p.id} />
-            <select name="equipe" className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm">{podeAdicionar.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select>
-            <button className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm">{t.adicionar}</button>
-          </form>
+          <p className={ROTULO}>{t.equipes}</p>
+          {p.equipes.length === 0 && <p className="text-sm text-neutral-500 mb-2">{t.semEquipeAinda}</p>}
+          <ul className="grid gap-1 mb-3">
+            {p.equipes.map((id) => {
+              const e = equipes.find((x) => x.id === id);
+              if (!e) return null;
+              const coord = e.coordenadores.includes(p.id);
+              return (
+                <li key={id} className="flex flex-wrap items-center gap-2 py-1.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: e.cor }} />
+                  <span className="text-sm flex-1 min-w-0">{e.nome}{e.gestao && <span className="ml-1.5 text-[10px] rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-1">{t.gestaoCompleta}</span>}</span>
+                  <span className={`text-xs ${coord ? "text-neutral-800 dark:text-neutral-200 font-medium" : "text-neutral-500"}`}>{coord ? t.coordenacao : t.membroLbl}</span>
+                  {me.gestao && (
+                    <>
+                      <form action={coordenacaoAction}>
+                        <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="equipe" value={id} /><input type="hidden" name="coordena" value={String(!coord)} />
+                        <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1 text-xs">{coord ? t.tirarCoordenacao : t.tornarCoordenador}</BotaoEnviar>
+                      </form>
+                      {!(e.gestao && p.id === me.pessoa?.id) && (
+                        <form action={removerDaEquipeAction}>
+                          <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="equipe" value={id} />
+                          <ConfirmarBotao pergunta={t.confirmarRemover.replace("{nome}", primeiro).replace("{equipe}", e.nome) + (e.gestao ? ` ${t.perdeGestao}` : "")}
+                            className="rounded-md border border-red-300 dark:border-red-900 text-red-700 dark:text-red-400 px-2 py-1 text-xs">{t.removerLbl}</ConfirmarBotao>
+                        </form>
+                      )}
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {podeAdicionar.length > 0 && (
+            <form action={addToEquipeAction} className="flex flex-wrap items-center gap-2">
+              <input type="hidden" name="pessoa" value={p.id} />
+              <select name="equipe" required defaultValue="" aria-label={t.ativarEm} className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm">
+                <option value="" disabled>{t.adicionarEm}</option>
+                {podeAdicionar.filter((e) => !e.gestao || me.gestao).map((e) => <option key={e.id} value={e.id}>{e.nome}{e.gestao ? ` (${t.gestaoCompleta})` : ""}</option>)}
+              </select>
+              <button className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm">{t.adicionar}</button>
+            </form>
+          )}
         </div>
       )}
     </div>
@@ -302,7 +338,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
       <Link href="/pessoas" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.pessoas}</Link>
 
       <div className="flex items-center gap-4">
-        <Avatar name={p.name} size={60} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} />
+        <Avatar name={p.name} size={60} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-semibold tracking-tight truncate">{p.name}</h1>
           <p className="text-sm text-neutral-500 truncate">{[p.apelido, p.nativeName, p.funcao].filter(Boolean).join(" · ") || p.nipeiId}</p>

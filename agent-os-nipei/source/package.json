@@ -1,6 +1,6 @@
 {
   "name": "nipei-os",
-  "version": "2.40.0",
+  "version": "2.41.0",
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
@@ -12,6 +12,7 @@
     "@types/js-yaml": "^4.0.9",
     "cmdk": "^1.1.1",
     "framer-motion": "^12.38.0",
+    "heic-convert": "^2.1.0",
     "highlight.js": "^11.11.1",
     "js-yaml": "^4.1.1",
     "lucide-react": "^1.16.0",

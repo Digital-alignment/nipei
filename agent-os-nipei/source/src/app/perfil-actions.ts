@@ -60,7 +60,7 @@ export async function uploadFotoAction(form: FormData): Promise<{ error?: string
   const file = form.get("arquivo");
   if (!(file instanceof File) || !file.size) return { error: "Nenhuma foto" };
   try {
-    salvarFoto(pessoaId, Buffer.from(await file.arrayBuffer()), file.type);
+    await salvarFoto(pessoaId, Buffer.from(await file.arrayBuffer()));
   } catch (e) {
     return erro(e);
   }

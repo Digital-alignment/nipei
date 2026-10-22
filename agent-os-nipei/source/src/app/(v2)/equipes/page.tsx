@@ -36,7 +36,7 @@ export default async function Equipes() {
           </div>
           <div className="flex items-center mt-3">
             <span className="flex -space-x-1.5">
-              {pessoasEq.slice(0, 6).map((id) => { const p = pessoa(id); return p && <span key={id} className="rounded-full ring-2 ring-white dark:ring-neutral-900"><Avatar name={p.name} size={26} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} /></span>; })}
+              {pessoasEq.slice(0, 6).map((id) => { const p = pessoa(id); return p && <span key={id} className="rounded-full ring-2 ring-white dark:ring-neutral-900"><Avatar name={p.name} size={26} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} /></span>; })}
             </span>
             {pessoasEq.length > 6 && <span className="ml-1.5 text-xs text-neutral-500">+{pessoasEq.length - 6}</span>}
             <span className="ml-auto text-xs text-neutral-500">{e.coordenadores.map((c) => pessoa(c)?.name.split(" ")[0]).filter(Boolean).join(", ")}</span>

@@ -27,7 +27,7 @@ export type Pessoa = {
   avisosWhatsapp: boolean; // false = the person switched WhatsApp notices off
   // "Meu perfil" (lib/v2/perfil.ts): private fields are shown only to the person and gestão.
   apelido: string; dataNascimento: string; nacionalidade: string; cidade: string; pais: string; idioma: string;
-  emergenciaNome: string; emergenciaWhatsapp: string; foto: string;
+  emergenciaNome: string; emergenciaWhatsapp: string; foto: string; fotoEm: string;
   whatsappVerificado: boolean; whatsappVerificadoEm: string; dadosConfirmadosEm: string;
 };
 export type Tarefa = {
@@ -117,7 +117,7 @@ export function getPessoas(): Pessoa[] {
       name: s(fm.name),
       nativeName: s(fm.native_name),
       equipes: arr(fm.equipes),
-      coordena: arr(fm.coordena),
+      coordena: arr(fm.coordena), fotoEm: s(fm.foto_em),
       usuario: s(fm.usuario),
       whatsapp: s(fm.whatsapp),
       email: s(fm.email),
@@ -288,6 +288,26 @@ export function addToEquipe(pessoaId: string, equipeId: string) {
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
   updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])] });
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
+}
+
+/** Takes a person out of a team (and out of its coordination). Both notes are updated. */
+export function removeFromEquipe(pessoaId: string, equipeId: string) {
+  const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
+  const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
+  if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
+  updateNote(pessoa.file, { equipes: arr(pessoa.fm.equipes).filter((x) => x !== equipeId), coordena: arr(pessoa.fm.coordena).filter((x) => x !== equipeId) });
+  updateNote(equipe.file, { membros: arr(equipe.fm.membros).filter((x) => x !== pessoaId), coordenadores: arr(equipe.fm.coordenadores).filter((x) => x !== pessoaId) });
+}
+
+/** Makes a team member a coordinator of that team (or not). */
+export function setCoordenacao(pessoaId: string, equipeId: string, coordena: boolean) {
+  const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
+  const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
+  if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
+  if (!arr(pessoa.fm.equipes).includes(equipeId)) throw new Error("A pessoa precisa ser membro da equipe");
+  const mudar = (lista: string[], id: string) => (coordena ? [...new Set([...lista, id])] : lista.filter((x) => x !== id));
+  updateNote(pessoa.file, { coordena: mudar(arr(pessoa.fm.coordena), equipeId) });
+  updateNote(equipe.file, { coordenadores: mudar(arr(equipe.fm.coordenadores), pessoaId) });
 }
 
 /** K4: news line at the top of the project's "## Atualizações" section (created if missing). */

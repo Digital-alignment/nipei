@@ -79,9 +79,57 @@ export async function createTarefaAction(form: FormData) {
 
 export async function addToEquipeAction(form: FormData) {
   const me = await requireUser();
-  const equipe = String(form.get("equipe"));
-  if (!can.gerirEquipe(me, equipe)) return;
+  const equipe = pick(form.get("equipe"), getEquipes().map((e) => e.id));
+  // a management team gives full access to everything: only management can add people to it
+  if (!equipe || !can.gerirEquipe(me, equipe) || (getEquipes().find((e) => e.id === equipe)?.gestao && !me.gestao)) return;
   addToEquipe(String(form.get("pessoa")), equipe);
+  revalidatePath("/", "layout");
+}
+
+/** Gestão: take a person out of a team. Guards: nobody removes themselves from management, and the
+ *  management team never ends up empty (that would lock everyone out of the admin views). */
+export async function removerDaEquipeAction(form: FormData) {
+  const me = await requireUser();
+  const pessoa = String(form.get("pessoa")), equipeId = String(form.get("equipe"));
+  const e = getEquipes().find((x) => x.id === equipeId);
+  await tentar(async () => {
+    if (!me.gestao || !e) throw new Error("Só a gestão remove pessoas das equipes");
+    if (e.gestao && pessoa === me.pessoa?.id) throw new Error("Você não pode tirar a si mesmo da gestão");
+    if (e.gestao && e.membros.filter((m) => m !== pessoa).length === 0) throw new Error("A equipe de gestão não pode ficar vazia");
+    const { removeFromEquipe } = await import("@/lib/v2/data");
+    removeFromEquipe(pessoa, equipeId);
+  });
+  revalidatePath("/", "layout");
+}
+
+/** Gestão: send each selected person their own registration link (Notificar limits apply: it stops at the first limit). */
+export async function cadastroLoteAction(form: FormData): Promise<{ enviados?: number; semWhats?: number; parou?: string; error?: string }> {
+  const me = await requireUser();
+  if (!me.gestao) return { error: "Só a gestão envia em lote" };
+  const ids = [...new Set(form.getAll("ids").map(String))].slice(0, 30);
+  const pessoas = getPessoas().filter((p) => ids.includes(p.id));
+  const { enviar, textoLink } = await import("@/lib/v2/notificar");
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  const origin = process.env.NEXT_PUBLIC_APP_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  let enviados = 0, semWhats = 0, parou = "";
+  for (const p of pessoas) {
+    if (!p.whatsapp) { semWhats++; continue; }
+    try { await enviar(p, textoLink(p, "cadastro", origin), "cadastro", actorName(me)); enviados++; }
+    catch (e) { parou = (e as Error).message; if (/limite|Limite/.test(parou)) break; }
+  }
+  revalidatePath("/pessoas");
+  return { enviados, semWhats, parou };
+}
+
+export async function coordenacaoAction(form: FormData) {
+  const me = await requireUser();
+  const pessoa = String(form.get("pessoa")), equipeId = pick(form.get("equipe"), getEquipes().map((e) => e.id));
+  await tentar(async () => {
+    if (!me.gestao || !equipeId) throw new Error("Só a gestão muda a coordenação");
+    const { setCoordenacao } = await import("@/lib/v2/data");
+    setCoordenacao(pessoa, equipeId, form.get("coordena") === "true");
+  });
   revalidatePath("/", "layout");
 }
 

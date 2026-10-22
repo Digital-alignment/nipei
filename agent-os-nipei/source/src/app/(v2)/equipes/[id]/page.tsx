@@ -149,7 +149,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           <li key={p.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
             <details>
               <summary className="list-none cursor-pointer p-3 flex items-center gap-3">
-                <Avatar name={p.name} size={36} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.dadosConfirmadosEm)}` : undefined} />
+                <Avatar name={p.name} size={36} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">
                     {p.name}

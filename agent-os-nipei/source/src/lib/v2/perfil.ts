@@ -136,17 +136,33 @@ export function salvarPerfil(pessoaId: string, d: DadosPerfil, prova: string, lg
 export const FOTO_DIR = path.join("Miembros", "_fotos");
 
 /** Profile photo (already shrunk on the phone), stored in the vault next to the notes. */
-export function salvarFoto(pessoaId: string, bytes: Buffer, tipo: string) {
-  const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[tipo];
-  if (!ext) throw new Error("Use uma foto JPG, PNG ou WebP");
-  if (bytes.length > 3 * 1024 * 1024) throw new Error("Foto maior que 3 MB");
+/** iPhone photos (HEIC/HEIF) — browsers often label them image/jpeg, so look at the bytes, not the type. */
+export const eHeic = (b: Buffer) => b.length > 12 && b.toString("latin1", 4, 8) === "ftyp" && /^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(b.toString("latin1", 8, 12));
+
+/**
+ * Any photo becomes a 512 px JPEG: HEIC is decoded first (Chrome can't show it), EXIF (incl. GPS) is
+ * dropped, the phone's rotation is applied. One photo per person.
+ */
+export async function salvarFoto(pessoaId: string, bytes: Buffer) {
+  if (bytes.length > 12 * 1024 * 1024) throw new Error("Foto maior que 12 MB");
   const file = arquivoPessoa(pessoaId);
   if (!file) throw new Error("Pessoa não encontrada");
+  const jpeg = await paraJpeg(bytes).catch(() => { throw new Error("Não consegui ler essa foto. Use JPG, PNG, WebP ou HEIC."); });
   const dir = path.join(defaultVault()!, FOTO_DIR);
   fs.mkdirSync(dir, { recursive: true });
-  for (const f of fs.readdirSync(dir)) if (f.startsWith(`${pessoaId}.`)) fs.unlinkSync(path.join(dir, f)); // one photo per person
-  fs.writeFileSync(path.join(dir, `${pessoaId}.${ext}`), bytes);
-  updateNote(file, { foto: `${FOTO_DIR}/${pessoaId}.${ext}`.split(path.sep).join("/") });
+  for (const f of fs.readdirSync(dir)) if (f.startsWith(`${pessoaId}.`)) fs.unlinkSync(path.join(dir, f));
+  fs.writeFileSync(path.join(dir, `${pessoaId}.jpg`), jpeg);
+  updateNote(file, { foto: `${FOTO_DIR}/${pessoaId}.jpg`.split(path.sep).join("/"), foto_em: new Date().toISOString() });
+}
+
+export async function paraJpeg(bytes: Buffer): Promise<Buffer> {
+  let entrada = bytes;
+  if (eHeic(bytes)) {
+    const { default: converter } = await import("heic-convert");
+    entrada = Buffer.from(await converter({ buffer: bytes, format: "JPEG", quality: 0.92 }));
+  }
+  const { default: sharp } = await import("sharp");
+  return sharp(entrada).rotate().resize(512, 512, { fit: "cover", position: "attention" }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
 }
 
 export function arquivoFoto(pessoaId: string): { abs: string; tipo: string } | null {

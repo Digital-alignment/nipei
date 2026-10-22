@@ -183,6 +183,15 @@ const pt = {
   memoriaVazia: "Ainda não sei nada sobre você. Diga, por exemplo, \"lembre que eu cuido das finanças do Inirau\" ou \"prefiro respostas em tópicos\". Quando eu notar algo útil, também vou propor guardar, e você decide.",
   memoriaCategorias: { preferencia: "Como você prefere", responsabilidade: "Do que você cuida", rotina: "Rotinas", contexto: "Contexto" },
   vozLigar: "Responder em voz", vozDesligar: "Desligar a voz", ouvirLbl: "Ouvir", pararLbl: "Parar", propostasFala: "Deixei {n} propostas para você confirmar na tela.",
+  semEquipeAinda: "Ainda não está em nenhuma equipe.", gestaoCompleta: "gestão completa", membroLbl: "membro", tornarCoordenador: "Tornar coordenação",
+  tirarCoordenacao: "Tirar coordenação", removerLbl: "Remover", adicionarEm: "Escolher equipe…",
+  confirmarRemover: "Remover {nome} da equipe {equipe}?", perdeGestao: "A pessoa perde na hora o acesso às vistas de gestão (finanças, pulso, participação).",
+  funcaoNaoDefinida: "Função não definida", abertaLbl: "aberta", atrasadaLbl: "atrasada", perfilCompleto: "Perfil completo (WhatsApp, função, dados confirmados, foto)",
+  semWhats: "Sem WhatsApp", whatsVerificado: "WhatsApp verificado", whatsNaoVerificado: "WhatsApp não verificado", semAcessoLbl: "sem acesso",
+  semAcessoAjuda: "A equipe desta pessoa ainda não tem acesso à plataforma", todasSituacoes: "Todos",
+  situacoes: { incompleto: "Perfil incompleto", sem_whats: "Sem WhatsApp", nao_verificado: "WhatsApp não verificado", sem_acesso: "Sem acesso" },
+  enviarCadastroLote: "Enviar link de cadastro", avisoCadastroLote: "Cada pessoa recebe o próprio link pelo WhatsApp do Nipëi. Quem não tem WhatsApp fica de fora. Máx. 30 por dia.",
+  resultadoCadastroLote: "Enviados: {ok}. Sem WhatsApp: {sem}.",
 };
 export type Dict = typeof pt;
 
@@ -365,6 +374,15 @@ const en: Dict = {
   memoriaVazia: "I don't know anything about you yet. Say, for example, \"remember that I handle Inirau's finances\" or \"I prefer answers in bullet points\". When I notice something useful I'll offer to keep it, and you decide.",
   memoriaCategorias: { preferencia: "How you like it", responsabilidade: "What you handle", rotina: "Routines", contexto: "Context" },
   vozLigar: "Answer out loud", vozDesligar: "Turn voice off", ouvirLbl: "Listen", pararLbl: "Stop", propostasFala: "I left {n} proposals for you to confirm on screen.",
+  semEquipeAinda: "Not in any team yet.", gestaoCompleta: "full management", membroLbl: "member", tornarCoordenador: "Make lead",
+  tirarCoordenacao: "Remove lead", removerLbl: "Remove", adicionarEm: "Choose team…",
+  confirmarRemover: "Remove {nome} from {equipe}?", perdeGestao: "They lose the management views (finances, pulse, participation) right away.",
+  funcaoNaoDefinida: "Role not set", abertaLbl: "open", atrasadaLbl: "overdue", perfilCompleto: "Profile complete (WhatsApp, role, confirmed details, photo)",
+  semWhats: "No WhatsApp", whatsVerificado: "WhatsApp verified", whatsNaoVerificado: "WhatsApp not verified", semAcessoLbl: "no access",
+  semAcessoAjuda: "This person's team has no platform access yet", todasSituacoes: "All",
+  situacoes: { incompleto: "Incomplete profile", sem_whats: "No WhatsApp", nao_verificado: "WhatsApp not verified", sem_acesso: "No access" },
+  enviarCadastroLote: "Send registration link", avisoCadastroLote: "Each person gets their own link from the Nipëi WhatsApp. People without WhatsApp are skipped. Max 30 a day.",
+  resultadoCadastroLote: "Sent: {ok}. No WhatsApp: {sem}.",
 };
 
 export async function getLang(): Promise<Lang> {
