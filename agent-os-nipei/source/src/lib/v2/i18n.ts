@@ -205,6 +205,7 @@ const pt = {
   acessoSuspensoTexto: "Acesso suspenso: não entra na plataforma nem recebe avisos", acessoAtivoTexto: "Pode entrar na plataforma",
   suspenderAcesso: "Suspender acesso", reativarAcesso: "Reativar acesso", ehContatoExterno: "Contato externo (fora das equipes)",
   suspensoAjuda: "Suspender não tira das equipes: a pessoa continua aparecendo para receber tarefas.", suspensoCurto: "suspenso",
+  coordenacaoGeral: "coordenação geral (não é membro)", geralCurto: "geral", adicionarCoordenacao: "Adicionar coordenação…", historicoPessoa: "Histórico",
 };
 export type Dict = typeof pt;
 
@@ -409,6 +410,7 @@ const en: Dict = {
   acessoSuspensoTexto: "Access suspended: can't log in nor get notices", acessoAtivoTexto: "Can log in to the platform",
   suspenderAcesso: "Suspend access", reativarAcesso: "Restore access", ehContatoExterno: "Outside contact (not in teams)",
   suspensoAjuda: "Suspending doesn't remove them from teams: they still show up to receive tasks.", suspensoCurto: "suspended",
+  coordenacaoGeral: "general lead (not a member)", geralCurto: "general", adicionarCoordenacao: "Add lead…", historicoPessoa: "History",
 };
 
 export async function getLang(): Promise<Lang> {

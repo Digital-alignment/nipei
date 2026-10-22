@@ -38,6 +38,37 @@ ${NIPEI_STRICT_DOMAIN_RULE}
 `;
 
 
+// People notes still carry the old v1 model (squad_assignments, company_assignments, global_role).
+// For the AI they are described from the CURRENT fields only: teams, coordination, role, access, plus
+// the note's change history. Equipe names come from Equipes/.
+function nomesEquipes(vaultRoot: string): Record<string, string> {
+  const dir = path.join(vaultRoot, "Equipes");
+  if (!fs.existsSync(dir)) return {};
+  return Object.fromEntries(fs.readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => {
+    const t = fs.readFileSync(path.join(dir, f), "utf-8");
+    return [t.match(/^id:\s*"?([^"\r\n]+)"?/m)?.[1] ?? f.slice(0, -3), t.match(/^nome:\s*"?([^"\r\n]+)"?/m)?.[1] ?? f.slice(0, -3)];
+  }));
+}
+
+export function resumoPessoa(content: string, equipes: Record<string, string>): string {
+  const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "";
+  const um = (k: string) => fm.match(new RegExp(`^${k}:[ \\t]*"?([^"\\r\\n]*)"?`, "m"))?.[1].trim() ?? "";
+  const lista = (k: string) => (fm.match(new RegExp(`^${k}:[ \\t]*\\[([^\\]]*)\\]`, "m"))?.[1] ?? "").split(",").map((x) => x.trim().replace(/^"|"$/g, "")).filter(Boolean);
+  const nome = um("name");
+  const eqs = lista("equipes").map((e) => equipes[e] ?? e);
+  const coord = lista("coordena").map((e) => equipes[e] ?? e);
+  const historico = content.match(/## Atividade\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1].split(/\r?\n/).filter((l) => l.startsWith("- ")).slice(0, 5).join(" ") ?? "";
+  return [
+    `Pessoa: ${nome}${um("apelido") ? ` (${um("apelido")})` : ""}${um("native_name") ? ` — ${um("native_name")}` : ""}.`,
+    um("tipo_contato") === "externo" ? "Contato externo (não é de nenhuma equipe)." : `Equipes atuais: ${eqs.join(", ") || "nenhuma ainda"}.`,
+    coord.length ? `Coordena: ${coord.join(", ")}.` : "",
+    um("funcao") ? `Função: ${um("funcao")}.` : "",
+    um("area") ? `Área: ${um("area")}.` : "",
+    /^acesso_suspenso:\s*true/m.test(fm) ? "Acesso à plataforma suspenso no momento." : "",
+    historico ? `Mudanças recentes: ${historico}` : "",
+  ].filter(Boolean).join(" ");
+}
+
 /**
  * Searches nipei-vault for notes relevant to the user query.
  * Scans Master_Sources, Ingested_Knowledge, Squads, Omi, and Generated_Content.
@@ -81,6 +112,7 @@ export function queryVaultGrounding(
   ];
 
   const citations: VaultCitation[] = [];
+  const equipesNomes = nomesEquipes(vaultRoot);
 
   for (const dir of searchDirs) {
     if (!fs.existsSync(dir)) continue;
@@ -93,7 +125,9 @@ export function queryVaultGrounding(
           readFilesRecursively(fullPath);
         } else if (item.isFile() && item.name.endsWith(".md")) {
           try {
-            const content = fs.readFileSync(fullPath, "utf-8");
+            const bruto = fs.readFileSync(fullPath, "utf-8");
+            const ehPessoa = path.basename(path.dirname(fullPath)) === "Miembros";
+            const content = ehPessoa ? resumoPessoa(bruto, equipesNomes) : bruto;
             const lowerContent = content.toLowerCase();
 
             let matches = 0;
@@ -103,14 +137,14 @@ export function queryVaultGrounding(
 
             if (matches > 0) {
               const relevanceScore = Math.min(1.0, matches / Math.max(1, queryTerms.length));
-              const titleMatch = content.match(/title:\s*"([^"]+)"/) || content.match(/#\s*(.+)/);
+              const titleMatch = bruto.match(/title:\s*"([^"]+)"/) || bruto.match(/#\s*(.+)/);
               const title = titleMatch ? titleMatch[1].trim() : item.name;
               const sha256 = crypto.createHash("sha256").update(content).digest("hex");
               const relativePath = path.relative(vaultRoot, fullPath).replace(/\\/g, "/");
 
               // Extract snippet
               const lines = content.split("\n").filter((l) => !l.startsWith("---") && l.trim().length > 0);
-              const snippet = lines.slice(0, 4).join(" ").slice(0, 200);
+              const snippet = ehPessoa ? content.slice(0, 400) : lines.slice(0, 4).join(" ").slice(0, 200);
 
               citations.push({
                 path: relativePath,

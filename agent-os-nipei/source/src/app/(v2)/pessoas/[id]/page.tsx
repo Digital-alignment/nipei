@@ -10,7 +10,7 @@ import PrazoRapido from "@/components/v2/PrazoRapido";
 import Notificar from "@/components/v2/Notificar";
 import { historico } from "@/lib/v2/notificar";
 import { signToken } from "@/lib/auth";
-import { can, currentUser, getEquipes, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getPessoas, getTarefas, historicoPessoa, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { getColetivo, getDiagnosticos, getRespostas, participa, progresso } from "@/lib/v2/diagnostico";
 import { ordenarAgora, type Selo } from "@/lib/v2/ordem";
 import { NIVEL_COR } from "@/lib/v2/participacao";
@@ -71,6 +71,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
     { tipo: "cadastro", titulo: t.linkCadastro, url: `${origin}/cadastro?token=${signToken("cadastro", p.id, CADASTRO_TTL)}`, msg: t.msgCadastro },
     ...(temAcesso ? [{ tipo: "acesso", titulo: t.linkAcesso, url: `${origin}/entrar?token=${signToken("login-link", p.id, LOGIN_LINK_TTL)}`, msg: t.msgAcesso }] : []),
   ] : [];
+  const mudancas = historicoPessoa(p.id);
   const podeAdicionar = equipes.filter((e) => !p.equipes.includes(e.id) && can.gerirEquipe(me, e.id));
   const part = n.participacao;
   const podeNotificar = me.gestao || can.gerirPessoa(me, p);
@@ -309,24 +310,25 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
       {(me.gestao || podeAdicionar.length > 0) && (
         <div className={CARTAO}>
           <p className={ROTULO}>{t.equipes}</p>
-          {p.equipes.length === 0 && <p className="text-sm text-neutral-500 mb-2">{t.semEquipeAinda}</p>}
+          {p.equipes.length === 0 && !equipes.some((e) => e.coordenadores.includes(p.id)) && <p className="text-sm text-neutral-500 mb-2">{t.semEquipeAinda}</p>}
           <ul className="grid gap-1 mb-3">
-            {p.equipes.map((id) => {
+            {[...p.equipes, ...equipes.filter((e) => e.coordenadores.includes(p.id) && !p.equipes.includes(e.id)).map((e) => e.id)].map((id) => {
               const e = equipes.find((x) => x.id === id);
               if (!e) return null;
               const coord = e.coordenadores.includes(p.id);
+              const membro = p.equipes.includes(id);
               return (
                 <li key={id} className="flex flex-wrap items-center gap-2 py-1.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: e.cor }} />
                   <span className="text-sm flex-1 min-w-0">{e.nome}{e.gestao && <span className="ml-1.5 text-[10px] rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 px-1">{t.gestaoCompleta}</span>}</span>
-                  <span className={`text-xs ${coord ? "text-neutral-800 dark:text-neutral-200 font-medium" : "text-neutral-500"}`}>{coord ? t.coordenacao : t.membroLbl}</span>
+                  <span className={`text-xs ${coord ? "text-neutral-800 dark:text-neutral-200 font-medium" : "text-neutral-500"}`}>{coord ? (membro ? t.coordenacao : t.coordenacaoGeral) : t.membroLbl}</span>
                   {me.gestao && (
                     <>
                       <form action={coordenacaoAction}>
                         <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="equipe" value={id} /><input type="hidden" name="coordena" value={String(!coord)} />
                         <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1 text-xs">{coord ? t.tirarCoordenacao : t.tornarCoordenador}</BotaoEnviar>
                       </form>
-                      {!(e.gestao && p.id === me.pessoa?.id) && (
+                      {membro && !(e.gestao && p.id === me.pessoa?.id) && (
                         <form action={removerDaEquipeAction}>
                           <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="equipe" value={id} />
                           <ConfirmarBotao pergunta={t.confirmarRemover.replace("{nome}", primeiro).replace("{equipe}", e.nome) + (e.gestao ? ` ${t.perdeGestao}` : "")}
@@ -349,6 +351,20 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
               <button className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm">{t.adicionar}</button>
             </form>
           )}
+        </div>
+      )}
+      {gerir && mudancas.length > 0 && (
+        <div className={CARTAO}>
+          <p className={ROTULO}>{t.historicoPessoa}</p>
+          <ul className="grid gap-1.5">
+            {mudancas.map((h, i) => (
+              <li key={i} className="text-sm flex flex-wrap gap-x-2">
+                <span className="text-xs text-neutral-500 tabular-nums">{h.quando}</span>
+                <span className="text-xs text-neutral-500">{h.quem}</span>
+                <span className="basis-full sm:basis-auto">{h.oque}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

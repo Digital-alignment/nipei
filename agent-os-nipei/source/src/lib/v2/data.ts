@@ -287,32 +287,59 @@ export function createTarefa(input: { title: string; equipe: string; prazo: stri
 }
 
 /** Adds a person to a team: both the person's `equipes` and the team's `membros`. */
-export function addToEquipe(pessoaId: string, equipeId: string) {
+export function addToEquipe(pessoaId: string, equipeId: string, quem = "") {
   const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
   const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
   updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])] });
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
+  if (quem) registrarPessoa(pessoa.file, quem, `entrou na equipe ${s(equipe.fm.nome) || equipeId}`);
+}
+
+// ---------------------------------------------------------------- people history
+// "## Atividade" in the person's note, newest first, same format as tasks: "- AAAA-MM-DD HH:MM · quem · o que".
+// Team, coordination, access and role changes are written here so the history lives with the person.
+
+const agoraBahia = () => new Date().toLocaleString("sv-SE", { timeZone: "America/Bahia" }).slice(0, 16);
+export function registrarPessoa(relFile: string, quem: string, texto: string) {
+  const full = path.join(vault(), relFile);
+  const linha = `- ${agoraBahia()} · ${quem} · ${texto.replace(/\s+/g, " ").trim()}`;
+  let t = fs.readFileSync(full, "utf-8");
+  t = /\n## Atividade\r?\n/.test(t) ? t.replace(/(\n## Atividade\r?\n)/, `$1${linha}\n`) : `${t.trimEnd()}\n\n## Atividade\n${linha}\n`;
+  fs.writeFileSync(full, t, "utf-8");
+  requestSync(vault());
+}
+
+/** The person's change history (newest first). */
+export function historicoPessoa(pessoaId: string, max = 15): { quando: string; quem: string; oque: string }[] {
+  const n = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
+  const sec = n?.body.match(/## Atividade\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "";
+  return sec.split(/\r?\n/).filter((l) => l.startsWith("- ")).slice(0, max).map((l) => {
+    const [quando, quem, ...resto] = l.slice(2).split(" · ");
+    return { quando: quando ?? "", quem: quem ?? "", oque: resto.join(" · ") };
+  });
 }
 
 /** Takes a person out of a team (and out of its coordination). Both notes are updated. */
-export function removeFromEquipe(pessoaId: string, equipeId: string) {
+export function removeFromEquipe(pessoaId: string, equipeId: string, quem = "") {
   const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
   const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
   updateNote(pessoa.file, { equipes: arr(pessoa.fm.equipes).filter((x) => x !== equipeId), coordena: arr(pessoa.fm.coordena).filter((x) => x !== equipeId) });
   updateNote(equipe.file, { membros: arr(equipe.fm.membros).filter((x) => x !== pessoaId), coordenadores: arr(equipe.fm.coordenadores).filter((x) => x !== pessoaId) });
+  if (quem) registrarPessoa(pessoa.file, quem, `saiu da equipe ${s(equipe.fm.nome) || equipeId}`);
 }
 
-/** Makes a team member a coordinator of that team (or not). */
-export function setCoordenacao(pessoaId: string, equipeId: string, coordena: boolean) {
+/** Makes someone a coordinator of a team (or not). Membership is not required: general coordination
+ *  (e.g. the founder coordinating every team) is a valid state. */
+export function setCoordenacao(pessoaId: string, equipeId: string, coordena: boolean, quem = "") {
   const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
   const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
-  if (!arr(pessoa.fm.equipes).includes(equipeId)) throw new Error("A pessoa precisa ser membro da equipe");
   const mudar = (lista: string[], id: string) => (coordena ? [...new Set([...lista, id])] : lista.filter((x) => x !== id));
   updateNote(pessoa.file, { coordena: mudar(arr(pessoa.fm.coordena), equipeId) });
   updateNote(equipe.file, { coordenadores: mudar(arr(equipe.fm.coordenadores), pessoaId) });
+  if (quem) registrarPessoa(pessoa.file, quem, `${coordena ? "passou a coordenar" : "deixou de coordenar"} ${s(equipe.fm.nome) || equipeId}`);
 }
 
 export type GrupoResponsaveis = { grupo: "equipe" | "outras" | "sem"; pessoas: Pessoa[] };
@@ -320,7 +347,7 @@ export type GrupoResponsaveis = { grupo: "equipe" | "outras" | "sem"; pessoas: P
  *  Platform access doesn't matter (a suspended person or a team without access can still be assigned). */
 export function responsaveisPara(equipeId = ""): GrupoResponsaveis[] {
   const ps = getPessoas().filter((p) => !p.externo).sort((a, b) => a.name.localeCompare(b.name, "pt"));
-  const da = equipeId ? ps.filter((p) => p.equipes.includes(equipeId)) : [];
+  const da = equipeId ? ps.filter((p) => p.equipes.includes(equipeId) || p.coordena.includes(equipeId)) : [];
   return ([
     { grupo: "equipe", pessoas: da },
     { grupo: "outras", pessoas: ps.filter((p) => p.equipes.length && !da.includes(p)) },
@@ -335,17 +362,24 @@ function notaPessoa(pessoaId: string) {
 }
 
 /** Suspends (or restores) a person's access: no login, no WhatsApp notices. Teams and tasks stay. */
-export function setSuspenso(pessoaId: string, suspenso: boolean) {
-  updateNote(notaPessoa(pessoaId).file, { acesso_suspenso: suspenso, avisos_whatsapp: !suspenso });
+export function setSuspenso(pessoaId: string, suspenso: boolean, quem = "") {
+  const n = notaPessoa(pessoaId);
+  updateNote(n.file, { acesso_suspenso: suspenso, avisos_whatsapp: !suspenso });
+  if (quem) registrarPessoa(n.file, quem, suspenso ? "acesso suspenso" : "acesso reativado");
 }
 
 /** Marks a note as an outside contact / group (out of team organisation and assignee lists), or back. */
-export function setExterno(pessoaId: string, externo: boolean) {
-  updateNote(notaPessoa(pessoaId).file, { tipo_contato: externo ? "externo" : "" });
+export function setExterno(pessoaId: string, externo: boolean, quem = "") {
+  const n = notaPessoa(pessoaId);
+  updateNote(n.file, { tipo_contato: externo ? "externo" : "" });
+  if (quem) registrarPessoa(n.file, quem, externo ? "marcado como contato externo" : "voltou a ser da comunidade");
 }
 
-export function setFuncao(pessoaId: string, funcao: string) {
-  updateNote(notaPessoa(pessoaId).file, { funcao: funcao.trim().slice(0, 80) });
+export function setFuncao(pessoaId: string, funcao: string, quem = "") {
+  const n = notaPessoa(pessoaId);
+  const nova = funcao.trim().slice(0, 80);
+  updateNote(n.file, { funcao: nova });
+  if (quem) registrarPessoa(n.file, quem, `função: ${nova || "(vazia)"}`);
 }
 
 /** K4: news line at the top of the project's "## Atualizações" section (created if missing). */

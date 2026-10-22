@@ -21,14 +21,20 @@ if ($LASTEXITCODE -ne 0) {
   Log "committed"
 }
 
-git pull -q --rebase origin main 2>&1 | Out-Null
+# --autostash: an Obsidian save between the commit and the pull is set aside and put back.
+# Only a real content conflict is a CONFLICT; network drops are a RETRY (the next run picks them up).
+$saida = (git pull -q --rebase --autostash origin main 2>&1 | Out-String)
 if ($LASTEXITCODE -ne 0) {
   git rebase --abort 2>$null
-  Log "CONFLICT: pull --rebase failed; local commit kept, push skipped. Resolve in $Vault."
-  exit 1
+  if ($saida -match "(?i)conflict|could not apply") {
+    Log "CONFLICT: the same note changed here and in GitHub; local commit kept, push skipped. Resolve in $Vault."
+    exit 1
+  }
+  Log "RETRY: pull failed ($(($saida -split "`n")[0].Trim())); next run tries again."
+  exit 0
 }
 
 if (git rev-list origin/main..HEAD) {
   git push -q origin main 2>&1 | Out-Null
-  if ($LASTEXITCODE -eq 0) { Log "pushed" } else { Log "ERROR: push failed"; exit 1 }
+  if ($LASTEXITCODE -eq 0) { Log "pushed" } else { Log "RETRY: push failed; next run tries again." }
 }

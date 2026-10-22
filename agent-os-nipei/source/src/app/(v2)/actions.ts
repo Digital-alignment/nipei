@@ -82,7 +82,7 @@ export async function addToEquipeAction(form: FormData) {
   const equipe = pick(form.get("equipe"), getEquipes().map((e) => e.id));
   // a management team gives full access to everything: only management can add people to it
   if (!equipe || !can.gerirEquipe(me, equipe) || (getEquipes().find((e) => e.id === equipe)?.gestao && !me.gestao)) return;
-  addToEquipe(String(form.get("pessoa")), equipe);
+  addToEquipe(String(form.get("pessoa")), equipe, actorName(me));
   revalidatePath("/", "layout");
 }
 
@@ -97,7 +97,7 @@ export async function removerDaEquipeAction(form: FormData) {
     if (e.gestao && pessoa === me.pessoa?.id) throw new Error("Você não pode tirar a si mesmo da gestão");
     if (e.gestao && e.membros.filter((m) => m !== pessoa).length === 0) throw new Error("A equipe de gestão não pode ficar vazia");
     const { removeFromEquipe } = await import("@/lib/v2/data");
-    removeFromEquipe(pessoa, equipeId);
+    removeFromEquipe(pessoa, equipeId, actorName(me));
   });
   revalidatePath("/", "layout");
 }
@@ -130,7 +130,7 @@ export async function suspensoAction(form: FormData) {
     if (!me.gestao) throw new Error("Só a gestão suspende acessos");
     if (pessoa === me.pessoa?.id) throw new Error("Você não pode suspender o próprio acesso");
     const { setSuspenso } = await import("@/lib/v2/data");
-    setSuspenso(pessoa, form.get("suspenso") === "true");
+    setSuspenso(pessoa, form.get("suspenso") === "true", actorName(me));
   });
   revalidatePath("/", "layout");
 }
@@ -140,7 +140,13 @@ export async function externoAction(form: FormData) {
   const me = await requireUser();
   if (!me.gestao) return;
   const { setExterno } = await import("@/lib/v2/data");
-  await tentar(async () => setExterno(String(form.get("pessoa")), form.get("externo") === "true"));
+  const pessoa = getPessoas().find((p) => p.id === String(form.get("pessoa")));
+  await tentar(async () => {
+    if (!pessoa) throw new Error("Pessoa não encontrada");
+    const externo = form.get("externo") === "true";
+    if (externo && pessoa.equipes.length) throw new Error("Tire a pessoa das equipes antes de marcar como contato externo");
+    setExterno(pessoa.id, externo, actorName(me));
+  });
   revalidatePath("/", "layout");
 }
 
@@ -149,7 +155,7 @@ export async function funcaoAction(form: FormData) {
   const p = getPessoas().find((x) => x.id === String(form.get("pessoa")));
   if (!p || !(me.gestao || can.gerirPessoa(me, p))) return;
   const { setFuncao } = await import("@/lib/v2/data");
-  await tentar(async () => setFuncao(p.id, String(form.get("funcao") ?? "")));
+  await tentar(async () => setFuncao(p.id, String(form.get("funcao") ?? ""), actorName(me)));
   revalidatePath("/", "layout");
 }
 
@@ -159,7 +165,7 @@ export async function coordenacaoAction(form: FormData) {
   await tentar(async () => {
     if (!me.gestao || !equipeId) throw new Error("Só a gestão muda a coordenação");
     const { setCoordenacao } = await import("@/lib/v2/data");
-    setCoordenacao(pessoa, equipeId, form.get("coordena") === "true");
+    setCoordenacao(pessoa, equipeId, form.get("coordena") === "true", actorName(me));
   });
   revalidatePath("/", "layout");
 }

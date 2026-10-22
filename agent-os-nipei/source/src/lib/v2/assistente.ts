@@ -231,8 +231,10 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const q = n(s(a.texto));
     const eq = s(a.equipe) ? acharEquipe(s(a.equipe)) : null;
     const abertas = abertasDe(() => true);
-    return pessoas.filter((p) => p.equipes.length && (!eq || p.equipes.includes(eq.id)) && (!q || n(p.name).includes(q) || n(p.funcao).includes(q)))
-      .slice(0, 30).map((p) => ({ id: p.id, nome: p.name, funcao: p.funcao, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e), ...contagem(abertas.filter((t) => t.responsaveis.includes(p.id))) }));
+    return pessoas.filter((p) => !p.externo && (!eq || p.equipes.includes(eq.id) || p.coordena.includes(eq.id)) && (!q || n(p.name).includes(q) || n(p.funcao).includes(q)))
+      .slice(0, 30).map((p) => ({ id: p.id, nome: p.name, funcao: p.funcao, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e),
+        coordena: equipes.filter((e) => e.coordenadores.includes(p.id)).map((e) => e.nome), acesso_suspenso: p.suspenso || undefined,
+        ...contagem(abertas.filter((t) => t.responsaveis.includes(p.id))) }));
   }
   if (nome === "projetos") {
     const pr = s(a.projeto) ? acharProjeto(s(a.projeto)) : null;
@@ -419,6 +421,7 @@ ${(() => { const mem = getMemoria(donoMemoria(me)); return mem.length ? `O que v
 Responda no idioma da pessoa (padrão: ${lang === "en" ? "inglês" : "português do Brasil"}), curto e direto: 1 a 4 frases ou uma lista curta, a menos que a memória diga outra preferência. Chame a pessoa pelo primeiro nome só de vez em quando.
 Regras:
 - Use as ferramentas para ler; nunca invente tarefas, datas, pessoas, valores ou fatos. Se não achar, diga.
+- Quem é de qual equipe, quem coordena, função e quem está com acesso suspenso: responda SÓ com as ferramentas pessoas/equipe (dados atuais). Fatos e notas antigas podem estar desatualizados nisso (ex.: "squads" antigos); se houver diferença, vale a ferramenta e avise a diferença.
 - Nunca mostre ids internos (task_…, evt_…) para a pessoa: fale pelos títulos e nomes. Os ids são só para as ferramentas.
 - Para mudar algo, chame a ferramenta correspondente: ela só PROPÕE e a pessoa confirma num cartão. Diga em uma frase o que propôs. Nunca diga que já fez.
 - Para planejar (um retiro, uma semana, um projeto), proponha as tarefas uma a uma com criar_tarefa (máx. 8 por vez), com prazos e responsáveis coerentes.

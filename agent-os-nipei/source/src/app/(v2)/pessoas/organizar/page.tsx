@@ -6,7 +6,7 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { currentUser, getEquipes, getPessoas, type Pessoa } from "@/lib/v2/data";
 import { organizacao } from "@/lib/v2/organizacao";
 import { getT } from "@/lib/v2/i18n";
-import { addToEquipeAction, externoAction, funcaoAction } from "../../actions";
+import { addToEquipeAction, coordenacaoAction, externoAction, funcaoAction } from "../../actions";
 
 const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4";
 const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500";
@@ -90,8 +90,17 @@ export default async function OrganizarEquipes() {
                   {!e.acesso && <span title={t.equipeSemAcessoAjuda} className="text-neutral-400"><Lock size={13} /></span>}
                 </div>
                 {e.coordenadores.length
-                  ? <p className="text-xs text-neutral-500">{t.coordenacao}: {e.coordenadores.map(nome).join(", ")}</p>
+                  ? <p className="text-xs text-neutral-500">{t.coordenacao}: {e.coordenadores.map((c) => nome(c) + (pessoas.find((p) => p.id === c)?.equipes.includes(e.id) ? "" : ` (${t.geralCurto})`)).join(", ")}</p>
                   : <p className="text-xs text-amber-700 dark:text-amber-400 inline-flex items-center gap-1"><AlertTriangle size={12} />{t.semCoordenacaoAviso}</p>}
+                <form action={coordenacaoAction} className="flex items-center gap-1.5">
+                  <input type="hidden" name="equipe" value={e.id} /><input type="hidden" name="coordena" value="true" />
+                  <select name="pessoa" required defaultValue="" aria-label={t.adicionarCoordenacao} className={`${campo} flex-1 min-w-0 text-xs`}>
+                    <option value="" disabled>{t.adicionarCoordenacao}</option>
+                    {pessoas.filter((p) => !p.externo && !e.coordenadores.includes(p.id)).sort((a, b) => Number(b.equipes.includes(e.id)) - Number(a.equipes.includes(e.id)) || a.name.localeCompare(b.name, "pt"))
+                      .map((p) => <option key={p.id} value={p.id}>{p.name}{p.equipes.includes(e.id) ? "" : ` (${t.geralCurto})`}</option>)}
+                  </select>
+                  <BotaoEnviar enviando="…" className={sec}>{t.adicionar}</BotaoEnviar>
+                </form>
                 <div className="flex flex-wrap gap-1.5">
                   {membros.map((p) => (
                     <Link key={p.id} href={`/pessoas/${p.id}`} title={p.funcao || t.funcaoNaoDefinida}
