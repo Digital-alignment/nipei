@@ -125,6 +125,15 @@ export function contextoPagina(me: Me, pagina: string): string {
     const ev = getEventos().find((x) => x.id === p[1]);
     if (ev) return `Página do evento "${ev.titulo}" (${ev.inicio}${ev.hora ? ` ${ev.hora}` : ""}).`;
   }
+  if (p[0] === "agenda") {
+    const qs = new URLSearchParams(pagina.split("?")[1] ?? "");
+    const quem = qs.get("quem") === "equipe" ? "das equipes da pessoa" : qs.get("quem") === "todas" ? `de todas as equipes${qs.get("equipe") ? ` (filtro ${qs.get("equipe")})` : ""}` : "da própria pessoa";
+    const minhas = abertasDe((t) => !!me.pessoa && t.responsaveis.includes(me.pessoa.id));
+    const semana = (d: string) => new Date(Date.parse(`${d}T12:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
+    return `Página: Agenda (hoje ${hoje}), vista ${qs.get("vista") || "semana"}, mostrando tarefas ${quem}${qs.get("s") ? `, semana de ${qs.get("s")}` : ""}${qs.get("dia") ? `, dia ${qs.get("dia")}` : ""}. `
+      + `Minhas tarefas abertas: ${minhas.filter((t) => t.prazo && t.prazo < hoje).length} atrasadas, ${minhas.filter((t) => t.prazo === hoje).length} hoje, ${minhas.filter((t) => t.prazo > hoje && t.prazo <= semana(hoje)).length} nos próximos 7 dias, ${minhas.filter((t) => !t.prazo).length} sem prazo. `
+      + `Aqui a pessoa planeja: dar prazo, reprogramar atrasadas, ver a carga por dia e criar eventos.`;
+  }
   const nomes: Record<string, string> = {
     hoje: "Hoje (o dia da pessoa)", agenda: "Agenda", equipes: "lista de Equipes", projetos: "lista de Projetos", objetivos: "Objetivos",
     pessoas: "lista de Pessoas", conhecimento: "Conhecimento (fatos e fontes)", financas: "Finanças", pulso: "Pulso das equipes", diagnosticos: "Diagnósticos", acervo: "Acervo",

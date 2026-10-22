@@ -41,7 +41,7 @@ const SUGESTOES: Record<string, { pt: string[]; en: string[] }> = {
   pessoas: { pt: ["O que esta pessoa tem atrasado?", "Escreva um WhatsApp para ela"], en: ["What does this person have overdue?", "Write them a WhatsApp"] },
   conhecimento: { pt: ["Fatos para eu revisar", "O que sabemos sobre os retiros?"], en: ["Facts for me to review", "What do we know about the retreats?"] },
   financas: { pt: ["Resumo do mês", "Maiores despesas do mês"], en: ["Summary of the month", "Biggest expenses this month"] },
-  agenda: { pt: ["O que temos nos próximos 7 dias?", "Crie um evento"], en: ["What's on in the next 7 days?", "Create an event"] },
+  agenda: { pt: ["Como está minha semana?", "Reprograme minhas atrasadas", "Dê prazo às minhas tarefas sem data"], en: ["How does my week look?", "Reschedule my overdue tasks", "Give dates to my undated tasks"] },
   hoje: { pt: ["O que tenho hoje?", "Resumo da minha semana", "Como vai a missão da semana?"], en: ["What do I have today?", "Summary of my week", "How is the mission of the week going?"] },
 };
 

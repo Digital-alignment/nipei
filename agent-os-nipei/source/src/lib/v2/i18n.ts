@@ -208,6 +208,11 @@ const pt = {
   coordenacaoGeral: "coordenação geral (não é membro)", geralCurto: "geral", adicionarCoordenacao: "Adicionar coordenação…", historicoPessoa: "Histórico",
   notaInterna: "Nota interna", notasInternasTitulo: "Notas internas", notaPlaceholder: "Só a Equipe 1 vai ver esta nota…", salvarNota: "Salvar nota",
   soEquipe1: "só Equipe 1", comentarPlaceholder: "Comentário…", notaEditada: "editada por", semNotas: "Nenhuma nota ainda.", marqueEquipes: "Marque uma ou mais equipes",
+  agendaSub: "O que vence e o que acontece. Planeje sua semana: dê data às tarefas, arraste para mudar o prazo e marque eventos.", eventos30: "Eventos (30 dias)",
+  semPrazoTitulo: "Sem prazo", semPrazoAjuda: "Dê uma data para que entrem na agenda.", tudoComPrazo: "Todas as tarefas têm prazo.", voltarHoje: "Voltar para hoje",
+  vendoMinhas: "Mostrando as tarefas em que você é responsável e os eventos das suas equipes.", vendoEquipe: "Mostrando as tarefas e eventos das suas equipes.",
+  vendoTodas: "Mostrando tudo (filtre por equipe).", atrasadasAjuda: "Mude o prazo ou conclua para limpar a lista.", moverTodasPara: "Mover as {n} para:",
+  aDefinirAjuda: "têm mês ou ano, falta o dia",
   tarefaCriada: "Tarefa criada", tituloPh: "O que precisa ser feito?", descricaoPh: "Detalhes, contexto, links (opcional)", sextaLbl: "Sexta", semPrazoLbl: "sem prazo",
   buscarPessoa: "Buscar pessoa…", euLbl: "Eu", checklistPh: "Um passo por linha", criarOutra: "Criar e adicionar outra", nenhumaPessoa: "Ninguém com esse nome.",
 };
@@ -417,6 +422,11 @@ const en: Dict = {
   coordenacaoGeral: "general lead (not a member)", geralCurto: "general", adicionarCoordenacao: "Add lead…", historicoPessoa: "History",
   notaInterna: "Internal note", notasInternasTitulo: "Internal notes", notaPlaceholder: "Only Team 1 will see this note…", salvarNota: "Save note",
   soEquipe1: "Team 1 only", comentarPlaceholder: "Comment…", notaEditada: "edited by", semNotas: "No notes yet.", marqueEquipes: "Tick one or more teams",
+  agendaSub: "What is due and what is happening. Plan your week: give tasks a date, drag to change the due date and add events.", eventos30: "Events (30 days)",
+  semPrazoTitulo: "No due date", semPrazoAjuda: "Give them a date so they enter the agenda.", tudoComPrazo: "Every task has a due date.", voltarHoje: "Back to today",
+  vendoMinhas: "Showing the tasks you own and your teams' events.", vendoEquipe: "Showing your teams' tasks and events.",
+  vendoTodas: "Showing everything (filter by team).", atrasadasAjuda: "Change the due date or finish them to clear the list.", moverTodasPara: "Move all {n} to:",
+  aDefinirAjuda: "they have a month or year, the day is missing",
   tarefaCriada: "Task created", tituloPh: "What needs to be done?", descricaoPh: "Details, context, links (optional)", sextaLbl: "Friday", semPrazoLbl: "no deadline",
   buscarPessoa: "Search person…", euLbl: "Me", checklistPh: "One step per line", criarOutra: "Create and add another", nenhumaPessoa: "No one with that name.",
 };
