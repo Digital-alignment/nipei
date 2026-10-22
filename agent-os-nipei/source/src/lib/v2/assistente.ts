@@ -20,7 +20,7 @@ import {
 
 export type Msg = { role: "user" | "assistant"; content: string };
 export type Acao =
-  | { tipo: "criar_tarefa"; titulo: string; prazo?: string; equipe?: string; responsaveis?: string[]; projeto?: string; prioridade?: string; descricao?: string }
+  | { tipo: "criar_tarefa"; titulo: string; prazo?: string; equipe?: string; responsaveis?: string[]; projeto?: string; prioridade?: string; descricao?: string; checklist?: string[] }
   | { tipo: "mudar_status"; id: string; status: Status }
   | { tipo: "mudar_prazo"; id: string; prazo: string }
   | { tipo: "mudar_prioridade"; id: string; prioridade: string }
@@ -161,6 +161,7 @@ const TOOLS = [
   fn("criar_tarefa", "PROPÕE criar uma tarefa. Para planejar várias, chame várias vezes.", {
     titulo: { type: "string" }, prazo: DATA, equipe: { type: "string" }, responsaveis: { type: "array", items: { type: "string" } },
     projeto: { type: "string" }, prioridade: { type: "string", enum: PRIORIDADES }, descricao: { type: "string" },
+    checklist: { type: "array", items: { type: "string" }, description: "passos curtos, se a tarefa tiver etapas" },
   }, ["titulo"]),
   fn("mudar_status", "PROPÕE mudar o status de uma tarefa.", { id: { type: "string" }, status: { type: "string", enum: ["todo", "doing", "done"] } }, ["id", "status"]),
   fn("mudar_prazo", "PROPÕE mudar o prazo de uma tarefa.", { id: { type: "string" }, prazo: DATA }, ["id", "prazo"]),
@@ -305,7 +306,8 @@ function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoProposta
     const nomes = responsaveis.map((r) => primeiro(getPessoas().find((p) => p.id === r)?.name ?? r)).join(", ");
     return {
       tipo: "criar_tarefa", titulo, prazo, equipe, responsaveis, projeto: pr?.id ?? "", prioridade, descricao: s(a.descricao).slice(0, 2000),
-      resumo: `Criar "${titulo}"`, detalhe: [prazo && `prazo ${dm(prazo)}`, nomes, getEquipes().find((e) => e.id === equipe)?.nome, pr?.nome, prioridade].filter(Boolean).join(" · "),
+      checklist: (Array.isArray(a.checklist) ? a.checklist : []).map((x) => s(x).slice(0, 200)).filter(Boolean).slice(0, 15),
+      resumo: `Criar "${titulo}"`, detalhe: [prazo && `prazo ${dm(prazo)}`, nomes, getEquipes().find((e) => e.id === equipe)?.nome, pr?.nome, prioridade, Array.isArray(a.checklist) && a.checklist.length && `${Math.min(15, a.checklist.length)} passos`].filter(Boolean).join(" · "),
     };
   }
   if (nome === "criar_evento") {
@@ -384,7 +386,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
   const v = validar(me, acao.tipo, acao as unknown as Record<string, unknown>);
   if ("erro" in v) throw new Error(v.erro);
   if (v.tipo === "criar_tarefa") {
-    const id = createTarefa({ title: v.titulo, equipe: v.equipe ?? "", prazo: v.prazo ?? "", responsaveis: v.responsaveis ?? [], projeto: v.projeto ?? "", objetivo: "", recorrencia: "", priority: v.prioridade || undefined }, quem, { descricao: v.descricao || undefined });
+    const id = createTarefa({ title: v.titulo, equipe: v.equipe ?? "", prazo: v.prazo ?? "", responsaveis: v.responsaveis ?? [], projeto: v.projeto ?? "", objetivo: "", recorrencia: "", priority: v.prioridade || undefined }, quem, { descricao: v.descricao || undefined, checklist: v.checklist?.map((texto) => ({ feito: false, texto })) });
     return `/tarefas/${id}`;
   }
   if (v.tipo === "criar_evento") { createEvento({ titulo: v.titulo, inicio: v.inicio, fim: v.fim ?? "", status: "confirmado", equipe: v.equipe, hora: v.hora }); return "/agenda"; }

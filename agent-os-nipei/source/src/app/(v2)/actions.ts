@@ -64,16 +64,29 @@ export async function createTarefaAction(form: FormData) {
   if (!title || !can.criarEm(me, equipe)) return;
   const prazo = String(form.get("prazo") ?? "");
   const pessoas = getPessoas().map((p) => p.id);
-  createTarefa({
+  const projeto = pick(form.get("projeto"), getProjetos().map((p) => p.id));
+  const objetivo = pick(form.get("objetivo"), getObjetivos().map((o) => o.id));
+  const checklist = String(form.get("checklist") ?? "").split(/\r?\n/).map((l) => l.replace(/^\s*(?:[-*•]|\[ ?x?\])\s*/i, "").trim().slice(0, 200)).filter(Boolean).slice(0, 30);
+  const id = createTarefa({
     title,
     equipe,
     recorrencia: recorrencia(form),
-    projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
-    objetivo: pick(form.get("objetivo"), getObjetivos().map((o) => o.id)),
+    projeto,
+    objetivo,
     prazo: /^\d{4}-\d{2}-\d{2}$/.test(prazo) ? prazo : "",
-    responsaveis: form.getAll("responsaveis").map(String).filter((id) => pessoas.includes(id)),
-  }, actorName(me));
+    responsaveis: [...new Set(form.getAll("responsaveis").map(String))].filter((id) => pessoas.includes(id)),
+    priority: pick(form.get("prioridade"), ["baixa", "média", "alta", "urgente"]) || undefined,
+    area: pick(form.get("area"), getEquipes().find((e) => e.id === equipe)?.areas ?? []) || undefined,
+  }, actorName(me), {
+    descricao: String(form.get("descricao") ?? "").replace(/\r/g, "").trim().slice(0, 4000) || undefined,
+    checklist: checklist.map((texto) => ({ feito: false, texto })),
+  });
   revalidatePath("/", "layout");
+  if (form.get("outra")) {
+    // keep the context (team, project, objective, where to go back) for the next task
+    const q = new URLSearchParams({ criada: id, ...(equipe ? { equipe } : {}), ...(projeto ? { projeto } : {}), ...(objetivo ? { objetivo } : {}), back: safeBack(form.get("back")) });
+    redirect(`/tarefas/nova?${q}`);
+  }
   redirect(safeBack(form.get("back")));
 }
 

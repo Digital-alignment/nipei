@@ -208,6 +208,8 @@ const pt = {
   coordenacaoGeral: "coordenação geral (não é membro)", geralCurto: "geral", adicionarCoordenacao: "Adicionar coordenação…", historicoPessoa: "Histórico",
   notaInterna: "Nota interna", notasInternasTitulo: "Notas internas", notaPlaceholder: "Só a Equipe 1 vai ver esta nota…", salvarNota: "Salvar nota",
   soEquipe1: "só Equipe 1", comentarPlaceholder: "Comentário…", notaEditada: "editada por", semNotas: "Nenhuma nota ainda.", marqueEquipes: "Marque uma ou mais equipes",
+  tarefaCriada: "Tarefa criada", tituloPh: "O que precisa ser feito?", descricaoPh: "Detalhes, contexto, links (opcional)", sextaLbl: "Sexta", semPrazoLbl: "sem prazo",
+  buscarPessoa: "Buscar pessoa…", euLbl: "Eu", checklistPh: "Um passo por linha", criarOutra: "Criar e adicionar outra", nenhumaPessoa: "Ninguém com esse nome.",
 };
 export type Dict = typeof pt;
 
@@ -415,6 +417,8 @@ const en: Dict = {
   coordenacaoGeral: "general lead (not a member)", geralCurto: "general", adicionarCoordenacao: "Add lead…", historicoPessoa: "History",
   notaInterna: "Internal note", notasInternasTitulo: "Internal notes", notaPlaceholder: "Only Team 1 will see this note…", salvarNota: "Save note",
   soEquipe1: "Team 1 only", comentarPlaceholder: "Comment…", notaEditada: "edited by", semNotas: "No notes yet.", marqueEquipes: "Tick one or more teams",
+  tarefaCriada: "Task created", tituloPh: "What needs to be done?", descricaoPh: "Details, context, links (optional)", sextaLbl: "Friday", semPrazoLbl: "no deadline",
+  buscarPessoa: "Search person…", euLbl: "Me", checklistPh: "One step per line", criarOutra: "Create and add another", nenhumaPessoa: "No one with that name.",
 };
 
 export async function getLang(): Promise<Lang> {

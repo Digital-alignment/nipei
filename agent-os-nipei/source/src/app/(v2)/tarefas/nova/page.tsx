@@ -1,81 +1,53 @@
-import { Lock } from "lucide-react";
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import { Title } from "@/components/v2/ui";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, responsaveisPara } from "@/lib/v2/data";
+import NovaTarefaForm from "@/components/v2/NovaTarefaForm";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
-import { createTarefaAction } from "../../actions";
 
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
+type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string };
 
-export default async function NovaTarefa({ searchParams }: { searchParams: Promise<{ equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string }> }) {
+export default async function NovaTarefa({ searchParams }: { searchParams: Promise<Q> }) {
   const q = await searchParams;
   const { t } = await getT();
   const user = (await currentUser())!;
   const me = user.pessoa;
   // Only the teams this person may create tasks in (plan §4.4); "no team" is for gestão only.
-  const equipes = getEquipes().filter((e) => can.criarEm(user, e.id)), projetos = getProjetos(), objetivos = getObjetivos();
-  const equipeInicial = equipes.some((e) => e.id === q.equipe) ? q.equipe : me?.equipes.find((id) => equipes.some((e) => e.id === id)) ?? equipes[0]?.id ?? "";
-  const pessoas = responsaveisPara(q.equipe ?? "").flatMap((g) => g.pessoas); // team first, then everyone else (access doesn't matter)
+  const equipes = getEquipes().filter((e) => can.criarEm(user, e.id));
+  const equipeInicial = equipes.some((e) => e.id === q.equipe) ? q.equipe! : me?.equipes.find((id) => equipes.some((e) => e.id === id)) ?? equipes[0]?.id ?? "";
+  const pessoas = getPessoas().filter((p) => !p.externo).sort((a, b) => a.name.localeCompare(b.name, "pt")); // access doesn't matter for assigning
   const back = q.back?.startsWith("/") && !q.back.startsWith("//") ? q.back : "/hoje";
+  const criada = q.criada ? getTarefas().find((x) => x.id === q.criada) : undefined;
 
   return (
-    <>
+    <div className="max-w-3xl mx-auto">
       <Title>{t.novaTarefa}</Title>
-      <form action={createTarefaAction} className="grid gap-4">
-        <input type="hidden" name="back" value={back} />
-        <label className="grid gap-1 text-sm">{t.titulo}
-          <input name="title" required autoFocus maxLength={200} className={field} />
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="grid gap-1 text-sm">{t.equipe}
-            <select name="equipe" defaultValue={equipeInicial} className={field}>
-              {user.gestao && <option value="">{t.nenhum}</option>}
-              {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">{t.prazo}
-            <input type="date" name="prazo" defaultValue={/^\d{4}-\d{2}-\d{2}$/.test(q.prazo ?? "") ? q.prazo : undefined} className={field} />
-          </label>
-        </div>
-        <div className="grid grid-cols-2 gap-3 items-end">
-          <label className="grid gap-1 text-sm">{t.repetir}
-            <select name="recorrencia" defaultValue={""} className={field}>
-              <option value="">{t.naoRepete}</option><option value="semanal">{t.semanal}</option>
-              <option value="quinzenal">{t.quinzenal}</option><option value="mensal">{t.mensal}</option>
-            </select>
-          </label>
-          <p className="text-[11px] text-neutral-500 pb-1">{t.repeteAviso}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="grid gap-1 text-sm">{t.projeto}
-            <select name="projeto" defaultValue={q.projeto ?? ""} className={field}>
-              <option value="">{t.nenhum}</option>
-              {projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">{t.objetivo}
-            <select name="objetivo" defaultValue={q.objetivo ?? ""} className={field}>
-              <option value="">{t.nenhum}</option>
-              {objetivos.map((o) => <option key={o.id} value={o.id}>{o.ano} · {o.titulo}</option>)}
-            </select>
-          </label>
-        </div>
-        <fieldset className="grid gap-1 text-sm">
-          <legend className="mb-1">{t.responsaveis}</legend>
-          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
-            {pessoas.map((p) => (
-              <label key={p.id} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-1 has-[:checked]:bg-neutral-900 has-[:checked]:text-white dark:has-[:checked]:bg-white dark:has-[:checked]:text-neutral-900">
-                <input type="checkbox" name="responsaveis" value={p.id} defaultChecked={p.id === (q.responsavel ?? me?.id)} className="sr-only" />
-                {p.name}{p.suspenso && <Lock size={11} aria-label={t.suspensoLbl} className="opacity-60" />}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <div className="flex gap-3 pt-2">
-          <button className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-5 py-2 text-sm font-medium">{t.criar}</button>
-          <Link href={back} className="rounded-lg px-5 py-2 text-sm border border-neutral-300 dark:border-neutral-700">{t.cancelar}</Link>
-        </div>
-      </form>
-    </>
+      {criada && (
+        <p className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm">
+          <CheckCircle2 size={16} className="text-green-600 shrink-0" /><span className="flex-1 min-w-0 truncate">{t.tarefaCriada}: {criada.title}</span>
+          <Link href={`/tarefas/${criada.id}`} className="underline shrink-0">{t.abrir}</Link>
+        </p>
+      )}
+      <NovaTarefaForm
+        equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}
+        pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso }))}
+        projetos={getProjetos().map((p) => ({ id: p.id, nome: p.nome }))}
+        objetivos={getObjetivos().map((o) => ({ id: o.id, titulo: o.titulo, ano: o.ano, projeto: o.projeto }))}
+        inicial={{
+          equipe: equipeInicial, projeto: q.projeto ?? "", objetivo: q.objetivo ?? "",
+          prazo: /^\d{4}-\d{2}-\d{2}$/.test(q.prazo ?? "") ? q.prazo! : "",
+          responsaveis: q.responsavel ? [q.responsavel] : !q.criada && me ? [me.id] : [],
+        }}
+        podeSemEquipe={user.gestao} meId={me?.id ?? ""} back={back}
+        l={{
+          titulo: t.titulo, tituloPh: t.tituloPh, descricao: t.descricao, descricaoPh: t.descricaoPh, equipe: t.equipe, nenhum: t.nenhum, area: t.areaEquipe,
+          prioridade: t.prioridade, prazo: t.prazo, hoje: t.hoje, amanha: t.amanha, sexta: t.sextaLbl, proximaSemana: t.proximaSemana, semPrazo: t.semPrazoLbl,
+          repetir: t.repetir, naoRepete: t.naoRepete, semanal: t.semanal, quinzenal: t.quinzenal, mensal: t.mensal, repeteAviso: t.repeteAviso,
+          projeto: t.projeto, objetivo: t.objetivo, responsaveis: t.responsaveis, buscarPessoa: t.buscarPessoa, eu: t.euLbl, checklist: t.checklist,
+          checklistPh: t.checklistPh, criar: t.criar, criarOutra: t.criarOutra, cancelar: t.cancelar, suspenso: t.suspensoLbl, nenhumaPessoa: t.nenhumaPessoa,
+          prio: { baixa: t.prioBaixa, "média": t.prioMedia, alta: t.prioAlta, urgente: t.prioUrgente }, grupos: t.gruposResp,
+        }}
+      />
+    </div>
   );
 }

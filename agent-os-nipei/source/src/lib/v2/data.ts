@@ -275,7 +275,7 @@ export function setTarefaStatus(id: string, status: Status, actor: string) {
   writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW[status]; });
 }
 
-export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string; priority?: string }, actor: string, opts: { descricao?: string; semAviso?: boolean } = {}) {
+export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string; priority?: string; area?: string }, actor: string, opts: { descricao?: string; checklist?: { feito: boolean; texto: string }[]; semAviso?: boolean } = {}) {
   const projeto = getProjetos().find((p) => p.id === input.projeto);
   return createTarefaNote(vault(), {
     title: input.title, prazo: input.prazo, project: projeto?.nome ?? "Geral",
@@ -283,6 +283,7 @@ export function createTarefa(input: { title: string; equipe: string; prazo: stri
     equipe: input.equipe, projeto: input.projeto, objetivo: input.objetivo, responsaveis: input.responsaveis,
     ...(input.recorrencia ? { recorrencia: input.recorrencia } : {}),
     ...(input.priority ? { priority: input.priority } : {}),
+    ...(input.area ? { area: input.area } : {}),
   }, actor, opts).id;
 }
 
