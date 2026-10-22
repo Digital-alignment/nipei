@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   if (!id) return fail("link");
   const pessoa = getPessoas().find((p) => p.id === id);
   const equipes = getEquipes();
-  if (!pessoa || !pessoa.equipes.some((e) => equipes.find((x) => x.id === e)?.acesso)) return fail("acesso");
+  if (!pessoa || pessoa.suspenso || !pessoa.equipes.some((e) => equipes.find((x) => x.id === e)?.acesso)) return fail("acesso");
 
   const res = NextResponse.redirect(new URL("/hoje", base));
   res.cookies.set(SESSION_COOKIE, signToken(sessionPurposeFor(pessoa), pessoa.id, LINK_SESSION_TTL), {

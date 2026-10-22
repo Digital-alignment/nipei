@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, BarChart3, Bot, Brain, Check, ChevronRight, ClipboardList, Clock, Handshake, ListChecks, Plus, Target, UserRound, type LucideIcon } from "lucide-react";
+import { AlertTriangle, BarChart3, Bot, Brain, Check, ChevronRight, ClipboardList, Clock, Handshake, ListChecks, Plus, Target, UserRound, type LucideIcon, UsersRound } from "lucide-react";
 import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BomDia from "@/components/v2/BomDia";
@@ -16,6 +16,9 @@ import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novid
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
+import { organizacao } from "@/lib/v2/organizacao";
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import { addToEquipeAction } from "../actions";
 
 
 const PILULA = "inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap rounded-full border h-8 px-3 text-xs font-medium transition-colors";
@@ -77,6 +80,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const passos = primeirosPassos(user);
   const comPassos = passos.some((x) => !x.feito);
   const missao = missaoDaSemana(user);
+  const org = user.gestao ? organizacao() : null;
+  const mostrarOrg = !!org && (org.semEquipe.length > 0 || org.semCoordenacao.length > 0 || org.semFuncao.length > 0);
   if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: UserRound, texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
   for (const d of me ? diagnosticosAbertos(me) : []) {
     const pr = progresso(d, me!.id);
@@ -158,6 +163,41 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {mostrarOrg && org && (
+        <section aria-label={t.organizarEquipes} className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <UsersRound size={16} className="text-sky-600 dark:text-sky-400 shrink-0" />
+            <p className="text-sm font-semibold flex-1">{t.organizarEquipes}</p>
+            <span className="text-xs font-semibold tabular-nums">{org.pct}%</span>
+          </div>
+          <p className="text-xs text-neutral-500 mb-2">{t.organizarHojeIntro}</p>
+          <div className="h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden mb-3"><div className="h-full bg-sky-500" style={{ width: `${org.pct}%` }} /></div>
+          <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
+            {org.semEquipe.length > 0 && <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1">{org.semEquipe.length} {t.semEquipeCurto}</span>}
+            {org.semCoordenacao.length > 0 && <span className="rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2.5 py-1">{org.semCoordenacao.length} {t.equipesSemCoord}</span>}
+            {org.semFuncao.length > 0 && <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1">{org.semFuncao.length} {t.semFuncaoCurto}</span>}
+          </div>
+          {org.semEquipe.length > 0 && (
+            <ul className="grid gap-1.5 mb-3">
+              {org.semEquipe.slice(0, 3).map((p) => (
+                <li key={p.id} className="flex flex-wrap items-center gap-2">
+                  <Link href={`/pessoas/${p.id}`} className="text-sm flex-1 min-w-28 truncate hover:underline">{p.name}</Link>
+                  <form action={addToEquipeAction} className="flex items-center gap-1.5">
+                    <input type="hidden" name="pessoa" value={p.id} />
+                    <select name="equipe" required defaultValue="" aria-label={t.ativarEm} className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2 py-1 text-xs max-w-40">
+                      <option value="" disabled>{t.adicionarEm}</option>
+                      {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}{e.gestao ? ` (${t.gestaoCompleta})` : ""}</option>)}
+                    </select>
+                    <BotaoEnviar enviando="…" className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs">{t.adicionar}</BotaoEnviar>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href="/pessoas/organizar" className="inline-flex items-center gap-1 text-sm font-medium hover:underline">{t.organizarTodos}<ChevronRight size={15} /></Link>
         </section>
       )}
 

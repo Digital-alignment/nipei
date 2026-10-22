@@ -1,6 +1,7 @@
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { Title } from "@/components/v2/ui";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, responsaveisPara } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { createTarefaAction } from "../../actions";
 
@@ -14,7 +15,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
   // Only the teams this person may create tasks in (plan §4.4); "no team" is for gestão only.
   const equipes = getEquipes().filter((e) => can.criarEm(user, e.id)), projetos = getProjetos(), objetivos = getObjetivos();
   const equipeInicial = equipes.some((e) => e.id === q.equipe) ? q.equipe : me?.equipes.find((id) => equipes.some((e) => e.id === id)) ?? equipes[0]?.id ?? "";
-  const pessoas = getPessoas().filter((p) => p.equipes.length > 0);
+  const pessoas = responsaveisPara(q.equipe ?? "").flatMap((g) => g.pessoas); // team first, then everyone else (access doesn't matter)
   const back = q.back?.startsWith("/") && !q.back.startsWith("//") ? q.back : "/hoje";
 
   return (
@@ -65,7 +66,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
             {pessoas.map((p) => (
               <label key={p.id} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-1 has-[:checked]:bg-neutral-900 has-[:checked]:text-white dark:has-[:checked]:bg-white dark:has-[:checked]:text-neutral-900">
                 <input type="checkbox" name="responsaveis" value={p.id} defaultChecked={p.id === (q.responsavel ?? me?.id)} className="sr-only" />
-                {p.name}
+                {p.name}{p.suspenso && <Lock size={11} aria-label={t.suspensoLbl} className="opacity-60" />}
               </label>
             ))}
           </div>

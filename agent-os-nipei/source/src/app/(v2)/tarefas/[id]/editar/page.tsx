@@ -1,8 +1,9 @@
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Empty, Title } from "@/components/v2/ui";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, responsaveisPara } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { updateTarefaAction } from "../../../actions";
 
@@ -27,7 +28,8 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
   }
 
   const equipes = getEquipes().filter((e) => e.id === tarefa.equipe || can.criarEm(me, e.id));
-  const pessoas = getPessoas().filter((p) => p.equipes.length > 0 || tarefa.responsaveis.includes(p.id));
+  // team first, then everyone else (access doesn't matter); current owners always stay listed so saving never drops them
+  const pessoas = [...responsaveisPara(tarefa.equipe).flatMap((g) => g.pessoas), ...getPessoas().filter((p) => p.externo && tarefa.responsaveis.includes(p.id))];
   const projetos = getProjetos(), objetivos = getObjetivos();
 
   return (
@@ -74,7 +76,7 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
             {pessoas.map((p) => (
               <label key={p.id} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-1 has-[:checked]:bg-neutral-900 has-[:checked]:text-white dark:has-[:checked]:bg-white dark:has-[:checked]:text-neutral-900">
                 <input type="checkbox" name="responsaveis" value={p.id} defaultChecked={tarefa.responsaveis.includes(p.id)} className="sr-only" />
-                {p.name}
+                {p.name}{p.suspenso && <Lock size={11} aria-label={t.suspensoLbl} className="opacity-60" />}
               </label>
             ))}
           </div>

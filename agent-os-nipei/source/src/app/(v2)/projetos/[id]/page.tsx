@@ -6,7 +6,7 @@ import Abas from "@/components/v2/Abas";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getDiagnosticos } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";
@@ -68,7 +68,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         </>
       )}
       {gerir && <LoteBarra formId="lote-projeto"
-        pessoas={pessoas.filter((x) => x.equipes.some((e) => p.equipes.includes(e))).map((x) => ({ id: x.id, nome: x.name }))}
+        pessoas={responsaveisPara(p.equipes[0]).flatMap((g) => g.pessoas).map((x) => ({ id: x.id, nome: x.name + (x.suspenso ? ` (${t.suspensoLbl})` : "") }))}
         equipes={equipes.filter((x) => can.gerirEquipe(me, x.id)).map((x) => ({ id: x.id, nome: x.nome }))}
         labels={{ selecionadas: t.selecionadas, todas: t.selecionarTodas, limpar: t.limparSelecao, aplicar: t.aplicar, acao: t.acaoLote,
           atribuir: t.atribuirA, prazo: t.mudarPrazo, concluir: t.marcarConcluidas, prioridade: t.prioridade, mover: t.moverEquipe,

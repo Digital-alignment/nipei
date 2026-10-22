@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Phone } from "lucide-react";
+import { ArrowLeft, Lock, MessageCircle, Phone, Users } from "lucide-react";
 import { Avatar, Chip, Title } from "@/components/v2/ui";
 import { can, currentUser, getEquipes, getPessoas, type Pessoa } from "@/lib/v2/data";
 import { resumoPessoas } from "@/lib/v2/pessoasInfo";
@@ -42,7 +42,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
   const situacao = me.gestao && (SITUACOES as readonly string[]).includes(q.situacao ?? "") ? q.situacao as (typeof SITUACOES)[number] : null;
   const daEquipe = todas.filter((p) => p.equipes.length > 0 && (!q.equipe || p.equipes.includes(q.equipe)));
   const ativas = ordenar(daEquipe.filter((p) => !situacao || naSituacao[situacao](p)));
-  const inativas = todas.filter((p) => p.equipes.length === 0);
+  const inativas = todas.filter((p) => p.equipes.length === 0 && !p.externo);
   const link = (o: Record<string, string | undefined>) => "/pessoas?" + new URLSearchParams(Object.entries({ q: q.q, equipe: q.equipe, ordem: q.ordem, situacao: q.situacao, ...o }).filter(([, v]) => v) as [string, string][]);
 
   const Cartao = ({ p }: { p: Pessoa }) => {
@@ -69,7 +69,8 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           <span className="ml-auto flex items-center gap-2">
             {me.gestao && <span title={t.perfilCompleto} className={`tabular-nums ${c === 4 ? "text-green-600 dark:text-green-400" : c >= 2 ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}`}>{c}/4</span>}
             <span title={fone.t} className={fone.cor}><Phone size={13} /></span>
-            {me.gestao && (part ? <span title={t.participacao} className={`tabular-nums font-medium ${NIVEL_COR[part.nivel]}`}>{part.total ?? "—"}</span>
+            {p.suspenso ? <span title={t.acessoSuspensoTexto} className="inline-flex items-center gap-0.5 rounded bg-amber-50 dark:bg-amber-950/40 px-1 text-[10px] text-amber-700 dark:text-amber-400"><Lock size={10} />{t.suspensoCurto}</span>
+              : me.gestao && (part ? <span title={t.participacao} className={`tabular-nums font-medium ${NIVEL_COR[part.nivel]}`}>{part.total ?? "—"}</span>
               : !acesso && <span title={t.semAcessoAjuda} className="rounded bg-neutral-100 dark:bg-neutral-800 px-1 text-[10px] text-neutral-500">{t.semAcessoLbl}</span>)}
             {p.whatsapp && <a href={waLink(p.whatsapp)} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="relative z-10 text-neutral-400 hover:text-green-600"><MessageCircle size={16} /></a>}
           </span>
@@ -83,7 +84,10 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       {(() => { const e = q.equipe ? equipes.find((x) => x.id === q.equipe) : null; return (
         <Link href={e ? `/equipes/${e.id}` : "/equipes"} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{e ? e.nome : t.equipes}</Link>
       ); })()}
-      <Title>{t.pessoas}</Title>
+      <div className="flex items-start justify-between gap-3">
+        <Title>{t.pessoas}</Title>
+        {me.gestao && <Link href="/pessoas/organizar" className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900"><Users size={15} />{t.organizarEquipes}</Link>}
+      </div>
       <form className="mb-3">
         {q.equipe && <input type="hidden" name="equipe" value={q.equipe} />}
         {q.ordem && <input type="hidden" name="ordem" value={q.ordem} />}

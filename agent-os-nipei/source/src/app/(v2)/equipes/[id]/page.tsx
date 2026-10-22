@@ -7,7 +7,7 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import { balancear } from "@/lib/v2/carga";
-import { can, currentUser, getAcessos, getEquipes, getObjetivos, getPessoas, getTarefas, novidadesPara, progresso, today, type Pessoa, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, getAcessos, getEquipes, getObjetivos, getPessoas, getTarefas, novidadesPara, progresso, today, type Pessoa, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { numerosDe } from "@/lib/v2/pessoasInfo";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getT } from "@/lib/v2/i18n";
@@ -60,7 +60,11 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           <input type="hidden" name="id" value={y.id} />
           <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={sel}>
             <option value="" disabled>{t.escolherPessoa}</option>
-            {membrosEq.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {responsaveisPara(id).map((g) => (
+              <optgroup key={g.grupo} label={t.gruposResp[g.grupo]}>
+                {g.pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}{p.suspenso ? ` (${t.suspensoLbl})` : ""}</option>)}
+              </optgroup>
+            ))}
           </select>
           <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1 text-xs">{t.atribuirPessoa}</BotaoEnviar>
         </form>
@@ -100,7 +104,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           {grupo(t.semData, ordenarSemData(filtradas.filter((x) => !x.prazo), ctx))}
         </>
       )}
-      {gerir && <LoteBarra formId="lote-equipe" pessoas={membrosEq.map((p) => ({ id: p.id, nome: p.name }))}
+      {gerir && <LoteBarra formId="lote-equipe" pessoas={responsaveisPara(id).flatMap((g) => g.pessoas).map((p) => ({ id: p.id, nome: p.name + (p.suspenso ? ` (${t.suspensoLbl})` : "") }))}
         equipes={equipes.filter((x) => can.gerirEquipe(me, x.id)).map((x) => ({ id: x.id, nome: x.nome }))}
         labels={{ selecionadas: t.selecionadas, todas: t.selecionarTodas, limpar: t.limparSelecao, aplicar: t.aplicar, acao: t.acaoLote,
           atribuir: t.atribuirA, prazo: t.mudarPrazo, concluir: t.marcarConcluidas, prioridade: t.prioridade, mover: t.moverEquipe,

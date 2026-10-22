@@ -28,6 +28,8 @@ export type Pessoa = {
   // "Meu perfil" (lib/v2/perfil.ts): private fields are shown only to the person and gestão.
   apelido: string; dataNascimento: string; nacionalidade: string; cidade: string; pais: string; idioma: string;
   emergenciaNome: string; emergenciaWhatsapp: string; foto: string; fotoEm: string;
+  suspenso: boolean; // acesso_suspenso: stays in its teams (can be assigned) but can't log in nor get notices
+  externo: boolean;  // tipo_contato: externo — a group or outside contact, not a team member
   whatsappVerificado: boolean; whatsappVerificadoEm: string; dadosConfirmadosEm: string;
 };
 export type Tarefa = {
@@ -132,6 +134,7 @@ export function getPessoas(): Pessoa[] {
       emergenciaNome: s(fm.emergencia_nome), emergenciaWhatsapp: s(fm.emergencia_whatsapp), foto: s(fm.foto),
       whatsappVerificado: fm.whatsapp_verificado === true, whatsappVerificadoEm: s(fm.whatsapp_verificado_em),
       dadosConfirmadosEm: s(fm.dados_confirmados_em),
+      suspenso: fm.acesso_suspenso === true, externo: s(fm.tipo_contato) === "externo",
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
@@ -180,6 +183,7 @@ export async function currentUser(): Promise<Me | null> {
   const sub = full ?? verifyToken(token, MEMBER_PURPOSE);
   if (!sub) return null;
   const pessoa = getPessoas().find((p) => p.usuario === sub || p.id === sub) ?? null;
+  if (pessoa?.suspenso) return null;
   const equipes = getEquipes();
   // Gestão comes from the person's teams *now*, on every request: leaving Equipe 1 drops the admin
   // views at once, whatever session they hold. Only a login with no person note (env-only) keeps
@@ -194,6 +198,7 @@ export async function currentUser(): Promise<Me | null> {
 export function gestaoAgora(sub: string): boolean | null {
   const pessoa = getPessoas().find((p) => p.usuario === sub || p.id === sub);
   if (!pessoa) return null;
+  if (pessoa.suspenso) return false;
   const equipes = getEquipes();
   return pessoa.equipes.some((id) => equipes.find((e) => e.id === id)?.gestao);
 }
@@ -308,6 +313,39 @@ export function setCoordenacao(pessoaId: string, equipeId: string, coordena: boo
   const mudar = (lista: string[], id: string) => (coordena ? [...new Set([...lista, id])] : lista.filter((x) => x !== id));
   updateNote(pessoa.file, { coordena: mudar(arr(pessoa.fm.coordena), equipeId) });
   updateNote(equipe.file, { coordenadores: mudar(arr(equipe.fm.coordenadores), pessoaId) });
+}
+
+export type GrupoResponsaveis = { grupo: "equipe" | "outras" | "sem"; pessoas: Pessoa[] };
+/** Who can own a task: this team's members, then other teams, then people not in a team yet.
+ *  Platform access doesn't matter (a suspended person or a team without access can still be assigned). */
+export function responsaveisPara(equipeId = ""): GrupoResponsaveis[] {
+  const ps = getPessoas().filter((p) => !p.externo).sort((a, b) => a.name.localeCompare(b.name, "pt"));
+  const da = equipeId ? ps.filter((p) => p.equipes.includes(equipeId)) : [];
+  return ([
+    { grupo: "equipe", pessoas: da },
+    { grupo: "outras", pessoas: ps.filter((p) => p.equipes.length && !da.includes(p)) },
+    { grupo: "sem", pessoas: ps.filter((p) => !p.equipes.length) },
+  ] as GrupoResponsaveis[]).filter((g) => g.pessoas.length);
+}
+
+function notaPessoa(pessoaId: string) {
+  const n = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
+  if (!n) throw new Error("Pessoa não encontrada");
+  return n;
+}
+
+/** Suspends (or restores) a person's access: no login, no WhatsApp notices. Teams and tasks stay. */
+export function setSuspenso(pessoaId: string, suspenso: boolean) {
+  updateNote(notaPessoa(pessoaId).file, { acesso_suspenso: suspenso, avisos_whatsapp: !suspenso });
+}
+
+/** Marks a note as an outside contact / group (out of team organisation and assignee lists), or back. */
+export function setExterno(pessoaId: string, externo: boolean) {
+  updateNote(notaPessoa(pessoaId).file, { tipo_contato: externo ? "externo" : "" });
+}
+
+export function setFuncao(pessoaId: string, funcao: string) {
+  updateNote(notaPessoa(pessoaId).file, { funcao: funcao.trim().slice(0, 80) });
 }
 
 /** K4: news line at the top of the project's "## Atualizações" section (created if missing). */

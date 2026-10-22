@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Chip, Title } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import { currentUser, getTarefas, today } from "@/lib/v2/data";
+import { currentUser, getTarefas, responsaveisPara, today } from "@/lib/v2/data";
 import { pulso } from "@/lib/v2/hoje";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { atribuirAction } from "../actions";
@@ -61,7 +61,11 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
               <input type="hidden" name="id" value={x.id} />
               <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={sel}>
                 <option value="" disabled>{t.escolherPessoa}</option>
-                {p.pessoas.filter((y) => !x.equipe || y.equipes.includes(x.equipe)).map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                {responsaveisPara(x.equipe).map((g) => (
+                  <optgroup key={g.grupo} label={t.gruposResp[g.grupo]}>
+                    {g.pessoas.map((y) => <option key={y.id} value={y.id}>{y.name}{y.suspenso ? ` (${t.suspensoLbl})` : ""}</option>)}
+                  </optgroup>
+                ))}
               </select>
               <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1 text-xs">{t.atribuirPessoa}</BotaoEnviar>
             </form>

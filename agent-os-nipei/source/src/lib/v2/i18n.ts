@@ -192,6 +192,19 @@ const pt = {
   situacoes: { incompleto: "Perfil incompleto", sem_whats: "Sem WhatsApp", nao_verificado: "WhatsApp não verificado", sem_acesso: "Sem acesso" },
   enviarCadastroLote: "Enviar link de cadastro", avisoCadastroLote: "Cada pessoa recebe o próprio link pelo WhatsApp do Nipëi. Quem não tem WhatsApp fica de fora. Máx. 30 por dia.",
   resultadoCadastroLote: "Enviados: {ok}. Sem WhatsApp: {sem}.",
+  suspensoLbl: "acesso suspenso", gruposResp: { equipe: "Desta equipe", outras: "Outras equipes", sem: "Ainda sem equipe" },
+  organizarEquipes: "Organizar equipes", organizarIntro: "Defina quem é de cada equipe. É isso que permite atribuir tarefas, mesmo a quem ainda não entra na plataforma ou está com o acesso suspenso.",
+  organizadas: "{n} de {total} pessoas já estão numa equipe", semEquipeCurto: "sem equipe", equipesSemCoord: "equipes sem coordenação", semFuncaoCurto: "sem função",
+  contatosExternos: "Contatos externos", contatosExternosAjuda: "Grupos e pessoas de fora (facilitadores, fornecedores). Não entram nas equipes nem na lista de responsáveis.",
+  aindaSemEquipe: "Ainda sem equipe", aindaSemEquipeAjuda: "Escolha a equipe de cada pessoa. Se for um grupo ou alguém de fora, marque como contato externo.",
+  marcarExterno: "Contato externo", voltarPessoa: "É da comunidade", semCoordenacaoAviso: "Sem coordenação: defina na ficha de um membro (aba Gestão).",
+  semMembros: "Nenhum membro ainda", adicionarPessoa: "Adicionar pessoa…", semFuncaoTitulo: "Membros sem função",
+  semFuncaoAjuda: "Uma função curta ajuda a IA e a equipe a saber a quem atribuir cada tarefa.", funcaoExemplo: "ex.: Produção de rapé",
+  equipeSemAcessoAjuda: "Equipe ainda sem acesso à plataforma (os membros podem receber tarefas)",
+  organizarHojeIntro: "Deixe claro quem é de cada equipe para poder atribuir tarefas a todos.", organizarTodos: "Organizar equipes",
+  acessoSuspensoTexto: "Acesso suspenso: não entra na plataforma nem recebe avisos", acessoAtivoTexto: "Pode entrar na plataforma",
+  suspenderAcesso: "Suspender acesso", reativarAcesso: "Reativar acesso", ehContatoExterno: "Contato externo (fora das equipes)",
+  suspensoAjuda: "Suspender não tira das equipes: a pessoa continua aparecendo para receber tarefas.", suspensoCurto: "suspenso",
 };
 export type Dict = typeof pt;
 
@@ -383,6 +396,19 @@ const en: Dict = {
   situacoes: { incompleto: "Incomplete profile", sem_whats: "No WhatsApp", nao_verificado: "WhatsApp not verified", sem_acesso: "No access" },
   enviarCadastroLote: "Send registration link", avisoCadastroLote: "Each person gets their own link from the Nipëi WhatsApp. People without WhatsApp are skipped. Max 30 a day.",
   resultadoCadastroLote: "Sent: {ok}. No WhatsApp: {sem}.",
+  suspensoLbl: "access suspended", gruposResp: { equipe: "This team", outras: "Other teams", sem: "Not in a team yet" },
+  organizarEquipes: "Organise teams", organizarIntro: "Set who belongs to each team. That is what lets you assign tasks, even to people who can't log in yet or whose access is suspended.",
+  organizadas: "{n} of {total} people are already in a team", semEquipeCurto: "without team", equipesSemCoord: "teams without a lead", semFuncaoCurto: "without role",
+  contatosExternos: "Outside contacts", contatosExternosAjuda: "Groups and outside people (facilitators, suppliers). They are not in teams nor in the owner lists.",
+  aindaSemEquipe: "Not in a team yet", aindaSemEquipeAjuda: "Choose each person's team. If it is a group or someone from outside, mark it as an outside contact.",
+  marcarExterno: "Outside contact", voltarPessoa: "Part of the community", semCoordenacaoAviso: "No lead: set it on a member's profile (Management tab).",
+  semMembros: "No members yet", adicionarPessoa: "Add person…", semFuncaoTitulo: "Members without a role",
+  semFuncaoAjuda: "A short role helps the AI and the team know whom to assign each task.", funcaoExemplo: "e.g. Rapé production",
+  equipeSemAcessoAjuda: "Team without platform access yet (members can still get tasks)",
+  organizarHojeIntro: "Make clear who is in each team so tasks can be assigned to everyone.", organizarTodos: "Organise teams",
+  acessoSuspensoTexto: "Access suspended: can't log in nor get notices", acessoAtivoTexto: "Can log in to the platform",
+  suspenderAcesso: "Suspend access", reativarAcesso: "Restore access", ehContatoExterno: "Outside contact (not in teams)",
+  suspensoAjuda: "Suspending doesn't remove them from teams: they still show up to receive tasks.", suspensoCurto: "suspended",
 };
 
 export async function getLang(): Promise<Lang> {

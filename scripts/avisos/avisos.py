@@ -76,6 +76,8 @@ def pessoas_que_recebem(hoje=None):
         verificado = fm.get("whatsapp_verificado") is True
         if not (verificado or hoje < FIM_TRANSICAO):
             continue
+        if fm.get("acesso_suspenso") is True or str(fm.get("tipo_contato") or "") == "externo":
+            continue  # suspended access / outside contact: never notified
         if fone and fm.get("avisos_whatsapp") is not False and set(map(str, fm.get("equipes") or [])) & equipes_com_aviso:
             out[pid] = {"nome": str(fm.get("apelido") or fm.get("name") or pid).split(" (")[0], "fone": fone, "verificado": verificado}
     return out

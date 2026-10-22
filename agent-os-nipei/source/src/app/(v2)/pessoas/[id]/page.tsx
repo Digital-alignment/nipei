@@ -17,7 +17,7 @@ import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getEstudo, resumoPessoas } from "@/lib/v2/pessoasInfo";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { addToEquipeAction, atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, removerDaEquipeAction, setAvisosPessoaAction, toggleLangAction } from "../../actions";
+import { addToEquipeAction, atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, externoAction, removerDaEquipeAction, setAvisosPessoaAction, suspensoAction, toggleLangAction } from "../../actions";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
@@ -285,6 +285,27 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
           )}
         </div>
       )}
+      {me.gestao && (
+        <div className={CARTAO}>
+          <p className={ROTULO}>{t.acessoPlataforma}</p>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            {p.externo ? <span className="text-neutral-500">{t.ehContatoExterno}</span>
+              : p.suspenso ? <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400"><Lock size={14} />{t.acessoSuspensoTexto}</span>
+              : <span className={temAcesso ? "text-green-700 dark:text-green-400" : "text-neutral-500"}>{temAcesso ? t.acessoAtivoTexto : t.equipeSemAcesso}</span>}
+            {!p.externo && p.id !== me.pessoa?.id && (
+              <form action={suspensoAction}>
+                <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="suspenso" value={String(!p.suspenso)} />
+                <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs">{p.suspenso ? t.reativarAcesso : t.suspenderAcesso}</BotaoEnviar>
+              </form>
+            )}
+            <form action={externoAction} className="ml-auto">
+              <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="externo" value={String(!p.externo)} />
+              <BotaoEnviar enviando="…" className="text-xs underline text-neutral-500">{p.externo ? t.voltarPessoa : t.marcarExterno}</BotaoEnviar>
+            </form>
+          </div>
+          <p className="text-[11px] text-neutral-500 mt-2">{t.suspensoAjuda}</p>
+        </div>
+      )}
       {(me.gestao || podeAdicionar.length > 0) && (
         <div className={CARTAO}>
           <p className={ROTULO}>{t.equipes}</p>
@@ -340,7 +361,7 @@ export default async function PessoaDetalhe({ params }: { params: Promise<{ id: 
       <div className="flex items-center gap-4">
         <Avatar name={p.name} size={60} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold tracking-tight truncate">{p.name}</h1>
+          <h1 className="text-xl font-semibold tracking-tight truncate">{p.name}{p.suspenso && <span title={t.acessoSuspensoTexto} className="inline-flex align-middle ml-2 text-amber-600 dark:text-amber-400"><Lock size={16} /></span>}</h1>
           <p className="text-sm text-neutral-500 truncate">{[p.apelido, p.nativeName, p.funcao].filter(Boolean).join(" · ") || p.nipeiId}</p>
         </div>
         <div className="flex gap-1.5">

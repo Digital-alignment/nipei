@@ -122,6 +122,37 @@ export async function cadastroLoteAction(form: FormData): Promise<{ enviados?: n
   return { enviados, semWhats, parou };
 }
 
+/** Gestão: suspend or restore someone's access (no login, no notices; teams and tasks stay). Never yourself. */
+export async function suspensoAction(form: FormData) {
+  const me = await requireUser();
+  const pessoa = String(form.get("pessoa"));
+  await tentar(async () => {
+    if (!me.gestao) throw new Error("Só a gestão suspende acessos");
+    if (pessoa === me.pessoa?.id) throw new Error("Você não pode suspender o próprio acesso");
+    const { setSuspenso } = await import("@/lib/v2/data");
+    setSuspenso(pessoa, form.get("suspenso") === "true");
+  });
+  revalidatePath("/", "layout");
+}
+
+/** Gestão: mark a note as an outside contact / group (or back to person). */
+export async function externoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { setExterno } = await import("@/lib/v2/data");
+  await tentar(async () => setExterno(String(form.get("pessoa")), form.get("externo") === "true"));
+  revalidatePath("/", "layout");
+}
+
+export async function funcaoAction(form: FormData) {
+  const me = await requireUser();
+  const p = getPessoas().find((x) => x.id === String(form.get("pessoa")));
+  if (!p || !(me.gestao || can.gerirPessoa(me, p))) return;
+  const { setFuncao } = await import("@/lib/v2/data");
+  await tentar(async () => setFuncao(p.id, String(form.get("funcao") ?? "")));
+  revalidatePath("/", "layout");
+}
+
 export async function coordenacaoAction(form: FormData) {
   const me = await requireUser();
   const pessoa = String(form.get("pessoa")), equipeId = pick(form.get("equipe"), getEquipes().map((e) => e.id));
