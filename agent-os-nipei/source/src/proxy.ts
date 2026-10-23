@@ -9,7 +9,7 @@ const PUBLIC_API = [
   "/api/ingest/inbox-webhook", // checks NIPEI_WEBHOOK_SECRET itself
   "/api/agenda/ics", // Google Calendar feed: checks its signed "ics" token itself
 ];
-const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro"]; // /entrar and /cadastro check their link token
+const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade"]; // /entrar and /cadastro check their link token
 
 // A "member" session (non-gestão teams) only reaches the v2 pages; v1 and the internal API
 // (agents, dispatch, vault writes…) stay gestão-only. Keep in sync with V2_PATHS in Shell.tsx.
