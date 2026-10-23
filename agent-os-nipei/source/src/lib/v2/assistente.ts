@@ -473,6 +473,7 @@ Regras:
 - Para planejar (um retiro, uma semana, um projeto), proponha as tarefas uma a uma com criar_tarefa (máx. 8 por vez), com prazos e responsáveis coerentes.
 - Antes de mudar uma tarefa, ache o id. Datas relativas ("sexta", "amanhã") viram AAAA-MM-DD a partir de hoje.
 - "Esta tarefa / este projeto / esta equipe / esta pessoa" = o que está na página atual.
+- Mensagens marcadas [mensagem de AAAA-MM-DD] são de outro dia: datas relativas nelas ("amanhã", "hoje") valem para aquele dia. Não corrija nem comente respostas antigas, a menos que a pessoa peça; responda só ao pedido atual.
 - WhatsApp: escreva a mensagem completa no idioma de quem recebe; ela só sai depois da confirmação.
 - Google: google_agenda é a agenda pessoal (para disponibilidade e "o que eu tenho"); a Agenda do Nipëi (agenda) é a da comunidade. Para marcar um compromisso pessoal ou com convidados de fora, use evento_google; para um evento da comunidade, criar_evento.
 - Notas internas (notas_internas) são confidenciais da gestão: use para responder à gestão, mas nunca as coloque em mensagens, comentários de tarefa, notas de projeto ou na memória.
@@ -485,10 +486,13 @@ type ApiMsg = { role: "system" | "user" | "assistant" | "tool"; content: string 
 
 /** Saved messages → model history (the cards are told back as one line, so it knows what was decided). */
 export function paraModelo(salvas: MsgSalva[]): Msg[] {
+  const hoje = today();
+  const dia = (em: string) => new Date(em).toLocaleString("sv-SE", { timeZone: "America/Bahia" }).slice(0, 10);
   return salvas.map((m) => ({
     role: m.role,
-    // past tool calls are not replayed, so say which reads backed the answer (else the model doubts it)
-    content: m.content + (m.consultas?.length ? `\n[consultou: ${m.consultas.join(", ")}]` : "") + (m.cartoes?.length ? `\n[propostas: ${m.cartoes.map((c) => `${c.resumo} (${c.estado})`).join("; ")}]` : ""),
+    // messages from earlier days carry their date: "amanhã" said yesterday is not today's tomorrow.
+    // Past tool calls are not replayed, so say which reads backed the answer (else the model doubts it).
+    content: (m.em && dia(m.em) !== hoje ? `[mensagem de ${dia(m.em)}] ` : "") + m.content + (m.consultas?.length ? `\n[consultou: ${m.consultas.join(", ")}]` : "") + (m.cartoes?.length ? `\n[propostas: ${m.cartoes.map((c) => `${c.resumo} (${c.estado})`).join("; ")}]` : ""),
   }));
 }
 
@@ -509,7 +513,7 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
     const m = (await res.json())?.choices?.[0]?.message as ApiMsg | undefined;
     if (!m) throw new Error("A IA não respondeu");
     const calls = m.tool_calls ?? [];
-    if (!calls.length) return { resposta: s(m.content).replace(/\n?\[(consultou|propostas):[^\]]*\]/g, "").trim(), acoes, consultas: [...consultas] };
+    if (!calls.length) return { resposta: s(m.content).replace(/\n?\[(consultou|propostas):[^\]]*\]/g, "").replace(/^\[mensagem de [^\]]*\]\s*/, "").trim(), acoes, consultas: [...consultas] };
     msgs.push({ role: "assistant", content: m.content ?? null, tool_calls: calls });
     for (const c of calls) {
       let args: Record<string, unknown> = {};
