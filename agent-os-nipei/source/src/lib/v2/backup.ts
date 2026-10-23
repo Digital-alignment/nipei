@@ -3,7 +3,7 @@ import path from "path";
 import { getEquipes, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, today, vault } from "./data";
 import { getConversa, getMemoria } from "./assistente";
 import { getConexoes, pessoasConectadas, salvarConexoes } from "./conexoes";
-import { salvarArquivo } from "./google";
+import { gapi, pastaNipei, salvarArquivo } from "./google";
 
 // One-way copy of each person's own slice of Nipëi into the "Nipëi" folder of their Google Drive:
 // profile, their tasks, the assistant's memory about them and their conversation. The vault stays the
@@ -37,9 +37,33 @@ function arquivos(pessoaId: string) {
 }
 
 /** Writes (or overwrites) the person's files; remembers their ids so the folder doesn't fill with copies. */
-export async function backupPessoa(pessoaId: string): Promise<number> {
+const emCurso = new Map<string, Promise<number>>();
+/** One backup per person at a time: a second call (connect + hourly check) joins the running one. */
+export function backupPessoa(pessoaId: string): Promise<number> {
+  const atual = emCurso.get(pessoaId);
+  if (atual) return atual;
+  const p = executarBackup(pessoaId).finally(() => emCurso.delete(pessoaId));
+  emCurso.set(pessoaId, p);
+  return p;
+}
+
+async function executarBackup(pessoaId: string): Promise<number> {
   const conteudo = arquivos(pessoaId);
   try {
+    // what is already in the folder: reuse it by name and send extra copies to the trash (recoverable)
+    const pasta = await pastaNipei(pessoaId);
+    const q = new URLSearchParams({ q: `'${pasta}' in parents and trashed=false`, fields: "files(id,name)", pageSize: "200" });
+    const existentes = (await gapi<{ files?: { id: string; name: string }[] }>(pessoaId, "www.googleapis.com", `/drive/v3/files?${q}`)).files ?? [];
+    for (const nome of Object.keys(conteudo)) {
+      const ids = existentes.filter((f) => f.name === nome).map((f) => f.id);
+      const guardado = getConexoes(pessoaId).google?.backup?.arquivos?.[nome];
+      const fica = guardado && ids.includes(guardado) ? guardado : ids[0];
+      for (const extra of ids.filter((x) => x !== fica)) {
+        await gapi(pessoaId, "www.googleapis.com", `/drive/v3/files/${extra}?fields=id`, { method: "PATCH", body: JSON.stringify({ trashed: true }) }).catch(() => null);
+      }
+      const c = getConexoes(pessoaId);
+      if (c.google && fica && fica !== guardado) { c.google.backup = { ...c.google.backup, arquivos: { ...c.google.backup?.arquivos, [nome]: fica } }; salvarConexoes(pessoaId, c); }
+    }
     for (const [nome, texto] of Object.entries(conteudo)) {
       const id = getConexoes(pessoaId).google?.backup?.arquivos?.[nome];
       const f = await salvarArquivo(pessoaId, { nome, conteudo: texto, tipo: "text/markdown", id });
