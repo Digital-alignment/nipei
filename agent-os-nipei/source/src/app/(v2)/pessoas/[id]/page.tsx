@@ -412,7 +412,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         { id: "perfil", label: t.perfilLbl, count: 0, conteudo: perfil },
         ...(gerir || proprio || enviados.length ? [{ id: "gestao", label: `🔒 ${t.gestaoLbl}`, count: 0, conteudo: gestao }] : []),
         // only on one's own profile: nobody sees or touches someone else's connections
-        ...(me.pessoa?.id === p.id ? [{ id: "conexoes", label: t.cx.aba, count: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },
+        ...(me.pessoa?.id === p.id && !me.vendoComo ? [{ id: "conexoes", label: t.cx.aba, count: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },
           { id: "seguranca", label: t.sg.aba, count: 0, conteudo: <Seguranca p={p} t={t} ok={q.aba === "seguranca" ? q.ok : undefined} /> }] : []),
       ]} />
     </>

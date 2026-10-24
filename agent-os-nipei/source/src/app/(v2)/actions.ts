@@ -813,7 +813,9 @@ export async function prazoRapidoAction(form: FormData) {
 // ---------------------------------------------------------------- Hoje: Bom dia, pulso
 
 export async function bomDiaAction(): Promise<string> {
-  const me = await requireUser();
+  const me = await currentUser({ leitura: true });
+  if (!me) redirect("/login");
+  if (me.vendoComo) return ""; // "ver como": no AI call, no cache written for the other person
   const { getLang } = await import("@/lib/v2/i18n");
   const { gerarBomDia } = await import("@/lib/v2/hoje");
   try { return await gerarBomDia(me, await getLang()); } catch (e) { console.warn("[bomDia]", (e as Error).message); return ""; }

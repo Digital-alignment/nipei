@@ -13,6 +13,7 @@ import { Avatar } from "@/components/v2/ui";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { MEMBER_PURPOSE, currentUser, registrarAcesso } from "@/lib/v2/data";
 import { backupsPendentes } from "@/lib/v2/backup";
+import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
 
@@ -27,14 +28,25 @@ export default async function V2Layout({ children }: { children: React.ReactNode
     const token = (await cookies()).get(SESSION_COOKIE)?.value;
     redirect(verifyToken(token, MEMBER_PURPOSE) ? "/login?erro=acesso" : "/login");
   }
-  if (user.pessoa) registrarAcesso(user.pessoa.id);
+  if (user.pessoa && !user.vendoComo) registrarAcesso(user.pessoa.id);
   backupsPendentes(); // daily Drive copy for whoever connected Google (background, at most hourly)
+  vigiarSaude(); // health alerts on the admins' WhatsApp (background, at most every 10 min)
   const { t, lang } = await getT();
   const name = user.pessoa?.name ?? user.username;
   const menuFechado = (await cookies()).get("nipei_menu")?.value === "fechado"; // set by components/v2/Nav.tsx
 
   return (
     <div className="v2 min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+      {user.vendoComo && (
+        <>
+          {/* "ver como" (admin, read-only): impossible to miss, and always one tap from leaving */}
+          <div className="print:hidden bg-amber-400 text-black text-sm px-4 py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+            <span>👁 Vendo a plataforma como <strong>{name}</strong>{user.gestao ? " (gestão)" : user.coordena.length ? " (coordenação)" : " (membro)"} — <strong>somente leitura</strong>: nada que você fizer aqui é salvo.</span>
+            <a href="/ver-como/sair" className="rounded-full bg-black text-white px-3 py-0.5 text-xs font-medium">Sair do “ver como”</a>
+          </div>
+          <a href="/ver-como/sair" className="print:hidden fixed z-50 left-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:left-1/2 md:-translate-x-1/2 md:bottom-4 rounded-full bg-amber-400 text-black shadow-lg px-3 py-1.5 text-xs font-medium">👁 {name.split(" (")[0]} · sair</a>
+        </>
+      )}
       <header className="print:hidden sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
         <Link href="/hoje" aria-label="Nipëi" className="shrink-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2">
           {/* app icon (public/icons, generated from public/brand) — light, crisp up to 3× screens */}
@@ -60,10 +72,10 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       <div className="flex">
         <Nav fechadoInicial={menuFechado} assistente={user.gestao ? t.assistente : undefined} labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas, recolher: t.recolherMenu, expandir: t.expandirMenu }} />
         <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-10">
-          <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}{user.pessoa && <PulsoUso />}</div>
+          <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}{user.pessoa && !user.vendoComo && <PulsoUso />}</div>
         </main>
       </div>
-      {user.gestao && (
+      {user.gestao && !user.vendoComo && (
         <Suspense>
           <AssistenteGlobal lang={lang} labels={{ titulo: t.assistente, placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, confirmarTodas: t.confirmarTodas,
             cancelar: t.cancelar, feito: t.feitoLbl, nova: t.novaConversa, pensando: t.pensando, fechar: t.fechar, intro: t.assistenteIntro, abrir: t.abrirAssistente, semVoz: t.semVoz,

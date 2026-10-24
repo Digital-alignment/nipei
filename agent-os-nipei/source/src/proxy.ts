@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, isValidApiToken, verifyToken } from "@/lib/auth";
-import { gestaoAgora, sessaoCortada } from "@/lib/v2/data";
+import { VER_COMO_COOKIE, gestaoAgora, sessaoCortada, verComoAtivo } from "@/lib/v2/data";
 import { subEhAdmin } from "@/lib/v2/admin";
 
 // Routes reachable without a session. Only add routes that verify their own secret
@@ -23,6 +23,12 @@ const isMemberPage = (p: string) => p === "/" || MEMBER_PAGES.some((m) => p === 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isApi = pathname.startsWith("/api/");
+  // "ver como" (admin, read-only): no write reaches any route handler or API — public ones included (usage
+  // pulse, login…). Server actions are stopped in currentUser() with a friendly notice instead.
+  if (req.method !== "GET" && req.method !== "HEAD" && !req.headers.get("next-action")
+    && verComoAtivo(verifyToken(req.cookies.get(SESSION_COOKIE)?.value, "session"), req.cookies.get(VER_COMO_COOKIE)?.value)) {
+    return NextResponse.json({ ok: false, error: "Modo “ver como”: somente leitura" }, { status: 403 });
+  }
   if ((isApi ? PUBLIC_API : PUBLIC_PAGES).includes(pathname)) return NextResponse.next();
   // MCP + its OAuth server: /mcp checks its Bearer token, /oauth/authorize asks for the Nipëi login itself
   if (pathname === "/mcp" || pathname.startsWith("/oauth/") || pathname.startsWith("/.well-known/")) return NextResponse.next();

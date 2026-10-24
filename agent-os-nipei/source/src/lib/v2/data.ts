@@ -172,17 +172,50 @@ export function getTarefas(): Tarefa[] {
 //   "member":  everyone else — v2 pages only
 export const MEMBER_PURPOSE = "member";
 
-export type Me = { username: string; pessoa: Pessoa | null; gestao: boolean; coordena: string[]; equipes: string[] };
+export type Me = {
+  username: string; pessoa: Pessoa | null; gestao: boolean; coordena: string[]; equipes: string[];
+  /** set while the admin is "seeing as" this person (read-only; see verComoAtivo) */
+  vendoComo?: { admin: string };
+};
+
+export const VER_COMO_COOKIE = "nipei_vercomo";
+const admins = () => (process.env.NIPEI_ADMINS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+/**
+ * "Ver como" (admin panel): a signed cookie "<admin id>|<person id>" that only counts when the real session
+ * belongs to that same admin, still listed in NIPEI_ADMINS. Returns the pair or null.
+ */
+export function verComoAtivo(sessaoSub: string | null, cookieVal: string | undefined): { admin: string; alvo: string } | null {
+  const v = verifyToken(cookieVal, "ver-como");
+  if (!v || !sessaoSub) return null;
+  const [admin, alvo] = v.split("|");
+  const dono = getPessoas().find((p) => p.usuario === sessaoSub || p.id === sessaoSub);
+  return dono && dono.id === admin && admins().includes(admin) && alvo ? { admin, alvo } : null;
+}
 
 /**
  * The logged-in person, or null when not logged in or when none of their teams has access
  * (so turning a team's access off takes effect on the next request, not when the cookie expires).
  */
-export async function currentUser(): Promise<Me | null> {
+/** `leitura`: a read-only server action (allowed in "ver como"); every other server action is stopped there. */
+export async function currentUser(opts: { leitura?: boolean } = {}): Promise<Me | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const full = verifyToken(token, "session");
   const sub = full ?? verifyToken(token, MEMBER_PURPOSE);
   if (!sub || sessaoCortada(token)) return null;
+  const vc = verComoAtivo(full, (await cookies()).get(VER_COMO_COOKIE)?.value);
+  if (vc) {
+    // read-only: any server action (form or button) stops here with a notice instead of writing
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    if (h.get("next-action") && !opts.leitura) {
+      const { redirect } = await import("next/navigation");
+      let volta = "/hoje";
+      try { const u = new URL(h.get("referer") ?? ""); u.searchParams.set("erro", "Modo “ver como”: somente leitura — nada foi salvo."); volta = u.pathname + u.search; } catch { /* no referer */ }
+      redirect(volta);
+    }
+    const alvo = montarMe(vc.alvo, false);
+    return alvo ? { ...alvo, vendoComo: { admin: vc.admin } } : null;
+  }
   return montarMe(sub, !!full);
 }
 

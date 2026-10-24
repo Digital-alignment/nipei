@@ -44,3 +44,68 @@ export async function verificarSaudeAction() {
   registrarAdmin(me.pessoa!.id, "verificou a saúde agora");
   revalidatePath("/controle");
 }
+
+/** Starts "ver como" (read-only, 30 min) for one person, opening the chosen page. */
+export async function iniciarVerComoAction(form: FormData) {
+  const me = await admin();
+  if (!(await adminConfirmado(me))) redirect("/controle");
+  const { getPessoas, meDaPessoa, VER_COMO_COOKIE } = await import("@/lib/v2/data");
+  const { signToken } = await import("@/lib/auth");
+  const alvo = getPessoas().find((p) => p.id === String(form.get("pessoa")));
+  if (!alvo || alvo.id === me.pessoa!.id) redirect("/controle?m=vercomo&erro=Escolha outra pessoa.");
+  if (!meDaPessoa(alvo.id)) redirect(`/controle?m=vercomo&erro=${encodeURIComponent(`${alvo.name} não consegue entrar na plataforma agora.`)}`);
+  const pg = String(form.get("pagina") ?? "/hoje");
+  const destino = pg === "ficha" ? `/pessoas/${alvo.id}` : ["/hoje", "/agenda", "/equipes", "/projetos", "/conhecimento"].includes(pg) ? pg : "/hoje";
+  (await cookies()).set({ name: VER_COMO_COOKIE, value: signToken("ver-como", `${me.pessoa!.id}|${alvo.id}`, 1800), httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 1800 });
+  registrarAdmin(me.pessoa!.id, `começou "ver como" ${alvo.id} (${destino})`);
+  redirect(destino);
+}
+
+// ---------------------------------------------------------------- Operação
+async function confirmado() {
+  const me = await admin();
+  if (!(await adminConfirmado(me))) redirect("/controle");
+  return me;
+}
+const voltarOp = (msg: string) => redirect(`/controle?m=operacao&ok=${encodeURIComponent(msg)}`);
+
+export async function alertasAction(form: FormData) {
+  const me = await confirmado();
+  const { avisarAdmins, ligarAlertas } = await import("@/lib/v2/alertas");
+  const o = String(form.get("o"));
+  if (o === "teste") {
+    const ok = await avisarAdmins("Nipëi · painel de controle\n\n🔔 Alerta de teste: os avisos de saúde chegam aqui.");
+    registrarAdmin(me.pessoa!.id, "enviou alerta de teste");
+    voltarOp(ok ? "Alerta de teste enviado." : "Não consegui enviar (WhatsApp do Nipëi ou seu número).");
+  }
+  ligarAlertas(o === "ligar");
+  registrarAdmin(me.pessoa!.id, `alertas ${o === "ligar" ? "ligados" : "desligados"}`);
+  voltarOp(o === "ligar" ? "Alertas ligados." : "Alertas desligados.");
+}
+
+export async function operacaoAction(form: FormData) {
+  const me = await confirmado();
+  const o = String(form.get("o"));
+  if (o === "backup") {
+    const { pessoasConectadas, getConexoes } = await import("@/lib/v2/conexoes");
+    const { backupPessoa } = await import("@/lib/v2/backup");
+    const ids = pessoasConectadas().filter((p) => getConexoes(p).google);
+    const r = await Promise.allSettled(ids.map((p) => backupPessoa(p)));
+    registrarAdmin(me.pessoa!.id, `cópia no Drive de todos (${ids.length})`);
+    voltarOp(`Cópia feita: ${r.filter((x) => x.status === "fulfilled").length} de ${ids.length}.`);
+  }
+  if (o === "sync") {
+    const { requestSync } = await import("@/lib/tarefaNote");
+    const { vault } = await import("@/lib/v2/data");
+    requestSync(vault());
+    registrarAdmin(me.pessoa!.id, "pediu sincronização do vault");
+    voltarOp("Sincronização pedida (o servidor roda em alguns segundos).");
+  }
+  if (o === "bloqueios") {
+    const { limparTodosBloqueios } = await import("@/lib/v2/seguranca");
+    const n = limparTodosBloqueios();
+    registrarAdmin(me.pessoa!.id, `limpou bloqueios de login (${n})`);
+    voltarOp(`Bloqueios de login limpos (${n}).`);
+  }
+  voltarOp("Nada feito.");
+}

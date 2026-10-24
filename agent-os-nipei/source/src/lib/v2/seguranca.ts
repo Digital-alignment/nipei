@@ -110,3 +110,5 @@ export function todosAcessos(): { pessoa: string; em: string; metodo: string; di
 }
 /** Who still logs in with the old env password (not yet migrated to a hash). */
 export const semHash = () => getPessoas().filter((p) => p.usuario && envSenha(p.usuario) !== null && !ler(p.id).senha).map((p) => p.id);
+/** Clears every login lockout (admin panel → Operação). */
+export function limparTodosBloqueios() { const n = falhas.size; falhas.clear(); return n; }
