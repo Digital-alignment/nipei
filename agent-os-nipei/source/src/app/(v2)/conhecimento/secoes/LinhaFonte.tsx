@@ -14,7 +14,7 @@ export default function LinhaFonte({ f, ctx }: { f: Fonte; ctx: Ctx }) {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate">{f.titulo || f.url || "…"}</p>
           <p className="text-xs text-neutral-500">
-            {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)} · {" "}
+            {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)}{f.acervo && ` · ${t.doAcervo}`} · {" "}
             {f.status === "processando" ? t.processando : f.status === "erro" ? <span className="text-red-600">{t.erroFonte}</span>
               : pendentes.length ? <span className="text-amber-700 dark:text-amber-400">{pendentes.length} {t.fatosPropostos}</span> : t.pronta}
           </p>

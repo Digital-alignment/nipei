@@ -31,6 +31,7 @@ export type StatusFato = "proposto" | "confirmado" | "substituido" | "descartado
 export type Fonte = {
   id: string; file: string; titulo: string; tipo: "arquivo" | "link" | "texto"; arquivo: string; url: string;
   enviadoPor: string; enviadoEm: string; status: "processando" | "pronta" | "erro"; erro: string; resumo: string; texto: string;
+  acervo: string; // id of the Acervo item this source was taught from ("Ensinar à IA"), if any
 };
 export type Fato = {
   id: string; file: string; texto: string; tipo: string; fonte: string; equipe: string; projetos: string[]; objetivos: string[];
@@ -47,7 +48,7 @@ export function getFontes(): Fonte[] {
   return readDir(FONTES).filter(({ fm }) => fm.type === "fonte").map(({ file, fm, body }) => ({
     id: s(fm.id), file, titulo: s(fm.titulo), tipo: (s(fm.tipo) || "texto") as Fonte["tipo"], arquivo: s(fm.arquivo), url: s(fm.url),
     enviadoPor: s(fm.enviado_por), enviadoEm: s(fm.enviado_em), status: (s(fm.status) || "processando") as Fonte["status"], erro: s(fm.erro),
-    resumo: secao(body, "Resumo"), texto: secao(body, "Texto"),
+    resumo: secao(body, "Resumo"), texto: secao(body, "Texto"), acervo: s(fm.acervo),
   })).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm));
 }
 
@@ -109,11 +110,11 @@ function escreverFonte(id: string, fm: Record<string, FmValue>, resumo: string, 
   requestSync(vault());
 }
 
-export function criarFonte(input: { titulo: string; por: string } & (
+export function criarFonte(input: { titulo: string; por: string; acervo?: string } & (
   { tipo: "arquivo"; nome: string; bytes: Buffer } | { tipo: "link"; url: string } | { tipo: "texto"; texto: string }
 )): string {
   const id = novoId("fnt");
-  const fm: Record<string, FmValue> = { titulo: input.titulo.slice(0, 150), tipo: input.tipo, arquivo: "", url: "", enviado_por: input.por, enviado_em: new Date().toISOString(), status: "processando", erro: "" };
+  const fm: Record<string, FmValue> = { titulo: input.titulo.slice(0, 150), tipo: input.tipo, arquivo: "", url: "", enviado_por: input.por, enviado_em: new Date().toISOString(), status: "processando", erro: "", ...(input.acervo ? { acervo: input.acervo } : {}) };
   let texto = "";
   if (input.tipo === "arquivo") {
     const ext = input.nome.split(".").pop()?.toLowerCase() ?? "";
@@ -141,8 +142,26 @@ function ipPrivado(ip: string) {
   return /^(10\.|127\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|f[cd]|fe80)/i.test(ip);
 }
 
-/** Fetches a public web page (no internal addresses) → plain text, or a PDF → base64. */
+/**
+ * Google links point at a viewer page with no readable text; use the plain export instead
+ * (Docs → txt, Sheets → csv, Slides → txt, Drive file → direct download). Folders can't be read.
+ */
+function urlDeLeitura(url: string): string {
+  const id = url.match(/\/d\/([\w-]{10,})/)?.[1] ?? url.match(/[?&]id=([\w-]{10,})/)?.[1];
+  if (/drive\.google\.com\/drive\/(u\/\d+\/)?folders\//.test(url)) throw new Error("É uma pasta do Drive: a IA lê arquivos, não pastas. Ensine cada arquivo (ou envie-o aqui em Conhecimento).");
+  if (!id) return url;
+  if (url.includes("docs.google.com/document/")) return `https://docs.google.com/document/d/${id}/export?format=txt`;
+  if (url.includes("docs.google.com/spreadsheets/")) return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`;
+  if (url.includes("docs.google.com/presentation/")) return `https://docs.google.com/presentation/d/${id}/export/txt`;
+  if (url.includes("drive.google.com/")) return `https://drive.google.com/uc?export=download&id=${id}`;
+  return url;
+}
+
+/** Fetches a public web page (no internal addresses) → plain text, a PDF → base64, an image → image. */
 async function lerLink(url: string): Promise<Parte[]> {
+  const original = url;
+  url = urlDeLeitura(url);
+  const doGoogle = url !== original;
   let res: Response | null = null;
   // follow redirects by hand so every hop is checked against internal addresses
   for (let hop = 0; hop < 4 && !res; hop++) {
@@ -152,16 +171,24 @@ async function lerLink(url: string): Promise<Parte[]> {
     if (ipPrivado(ip)) throw new Error("Endereço não permitido");
     // ponytail: DNS is checked once per hop before fetch (rebinding could slip through); fine for a team-only upload box.
     const r = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(20_000), headers: { "User-Agent": "Mozilla/5.0 (Nipei OS)" } });
-    if (r.status >= 300 && r.status < 400 && r.headers.get("location")) url = new URL(r.headers.get("location")!, url).toString();
-    else res = r;
+    if (r.status >= 300 && r.status < 400 && r.headers.get("location")) {
+      url = new URL(r.headers.get("location")!, url).toString();
+      if (new URL(url).hostname === "accounts.google.com") throw new Error("O arquivo do Google não está público. No Drive: Compartilhar → “Qualquer pessoa com o link”, ou envie o arquivo aqui em Conhecimento.");
+    } else res = r;
   }
   if (!res) throw new Error("O link redireciona demais");
+  if (doGoogle && [401, 403, 404].includes(res.status)) throw new Error("O arquivo do Google não está público. No Drive: Compartilhar → “Qualquer pessoa com o link”, ou envie o arquivo aqui em Conhecimento.");
   if (!res.ok) throw new Error(`O link respondeu ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length > FONTE_MAX_BYTES) throw new Error("Página grande demais");
-  if ((res.headers.get("content-type") ?? "").includes("pdf")) {
+  const tipo = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  if (tipo.includes("pdf")) {
     return [{ type: "file", file: { filename: "link.pdf", file_data: `data:application/pdf;base64,${buf.toString("base64")}` } }];
   }
+  if (/^image\/(jpeg|png|webp|gif)$/.test(tipo)) return [{ type: "image_url", image_url: { url: `data:${tipo};base64,${buf.toString("base64")}` } }];
+  // a Drive "download" that answers HTML is Google's warning page (big file) or a login wall
+  if (doGoogle && tipo === "text/html" && url.includes("drive.google.com")) throw new Error("Não consegui baixar o arquivo do Drive pelo link (privado ou grande demais). Envie o arquivo aqui em Conhecimento.");
+  if (tipo && !tipo.startsWith("text/") && !/json|xml|csv/.test(tipo)) throw new Error(`Formato que a IA não lê pelo link (${tipo}). Use PDF, imagem, Google Docs/Planilhas/Apresentações ou envie o arquivo.`);
   const html = buf.toString("utf-8");
   const texto = html.replace(/<(script|style|noscript)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
@@ -201,7 +228,7 @@ function catalogo() {
 export async function processarFonte(id: string) {
   const f = getFontes().find((x) => x.id === id);
   if (!f) return;
-  const fm = (st: string, erro = ""): Record<string, FmValue> => ({ titulo: f.titulo, tipo: f.tipo, arquivo: f.arquivo, url: f.url, enviado_por: f.enviadoPor, enviado_em: f.enviadoEm, status: st, erro });
+  const fm = (st: string, erro = ""): Record<string, FmValue> => ({ titulo: f.titulo, tipo: f.tipo, arquivo: f.arquivo, url: f.url, enviado_por: f.enviadoPor, enviado_em: f.enviadoEm, status: st, erro, ...(f.acervo ? { acervo: f.acervo } : {}) });
   try {
     const conteudo: Parte[] = f.tipo === "arquivo" ? lerArquivo(f.arquivo) : f.tipo === "link" ? await lerLink(f.url) : [{ type: "text", text: f.texto }];
     const { o } = await chamarIA(SISTEMA, [{ type: "text", text: `${catalogo()}\n\n## Fonte: ${f.titulo}` }, ...conteudo], 8000, 180_000);

@@ -1,4 +1,5 @@
-import { CheckCircle2, ExternalLink, FileText, Folder, GraduationCap, Image as ImageIcon, Music, Palette, Pencil, Plus, Video, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { Brain, CheckCircle2, ExternalLink, FileText, Folder, GraduationCap, Image as ImageIcon, Music, Palette, Pencil, Plus, Video, type LucideIcon } from "lucide-react";
 import { Empty, Title } from "@/components/v2/ui";
 import AcervoForm, { FiltroAuto, type AcervoFormLabels } from "@/components/v2/AcervoForm";
 import CopiarBotao from "@/components/v2/CopiarBotao";
@@ -6,8 +7,10 @@ import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 import Recolhivel, { BotaoSecao } from "@/components/v2/Recolhivel";
 import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, getProjetos, podeEditarAcervo, type AcervoItem } from "@/lib/v2/data";
 import { tipoLink } from "@/lib/v2/acervoLinks";
+import { getFatos, getFontes } from "@/lib/v2/conhecimento";
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { arquivarAcervoAction, createAcervoAction, updateAcervoAction } from "../actions";
+import { arquivarAcervoAction, createAcervoAction, ensinarAcervoAction, updateAcervoAction } from "../actions";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
 const sel = "rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm min-w-0";
@@ -43,13 +46,21 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
     return `/acervo${s ? `?${s}` : ""}`;
   };
   const tiposOpc = ACERVO_TIPOS.map((tp) => ({ id: tp, nome: t.tipos[tp] }));
+  // Acervo ↔ Conhecimento: the newest source taught from each item, with its facts
+  const fontes = getFontes(), fatos = getFatos();
+  const naIA = (id: string) => {
+    const f = fontes.filter((x) => x.acervo === id).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm))[0];
+    if (!f) return null;
+    const meus = fatos.filter((x) => x.fonte === f.id);
+    return { f, conf: meus.filter((x) => x.status === "confirmado").length, prop: meus.filter((x) => x.status === "proposto").length };
+  };
   const labels: AcervoFormLabels = { link: t.link, titulo: t.titulo, tipo: t.tipo, projeto: t.projeto, ano: t.ano, descricao: t.descricao, nenhum: t.nenhum, salvar: t.salvar, enviando: t.salvando, detectado: t.linkDetectado };
   const chip = (on: boolean) => `shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs border ${on ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white" : "border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`;
 
   const Cartao = ({ i }: { i: AcervoItem }) => {
-    const Icone = ICONE[i.tipo] ?? Folder, tl = tipoLink(i.url);
+    const Icone = ICONE[i.tipo] ?? Folder, tl = tipoLink(i.url), ia = naIA(i.id), pasta = tl?.rotulo === "Pasta do Drive";
     return (
-      <li className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 grid gap-2">
+      <li id={i.id} className="scroll-mt-20 target:ring-2 target:ring-neutral-400 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 grid gap-2">
         <div className="flex items-start gap-3">
           <span className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${COR[i.tipo] ?? COR.outros}`}><Icone size={18} /></span>
           <div className="min-w-0 flex-1">
@@ -60,6 +71,13 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
           <a href={i.url} target="_blank" rel="noreferrer" aria-label={t.abrir} title={t.abrir} className="shrink-0 p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><ExternalLink size={16} /></a>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
+          {ia ? (
+            <Link href={`/conhecimento/${ia.f.id}`} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${ia.f.status === "erro" ? "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"}`}>
+              <Brain size={12} />{t.naIA}: {ia.f.status === "processando" ? t.lendoIA : ia.f.status === "erro" ? t.erroIA : [ia.conf && `${ia.conf} ${t.fatosConfirmadosMin}`, ia.prop && `${ia.prop} ${t.fatosParaRevisar}`].filter(Boolean).join(" · ") || t.semFatos}
+            </Link>
+          ) : !pasta && (
+            <form action={ensinarAcervoAction}><input type="hidden" name="id" value={i.id} /><BotaoEnviar enviando="…" className="inline-flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200"><Brain size={12} />{t.ensinarIA}</BotaoEnviar></form>
+          )}
           {i.adicionadoPor && <span>{t.adicionadoPorLbl} {nome(i.adicionadoPor)}{i.adicionadoEm && ` · ${fmtDate(i.adicionadoEm.slice(0, 10), lang)}`}</span>}
           <CopiarBotao texto={i.url} label={t.copiarLinkCurto} copiado={t.copiado} className="ml-auto inline-flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200" />
           {podeEditarAcervo(me, i) && (

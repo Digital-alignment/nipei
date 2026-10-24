@@ -548,6 +548,23 @@ export async function enviarFonteAction(form: FormData) {
   redirect(`/conhecimento/${id}`);
 }
 
+/** Acervo → Conhecimento: the AI reads the linked file and proposes facts (one source per item; again = open it). */
+export async function ensinarAcervoAction(form: FormData) {
+  const me = await requireUser();
+  const i = getAcervo().find((x) => x.id === String(form.get("id")));
+  if (!i) return;
+  const ja = getFontes().find((f) => f.acervo === i.id && f.status !== "erro");
+  if (ja) redirect(`/conhecimento/${ja.id}`);
+  let id = "";
+  await tentar(async () => {
+    if (/drive\.google\.com\/drive\/(u\/\d+\/)?folders\//.test(i.url)) throw new Error("É uma pasta do Drive: a IA lê arquivos, não pastas. Adicione ao acervo o arquivo que importa (ou envie-o em Conhecimento).");
+    contarUso(me.pessoa?.id ?? me.username);
+    id = criarFonte({ tipo: "link", url: i.url, titulo: i.titulo, por: me.pessoa?.id ?? me.username, acervo: i.id });
+  });
+  fonteFeita(id);
+  redirect(`/conhecimento/${id}`);
+}
+
 export async function reprocessarFonteAction(form: FormData) {
   const me = await requireUser();
   const f = getFontes().find((x) => x.id === String(form.get("id")));

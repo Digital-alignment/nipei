@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FolderOpen } from "lucide-react";
 import { Chip, Empty } from "@/components/v2/ui";
 import type { Ctx } from "./index";
 
@@ -8,6 +9,7 @@ const MAX = 60;
 /** The confirmed facts — the only knowledge the AIs treat as true. Search + team filter (?q ?equipe). */
 export default function Base({ ctx }: { ctx: Ctx }) {
   const { q, t, equipes, confirmados } = ctx;
+  const acervoDe = new Map(ctx.fontes.filter((f) => f.acervo).map((f) => [f.id, f.acervo]));
   const busca = (q.q ?? "").toLowerCase().trim();
   const lista = confirmados.filter((f) => (!q.equipe || f.equipe === q.equipe) && (!busca || f.texto.toLowerCase().includes(busca)))
     .sort((a, b) => b.revisadoEm.localeCompare(a.revisadoEm));
@@ -32,6 +34,7 @@ export default function Base({ ctx }: { ctx: Ctx }) {
               <li key={f.id} className="text-sm">
                 <span className="text-[11px] uppercase tracking-wide text-neutral-400 mr-2">{t.tiposFato[f.tipo as keyof typeof t.tiposFato] ?? f.tipo}</span>
                 {f.texto} <Link href={`/conhecimento/${f.fonte}`} className="text-xs text-neutral-400 underline">↗</Link>
+                {acervoDe.has(f.fonte) && <Link href={`/acervo#${acervoDe.get(f.fonte)}`} title={t.noAcervo} aria-label={t.noAcervo} className="ml-1 inline-flex align-middle text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"><FolderOpen size={13} /></Link>}
               </li>
             ))}
           </ul>

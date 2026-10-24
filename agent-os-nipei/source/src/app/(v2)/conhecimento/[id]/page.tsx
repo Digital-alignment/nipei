@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, FolderOpen } from "lucide-react";
 import { Section } from "@/components/v2/ui";
 import AutoRefresh from "@/components/v2/AutoRefresh";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
@@ -43,6 +43,7 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
         {t.enviadoPor} {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)}
         {f.arquivo && <> · <a href={`/conhecimento/${f.id}/arquivo`} target="_blank" className="underline inline-flex items-center gap-0.5">{t.verOriginal}<ExternalLink size={12} /></a></>}
         {f.url && <> · <a href={f.url} target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-0.5">{t.verOriginal}<ExternalLink size={12} /></a></>}
+        {f.acervo && <> · <Link href={`/acervo#${f.acervo}`} className="underline inline-flex items-center gap-0.5"><FolderOpen size={12} />{t.noAcervo}</Link></>}
       </p>
 
       {f.status === "processando" && <p className="text-sm text-neutral-500 mb-6">{t.processando}</p>}
