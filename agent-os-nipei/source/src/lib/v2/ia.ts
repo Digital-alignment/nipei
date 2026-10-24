@@ -2,8 +2,10 @@ import fs from "fs";
 import path from "path";
 import { defaultVault } from "@/lib/config";
 import { motorIA } from "./motorIA";
+import { registrarCustoIA } from "./custosIA";
+import { registrarErro } from "./erros";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
-import { getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, type Status } from "./data";
+import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, type Status } from "./data";
 import { buscarConhecimento, formatarConhecimento } from "./conhecimento";
 
 // T2: the AI only *proposes*; a person reviews and applies (actions.ts aplicarIAAction).
@@ -129,11 +131,14 @@ async function chamarModelo(sistema: string, conteudo: Parte[], maxTokens: numbe
   const res = await fetch(m.url, {
     method: "POST",
     headers: m.headers,
-    body: JSON.stringify({ model: modelo, temperature: 0.2, max_tokens: maxTokens, messages: [{ role: "system", content: sistema }, { role: "user", content: conteudo }] }),
+    body: JSON.stringify({ model: modelo, temperature: 0.2, max_tokens: maxTokens, messages: [{ role: "system", content: sistema }, { role: "user", content: conteudo }], usage: { include: true } }),
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res.ok) throw new Error(`IA indisponível (${res.status})`);
+  if (!res.ok) { const e = new Error(`IA indisponível (${res.status})`); registrarErro(`IA (${modelo})`, e); throw e; }
   const data = await res.json();
+  // who asked: the logged-in person when there is a request; "" for background jobs
+  const quem = await currentUser({ leitura: true }).then((me) => me?.pessoa?.id ?? me?.username ?? "").catch(() => "");
+  registrarCustoIA(quem, "ia", m.provedor, modelo, data?.usage);
   return { raw: data?.choices?.[0]?.message?.content ?? "", modelo };
 }
 

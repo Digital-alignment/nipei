@@ -837,7 +837,8 @@ export async function atribuirAction(form: FormData) {
 
 async function assistenteDono() {
   const me = await requireUser();
-  if (!me.gestao) throw new Error("O assistente está disponível só para a Equipe 1 por enquanto");
+  const { funcaoLigada } = await import("@/lib/v2/funcoes");
+  if (!funcaoLigada("assistente", me)) throw new Error("O assistente não está ativado para você");
   return { me, id: me.pessoa?.id ?? me.username };
 }
 

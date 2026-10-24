@@ -3,6 +3,8 @@ import { conversar, executarAcao, getConversa, paraModelo, salvarConversa, type 
 import { contarUso } from "./ia";
 import { enviarWhatsApp } from "./whatsapp";
 import { registrarEvento } from "./eventos";
+import { registrarCustoIA } from "./custosIA";
+import { funcaoLigada } from "./funcoes";
 
 // "Encaminhar para o Nipëi": a person writes or forwards a text or voice note to the Nipëi WhatsApp number.
 // Same assistant, same conversation and memory as the panel; proposals come back numbered and are confirmed
@@ -44,7 +46,7 @@ async function audioBase64(d: Dados): Promise<{ base64: string; mime: string } |
 }
 
 /** Voice note → text (Gemini; NIPEI_TRANSCRICAO_MODEL, default the current flash-lite). */
-export async function transcrever(base64: string, mime: string): Promise<string> {
+export async function transcrever(base64: string, mime: string, pessoa?: string): Promise<string> {
   const modelo = process.env.NIPEI_TRANSCRICAO_MODEL || "gemini-flash-lite-latest";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(60_000),
@@ -52,6 +54,7 @@ export async function transcrever(base64: string, mime: string): Promise<string>
   });
   if (!r.ok) throw new Error(`transcrição falhou (${r.status})`);
   const j = await r.json();
+  registrarCustoIA(pessoa, "transcricao", "gemini", modelo, j?.usageMetadata);
   return String(j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "").trim();
 }
 
@@ -89,12 +92,12 @@ export async function processarEntrada(d: Dados): Promise<void> {
   if (k.id) { vistos.add(k.id); if (vistos.size > 1000) vistos.delete(vistos.values().next().value!); }
   const p = remetente(k);
   const me = p ? meDaPessoa(p.id) : null;
-  if (!p || !me?.gestao) return; // unknown number, no access, or not allowed to use the assistant yet
+  if (!p || !me || !funcaoLigada("whatsapp", me)) return; // unknown number, no access, or not allowed to use the assistant yet
   const fone = p.whatsapp, quem = `${p.name.split(" (")[0]} (via WhatsApp)`, dono = p.id;
   try {
     let texto = textoDe(d.message);
     const audio = !texto ? await audioBase64(d) : null;
-    if (audio) texto = await transcrever(audio.base64, audio.mime);
+    if (audio) texto = await transcrever(audio.base64, audio.mime, p.id);
     if (!texto) { await enviarWhatsApp(fone, "Por enquanto eu entendo texto e áudio. 🙏"); return; }
 
     const decisao = lerDecisao(texto);

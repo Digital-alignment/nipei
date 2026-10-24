@@ -4,6 +4,7 @@ import { base, concessaoDoToken } from "@/lib/v2/oauthMcp";
 import { chamarMCP, ferramentasMCP, instrucoesMCP } from "@/lib/v2/assistente";
 import { CORS } from "./cors";
 import { registrarEvento } from "@/lib/v2/eventos";
+import { funcaoLigada } from "@/lib/v2/funcoes";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
       status: 401, headers: { ...CORS, "WWW-Authenticate": `Bearer resource_metadata="${b}/.well-known/oauth-protected-resource", error="invalid_token"` },
     });
   }
+  if (!funcaoLigada("mcp", me)) return NextResponse.json(erro(null, -32003, "Apps de IA desativados para esta pessoa no Nipëi"), { status: 403, headers: CORS });
   let corpo: Rpc | Rpc[];
   try { corpo = await req.json(); } catch { return NextResponse.json(erro(null, -32700, "JSON inválido"), { status: 400, headers: CORS }); }
   const quem = `${me.pessoa?.name.split(" (")[0] ?? me.username} (via ${g.nomeCliente})`;

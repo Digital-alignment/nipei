@@ -109,3 +109,27 @@ export async function operacaoAction(form: FormData) {
   }
   voltarOp("Nada feito.");
 }
+
+// ---------------------------------------------------------------- Funções (switches)
+/** o = desligar|ligar (whole feature) or pessoa (pessoa + valor = sim|nao|padrao). */
+export async function funcoesAction(form: FormData) {
+  const me = await confirmado();
+  const { FUNCOES, lerFuncoes, salvarFuncoes } = await import("@/lib/v2/funcoes");
+  const id = String(form.get("f")) as keyof typeof FUNCOES;
+  if (!FUNCOES[id]) redirect("/controle?m=funcoes");
+  const c = lerFuncoes(), f = (c[id] ??= {}), o = String(form.get("o"));
+  let msg = "";
+  if (o === "desligar" || o === "ligar") { f.desligada = o === "desligar"; msg = `${FUNCOES[id].nome}: ${o === "desligar" ? "desligada para todos" : "ligada de novo"}`; }
+  else {
+    const { getPessoas } = await import("@/lib/v2/data");
+    const p = getPessoas().find((x) => x.id === String(form.get("pessoa")));
+    if (!p) redirect("/controle?m=funcoes");
+    const v = String(form.get("valor"));
+    f.pessoas ??= {};
+    if (v === "padrao") delete f.pessoas[p.id]; else f.pessoas[p.id] = v === "sim";
+    msg = `${FUNCOES[id].nome}: ${p.name.split(" (")[0]} → ${v === "padrao" ? "regra normal" : v === "sim" ? "ligada" : "desligada"}`;
+  }
+  salvarFuncoes(c);
+  registrarAdmin(me.pessoa!.id, msg);
+  redirect(`/controle?m=funcoes&ok=${encodeURIComponent(msg)}`);
+}

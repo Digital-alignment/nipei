@@ -16,6 +16,7 @@ import { backupsPendentes } from "@/lib/v2/backup";
 import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
+import { funcaoLigada } from "@/lib/v2/funcoes";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
     redirect(verifyToken(token, MEMBER_PURPOSE) ? "/login?erro=acesso" : "/login");
   }
   if (user.pessoa && !user.vendoComo) registrarAcesso(user.pessoa.id);
+  const comAssistente = funcaoLigada("assistente", user);
   backupsPendentes(); // daily Drive copy for whoever connected Google (background, at most hourly)
   vigiarSaude(); // health alerts on the admins' WhatsApp (background, at most every 10 min)
   const { t, lang } = await getT();
@@ -70,12 +72,12 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         </div>
       </header>
       <div className="flex">
-        <Nav fechadoInicial={menuFechado} assistente={user.gestao ? t.assistente : undefined} labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas, recolher: t.recolherMenu, expandir: t.expandirMenu }} />
+        <Nav fechadoInicial={menuFechado} assistente={comAssistente ? t.assistente : undefined} labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas, recolher: t.recolherMenu, expandir: t.expandirMenu }} />
         <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-10">
           <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}{user.pessoa && !user.vendoComo && <PulsoUso />}</div>
         </main>
       </div>
-      {user.gestao && !user.vendoComo && (
+      {comAssistente && !user.vendoComo && (
         <Suspense>
           <AssistenteGlobal lang={lang} labels={{ titulo: t.assistente, placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, confirmarTodas: t.confirmarTodas,
             cancelar: t.cancelar, feito: t.feitoLbl, nova: t.novaConversa, pensando: t.pensando, fechar: t.fechar, intro: t.assistenteIntro, abrir: t.abrirAssistente, semVoz: t.semVoz,

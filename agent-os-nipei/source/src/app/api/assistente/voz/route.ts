@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/v2/data";
+import { funcaoLigada } from "@/lib/v2/funcoes";
+import { registrarCustoIA } from "@/lib/v2/custosIA";
 
 // Spoken replies for the assistant (Equipe 1): Gemini TTS → audio/wav. The text is already short
 // (the panel cleans markdown and cuts it); this route caps it again and counts uses per person.
@@ -11,7 +13,7 @@ const usos = new Map<string, { dia: string; n: number }>(); // ponytail: in memo
 
 export async function POST(req: Request) {
   const me = await currentUser();
-  if (!me?.gestao) return NextResponse.json({ erro: "só a Equipe 1" }, { status: 403 });
+  if (!me || !funcaoLigada("voz", me)) return NextResponse.json({ erro: "só a Equipe 1" }, { status: 403 });
   const key = process.env.GEMINI_API_KEY;
   if (!key) return NextResponse.json({ erro: "voz não configurada (GEMINI_API_KEY)" }, { status: 503 });
   const { texto, lang } = await req.json().catch(() => ({}));
@@ -36,7 +38,9 @@ export async function POST(req: Request) {
     }),
     signal: AbortSignal.timeout(45_000),
   }).catch(() => null);
-  const audio = r?.ok ? (await r.json())?.candidates?.[0]?.content?.parts?.[0]?.inlineData : null;
+  const j = r?.ok ? await r.json() : null;
+  registrarCustoIA(me.pessoa?.id ?? me.username, "voz", "gemini", modelo, j?.usageMetadata);
+  const audio = j?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
   if (!audio?.data) return NextResponse.json({ erro: "voz indisponível agora" }, { status: 502 });
   return new NextResponse(Buffer.from(audio.data, "base64"), { headers: { "Content-Type": audio.mimeType?.startsWith("audio/") ? audio.mimeType : "audio/wav", "Cache-Control": "no-store" } });
 }
