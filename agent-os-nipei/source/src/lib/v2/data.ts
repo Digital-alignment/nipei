@@ -182,6 +182,15 @@ export async function currentUser(): Promise<Me | null> {
   const full = verifyToken(token, "session");
   const sub = full ?? verifyToken(token, MEMBER_PURPOSE);
   if (!sub) return null;
+  return montarMe(sub, !!full);
+}
+
+/** The same user as a login would give, for a person id (MCP apps act as the person). null = no access now. */
+export function meDaPessoa(pessoaId: string): Me | null {
+  return montarMe(pessoaId, false);
+}
+
+function montarMe(sub: string, full: boolean): Me | null {
   const pessoa = getPessoas().find((p) => p.usuario === sub || p.id === sub) ?? null;
   if (pessoa?.suspenso) return null;
   const equipes = getEquipes();

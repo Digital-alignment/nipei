@@ -1121,3 +1121,13 @@ export async function exportarGoogleAction(form: FormData) {
   });
   if (link) redirect(link);
 }
+
+/** Cuts an AI app's (MCP) access to the person's Nipëi at once. */
+export async function revogarAppAction(form: FormData) {
+  await tentar(async () => {
+    const { pessoaId } = await minhaConexao();
+    const { revogar } = await import("@/lib/v2/oauthMcp");
+    revogar(pessoaId, String(form.get("id")));
+  });
+  revalidatePath("/", "layout");
+}

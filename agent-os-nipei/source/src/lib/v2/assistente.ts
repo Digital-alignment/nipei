@@ -452,6 +452,56 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
   return `/tarefas/${t.id}`;
 }
 
+// ---------------------------------------------------------------- MCP (Claude, ChatGPT, Gemini… act as the person)
+// Same tools and checks as the panel; writes run at once because the client app asks the person before each
+// tool call, and every change is logged as "Nome (via <app>)". Limits keep a runaway agent in check.
+
+const SO_GESTAO = new Set(["pulso_equipes", "notas_internas", "financas_resumo"]);
+const escritasMcp = new Map<string, number[]>();
+
+export function ferramentasMCP(me: Me) {
+  const lista = TOOLS.filter((t) => me.gestao || !SO_GESTAO.has(t.function.name)).map((t) => {
+    const escreve = PROPOSTAS.has(t.function.name);
+    const d = t.function.description.replace(/^PROPÕE /, "");
+    return {
+      name: t.function.name, description: escreve ? d.charAt(0).toUpperCase() + d.slice(1) : t.function.description, inputSchema: t.function.parameters,
+      annotations: { readOnlyHint: !escreve, destructiveHint: false, openWorldHint: t.function.name === "enviar_whatsapp" || t.function.name === "evento_google" },
+    };
+  });
+  return [...lista, { name: "minha_memoria", description: "O que o assistente do Nipëi sabe sobre a pessoa (itens aprovados por ela, com id para esquecer).", inputSchema: { type: "object", properties: {}, required: [] as string[] }, annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false } }];
+}
+
+export async function chamarMCP(me: Me, nome: string, args: Record<string, unknown>, quem: string): Promise<{ ok: boolean; dados: unknown }> {
+  if (nome === "minha_memoria") return { ok: true, dados: getMemoria(donoMemoria(me)) };
+  if (SO_GESTAO.has(nome) && !me.gestao) return { ok: false, dados: { erro: "só a gestão" } };
+  if (!PROPOSTAS.has(nome)) {
+    if (!TOOLS.some((t) => t.function.name === nome)) return { ok: false, dados: { erro: `ferramenta desconhecida: ${nome}` } };
+    const r = await ler(me, nome, args);
+    return { ok: !(r && typeof r === "object" && "erro" in r), dados: r };
+  }
+  // at most 40 changes per hour per person through MCP
+  const dono = donoMemoria(me), agora = Date.now();
+  const recentes = (escritasMcp.get(dono) ?? []).filter((x) => agora - x < 3600_000);
+  if (recentes.length >= 40) return { ok: false, dados: { erro: "limite de 40 mudanças por hora pelo app; tente mais tarde ou use a plataforma" } };
+  const v = validar(me, nome, args);
+  if ("erro" in v) return { ok: false, dados: v };
+  escritasMcp.set(dono, [...recentes, agora]);
+  const link = await executarAcao(me, v, quem);
+  return { ok: true, dados: { feito: v.resumo, detalhe: v.detalhe ?? null, link: link ? `https://os.nipeihu.app${link.startsWith("/") ? link : ""}` : null } };
+}
+
+/** Sent once when the app connects: who the person is, today's date, the team names, memory and the rules. */
+export function instrucoesMCP(me: Me) {
+  const p = me.pessoa, equipes = getEquipes();
+  const nomeEq = (id: string) => equipes.find((e) => e.id === id)?.nome ?? id;
+  const mem = getMemoria(donoMemoria(me));
+  return `Nipëi OS: plataforma da comunidade do Santuário Nipeihu (povo Yawanawá). Você está conectado como ${p?.name ?? me.username}${me.gestao ? " (gestão, Equipe 1)" : ""}; equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}.
+Fuso: America/Bahia (consulte a data atual antes de usar "hoje", "amanhã"). Equipes: ${equipes.map((e) => `${e.id.replace("equipe_", "Equipe ")} = ${e.nome}`).join("; ")}.
+${mem.length ? `Memória aprovada pela pessoa (siga isto):\n${mem.map((x) => `- (${x.categoria}) ${x.texto}`).join("\n")}` : "Ainda não há memória sobre a pessoa."}
+Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência.
+Memória: use lembrar só quando a pessoa pedir ou concordar; nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas.${me.gestao ? "\nNotas internas (notas_internas) são confidenciais da gestão: nunca as copie para mensagens, tarefas, projetos ou memória." : ""}`;
+}
+
 // ---------------------------------------------------------------- the conversation
 
 const SISTEMA = (me: Me, lang: string, pagina: string) => {

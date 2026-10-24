@@ -1,7 +1,9 @@
 import { CalendarDays, CheckCircle2, FolderOpen, HardDriveUpload, Link2, Lock, Mail, Plug, Sparkles } from "lucide-react";
 import BotaoEnviar from "./BotaoEnviar";
 import ConfirmarBotao from "./ConfirmarBotao";
-import { backupAgoraAction, desconectarGoogleAction } from "@/app/(v2)/actions";
+import { backupAgoraAction, desconectarGoogleAction, revogarAppAction } from "@/app/(v2)/actions";
+import CopiarBotao from "./CopiarBotao";
+import { concessoesDe } from "@/lib/v2/oauthMcp";
 import { getConexoes } from "@/lib/v2/conexoes";
 import { googleConfigurado } from "@/lib/v2/google";
 import type { Dict } from "@/lib/v2/i18n";
@@ -13,6 +15,7 @@ const quando = (iso?: string) => (iso ? new Date(iso).toLocaleString("pt-BR", { 
 /** "Conexões" tab — only on the person's own profile: their Google account, what Nipëi may touch, backups. */
 export default function Conexoes({ pessoaId, t, ok }: { pessoaId: string; t: Dict; ok?: boolean }) {
   const g = getConexoes(pessoaId).google;
+  const apps = concessoesDe(pessoaId);
   const c = t.cx;
   return (
     <div className="grid gap-4">
@@ -57,10 +60,39 @@ export default function Conexoes({ pessoaId, t, ok }: { pessoaId: string; t: Dic
         )}
       </div>
 
+      <div className={`${CARTAO} grid gap-3`}>
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center"><Sparkles size={17} /></span>
+          <div className="flex-1 min-w-0"><p className="font-medium">{c.iaTitulo}</p><p className="text-xs text-neutral-500">{c.iaSub}</p></div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <code className="rounded-md bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1.5 text-sm select-all">https://os.nipeihu.app/mcp</code>
+          <CopiarBotao texto="https://os.nipeihu.app/mcp" label={c.copiarUrl} copiado={t.copiado} />
+        </div>
+        <ul className="grid gap-1 text-sm text-neutral-600 dark:text-neutral-300">
+          <li><strong>Claude</strong>: {c.comoClaude}</li>
+          <li><strong>Gemini</strong>: {c.comoGemini}</li>
+          <li><strong>ChatGPT</strong>: {c.comoChatgpt}</li>
+        </ul>
+        <p className="text-xs text-neutral-500">{c.iaAviso}</p>
+        {apps.length > 0 && (
+          <ul className="grid gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-3">
+            {apps.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                <span className="font-medium">{a.nomeCliente}</span>
+                <span className="text-xs text-neutral-500 flex-1">{c.desde} {quando(a.criadoEm)} · {c.usadoEm} {quando(a.usadoEm)}</span>
+                <form action={revogarAppAction}><input type="hidden" name="id" value={a.id} />
+                  <ConfirmarBotao pergunta={c.revogarPergunta.replace("{app}", a.nomeCliente)} className="rounded-lg px-2.5 py-1 text-xs text-red-700 dark:text-red-400">{c.revogar}</ConfirmarBotao>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className={`${CARTAO} grid gap-2 opacity-80`}>
         <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5"><Plug size={13} />{c.emBreve}</p>
         <p className="text-sm flex gap-2"><Mail size={15} className="mt-0.5 shrink-0 text-neutral-500" />{c.breveGmail}</p>
-        <p className="text-sm flex gap-2"><Sparkles size={15} className="mt-0.5 shrink-0 text-neutral-500" />{c.breveIA}</p>
       </div>
     </div>
   );

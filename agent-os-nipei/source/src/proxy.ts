@@ -20,6 +20,8 @@ export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isApi = pathname.startsWith("/api/");
   if ((isApi ? PUBLIC_API : PUBLIC_PAGES).includes(pathname)) return NextResponse.next();
+  // MCP + its OAuth server: /mcp checks its Bearer token, /oauth/authorize asks for the Nipëi login itself
+  if (pathname === "/mcp" || pathname.startsWith("/oauth/") || pathname.startsWith("/.well-known/")) return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   // A full session counts only while its person is still in a gestão team (checked on every request):
