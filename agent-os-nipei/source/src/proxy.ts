@@ -8,6 +8,7 @@ const PUBLIC_API = [
   "/api/auth/login",
   "/api/ingest/inbox-webhook", // checks NIPEI_WEBHOOK_SECRET itself
   "/api/agenda/ics", // Google Calendar feed: checks its signed "ics" token itself
+  "/api/whatsapp/webhook", // Evolution webhook: checks NIPEI_WHATSAPP_WEBHOOK_SECRET itself
 ];
 const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade"]; // /entrar and /cadastro check their link token
 

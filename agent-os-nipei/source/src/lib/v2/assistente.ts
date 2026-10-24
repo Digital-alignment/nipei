@@ -128,6 +128,9 @@ export function contextoPagina(me: Me, pagina: string): string {
     const ev = getEventos().find((x) => x.id === p[1]);
     if (ev) return `Página do evento "${ev.titulo}" (${ev.inicio}${ev.hora ? ` ${ev.hora}` : ""}).`;
   }
+  if (p[0] === "whatsapp") {
+    return `Canal: WhatsApp (a pessoa escreveu ou mandou áudio para o número do Nipëi, às vezes encaminhando uma conversa de outra pessoa). Responda curto, sem tabelas nem títulos; *negrito* com um asterisco. Se for uma conversa encaminhada, extraia o que vira tarefa, evento ou lembrete e proponha. As propostas vão numeradas automaticamente logo abaixo da sua resposta e a pessoa confirma respondendo sim, os números ou não: NÃO liste nem numere as propostas e não peça "responda sim ou não"; diga só em uma frase o que propôs e o que não deu para fazer.`;
+  }
   if (p[0] === "agenda") {
     const qs = new URLSearchParams(pagina.split("?")[1] ?? "");
     const quem = qs.get("quem") === "equipe" ? "das equipes da pessoa" : qs.get("quem") === "todas" ? `de todas as equipes${qs.get("equipe") ? ` (filtro ${qs.get("equipe")})` : ""}` : "da própria pessoa";
@@ -552,6 +555,7 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
   const msgs: ApiMsg[] = [{ role: "system", content: SISTEMA(me, lang, pagina) }, ...historico.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))];
   const acoes: AcaoProposta[] = [];
   const consultas = new Set<string>();
+  let cobrado = false;
   for (let volta = 0; volta < 8; volta++) {
     const res = await fetch(motor.url, {
       method: "POST",
@@ -563,6 +567,12 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
     const m = (await res.json())?.choices?.[0]?.message as ApiMsg | undefined;
     if (!m) throw new Error("A IA não respondeu");
     const calls = m.tool_calls ?? [];
+    // it says it proposed something but made no proposal: ask once to actually do it (or say it didn't)
+    if (!calls.length && !acoes.length && !cobrado && /\b(propus|proponho|propondo|propostas? (abaixo|acima|criadas?))\b/i.test(s(m.content))) {
+      cobrado = true;
+      msgs.push({ role: "assistant", content: m.content ?? "" }, { role: "user", content: "[sistema] Você disse que propôs, mas nenhuma ferramenta de proposta foi chamada. Chame agora as ferramentas das propostas e responda de novo em uma frase; se não for propor nada, responda sem dizer que propôs." });
+      continue;
+    }
     if (!calls.length) return { resposta: s(m.content).replace(/\n?\[(consultou|propostas):[^\]]*\]/g, "").replace(/^\[mensagem de [^\]]*\]\s*/, "").trim(), acoes, consultas: [...consultas] };
     msgs.push({ role: "assistant", content: m.content ?? null, tool_calls: calls });
     for (const c of calls) {
