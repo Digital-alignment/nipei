@@ -4,6 +4,20 @@
 
 ---
 
+## 0. Próxima sessão — onde paramos (2026-10-24, v2.50.0)
+
+**Em produção e verificado com a conta real do Ashuan:** plano "Nipëi pessoal e conectado", fases 1–6 (detalhes em 3.8): aba Conexões, Google (Drive com cópia diária, Calendar, Gmail), MCP (`/mcp`, Claude e Gemini do Ashuan conectados), WhatsApp "Encaminhar para o Nipëi" e chave de IA própria. Código, GitHub e VPS no mesmo commit; vault sincronizado.
+
+**Começar por aqui:**
+1. **Fase 7 — NotebookLM + Estúdio** (pedida e ainda não iniciada). NotebookLM não tem API para contas pessoais (só a Enterprise, em preview); não usar a biblioteca não oficial (`notebooklm-py`, sessão do navegador). Plano: (a) "Enviar para NotebookLM": montar no Drive da pessoa (pasta Nipëi, escopo `drive.file`) um pacote de Docs por projeto — visão, fatos confirmados, tarefas, atas — para ela adicionar como fontes no próprio NotebookLM; (b) "Estúdio" no Nipëi: resumo em áudio (Gemini TTS, já existe em `/api/assistente/voz`), slides (`criarApresentacao` em `lib/v2/google.ts`), relatório em Docs. Testar com o mock do Google (ver 3.8, "Teste local sem Google").
+2. **Pendências do Ashuan / Equipe 1** (não são código): a chave Gemini do Ashuan está salva mas **pausada** (Conexões → "Usar minha chave"); reconectar o Nipëi no Claude para ele ver as ferramentas de Gmail; Jordão, Paulo Roberto e Rodrigo ainda não conectaram Google nem IA.
+3. **Ainda não testado com conta real** (só local): enviar e-mail pelo assistente; exportar Docs/Slides/Sheets.
+4. Opcional: verificação do app OAuth no Google (`nipei-512411`) para tirar o aviso "não verificado"; Gmail é escopo restrito (avaliação de segurança paga).
+
+**Cuidados que já morderam:** o assistente tende a "corrigir" respostas antigas (regras e marcadores em `paraModelo`); dizia "propus" sem chamar a ferramenta (trava em `conversar`); backups simultâneos duplicavam arquivos no Drive (trava por pessoa em `backup.ts`); APIs do Google precisam estar ativas no projeto (a do Gmail faltou). Testes locais: vault copiado para o scratchpad + `.env.development.local` (VAULT_PATH, mocks do Evolution e do Google); apagar o `.env.development.local` antes do deploy.
+
+---
+
 ## 1. Visão Geral do Projeto
 
 **Nipëi OS Control Hub** (`nipei-control`) é a interface central de governança, orquestração e produtividade do ecossistema Nipëi.

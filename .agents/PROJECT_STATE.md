@@ -1,5 +1,7 @@
 # Estado Atual do Projeto — Nipëi OS Control Hub
 
+> **Atualização 2026-10-24 (v2.50.0):** este arquivo parou em 18/10. O estado atual e os próximos passos estão em `CLAUDE.md` → seção **"0. Próxima sessão"** (e o histórico das versões v2.x nas seções 3.7–3.10).
+
 **Data de Atualização:** 18 de Outubro de 2026  
 **Status do Sistema:** 🟢 Online & Estável  
 **Produção:** `https://os.nipeihu.app` | **VPS:** `85.31.61.100` (`nipei-os`)  
