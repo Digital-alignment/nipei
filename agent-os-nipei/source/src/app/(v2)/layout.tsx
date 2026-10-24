@@ -8,6 +8,7 @@ import { Brain, Library, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { ehAdmin } from "@/lib/v2/admin";
 import Nav from "@/components/v2/Nav";
 import AssistenteGlobal from "@/components/v2/AssistenteGlobal";
+import PulsoUso from "@/components/v2/PulsoUso";
 import { Avatar } from "@/components/v2/ui";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { MEMBER_PURPOSE, currentUser, registrarAcesso } from "@/lib/v2/data";
@@ -59,7 +60,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       <div className="flex">
         <Nav fechadoInicial={menuFechado} assistente={user.gestao ? t.assistente : undefined} labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas, recolher: t.recolherMenu, expandir: t.expandirMenu }} />
         <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-10">
-          <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}</div>
+          <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}{user.pessoa && <PulsoUso />}</div>
         </main>
       </div>
       {user.gestao && (

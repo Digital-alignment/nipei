@@ -11,6 +11,7 @@ const PUBLIC_API = [
   "/api/agenda/ics", // Google Calendar feed: checks its signed "ics" token itself
   "/api/whatsapp/webhook", // Evolution webhook: checks NIPEI_WHATSAPP_WEBHOOK_SECRET itself
   "/api/auth/link-whatsapp", // "receive an access link": rate-limited, always answers the same
+  "/api/uso", // one-minute usage pulse: checks the session itself and counts only the logged-in person
 ];
 const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade", "/google/entrar", "/google/callback"]; // /google/callback checks its signed state itself // /entrar and /cadastro check their link token
 
