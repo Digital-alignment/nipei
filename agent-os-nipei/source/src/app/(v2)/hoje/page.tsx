@@ -2,16 +2,16 @@ import Link from "next/link";
 import { AlertTriangle, BarChart3, Bot, Brain, Check, ChevronRight, ClipboardList, Clock, Handshake, ListChecks, Plus, Target, UserRound, type LucideIcon, UsersRound } from "lucide-react";
 import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
-import BomDia from "@/components/v2/BomDia";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import { CampoAssistente } from "@/components/v2/AssistenteGlobal";
+import { funcaoLigada } from "@/lib/v2/funcoes";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
-import { agendaDoDia, bomDiaGuardado, pulso } from "@/lib/v2/hoje";
+import { agendaDoDia, pulso } from "@/lib/v2/hoje";
 import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
@@ -28,7 +28,7 @@ const TOM = {
   neutro: "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-600",
 } as const;
 
-// Hoje, compact: what matters today in three lines (Bom dia, agenda, pending pills), one place to ask,
+// Hoje, compact: what matters today (agenda, pending pills), one place to ask,
 // and one task list at a time (tabs).
 export default async function Hoje({ searchParams }: { searchParams: Promise<{ dia?: string }> }) {
   const q = await searchParams;
@@ -113,8 +113,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         <h1 className="text-xl font-semibold tracking-tight">{t.ola}, {(me?.name ?? user.username).split(/[\s(]/)[0]}</h1>
         <p className="text-xs text-neutral-500 first-letter:uppercase">{new Date().toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Bahia" })}</p>
       </div>
-
-      {me && <BomDia inicial={bomDiaGuardado(user)} />}
 
       {(eventosHoje.length > 0 || proximos.length > 0) && (
         <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1" aria-label={t.agenda}>
@@ -226,8 +224,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </details>
       )}
 
-      {user.gestao && <CampoAssistente placeholder={t.perguntePeca} sugestoes={t.sugestoesHoje} />}
-
       {me && (
         <nav aria-label={t.semanaLbl} className="grid grid-cols-7 gap-1 mb-2 text-center">
           {semana.map((x, i) => {
@@ -281,6 +277,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           },
         ]} />
       )}
+
+      {funcaoLigada("assistente", user) && !user.vendoComo && <div className="mt-6 pb-20 md:pb-0"><CampoAssistente placeholder={t.perguntePeca} sugestoes={t.sugestoesHoje} /></div>}
 
       <Link href="/tarefas/nova" aria-label={t.novaTarefa}
         className={`fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] ${user.gestao ? "md:right-6 md:bottom-24" : "md:bottom-8"} z-30 w-14 h-14 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg flex items-center justify-center`}>
