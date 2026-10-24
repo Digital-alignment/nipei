@@ -19,7 +19,7 @@ import {
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { RECORRENCIAS } from "@/lib/tarefaNote";
 import {
-  ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, can, createAcervo, createEvento, createLancamento, createPessoa, createTarefa,
+  ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, createPessoa, createTarefa,
   currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
   updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today,
   addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos,
@@ -441,21 +441,50 @@ export async function anularLancamentoAction(form: FormData) {
   revalidatePath("/financas");
 }
 
-export async function createAcervoAction(form: FormData) {
-  const me = await requireUser();
-  if (!me.gestao && me.coordena.length === 0) return;
+/** Form → validated Acervo fields; the same link twice (even with another ?usp=… suffix) is refused. */
+async function dadosAcervo(form: FormData, ignorar?: string) {
+  const { chaveLink } = await import("@/lib/v2/acervoLinks");
   const url = String(form.get("url") ?? "").trim();
   const titulo = String(form.get("titulo") ?? "").trim().slice(0, 150);
-  if (!titulo || !/^https:\/\/\S+$/.test(url)) return;
+  if (!titulo) throw new Error("Dê um título ao item");
+  if (!/^https:\/\/\S+$/.test(url)) throw new Error("O link precisa começar com https://");
+  const repetido = getAcervo().find((i) => i.id !== ignorar && chaveLink(i.url) === chaveLink(url));
+  if (repetido) throw new Error(`Esse link já está no acervo: "${repetido.titulo}"`);
   const ano = String(form.get("ano") ?? "");
-  createAcervo({
+  return {
     titulo, url,
     tipo: pick(form.get("tipo"), [...ACERVO_TIPOS]) || "outros",
     projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
     ano: /^\d{4}$/.test(ano) ? ano : "",
     descricao: String(form.get("descricao") ?? "").trim().slice(0, 300),
-  }, me.pessoa?.id ?? me.username);
+  };
+}
+
+export async function createAcervoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao && me.coordena.length === 0) return;
+  let titulo = "";
+  await tentar(async () => { const d = await dadosAcervo(form); titulo = d.titulo; createAcervo(d, me.pessoa?.id ?? me.username); });
   revalidatePath("/acervo");
+  redirect(`/acervo?ok=${encodeURIComponent(`Adicionado: ${titulo}`)}`);
+}
+
+export async function updateAcervoAction(form: FormData) {
+  const me = await requireUser();
+  const i = getAcervo().find((x) => x.id === String(form.get("id")));
+  if (!i || !podeEditarAcervo(me, i)) return;
+  await tentar(async () => updateAcervo(i.id, await dadosAcervo(form, i.id), me.pessoa?.id ?? me.username));
+  revalidatePath("/acervo");
+  redirect(`/acervo?ok=${encodeURIComponent(`Salvo: ${String(form.get("titulo") ?? "").trim()}`)}`);
+}
+
+export async function arquivarAcervoAction(form: FormData) {
+  const me = await requireUser();
+  const i = getAcervo().find((x) => x.id === String(form.get("id")));
+  if (!i || !podeEditarAcervo(me, i)) return;
+  arquivarAcervo(i.id, me.pessoa?.id ?? me.username);
+  revalidatePath("/acervo");
+  redirect(`/acervo?ok=${encodeURIComponent(`Removido do acervo: ${i.titulo}`)}`);
 }
 
 export async function setEquipeAvisosAction(form: FormData) {

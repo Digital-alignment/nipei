@@ -519,21 +519,40 @@ export function anularLancamento(id: string, por: string) {
 // ---------------------------------------------------------------- acervo (links to Drive folders/files)
 
 export const ACERVO_TIPOS = ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] as const;
-export type AcervoItem = { id: string; titulo: string; url: string; tipo: string; projeto: string; ano: string; descricao: string };
+export type AcervoDados = { titulo: string; url: string; tipo: string; projeto: string; ano: string; descricao: string };
+export type AcervoItem = AcervoDados & { id: string; file: string; adicionadoPor: string; adicionadoEm: string };
 
+/** Items not removed ("arquivado" items stay in the vault, hidden here). Newest year first, then A–Z. */
 export function getAcervo(): AcervoItem[] {
-  return readDir("Acervo")
-    .map(({ fm }) => ({ id: s(fm.id), titulo: s(fm.titulo), url: s(fm.url), tipo: s(fm.tipo) || "outros", projeto: s(fm.projeto), ano: s(fm.ano), descricao: s(fm.descricao) }))
+  return readDir("Acervo").filter(({ fm }) => fm.arquivado !== true)
+    .map(({ fm, file }) => ({
+      id: s(fm.id), file, titulo: s(fm.titulo), url: s(fm.url), tipo: s(fm.tipo) || "outros", projeto: s(fm.projeto), ano: s(fm.ano), descricao: s(fm.descricao),
+      adicionadoPor: s(fm.adicionado_por), adicionadoEm: s(fm.adicionado_em) || s(fm.updated_at),
+    }))
     .sort((a, b) => b.ano.localeCompare(a.ano) || a.titulo.localeCompare(b.titulo, "pt"));
 }
+/** Who may edit or remove an item: gestão, or whoever added it. */
+export const podeEditarAcervo = (me: Me, i: AcervoItem) => me.gestao || (!!me.pessoa && i.adicionadoPor === me.pessoa.id);
 
-export function createAcervo(input: Omit<AcervoItem, "id">, por: string) {
+export function createAcervo(input: AcervoDados, por: string) {
   const dir = path.join(vault(), "Acervo");
   fs.mkdirSync(dir, { recursive: true });
-  const id = `acv_${Date.now().toString(36)}`;
-  const fm: Record<string, FmValue> = { ...input, id, type: "acervo", adicionado_por: por, updated_at: new Date().toISOString() };
+  const id = `acv_${Date.now().toString(36)}`, agora = new Date().toISOString();
+  const fm: Record<string, FmValue> = { ...input, id, type: "acervo", adicionado_por: por, adicionado_em: agora, updated_at: agora };
   fs.writeFileSync(path.join(dir, `${slugify(input.titulo) || "item"}_${id.slice(4)}.md`), noteText(fm, `# ${input.titulo}\n\n${input.url}`), { encoding: "utf-8", flag: "wx" });
   requestSync(vault());
+  return id;
+}
+export function updateAcervo(id: string, input: AcervoDados, por: string) {
+  const i = getAcervo().find((x) => x.id === id);
+  if (!i) throw new Error("Item não encontrado");
+  updateNote(i.file, { ...input, editado_por: por });
+}
+/** "Remove" = hide from the index; the note stays in the vault (and in git history). */
+export function arquivarAcervo(id: string, por: string) {
+  const i = getAcervo().find((x) => x.id === id);
+  if (!i) throw new Error("Item não encontrado");
+  updateNote(i.file, { arquivado: true, arquivado_por: por, arquivado_em: new Date().toISOString() });
 }
 
 // ---------------------------------------------------------------- edits (tarefa, evento, objetivo)

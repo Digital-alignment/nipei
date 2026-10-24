@@ -13,7 +13,7 @@ import { getConexoes } from "./conexoes";
 import { criarEventoGoogle, eventosGoogle, gmailBuscar, gmailEnviar, gmailLer, temGmail } from "./google";
 import { getNotas, podeNotasInternas } from "./notasInternas";
 import {
-  STATUS_RAW, anotarProjeto, can, comentar, createEvento, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
+  STATUS_RAW, anotarProjeto, can, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
   getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault,
   type Me, type Status, type Tarefa,
 } from "./data";
@@ -168,6 +168,7 @@ const TOOLS = [
   fn("agenda", "Eventos dos próximos dias (com hora quando houver).", { dias: { type: "number" } }),
   fn("google_agenda", "Agenda PESSOAL do Google Calendar de quem fala com você (reuniões, compromissos), para ver disponibilidade. Só se a pessoa conectou a conta Google.", { dias: { type: "number", description: "padrão 7, máx. 31" } }),
   fn("buscar_conhecimento", "Base de conhecimento (fatos confirmados + notas antigas). Para perguntas sobre o santuário, retiros, regras, valores, pessoas, projetos, empresas.", { pergunta: { type: "string" } }, ["pergunta"]),
+  fn("acervo", "Acervo: índice de links do Google Drive (fotos, vídeos, áudios, cursos, documentos, marca). Para achar ONDE está um arquivo ou pasta e dar o link.", { busca: { type: "string" }, tipo: { type: "string", enum: ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] } }),
   fn("conhecimento_pendente", "Fatos propostos esperando revisão (com id) e alertas do auditor abertos.", { equipe: { type: "string" }, texto: { type: "string" } }),
   fn("pessoas", "Pessoas da comunidade: nome, id, equipes, função e carga de tarefas.", { texto: { type: "string" }, equipe: { type: "string" } }),
   fn("projetos", "Projetos: lista com números, ou detalhes de um (objetivos, atualizações, tarefas abertas).", { projeto: { type: "string", description: "nome ou id; vazio = todos" } }),
@@ -256,6 +257,12 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const ate = new Date(Date.parse(`${hoje}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10);
     const { hoje: deHoje } = agendaDoDia(me);
     return { hoje, deHoje: deHoje.map((e) => `${e.hora || ""} ${e.titulo}`.trim()), eventos: getEventos().filter((e) => e.inicio >= hoje.slice(0, e.inicio.length) && e.inicio <= ate).map((e) => ({ titulo: e.titulo, inicio: e.inicio, hora: e.hora || null, status: e.status })) };
+  }
+  if (nome === "acervo") {
+    const n = (x: string) => x.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+    const ws = n(s(a.busca)).split(/\s+/).filter((w) => w.length > 2);
+    const lista = getAcervo().filter((i) => (!a.tipo || i.tipo === s(a.tipo)) && (!ws.length || ws.some((w) => n(`${i.titulo} ${i.descricao}`).includes(w))));
+    return lista.length ? lista.slice(0, 15).map((i) => ({ titulo: i.titulo, url: i.url, tipo: i.tipo, ano: i.ano || null, projeto: i.projeto || null, descricao: i.descricao || null })) : { aviso: "nada no acervo com isso" };
   }
   if (nome === "buscar_conhecimento") {
     const p = s(a.pergunta);

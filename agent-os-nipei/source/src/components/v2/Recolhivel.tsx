@@ -38,13 +38,21 @@ export default function Recolhivel({ id, titulo, contagem, alerta, aberto = true
   );
 }
 
+/** Opens a Recolhivel section and scrolls to it. */
+function irPara(id: string) {
+  window.dispatchEvent(new CustomEvent(EVENTO, { detail: id }));
+  requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  history.replaceState(null, "", `#${id}`);
+}
+
+/** A button anywhere on the page that opens one section (e.g. "+ Adicionar" → the add form). */
+export function BotaoSecao({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+  return <button type="button" onClick={() => irPara(id)} className={className}>{children}</button>;
+}
+
 /** Shortcut cards on top of the page: open the section and scroll to it. */
 export function AtalhosSecao({ itens }: { itens: { id: string; label: string; valor: number | string; alerta?: boolean }[] }) {
-  const ir = (id: string) => {
-    window.dispatchEvent(new CustomEvent(EVENTO, { detail: id }));
-    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    history.replaceState(null, "", `#${id}`);
-  };
+  const ir = irPara;
   return (
     <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(${itens.length}, minmax(0, 1fr))` }}>
       {itens.map((i) => (
