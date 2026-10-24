@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/v2/data";
-import { googleConfigurado, linkConsentimento } from "@/lib/v2/google";
+import { ESCOPOS_GMAIL, googleConfigurado, linkConsentimento } from "@/lib/v2/google";
 
 export const dynamic = "force-dynamic";
 
@@ -12,5 +12,7 @@ export async function GET(req: Request) {
   if (!me?.pessoa) return NextResponse.redirect(new URL("/login", base));
   const volta = `/pessoas/${me.pessoa.id}?aba=conexoes`;
   if (!googleConfigurado()) return NextResponse.redirect(new URL(`${volta}&erro=${encodeURIComponent("Integração com o Google ainda não configurada no servidor")}`, base));
-  return NextResponse.redirect(linkConsentimento(me.pessoa.id, base));
+  // ?gmail=1 adds Gmail (restricted scopes) — Equipe 1 only for now
+  const gmail = new URL(req.url).searchParams.get("gmail") === "1" && me.gestao;
+  return NextResponse.redirect(linkConsentimento(me.pessoa.id, base, gmail ? ESCOPOS_GMAIL : []));
 }

@@ -14,9 +14,9 @@ const url = (host: string, p: string) => process.env.NIPEI_GOOGLE_MOCK ? `${proc
 const redirectUri = (origin: string) => `${origin}/google/callback`;
 
 /** Where the "Conectar Google" button sends the person (state = signed person id, 10 min). */
-export function linkConsentimento(pessoaId: string, origin: string) {
+export function linkConsentimento(pessoaId: string, origin: string, extras: string[] = []) {
   const q = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: redirectUri(origin), response_type: "code", scope: ESCOPOS.join(" "),
+    client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: redirectUri(origin), response_type: "code", scope: [...ESCOPOS, ...extras].join(" "),
     access_type: "offline", prompt: "consent", include_granted_scopes: "true", state: signToken("google-oauth", pessoaId, 600),
   });
   return url("accounts.google.com", `/o/oauth2/v2/auth?${q}`);
@@ -181,4 +181,61 @@ export async function criarApresentacao(pessoaId: string, titulo: string, secoes
   const pasta = await pastaNipei(pessoaId);
   await gapi(pessoaId, "www.googleapis.com", `/drive/v3/files/${p.presentationId}?addParents=${pasta}&fields=id`, { method: "PATCH", body: "{}" }).catch(() => null);
   return `https://docs.google.com/presentation/d/${p.presentationId}/edit`;
+}
+
+// ---------------------------------------------------------------- Gmail (separate opt-in, Equipe 1)
+// Restricted scopes, asked only when the person turns Gmail on. E-mail content is external data: the assistant
+// reads it to answer, never obeys it, and sending always goes through a confirmation.
+
+export const ESCOPOS_GMAIL = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose"];
+export const temGmail = (g: ConexaoGoogle | undefined) => ESCOPOS_GMAIL.every((s) => temEscopo(g, s));
+
+type Parte = { mimeType?: string; body?: { data?: string }; parts?: Parte[]; headers?: { name: string; value: string }[] };
+const b64 = (s = "") => Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
+const cab = (p: Parte | undefined, nome: string) => p?.headers?.find((h) => h.name.toLowerCase() === nome.toLowerCase())?.value ?? "";
+function corpoTexto(p: Parte): string {
+  if (p.mimeType === "text/plain" && p.body?.data) return b64(p.body.data);
+  for (const x of p.parts ?? []) { const t = corpoTexto(x); if (t) return t; }
+  if (p.mimeType === "text/html" && p.body?.data) return b64(p.body.data).replace(/<(style|script)[\s\S]*?<\/\1>/gi, "").replace(/<br\s*\/?>|<\/p>/gi, "\n").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\n{3,}/g, "\n\n");
+  return "";
+}
+
+/** Gmail search (same syntax as the Gmail box, e.g. "is:unread newer_than:2d"). */
+export async function gmailBuscar(pessoaId: string, q: string, max = 10) {
+  const l = await gapi<{ messages?: { id: string; threadId: string }[] }>(pessoaId, "gmail.googleapis.com", `/gmail/v1/users/me/messages?${new URLSearchParams({ q: q || "in:inbox", maxResults: String(Math.min(20, Math.max(1, max))) })}`);
+  return Promise.all((l.messages ?? []).map(async (m) => {
+    const d = await gapi<{ id: string; threadId: string; snippet?: string; labelIds?: string[]; payload?: Parte }>(pessoaId, "gmail.googleapis.com", `/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`);
+    return { id: d.id, de: cab(d.payload, "From"), assunto: cab(d.payload, "Subject"), data: cab(d.payload, "Date"), trecho: d.snippet ?? "", nao_lido: !!d.labelIds?.includes("UNREAD") };
+  }));
+}
+
+export async function gmailLer(pessoaId: string, id: string) {
+  const d = await gapi<{ id: string; threadId: string; payload?: Parte }>(pessoaId, "gmail.googleapis.com", `/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`);
+  return { id: d.id, de: cab(d.payload, "From"), para: cab(d.payload, "To"), assunto: cab(d.payload, "Subject"), data: cab(d.payload, "Date"), texto: corpoTexto(d.payload ?? {}).trim().slice(0, 6000) };
+}
+
+const mimeAssunto = (s: string) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${Buffer.from(s).toString("base64")}?=`);
+
+/** Sends (or saves as a draft) a new e-mail or a reply in the same thread. Returns a link to Gmail. */
+export async function gmailEnviar(pessoaId: string, e: { para?: string; assunto?: string; texto: string; responderA?: string; rascunho?: boolean }) {
+  let para = e.para ?? "", assunto = e.assunto ?? "", threadId: string | undefined, extra = "";
+  if (e.responderA) {
+    const o = await gapi<{ threadId: string; payload?: Parte }>(pessoaId, "gmail.googleapis.com", `/gmail/v1/users/me/messages/${encodeURIComponent(e.responderA)}?format=metadata&metadataHeaders=From&metadataHeaders=Reply-To&metadataHeaders=Subject&metadataHeaders=Message-ID&metadataHeaders=References`);
+    threadId = o.threadId;
+    para ||= cab(o.payload, "Reply-To") || cab(o.payload, "From");
+    const s = cab(o.payload, "Subject");
+    assunto ||= /^re:/i.test(s) ? s : `Re: ${s}`;
+    const mid = cab(o.payload, "Message-ID");
+    if (mid) extra = `In-Reply-To: ${mid}\r\nReferences: ${[cab(o.payload, "References"), mid].filter(Boolean).join(" ")}\r\n`;
+  }
+  // no line breaks in headers (header injection)
+  para = para.replace(/[\r\n]+/g, " ").trim(); assunto = assunto.replace(/[\r\n]+/g, " ").trim();
+  if (!para) throw new Error("Falta o destinatário");
+  const raw = Buffer.from(`To: ${para}\r\nSubject: ${mimeAssunto(assunto)}\r\n${extra}MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${Buffer.from(e.texto).toString("base64")}`).toString("base64url");
+  if (e.rascunho) {
+    await gapi(pessoaId, "gmail.googleapis.com", "/gmail/v1/users/me/drafts", { method: "POST", body: JSON.stringify({ message: { raw, threadId } }) });
+    return "https://mail.google.com/mail/u/0/#drafts";
+  }
+  const r = await gapi<{ threadId: string }>(pessoaId, "gmail.googleapis.com", "/gmail/v1/users/me/messages/send", { method: "POST", body: JSON.stringify({ raw, threadId }) });
+  return `https://mail.google.com/mail/u/0/#all/${r.threadId}`;
 }

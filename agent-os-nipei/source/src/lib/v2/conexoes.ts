@@ -12,7 +12,7 @@ export type ConexaoGoogle = {
   email: string; refreshToken: string; accessToken?: string; expiraEm?: number; escopos: string[]; conectadoEm: string;
   backup?: { pastaId?: string; arquivos?: Record<string, string>; ultimoEm?: string; erro?: string };
 };
-export type Conexoes = { google?: ConexaoGoogle };
+export type Conexoes = { google?: ConexaoGoogle; ia?: import("./motorIA").ChaveIA };
 
 function chave() {
   const k = process.env.NIPEI_CONEXOES_KEY;

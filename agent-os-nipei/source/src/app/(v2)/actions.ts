@@ -1131,3 +1131,38 @@ export async function revogarAppAction(form: FormData) {
   });
   revalidatePath("/", "layout");
 }
+
+// ---------------------------------------------------------------- the person's own AI key (assistant runs on it)
+
+export async function salvarChaveIAAction(form: FormData) {
+  await tentar(async () => {
+    const { me, pessoaId } = await minhaConexao();
+    if (!me.gestao) throw new Error("O assistente está disponível só para a Equipe 1 por enquanto");
+    const { PROVEDORES, testarChave } = await import("@/lib/v2/motorIA");
+    const provedor = pick(form.get("provedor"), Object.keys(PROVEDORES)) as keyof typeof PROVEDORES;
+    const key = String(form.get("key") ?? "").trim(), modelo = String(form.get("modelo") ?? "").trim().slice(0, 80);
+    if (!provedor || key.length < 10) throw new Error("Escolha o provedor e cole a chave");
+    const erro = await testarChave(provedor, key, modelo);
+    if (erro) throw new Error(`A chave não funcionou: ${erro}`);
+    const { getConexoes, salvarConexoes } = await import("@/lib/v2/conexoes");
+    const c = getConexoes(pessoaId);
+    c.ia = { provedor, key, modelo: modelo || PROVEDORES[provedor].modelo, salvaEm: new Date().toISOString() };
+    salvarConexoes(pessoaId, c);
+  });
+  revalidatePath("/", "layout");
+}
+
+/** pausar = back to the platform's key without deleting yours; remover = delete it. */
+export async function chaveIAAction(form: FormData) {
+  await tentar(async () => {
+    const { pessoaId } = await minhaConexao();
+    const { getConexoes, salvarConexoes } = await import("@/lib/v2/conexoes");
+    const c = getConexoes(pessoaId);
+    if (!c.ia) return;
+    const o = String(form.get("o"));
+    if (o === "remover") delete c.ia;
+    else c.ia = { ...c.ia, pausada: o === "pausar", erro: undefined };
+    salvarConexoes(pessoaId, c);
+  });
+  revalidatePath("/", "layout");
+}
