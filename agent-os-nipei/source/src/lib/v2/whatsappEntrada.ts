@@ -2,6 +2,7 @@ import { getPessoas, meDaPessoa, type Me, type Pessoa } from "./data";
 import { conversar, executarAcao, getConversa, paraModelo, salvarConversa, type MsgSalva } from "./assistente";
 import { contarUso } from "./ia";
 import { enviarWhatsApp } from "./whatsapp";
+import { registrarEvento } from "./eventos";
 
 // "Encaminhar para o Nipëi": a person writes or forwards a text or voice note to the Nipëi WhatsApp number.
 // Same assistant, same conversation and memory as the panel; proposals come back numbered and are confirmed
@@ -98,7 +99,11 @@ export async function processarEntrada(d: Dados): Promise<void> {
 
     const decisao = lerDecisao(texto);
     const ultima = [...getConversa(dono)].reverse().find((m) => m.role === "assistant");
-    if (decisao && ultima && resumoCartoes(ultima).length) { await enviarWhatsApp(fone, await decidir(me, dono, quem, decisao)); return; }
+    if (decisao && ultima && resumoCartoes(ultima).length) {
+      registrarEvento(dono, decisao === "nenhuma" ? "cancelou proposta" : "confirmou proposta", `pelo WhatsApp (${Array.isArray(decisao) ? decisao.join(", ") : decisao})`, "whatsapp");
+      await enviarWhatsApp(fone, await decidir(me, dono, quem, decisao)); return;
+    }
+    registrarEvento(dono, audio ? "mandou áudio" : "mandou mensagem", "para o número do Nipëi", "whatsapp");
 
     contarUso(dono);
     const msgs = [...getConversa(dono), { role: "user" as const, content: audio ? `🎤 ${texto}` : texto.slice(0, 4000), em: new Date().toISOString() }];

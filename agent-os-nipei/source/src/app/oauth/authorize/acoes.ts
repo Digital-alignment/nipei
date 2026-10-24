@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/v2/data";
 import { emitirCodigo, getCliente } from "@/lib/v2/oauthMcp";
+import { registrarEvento } from "@/lib/v2/eventos";
 
 /** The person said yes (or no) on the consent page; everything is checked again here. */
 export async function decidirAction(form: FormData) {
@@ -16,6 +17,7 @@ export async function decidirAction(form: FormData) {
     u.searchParams.set("error", "access_denied");
   } else {
     u.searchParams.set("code", emitirCodigo(me.pessoa.id, cliente.id, redirectUri, String(form.get("code_challenge"))));
+    registrarEvento(me.pessoa.id, "conexão", `conectou ${cliente.nome} (MCP)`, "plataforma");
     u.searchParams.set("iss", process.env.NEXT_PUBLIC_APP_URL || "https://os.nipeihu.app");
   }
   redirect(u.toString());

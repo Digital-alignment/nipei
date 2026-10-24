@@ -6,6 +6,7 @@ import { backupPessoa } from "@/lib/v2/backup";
 import { podeEntrar } from "@/lib/v2/seguranca";
 import { abrirSessao, pessoaDoGoogle } from "@/lib/v2/sessao";
 import { cookieAdmin, ehAdmin, registrarAdmin } from "@/lib/v2/admin";
+import { registrarEvento } from "@/lib/v2/eventos";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
   try {
     const pessoaId = await concluirConexao(state, code, base, me.pessoa.id);
     backupPessoa(pessoaId).catch(() => null); // first copy right away, in the background
+    registrarEvento(pessoaId, "conexão", "conectou o Google", "plataforma");
     return volta("&google=ok");
   } catch (e) {
     return volta(`&erro=${encodeURIComponent((e as Error).message)}`);

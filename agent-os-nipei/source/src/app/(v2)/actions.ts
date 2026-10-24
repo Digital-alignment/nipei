@@ -860,6 +860,7 @@ export async function assistenteAction(texto: string, pagina: string) {
     const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString() }];
     const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300));
     msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), ...(r.consultas.length ? { consultas: r.consultas } : {}), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
+    (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "usou o assistente", r.acoes.length ? `${r.acoes.length} proposta(s)` : "consulta", "assistente");
     salvarConversa(id, msgs);
     return { msgs };
   } catch (e) {
@@ -879,6 +880,7 @@ export async function decidirCartaoAction(msg: number, cartao: number, confirmar
       try { c.link = await executarAcao(me, c, `${actorName(me)} (via assistente)`); c.estado = "feito"; } catch (e) { c.estado = "erro"; c.erro = (e as Error).message; }
     }
     salvarConversa(id, msgs);
+    (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, confirmar ? (c.estado === "erro" ? "proposta falhou" : "confirmou proposta") : "cancelou proposta", c.resumo, "assistente");
     if (c.estado === "feito") revalidatePath("/", "layout");
     return { msgs };
   } catch (e) {
@@ -1070,6 +1072,7 @@ export async function desconectarGoogleAction() {
     const { pessoaId } = await minhaConexao();
     const { desconectarGoogle } = await import("@/lib/v2/google");
     await desconectarGoogle(pessoaId);
+    (await import("@/lib/v2/eventos")).registrarEvento(pessoaId, "conexão", "desconectou o Google", "plataforma");
   });
   revalidatePath("/", "layout");
 }
@@ -1119,7 +1122,11 @@ export async function exportarGoogleAction(form: FormData) {
       link = (await g.salvarArquivo(pessoaId, { nome: `Finanças Nipëi · ${today()}`, conteudo: ["Data,Tipo,Valor,Categoria,Descrição,Projeto,Equipe,Registrado por", ...linhas].join("\n"), tipo: "text/csv", converter: true })).link;
     } else throw new Error("Exportação desconhecida");
   });
-  if (link) redirect(link);
+  if (link) {
+    const me = await requireUser();
+    (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "exportou", `${String(form.get("tipo"))} → ${String(form.get("formato") || "doc")}`, "plataforma");
+    redirect(link);
+  }
 }
 
 /** Cuts an AI app's (MCP) access to the person's Nipëi at once. */
@@ -1128,6 +1135,7 @@ export async function revogarAppAction(form: FormData) {
     const { pessoaId } = await minhaConexao();
     const { revogar } = await import("@/lib/v2/oauthMcp");
     revogar(pessoaId, String(form.get("id")));
+    (await import("@/lib/v2/eventos")).registrarEvento(pessoaId, "conexão", "desconectou um app de IA (MCP)", "plataforma");
   });
   revalidatePath("/", "layout");
 }
@@ -1147,6 +1155,7 @@ export async function salvarChaveIAAction(form: FormData) {
     const { getConexoes, salvarConexoes } = await import("@/lib/v2/conexoes");
     const c = getConexoes(pessoaId);
     c.ia = { provedor, key, modelo: modelo || PROVEDORES[provedor].modelo, salvaEm: new Date().toISOString() };
+    (await import("@/lib/v2/eventos")).registrarEvento(pessoaId, "conexão", `salvou chave de IA (${PROVEDORES[provedor].nome})`, "plataforma");
     salvarConexoes(pessoaId, c);
   });
   revalidatePath("/", "layout");
@@ -1186,6 +1195,7 @@ export async function alterarSenhaAction(form: FormData) {
     if (temSenha(me.pessoa) && !conferirSenhaAtual(me.pessoa, String(form.get("atual") ?? ""))) throw new Error("A senha atual não confere");
     if (nova !== confirmar) throw new Error("A confirmação não é igual à nova senha");
     definirSenha(me.pessoa.id, nova);
+    (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa.id, "segurança", "trocou a senha", "plataforma");
   });
   await renovarMinhaSessao(me);
   redirect(`/pessoas/${me.pessoa!.id}?aba=seguranca&ok=senha`);
@@ -1196,6 +1206,7 @@ export async function sairTodosAction() {
   if (!me.pessoa) return;
   const { cortarSessoes } = await import("@/lib/v2/seguranca");
   cortarSessoes(me.pessoa.id);
+  (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa.id, "segurança", "saiu de todos os outros aparelhos", "plataforma");
   await renovarMinhaSessao(me);
   redirect(`/pessoas/${me.pessoa.id}?aba=seguranca&ok=sair`);
 }

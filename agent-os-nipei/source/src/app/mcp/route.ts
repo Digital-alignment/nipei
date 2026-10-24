@@ -3,6 +3,7 @@ import { meDaPessoa, today } from "@/lib/v2/data";
 import { base, concessaoDoToken } from "@/lib/v2/oauthMcp";
 import { chamarMCP, ferramentasMCP, instrucoesMCP } from "@/lib/v2/assistente";
 import { CORS } from "./cors";
+import { registrarEvento } from "@/lib/v2/eventos";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
       const nome = String(m.params?.name ?? ""), args = (m.params?.arguments ?? {}) as Record<string, unknown>;
       try {
         const r = await chamarMCP(me, nome, args, quem);
+        registrarEvento(g.pessoa, "app de IA", `${g.nomeCliente}: ${nome}${r.ok ? "" : " (erro)"}`, "mcp");
         return resposta(m.id, { content: [{ type: "text", text: JSON.stringify({ hoje: today(), ...(r.dados && typeof r.dados === "object" && !Array.isArray(r.dados) ? r.dados : { resultado: r.dados }) }) }], isError: !r.ok });
       } catch (e) {
         return resposta(m.id, { content: [{ type: "text", text: `Erro: ${(e as Error).message}` }], isError: true });
