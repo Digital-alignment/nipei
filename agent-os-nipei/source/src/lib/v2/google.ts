@@ -23,10 +23,12 @@ export function linkConsentimento(pessoaId: string, origin: string, extras: stri
 }
 
 /** "Entrar com Google": identity only (no Drive/Calendar), Google's account chooser, back to `next`. */
-export function linkLoginGoogle(origin: string, next: string) {
+export function linkLoginGoogle(origin: string, next: string, adminDe?: string) {
   const q = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: redirectUri(origin), response_type: "code", scope: "openid email profile",
-    access_type: "online", prompt: "select_account", state: signToken("google-login", next, 600),
+    access_type: "online", prompt: "select_account",
+    // adminDe: re-confirmation for the admin panel (must come back as this same person)
+    state: adminDe ? signToken("google-admin", adminDe, 600) : signToken("google-login", next, 600),
   });
   return url("accounts.google.com", `/o/oauth2/v2/auth?${q}`);
 }

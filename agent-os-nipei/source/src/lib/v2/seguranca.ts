@@ -100,3 +100,13 @@ export function bloqueado(chave: string, max: number, janelaMs: number) {
 }
 export function contarFalha(chave: string) { falhas.set(chave, [...(falhas.get(chave) ?? []), Date.now()]); if (falhas.size > 5000) falhas.clear(); }
 export function limparFalhas(chave: string) { falhas.delete(chave); }
+
+/** Every recorded login of every person, newest first (admin panel). */
+export function todosAcessos(): { pessoa: string; em: string; metodo: string; disp: string }[] {
+  const dir = path.join(vault(), ".jobs", "seguranca");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((f) => f.endsWith(".json")).flatMap((f) => (ler(f.slice(0, -5)).acessos ?? []).map((a) => ({ pessoa: f.slice(0, -5), ...a })))
+    .sort((a, b) => b.em.localeCompare(a.em));
+}
+/** Who still logs in with the old env password (not yet migrated to a hash). */
+export const semHash = () => getPessoas().filter((p) => p.usuario && envSenha(p.usuario) !== null && !ler(p.id).senha).map((p) => p.id);

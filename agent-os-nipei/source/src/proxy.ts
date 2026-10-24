@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, isValidApiToken, verifyToken } from "@/lib/auth";
 import { gestaoAgora, sessaoCortada } from "@/lib/v2/data";
+import { subEhAdmin } from "@/lib/v2/admin";
 
 // Routes reachable without a session. Only add routes that verify their own secret
 // (or signed per-member token) inside the handler.
@@ -31,6 +32,10 @@ export function proxy(req: NextRequest) {
   // A full session counts only while its person is still in a gestão team (checked on every request):
   // someone moved out of Equipe 1 keeps their login but falls back to the member pages at once.
   const full = verifyToken(token, "session");
+  // the admin panel doesn't exist for anyone outside NIPEI_ADMINS: a real 404 before any page code runs
+  if ((pathname === "/controle" || pathname.startsWith("/controle/")) && !subEhAdmin(full)) {
+    return token ? NextResponse.rewrite(new URL("/_nao-existe", req.url), { status: 404 }) : NextResponse.redirect(new URL("/login", req.url));
+  }
   if (full && gestaoAgora(full) !== false) return NextResponse.next();
   if (isApi && isValidApiToken(req.headers.get("authorization"))) return NextResponse.next();
 

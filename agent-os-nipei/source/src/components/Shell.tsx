@@ -9,7 +9,7 @@ import MobileFX from "./MobileFX";
 import HermesFloatingAssistant from "./HermesFloatingAssistant";
 import { INITIAL_MEMBERS } from "@/lib/nipeiStore";
 
-const V2_PATHS = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/legacy", "/cadastro", "/financas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/oauth", "/privacidade"]; // /oauth + /privacidade: standalone pages
+const V2_PATHS = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/legacy", "/cadastro", "/financas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/oauth", "/privacidade", "/controle"]; // /oauth + /privacidade: standalone pages; /controle: admin panel (v2 chrome)
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

@@ -89,5 +89,20 @@ def main():
             entregar_salvo(job["id"], False, f"O Hermes passou de {TIMEOUT // 60} minutos e foi interrompido.")
 
 
+def estado(ok, msg=""):
+    """Last run, for the app's admin panel (/controle → Saúde)."""
+    try:
+        os.makedirs(f"{JOBS}/estado", exist_ok=True)
+        with open(f"{JOBS}/estado/hermes-worker.json", "w") as f:
+            json.dump({"em": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "resultado": "ok" if ok else "erro", "msg": msg[:200]}, f)
+    except OSError:
+        pass
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        estado(True)
+    except Exception as e:
+        estado(False, str(e))
+        raise

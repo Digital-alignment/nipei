@@ -223,11 +223,29 @@ def diario(cfg, teste=None):
         open(marca, "w").write(hoje)
 
 
+def estado(modo, ok, msg=""):
+    """Last run, for the app's admin panel (/controle → Saúde)."""
+    try:
+        os.makedirs(f"{VAULT}/.jobs/estado", exist_ok=True)
+        with open(f"{VAULT}/.jobs/estado/avisos-{modo}.json", "w") as f:
+            json.dump({"em": datetime.now(TZ).isoformat(timespec="seconds"), "resultado": "ok" if ok else "erro", "msg": msg[:200]}, f)
+    except OSError:
+        pass
+
+
 if __name__ == "__main__":
     modo = sys.argv[1] if len(sys.argv) > 1 else "fila"
+    teste = "--teste" in sys.argv
     cfg = env()
-    if modo == "diario":
-        diario(cfg, sys.argv[3] if len(sys.argv) > 3 and sys.argv[2] == "--teste" else None)
-    else:
-        os.makedirs(FILA, exist_ok=True)
-        fila(cfg, teste="--teste" in sys.argv)
+    try:
+        if modo == "diario":
+            diario(cfg, sys.argv[3] if len(sys.argv) > 3 and sys.argv[2] == "--teste" else None)
+        else:
+            os.makedirs(FILA, exist_ok=True)
+            fila(cfg, teste=teste)
+        if not teste:
+            estado("diario" if modo == "diario" else "fila", True)
+    except Exception as e:
+        if not teste:
+            estado("diario" if modo == "diario" else "fila", False, str(e))
+        raise

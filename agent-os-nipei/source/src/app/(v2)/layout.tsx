@@ -4,7 +4,8 @@ import ErroAviso from "@/components/v2/ErroAviso";
 import Offline from "@/components/v2/Offline";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Brain, Library, LogOut, Wallet } from "lucide-react";
+import { Brain, Library, LogOut, ShieldCheck, Wallet } from "lucide-react";
+import { ehAdmin } from "@/lib/v2/admin";
 import Nav from "@/components/v2/Nav";
 import AssistenteGlobal from "@/components/v2/AssistenteGlobal";
 import { Avatar } from "@/components/v2/ui";
@@ -43,6 +44,8 @@ export default async function V2Layout({ children }: { children: React.ReactNode
           <Link href="/conhecimento" aria-label={t.conhecimento} title={t.conhecimento} className={ICONE}><Brain size={19} /></Link>
           <Link href="/acervo" aria-label={t.acervo} title={t.acervo} className={ICONE}><Library size={19} /></Link>
           {user.gestao && <Link href="/financas" aria-label={t.financas} title={t.financas} className={ICONE}><Wallet size={19} /></Link>}
+          {/* only rendered for NIPEI_ADMINS: nobody else gets the link in their HTML */}
+          {ehAdmin(user) && <Link href="/controle" aria-label="Painel de controle" title="Painel de controle" className={ICONE}><ShieldCheck size={19} /></Link>}
           {!user.pessoa && (
             // no profile to hold the language switch → keep it here
             <form action={toggleLangAction}><button className="text-xs rounded-md px-2 py-1 border border-neutral-300 dark:border-neutral-700">{t.idioma}</button></form>
