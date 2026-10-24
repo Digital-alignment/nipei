@@ -4,12 +4,12 @@
 
 ---
 
-## 0. Próxima sessão — onde paramos (2026-10-24, v2.50.0)
+## 0. Próxima sessão — onde paramos (2026-10-24, v2.50.0; decisão da fase 7 em 31/10)
 
 **Em produção e verificado com a conta real do Ashuan:** plano "Nipëi pessoal e conectado", fases 1–6 (detalhes em 3.8): aba Conexões, Google (Drive com cópia diária, Calendar, Gmail), MCP (`/mcp`, Claude e Gemini do Ashuan conectados), WhatsApp "Encaminhar para o Nipëi" e chave de IA própria. Código, GitHub e VPS no mesmo commit; vault sincronizado.
 
 **Começar por aqui:**
-1. **Fase 7 — NotebookLM + Estúdio** (pedida e ainda não iniciada). NotebookLM não tem API para contas pessoais (só a Enterprise, em preview); não usar a biblioteca não oficial (`notebooklm-py`, sessão do navegador). Plano: (a) "Enviar para NotebookLM": montar no Drive da pessoa (pasta Nipëi, escopo `drive.file`) um pacote de Docs por projeto — visão, fatos confirmados, tarefas, atas — para ela adicionar como fontes no próprio NotebookLM; (b) "Estúdio" no Nipëi: resumo em áudio (Gemini TTS, já existe em `/api/assistente/voz`), slides (`criarApresentacao` em `lib/v2/google.ts`), relatório em Docs. Testar com o mock do Google (ver 3.8, "Teste local sem Google").
+1. **Fase 7 (NotebookLM) — decisão em 31/10/2026** (tarefa "Decidir: NotebookLM…" do Ashuan no Nipëi). Decidido em 24/10: NÃO fazer o "Estúdio" no Nipëi; o Gemini (assinatura AI Pro) já tem Notebooks sincronizados com o NotebookLM e lê o Nipëi pelo MCP — fluxo manual: pedir ao Gemini o conteúdo do projeto → "Adicionar ao notebook" → áudio/slides no NotebookLM. NotebookLM não tem API para contas pessoais; não usar `notebooklm-py`. Se o Ashuan pedir, as opções são: (a) ferramenta MCP `dossie_projeto` (visão, objetivos, tarefas abertas, fatos confirmados, atas e, só gestão, finanças, numa chamada; base em `coletarVisao` de `lib/v2/visao.ts`); (b) dossiê vivo: um Google Doc por projeto na pasta Nipëi regenerado junto com o backup diário (fonte do Drive que o NotebookLM sincroniza).
 2. **Pendências do Ashuan / Equipe 1** (não são código): a chave Gemini do Ashuan está salva mas **pausada** (Conexões → "Usar minha chave"); reconectar o Nipëi no Claude para ele ver as ferramentas de Gmail; Jordão, Paulo Roberto e Rodrigo ainda não conectaram Google nem IA.
 3. **Ainda não testado com conta real** (só local): enviar e-mail pelo assistente; exportar Docs/Slides/Sheets.
 4. Opcional: verificação do app OAuth no Google (`nipei-512411`) para tirar o aviso "não verificado"; Gmail é escopo restrito (avaliação de segurança paga).
