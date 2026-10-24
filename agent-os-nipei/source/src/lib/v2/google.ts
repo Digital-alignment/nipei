@@ -22,6 +22,23 @@ export function linkConsentimento(pessoaId: string, origin: string, extras: stri
   return url("accounts.google.com", `/o/oauth2/v2/auth?${q}`);
 }
 
+/** "Entrar com Google": identity only (no Drive/Calendar), Google's account chooser, back to `next`. */
+export function linkLoginGoogle(origin: string, next: string) {
+  const q = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: redirectUri(origin), response_type: "code", scope: "openid email profile",
+    access_type: "online", prompt: "select_account", state: signToken("google-login", next, 600),
+  });
+  return url("accounts.google.com", `/o/oauth2/v2/auth?${q}`);
+}
+
+/** Login callback: which verified e-mail signed in (nothing is stored). */
+export async function identidadeGoogle(code: string, origin: string): Promise<{ email: string; verificado: boolean }> {
+  const { ok, j } = await token({ code, grant_type: "authorization_code", redirect_uri: redirectUri(origin) });
+  if (!ok || !j.access_token) throw new Error("O Google recusou o login");
+  const eu = await fetch(url("openidconnect.googleapis.com", "/v1/userinfo"), { headers: { Authorization: `Bearer ${j.access_token}` } }).then((r) => r.json()).catch(() => ({}));
+  return { email: String(eu.email ?? "").toLowerCase(), verificado: eu.email_verified !== false };
+}
+
 async function token(form: Record<string, string>) {
   const r = await fetch(url("oauth2.googleapis.com", "/token"), {
     method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },

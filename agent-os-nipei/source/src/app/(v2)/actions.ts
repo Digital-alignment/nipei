@@ -1166,3 +1166,36 @@ export async function chaveIAAction(form: FormData) {
   });
   revalidatePath("/", "layout");
 }
+
+// ---------------------------------------------------------------- login security (own profile, Segurança tab)
+
+/** Keeps THIS device logged in after cutting every other session (fresh token, issued after the cut). */
+async function renovarMinhaSessao(me: { username: string }) {
+  const { SESSION_TTL_SECONDS, cookieSessao, signToken, verifyToken } = await import("@/lib/auth");
+  const jar = await cookies();
+  const full = !!verifyToken(jar.get(SESSION_COOKIE)?.value, "session");
+  jar.set(SESSION_COOKIE, signToken(full ? "session" : "member", me.username, SESSION_TTL_SECONDS), cookieSessao(SESSION_TTL_SECONDS));
+}
+
+export async function alterarSenhaAction(form: FormData) {
+  const me = await requireUser();
+  await tentar(async () => {
+    if (!me.pessoa) throw new Error("Só quem tem ficha pode ter senha própria");
+    const { conferirSenhaAtual, definirSenha, temSenha } = await import("@/lib/v2/seguranca");
+    const nova = String(form.get("nova") ?? ""), confirmar = String(form.get("confirmar") ?? "");
+    if (temSenha(me.pessoa) && !conferirSenhaAtual(me.pessoa, String(form.get("atual") ?? ""))) throw new Error("A senha atual não confere");
+    if (nova !== confirmar) throw new Error("A confirmação não é igual à nova senha");
+    definirSenha(me.pessoa.id, nova);
+  });
+  await renovarMinhaSessao(me);
+  redirect(`/pessoas/${me.pessoa!.id}?aba=seguranca&ok=senha`);
+}
+
+export async function sairTodosAction() {
+  const me = await requireUser();
+  if (!me.pessoa) return;
+  const { cortarSessoes } = await import("@/lib/v2/seguranca");
+  cortarSessoes(me.pessoa.id);
+  await renovarMinhaSessao(me);
+  redirect(`/pessoas/${me.pessoa.id}?aba=seguranca&ok=sair`);
+}

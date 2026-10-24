@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, isValidApiToken, verifyToken } from "@/lib/auth";
-import { gestaoAgora } from "@/lib/v2/data";
+import { gestaoAgora, sessaoCortada } from "@/lib/v2/data";
 
 // Routes reachable without a session. Only add routes that verify their own secret
 // (or signed per-member token) inside the handler.
@@ -9,8 +9,9 @@ const PUBLIC_API = [
   "/api/ingest/inbox-webhook", // checks NIPEI_WEBHOOK_SECRET itself
   "/api/agenda/ics", // Google Calendar feed: checks its signed "ics" token itself
   "/api/whatsapp/webhook", // Evolution webhook: checks NIPEI_WHATSAPP_WEBHOOK_SECRET itself
+  "/api/auth/link-whatsapp", // "receive an access link": rate-limited, always answers the same
 ];
-const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade"]; // /entrar and /cadastro check their link token
+const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade", "/google/entrar", "/google/callback"]; // /google/callback checks its signed state itself // /entrar and /cadastro check their link token
 
 // A "member" session (non-gestão teams) only reaches the v2 pages; v1 and the internal API
 // (agents, dispatch, vault writes…) stay gestão-only. Keep in sync with V2_PATHS in Shell.tsx.
@@ -24,7 +25,9 @@ export function proxy(req: NextRequest) {
   // MCP + its OAuth server: /mcp checks its Bearer token, /oauth/authorize asks for the Nipëi login itself
   if (pathname === "/mcp" || pathname.startsWith("/oauth/") || pathname.startsWith("/.well-known/")) return NextResponse.next();
 
-  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  // a session issued before its person's cut-off (password change, "sign out everywhere") counts as none
+  const bruto = req.cookies.get(SESSION_COOKIE)?.value;
+  const token = bruto && !sessaoCortada(bruto) ? bruto : undefined;
   // A full session counts only while its person is still in a gestão team (checked on every request):
   // someone moved out of Equipe 1 keeps their login but falls back to the member pages at once.
   const full = verifyToken(token, "session");

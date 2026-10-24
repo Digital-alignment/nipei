@@ -3,7 +3,8 @@ import path from "path";
 import yaml from "js-yaml";
 import { cookies } from "next/headers";
 import { defaultVault } from "@/lib/config";
-import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
+import { SESSION_COOKIE, lerToken, verifyToken } from "@/lib/auth";
+import { corteSessao } from "./seguranca";
 import { normalizeDueDate } from "@/lib/kanbanGrounding";
 import { createTarefaNote, parseTarefa, requestSync, writeTarefa, type ChecklistItem, type TarefaDoc } from "@/lib/tarefaNote";
 
@@ -181,8 +182,16 @@ export async function currentUser(): Promise<Me | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const full = verifyToken(token, "session");
   const sub = full ?? verifyToken(token, MEMBER_PURPOSE);
-  if (!sub) return null;
+  if (!sub || sessaoCortada(token)) return null;
   return montarMe(sub, !!full);
+}
+
+/** True when the session token was issued before its person's cut-off (see lib/v2/seguranca.ts). */
+export function sessaoCortada(token: string | undefined): boolean {
+  const t = lerToken(token, "session") ?? lerToken(token, MEMBER_PURPOSE);
+  if (!t) return false;
+  const p = getPessoas().find((x) => x.usuario === t.sub || x.id === t.sub);
+  return !!p && t.iat * 1000 < corteSessao(p.id);
 }
 
 /** The same user as a login would give, for a person id (MCP apps act as the person). null = no access now. */

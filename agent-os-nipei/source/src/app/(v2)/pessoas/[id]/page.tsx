@@ -22,6 +22,7 @@ import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 import EscolherEquipes from "@/components/v2/EscolherEquipes";
 import NotasInternas from "@/components/v2/NotasInternas";
 import Conexoes from "@/components/v2/Conexoes";
+import Seguranca from "@/components/v2/Seguranca";
 import { getNotas } from "@/lib/v2/notasInternas";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
@@ -32,7 +33,7 @@ const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500 
 
 // A person's profile in tabs: Resumo (numbers, and for gestão Participação + AI study), Tarefas,
 // Perfil (details, role from the assessment) and Gestão (links, notices, teams).
-export default async function PessoaDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; google?: string }> }) {
+export default async function PessoaDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aba?: string; google?: string; ok?: string }> }) {
   const { id } = await params;
   const q = await searchParams;
   const { t, lang } = await getT();
@@ -405,13 +406,14 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         <Num v={n.ultimoUso ? (n.ultimoUso === hoje ? t.hoje : fmtDate(n.ultimoUso, lang)) : "—"} label={t.ultimoUso} />
       </div>
 
-      <Abas id="pessoa" inicial={q.aba === "conexoes" && me.pessoa?.id === p.id ? "conexoes" : undefined} abas={[
+      <Abas id="pessoa" inicial={(q.aba === "conexoes" || q.aba === "seguranca") && me.pessoa?.id === p.id ? q.aba : undefined} abas={[
         { id: "resumo", label: t.resumoLbl, count: 0, conteudo: resumo },
         { id: "tarefas", label: t.tarefasLbl, count: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
         { id: "perfil", label: t.perfilLbl, count: 0, conteudo: perfil },
         ...(gerir || proprio || enviados.length ? [{ id: "gestao", label: `🔒 ${t.gestaoLbl}`, count: 0, conteudo: gestao }] : []),
         // only on one's own profile: nobody sees or touches someone else's connections
-        ...(me.pessoa?.id === p.id ? [{ id: "conexoes", label: t.cx.aba, count: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> }] : []),
+        ...(me.pessoa?.id === p.id ? [{ id: "conexoes", label: t.cx.aba, count: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },
+          { id: "seguranca", label: t.sg.aba, count: 0, conteudo: <Seguranca p={p} t={t} ok={q.aba === "seguranca" ? q.ok : undefined} /> }] : []),
       ]} />
     </>
   );
