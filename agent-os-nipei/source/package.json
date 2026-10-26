@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
     "build": "next build",
-    "start": "next start -H 0.0.0.0"
+    "start": "next start -H 0.0.0.0",
+    "icones": "node scripts/gerar-icones.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

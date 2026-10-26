@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Icone, { type NomeIcone } from "./Icone";
 
 // Tema da v2 (DESIGN-SYSTEM.md seções 1, 11 e 13.1): Escuro (padrão) · Claro · Sistema.
 // A escolha fica no cookie nipei_tema (mesmo padrão de nipei_menu / nipei_lang) e vira o
@@ -20,15 +21,14 @@ function lido(): ValorTema {
   return (m?.[1] as ValorTema) ?? PADRAO;
 }
 
-const OPCOES: { v: ValorTema; rotulo: string }[] = [
-  { v: "escuro", rotulo: "Escuro" },
-  { v: "claro", rotulo: "Claro" },
-  { v: "sistema", rotulo: "Sistema" },
+const OPCOES: { v: ValorTema; rotulo: string; icone: NomeIcone }[] = [
+  { v: "escuro", rotulo: "Escuro", icone: "tema-escuro" },
+  { v: "claro", rotulo: "Claro", icone: "tema-claro" },
+  { v: "sistema", rotulo: "Sistema", icone: "tema-sistema" },
 ];
 
 /**
- * Seletor segmentado (seção 9.4): pílula s2; ativo = s3 + contorno de 1 px.
- * Ícones tema-escuro / tema-claro / tema-sistema entram com <Icone> (Prompt 3); por ora, texto.
+ * Seletor segmentado (seção 9.4): pílula s2; ativo = s3 + contorno de 1 px; ícone + texto (regra 7).
  */
 export default function Tema({ rotulo = "Tema" }: { rotulo?: string }) {
   const [atual, setAtual] = useState<ValorTema>(PADRAO);
@@ -38,7 +38,8 @@ export default function Tema({ rotulo = "Tema" }: { rotulo?: string }) {
     <div role="radiogroup" aria-label={rotulo} className="inline-flex gap-1 rounded-pilula bg-s2 p-1 font-texto">
       {OPCOES.map((o) => (
         <button key={o.v} type="button" role="radio" aria-checked={atual === o.v} onClick={() => escolher(o.v)}
-          className={`anel-foco min-h-11 rounded-pilula px-4 text-sm font-medium transition-colors duration-150 ${atual === o.v ? "bg-s3 text-t1 ring-1 ring-inset ring-s4" : "text-t2 hover:text-t1"}`}>
+          className={`anel-foco inline-flex min-h-11 items-center gap-2 rounded-pilula px-4 text-sm font-medium transition-colors duration-150 ${atual === o.v ? "bg-s3 text-t1 ring-1 ring-inset ring-s4" : "text-t2 hover:text-t1"}`}>
+          <Icone nome={o.icone} tamanho={18} className={atual === o.v ? "text-ac-text" : undefined} />
           {o.rotulo}
         </button>
       ))}
