@@ -19,8 +19,12 @@ export type ItemMenu = {
   confirmar?: PedidoConfirmacao;
 };
 
-/** `alinhar` é só o lado inicial: ao abrir, o menu vai na direção do centro da tela. */
-export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "direita" }: { itens: ItemMenu[]; rotulo?: string; alinhar?: "direita" | "esquerda" }) {
+/**
+ * `alinhar` é só o lado inicial: ao abrir, o menu vai na direção do centro da tela.
+ * `gatilho="criar"`: o "+" flutuante (56 px, claro sobre o fundo) que abre as ações de criação; o menu abre para cima.
+ */
+export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "direita", gatilho = "mais-opcoes" }: { itens: ItemMenu[]; rotulo?: string; alinhar?: "direita" | "esquerda"; gatilho?: "mais-opcoes" | "criar" }) {
+  const criar = gatilho === "criar";
   const [aberto, setAberto] = useState(false);
   const [lado, setLado] = useState(alinhar);
   /** Abre na direção do centro da tela: nunca por baixo do menu lateral nem para fora da borda. */
@@ -73,12 +77,14 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
       <button ref={botao} type="button" aria-label={rotulo} title={rotulo} aria-haspopup="menu" aria-expanded={aberto} aria-controls={aberto ? id : undefined}
         onClick={() => (aberto ? setAberto(false) : abrir())}
         onKeyDown={(e) => { if (!aberto && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); abrir(); } }}
-        className={`anel-foco inline-grid size-11 place-items-center rounded-pilula text-t1 transition-[background-color,box-shadow] duration-150 lg:size-10 ${aberto ? "bg-s2 shadow-[0_0_0_1.5px_var(--ac)]" : "hover:bg-s2"}`}>
-        <Icone nome="mais-opcoes" tamanho={20} />
+        className={criar
+          ? `anel-foco inline-grid size-14 place-items-center rounded-pilula bg-t1 text-bg transition-[transform,box-shadow] duration-150 active:scale-95 ${aberto ? "shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--ac)]" : ""}`
+          : `anel-foco inline-grid size-11 place-items-center rounded-pilula text-t1 transition-[background-color,box-shadow] duration-150 lg:size-10 ${aberto ? "bg-s2 shadow-[0_0_0_1.5px_var(--ac)]" : "hover:bg-s2"}`}>
+        <Icone nome={criar ? "mais" : "mais-opcoes"} tamanho={criar ? 26 : 20} className={criar ? `transition-transform duration-150 ${aberto ? "rotate-45" : ""}` : undefined} />
       </button>
       {aberto && (
         <div id={id} role="menu" aria-label={rotulo}
-          className={`absolute top-full z-50 mt-2 flex min-w-[230px] flex-col rounded-[16px] bg-s2 p-1.5 shadow-[0_0_0_1px_var(--s3)] ${lado === "direita" ? "right-0" : "left-0"}`}>
+          className={`absolute z-50 flex ${criar ? "bottom-full mb-3" : "top-full mt-2"} min-w-[230px] flex-col rounded-[16px] bg-s2 p-1.5 shadow-[0_0_0_1px_var(--s3)] ${lado === "direita" ? "right-0" : "left-0"}`}>
           {ordenados.map((item, i) => (
             <div key={i} className="contents">
               {i === primeiroSensivel && i > 0 && <hr className="mx-1.5 my-1 h-px border-0 bg-s3" />}

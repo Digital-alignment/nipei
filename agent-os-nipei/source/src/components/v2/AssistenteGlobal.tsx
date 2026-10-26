@@ -6,6 +6,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { ArrowLeft, BotMessageSquare, Brain, Check, CheckCheck, ExternalLink, Mic, RotateCcw, Send, Square, Trash2, Volume2, VolumeX, X } from "lucide-react";
 import { assistenteAction, assistenteConversaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
+import Campo from "@/components/ds/Campo";
+import Chip from "@/components/ds/Chip";
 import type { Lembranca, MsgSalva } from "@/lib/v2/assistente";
 
 export const ABRIR_ASSISTENTE = "nipei:assistente"; // window event; detail: { texto?: string }
@@ -320,23 +322,17 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
   );
 }
 
-/** Hoje's field: same look as before, but it opens the global assistant with what you typed. */
+/** Hoje's field: the design system's Pinu search field + suggestion chips; opens the global assistant. */
 export function CampoAssistente({ placeholder, sugestoes }: { placeholder: string; sugestoes: string[] }) {
   const [texto, setTexto] = useState("");
-  const abrir = (t?: string) => window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail: { texto: t } }));
+  const abrir = (detail?: { texto?: string; voz?: boolean }) => window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail }));
   return (
-    <div className="mb-4">
-      <form onSubmit={(e) => { e.preventDefault(); abrir(texto.trim() || undefined); setTexto(""); }} className="flex items-center gap-1.5">
-        <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={placeholder} maxLength={2000}
-          className="min-w-0 flex-1 h-10 rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 text-sm" />
-        <button aria-label={placeholder} className="w-10 h-10 shrink-0 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center">
-          {texto.trim() ? <Send size={16} /> : <BotMessageSquare size={17} />}
-        </button>
+    <div className="grid gap-2.5">
+      <form role="search" onSubmit={(e) => { e.preventDefault(); abrir({ texto: texto.trim() || undefined }); setTexto(""); }}>
+        <Campo tipo="busca" pinu rotulo={placeholder} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={2000} onMicrofone={() => abrir({ voz: true })} />
       </form>
-      <div className="flex gap-1.5 mt-2 overflow-x-auto -mx-1 px-1">
-        {sugestoes.map((x) => (
-          <button key={x} type="button" onClick={() => abrir(x)} className="shrink-0 whitespace-nowrap rounded-full border border-neutral-200 dark:border-neutral-800 px-3 h-8 text-xs text-neutral-600 dark:text-neutral-300 hover:border-neutral-400">{x}</button>
-        ))}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
+        {sugestoes.map((x) => <Chip key={x} tipo="pinu" onClick={() => abrir({ texto: x })}>{x}</Chip>)}
       </div>
     </div>
   );

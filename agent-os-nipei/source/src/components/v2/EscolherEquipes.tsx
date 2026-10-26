@@ -1,4 +1,6 @@
-import { NotebookPen } from "lucide-react";
+import Icone from "@/components/ds/Icone";
+import Selo from "@/components/ds/Selo";
+import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import BotaoEnviar from "./BotaoEnviar";
 import { addToEquipeAction, notaInternaAction } from "@/app/(v2)/actions";
 import type { Dict } from "@/lib/v2/i18n";
@@ -19,27 +21,33 @@ export default function EscolherEquipes({ pessoaId, equipes, t, notas = 0, comNo
         <form action={addToEquipeAction} aria-label={t.marqueEquipes} title={t.marqueEquipes} className="flex flex-wrap items-center gap-1.5">
           <input type="hidden" name="pessoa" value={pessoaId} />
           {equipes.map((e) => (
+            // chip de equipe (seção 9.6) que marca: selo + nome; marcado = s3 + anel na cor da equipe + ✓
             <label key={e.id} title={e.gestao ? t.gestaoCompleta : undefined}
-              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 px-2.5 py-1 text-xs cursor-pointer select-none has-[:checked]:bg-neutral-900 has-[:checked]:text-white has-[:checked]:border-neutral-900 dark:has-[:checked]:bg-white dark:has-[:checked]:text-neutral-900">
+              className="anel-foco group/eq inline-flex h-9 cursor-pointer select-none items-center gap-2 rounded-pilula bg-s2 pl-2.5 pr-3.5 font-texto text-sm font-medium text-t2 hover:bg-s3 hover:text-t1 has-[:checked]:bg-s3 has-[:checked]:text-t1 has-[:checked]:shadow-[inset_0_0_0_1.5px_var(--cor-eq)] has-[:focus-visible]:shadow-foco"
+              style={{ "--cor-eq": EQUIPES_DS[chaveEquipe(e.id) ?? chaveEquipe(e.cor) ?? "escritorio"].cor } as React.CSSProperties}>
               <input type="checkbox" name="equipe" value={e.id} className="sr-only" />
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: e.cor }} />{e.nome}{e.gestao ? " *" : ""}
+              {chaveEquipe(e.id) ?? chaveEquipe(e.cor)
+                ? <Selo nome={EQUIPES_DS[(chaveEquipe(e.id) ?? chaveEquipe(e.cor))!].selo} tamanho={18} style={{ color: "var(--cor-eq)" }} />
+                : <Icone nome="pessoas" tamanho={16} />}
+              {e.nome}{e.gestao ? " *" : ""}
+              <Icone nome="confirmar" tamanho={14} className="hidden text-ac-text group-has-[:checked]/eq:inline" />
             </label>
           ))}
-          <BotaoEnviar enviando="…" className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs">{t.adicionar}</BotaoEnviar>
+          <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4"><Icone nome="mais" tamanho={16} />{t.adicionar}</BotaoEnviar>
         </form>
       )}
       {comNota && (
         <details className="group">
-          <summary className="list-none cursor-pointer inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200">
-            <NotebookPen size={13} />{t.notaInterna}{notas > 0 && <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-1.5 tabular-nums">{notas}</span>}
+          <summary className="anel-foco meta inline-flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-pilula text-t2 hover:text-t1">
+            <Icone nome="editar" tamanho={16} />{t.notaInterna}{notas > 0 && <span className="rounded-pilula bg-s3 px-1.5 tabular-nums">{notas}</span>}
           </summary>
           <form action={notaInternaAction} className="grid gap-1.5 mt-2">
             <input type="hidden" name="pessoa" value={pessoaId} /><input type="hidden" name="modo" value="nova" />
             <textarea name="texto" required rows={2} maxLength={4000} placeholder={t.notaPlaceholder}
-              className="w-full sm:w-80 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2.5 py-1.5 text-sm" />
+              className="w-full sm:w-80 rounded-interno bg-s2 px-3 py-2 font-texto text-sm text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
             <div className="flex items-center gap-2">
-              <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2.5 py-1 text-xs">{t.salvarNota}</BotaoEnviar>
-              <span className="text-[11px] text-neutral-500">{t.soEquipe1}</span>
+              <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4"><Icone nome="confirmar" tamanho={16} />{t.salvarNota}</BotaoEnviar>
+              <span className="meta text-t3"><Icone nome="cadeado" tamanho={14} className="mr-1 inline align-[-2px]" />{t.soEquipe1}</span>
             </div>
           </form>
         </details>

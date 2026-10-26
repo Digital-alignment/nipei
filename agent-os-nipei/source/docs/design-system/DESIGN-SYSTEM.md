@@ -281,6 +281,7 @@ Cada componente existe nos dois temas e nos estados: normal · hover · pression
 - Sempre ícone + texto (ícone à esquerda; "Ver tudo ▶" à direita).
 - Carregando: arco girando + "Salvando…"; o botão fica desativado.
 - **Botão de ícone**: círculo 52 / 44 / 40 px, fundo tonal.
+- **"+" flutuante (criar)**: círculo de 56 px no canto inferior direito, fundo claro (`t1`, tinta = fundo) — o único botão claro da tela; abre o menu de ações de criação para cima (Nova tarefa, Novo evento…). No celular fica acima da barra.
 - **Botão dividido**: "Continuar" + peça com ▶, separadas por corte diagonal; cores invertidas (tonal + acento).
 
 ### 9.2 Bloco (atalho)

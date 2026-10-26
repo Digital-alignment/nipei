@@ -6,6 +6,7 @@ import { fmtDate, type Lang } from "@/lib/v2/i18n";
 import ChipDS from "@/components/ds/Chip";
 import AvatarDS, { TAMANHOS_AVATAR, iniciais } from "@/components/ds/Avatar";
 import { chaveEquipe } from "@/components/ds/equipes";
+import LinhaTarefa from "@/components/ds/padroes/LinhaTarefa";
 import Cartao from "@/components/ds/Cartao";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import { BarraProgresso } from "@/components/ds/Progresso";
@@ -48,48 +49,47 @@ export function Empty({ children }: { children: ReactNode }) {
   return <EstadoVazio compacto titulo={children} />;
 }
 
-/** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */
+/** One task as the design system's <LinhaTarefa>; the circle (StatusBotao) marks it done and works offline. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
 export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string } & RowProps) {
+  const en = lang === "en";
   const eq = equipes.find((e) => e.id === t.equipe);
-  const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id;
+  const pessoa = (id: string) => {
+    const p = pessoas.find((x) => x.id === id);
+    return { nome: p?.name ?? id, foto: p?.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined };
+  };
+  // on my own tasks only the OTHER people matter; elsewhere, who owns it
   const minha = !!me.pessoa && t.responsaveis.includes(me.pessoa.id);
-  const outros = t.responsaveis.filter((id) => id !== me.pessoa?.id);
-  // on my own tasks only the OTHER people matter ("+2"); elsewhere, who owns it
-  const who = minha ? (outros.length ? `+${outros.length}` : "") : t.responsaveis.map(nome).join(", ") || t.responsible;
-  const late = t.prazo && t.prazo < hoje && t.status !== "done";
-  const marca = t.priority === "urgente" ? "text-red-600 dark:text-red-400" : t.priority === "alta" ? "text-amber-600 dark:text-amber-400" : "";
+  const ids = minha ? t.responsaveis.filter((id) => id !== me.pessoa?.id) : t.responsaveis;
+  const feita = t.status === "done";
+  const vencido = !!t.prazo && t.prazo < hoje && !feita;
+  const editar = can.editTarefa(me, t);
+  const metadados = [
+    // "em andamento" já aparece no estado da linha
+    ...(selos ?? []).filter((x) => !(t.status === "doing" && /andamento|progress/i.test(x))).map((x) => ({ texto: x })),
+    ...(t.checklist.total > 0 ? [{ icone: "tarefa" as const, texto: `${t.checklist.feitos}/${t.checklist.total}`, rotulo: "checklist" }] : []),
+    ...(t.anexos > 0 ? [{ icone: "baixar" as const, texto: t.anexos, rotulo: en ? "attachments" : "anexos" }] : []),
+    ...(t.recorrencia ? [{ icone: "gerar-outra" as const, texto: t.recorrencia }] : []),
+  ];
   return (
-    <li title={eq?.nome} draggable={arrastavel || undefined} data-tarefa={arrastavel ? t.id : undefined} className="flex flex-wrap items-start gap-x-3 py-2 pl-2.5 border-l-2 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0"
-      style={{ borderLeftColor: eq?.cor ?? "transparent" }}>
-      {selecionar && <input type="checkbox" name="ids" value={t.id} form={selecionar} aria-label={t.title} className="lote-caixa mt-1 w-4 h-4 shrink-0 accent-neutral-900 dark:accent-white" />}
-      {can.editTarefa(me, t) ? (
-        <StatusBotao id={t.id} status={t.status} />
-      ) : (
-        // Read-only: not yours and not your team's to coordinate.
-        <span aria-hidden className="mt-0.5 w-5 h-5 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-700 shrink-0" />
-      )}
-      <div className="min-w-0 flex-1">
-        <Link href={`/tarefas/${t.id}`} className={`block text-sm leading-snug hover:underline ${t.status === "done" ? "line-through text-neutral-400" : ""}`}>
-          {marca && <span className={`${marca} font-semibold mr-1`} aria-label={t.priority}>{t.priority === "urgente" ? "!!" : "!"}</span>}{t.title}
-        </Link>
-        <p className="text-xs text-neutral-500 mt-0.5 flex flex-wrap items-center gap-x-2">
-          {t.prazo && <span className={late ? "text-red-600 dark:text-red-400 font-medium" : ""}>{fmtDate(t.prazo, lang)}</span>}
-          {who && <span title={minha ? outros.map(nome).join(", ") : undefined}>{who}</span>}
-          {selos?.map((s) => <span key={s} className="rounded bg-neutral-100 dark:bg-neutral-800 px-1 text-[10px] text-neutral-600 dark:text-neutral-300">{s}</span>)}
-          {t.checklist.total > 0 && <span>☑ {t.checklist.feitos}/{t.checklist.total}</span>}
-          {t.anexos > 0 && <span>📎 {t.anexos}</span>}
-          {t.recorrencia && <span title={t.recorrencia}>🔁</span>}
-        </p>
-      </div>
-      {extra?.(t)}
-    </li>
+    <LinhaTarefa href={`/tarefas/${t.id}`} titulo={t.title} equipe={eq?.id} nomeEquipe={chaveEquipe(eq?.id) ? undefined : eq?.nome}
+      prazo={feita && t.concluidoEm ? { texto: `${en ? "Done" : "Concluída em"} ${fmtDate(t.concluidoEm.slice(0, 10), lang)}` } : t.prazo ? { texto: fmtDate(t.prazo, lang), vencido } : undefined}
+      prioridade={t.priority === "urgente" || t.priority === "alta" ? { nivel: t.priority, rotulo: t.priority === "urgente" ? (en ? "Urgent" : "Urgente") : (en ? "High" : "Alta") } : undefined}
+      metadados={metadados} pessoas={ids.map(pessoa)} feita={feita}
+      estado={feita ? "feita" : vencido ? "atrasada" : t.status === "doing" ? "andamento" : undefined}
+      concluir={editar ? <StatusBotao id={t.id} status={t.status} />
+        // read-only: not yours and not your team's to coordinate (dashed = can't change here)
+        : <span aria-hidden="true" className="-mx-2 grid size-11 shrink-0 place-items-center"><span className="size-[26px] rounded-pilula border-2 border-dashed border-s4" /></span>}
+      antes={selecionar && <input type="checkbox" name="ids" value={t.id} form={selecionar} aria-label={t.title} className="lote-caixa size-4 shrink-0 accent-ac" />}
+      extra={extra?.(t)}
+      acoes={[{ icone: "avancar", rotulo: en ? "Open" : "Abrir", href: `/tarefas/${t.id}` }, ...(editar ? [{ icone: "editar" as const, rotulo: en ? "Edit" : "Editar", href: `/tarefas/${t.id}/editar` }] : [])]}
+      draggable={arrastavel || undefined} data-tarefa={arrastavel ? t.id : undefined} />
   );
 }
 
 export function TaskList({ tarefas, selos, ...rest }: { tarefas: Tarefa[]; extra?: (t: Tarefa) => ReactNode; selos?: Record<string, string[]> } & RowProps) {
-  return <ul>{tarefas.map((t) => <TaskRow key={t.id} t={t} selos={selos?.[t.id]} {...rest} />)}</ul>;
+  return <ul className="overflow-hidden rounded-cartao bg-s1">{tarefas.map((t) => <TaskRow key={t.id} t={t} selos={selos?.[t.id]} {...rest} />)}</ul>;
 }
 
 export const initials = iniciais;
