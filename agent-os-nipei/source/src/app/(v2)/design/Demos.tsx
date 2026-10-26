@@ -6,6 +6,7 @@ import Segmentado from "@/components/ds/Segmentado";
 import { Etapas } from "@/components/ds/Bloco";
 import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
+import Chip from "@/components/ds/Chip";
 
 // Exemplos interativos da página /design (precisam de estado no navegador).
 
@@ -69,6 +70,28 @@ export function DemoCampo() {
         <Campo tipo="data" rotulo="Prazo" defaultValue="2026-10-30" />
         <Campo rotulo="Responsável" iconeEsquerda="pessoa" placeholder="Nome da pessoa" />
         <Campo rotulo="Desativado" defaultValue="Só leitura" disabled />
+      </div>
+    </div>
+  );
+}
+
+export function DemoChips() {
+  const [filtro, setFiltro] = useState("abertas");
+  const [eqs, setEqs] = useState<string[]>(["guardioes"]);
+  const alterna = (e: string) => setEqs((l) => (l.includes(e) ? l.filter((x) => x !== e) : [...l, e]));
+  return (
+    <div className="grid gap-3">
+      <div className="flex flex-wrap gap-2">
+        {[["abertas", "Abertas", 24, "tarefa"], ["atrasadas", "Atrasadas", 3, "atencao"], ["minhas", "Comigo", 7, "pessoa"], ["semdono", "Sem responsável", 5, "pessoas"]].map(([v, r, n, i]) => (
+          <Chip key={v as string} icone={i as "tarefa"} contagem={n as number} ativo={filtro === v} onClick={() => setFiltro(v as string)}>{r}</Chip>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {(["escritorio", "producao", "guardioes", "manutencao"] as const).map((e) => (
+          <Chip key={e} tipo="equipe" equipe={e} ativo={eqs.includes(e)} onClick={() => alterna(e)}>
+            {{ escritorio: "Escritório", producao: "Produção Yawanawa", guardioes: "Guardiões", manutencao: "Manutenção" }[e]}
+          </Chip>
+        ))}
       </div>
     </div>
   );

@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import StatusBotao from "@/components/v2/StatusBotao";
 import { can, type Equipe, type Me, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, type Lang } from "@/lib/v2/i18n";
+import ChipDS from "@/components/ds/Chip";
+import AvatarDS, { TAMANHOS_AVATAR, iniciais } from "@/components/ds/Avatar";
+import { chaveEquipe } from "@/components/ds/equipes";
 
 export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
@@ -31,10 +34,10 @@ export function Card({ children, href, cor }: { children: ReactNode; href?: stri
     : <div className={cls} style={style}>{children}</div>;
 }
 
+/** Compatibilidade: o Chip antigo (cor / on) agora é o <Chip> do design system (components/ds/Chip). */
 export function Chip({ children, cor, href, on }: { children: ReactNode; cor?: string; href?: string; on?: boolean }) {
-  const cls = `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs border ${on ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white" : "border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`;
-  const dot = cor && <span className="w-2 h-2 rounded-full" style={{ background: cor }} />;
-  return href ? <Link href={href} className={cls}>{dot}{children}</Link> : <span className={cls}>{dot}{children}</span>;
+  const equipe = chaveEquipe(cor);
+  return <ChipDS tipo={equipe ? "equipe" : "filtro"} equipe={equipe} ativo={on} href={href}>{children}</ChipDS>;
 }
 
 export function Progress({ done, total }: { done: number; total: number }) {
@@ -97,17 +100,12 @@ export function TaskList({ tarefas, selos, ...rest }: { tarefas: Tarefa[]; extra
   return <ul>{tarefas.map((t) => <TaskRow key={t.id} t={t} selos={selos?.[t.id]} {...rest} />)}</ul>;
 }
 
-export function initials(name: string) {
-  return name.split(/\s+/).filter((w) => /^\p{L}/u.test(w)).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-}
+export const initials = iniciais;
 
-export function Avatar({ name, size = 32, src }: { name: string; size?: number; src?: string }) {
-  // eslint-disable-next-line @next/next/no-img-element
-  if (src) return <img src={src} alt={name} width={size} height={size} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />;
-  return (
-    <span className="inline-flex items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.38 }}>{initials(name)}</span>
-  );
+/** Compatibilidade: o Avatar antigo (name / size / src) agora é o <Avatar> do design system; o tamanho vai para o mais próximo de 24·32·40·56·80. */
+export function Avatar({ name, size = 32, src, equipe }: { name: string; size?: number; src?: string; equipe?: string }) {
+  const tamanho = TAMANHOS_AVATAR.reduce((a, b) => (Math.abs(b - size) < Math.abs(a - size) ? b : a));
+  return <AvatarDS nome={name} foto={src} tamanho={tamanho} equipe={equipe} />;
 }
 
 /** Sort: overdue first, then by due date, undated last. */

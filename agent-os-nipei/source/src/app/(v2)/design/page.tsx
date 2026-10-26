@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
 import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
 import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
-import { DemoCampo, DemoCarregando, DemoEtapas, DemoSegmentado } from "./Demos";
+import { DemoCampo, DemoCarregando, DemoChips, DemoEtapas, DemoSegmentado } from "./Demos";
+import Chip, { BadgeEstado, Contagem } from "@/components/ds/Chip";
+import Avatar, { GrupoAvatares, LinhaPessoa } from "@/components/ds/Avatar";
 import Selo, { SELOS, type NomeSelo } from "@/components/ds/Selo";
 import TemaLocal, { ValorToken } from "@/components/ds/TemaLocal";
 import { ICONES, type NomeIcone } from "@/components/ds/icones.generated";
@@ -99,6 +101,59 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
   campo: {
     sub: "Sem borda, superfície tonal, rótulo dentro. Passar por cima = brilho fraco; foco = anel de acento; erro = anel vermelho + ícone + o que corrigir. Tipos: texto, título, área, busca, seleção, data.",
     conteudo: <DemoCampo />,
+  },
+  chip: {
+    sub: "Filtro (ativo = tom mais claro + contorno + ✓ em acento), equipe (selo na cor da equipe; ativo = anel da equipe), metadado (dentro de cartões) e sugestão do Pinu.",
+    conteudo: (
+      <div className="grid gap-4">
+        <DemoChips />
+        <Linha><Rotulo>Metadado · Pinu</Rotulo>
+          <Chip tipo="metadado" icone="prazo">28 out</Chip>
+          <Chip tipo="metadado" icone="tarefa">3/5</Chip>
+          <Chip tipo="metadado" icone="mensagem">4</Chip>
+          <Chip tipo="metadado" icone="atencao">Alta</Chip>
+          <Chip tipo="pinu">Sugerido: Guardiões</Chip>
+        </Linha>
+      </div>
+    ),
+  },
+  badge: {
+    sub: "Contagem no canto de ícones (número ou ponto, com anel da cor do fundo). Estado sempre com ícone + texto; pendente = hachurado.",
+    conteudo: (
+      <div className="grid gap-4">
+        <Linha><Rotulo>Contagem</Rotulo>
+          <span className="relative inline-grid size-11 place-items-center rounded-pilula bg-s3"><Icone nome="notificacao" tamanho={22} /><Contagem valor={3} rotulo="notificações" /></span>
+          <span className="relative inline-grid size-11 place-items-center rounded-pilula bg-s3"><Icone nome="mensagem" tamanho={22} /><Contagem valor={128} rotulo="mensagens" /></span>
+          <span className="relative inline-grid size-11 place-items-center rounded-pilula bg-s3"><Icone nome="calendario" tamanho={22} /><Contagem rotulo="novidade" /></span>
+        </Linha>
+        <Linha><Rotulo>Estado</Rotulo>
+          <BadgeEstado estado="pendente" /><BadgeEstado estado="andamento" /><BadgeEstado estado="feita" /><BadgeEstado estado="atrasada" /><BadgeEstado estado="interna" />
+        </Linha>
+      </div>
+    ),
+  },
+  avatar: {
+    sub: "24 · 32 · 40 · 56 · 80. Foto ou iniciais sobre a cor da equipe; ponto de acento = online; selo da equipe no canto (56+). Grupo sobreposto com +N.",
+    conteudo: (
+      <div className="grid gap-5">
+        <Linha><Rotulo>Tamanhos e equipes</Rotulo>
+          <Avatar nome="Ashuan Web" equipe="escritorio" tamanho={24} />
+          <Avatar nome="Kenewma Yawanawá" equipe="producao" tamanho={32} />
+          <Avatar nome="Jordão Pekuti" equipe="guardioes" tamanho={40} online />
+          <Avatar nome="Paulo Roberto" equipe="manutencao" tamanho={56} selo online />
+          <Avatar nome="Rodrigo Andrade" equipe="escritorio" tamanho={80} selo />
+          <Avatar nome="Sem Equipe" tamanho={40} />
+        </Linha>
+        <Linha><Rotulo>Grupo</Rotulo>
+          <GrupoAvatares anel="bg" pessoas={[{ nome: "Ashuan Web", equipe: "escritorio" }, { nome: "Kenewma Yawanawá", equipe: "producao" }, { nome: "Jordão Pekuti", equipe: "guardioes" }, { nome: "Paulo Roberto", equipe: "manutencao" }, { nome: "Rodrigo Andrade", equipe: "escritorio" }]} />
+          <GrupoAvatares anel="bg" tamanho={24} max={2} pessoas={[{ nome: "Ana Lima", equipe: "producao" }, { nome: "Txaty", equipe: "guardioes" }, { nome: "Yawa", equipe: "guardioes" }]} />
+        </Linha>
+        <Linha><Rotulo>Linha pessoa</Rotulo>
+          <LinhaPessoa nome="Kenewma Yawanawá" equipe="producao" funcao="Coordenação" href="#avatar" online />
+          <LinhaPessoa nome="Jordão Pekuti" equipe="guardioes" funcao="Coordenação geral" tamanho={56} />
+        </Linha>
+      </div>
+    ),
   },
   segmentado: {
     sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",

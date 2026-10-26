@@ -649,7 +649,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   --destaque-bg:#C3D14A; --destaque-ink:#0A0A0A;
   --ok:#C3D14A; --ok-bg:#1B2410; --warn:#E0A526; --warn-bg:#2A2010;
   --err:#FF6B5E; --err-bg:#2C1514; --info:#6FA8F0; --info-bg:#121D2B;
-  --eq-escritorio:#2BB3A6; --eq-producao:#A68CF0; --eq-guardioes:#E37AB0; --eq-manutencao:#8FA6B8; --eq-reserva:#E08A5C;
+  --eq-escritorio:#2BB3A6; --eq-producao:#A68CF0; --eq-guardioes:#E37AB0; --eq-manutencao:#8FA6B8; --eq-reserva:#E08A5C; --eq-ink:#0A0A0A;
   --brilho-ia:0 0 0 1px rgba(195,209,74,.10),0 0 22px rgba(195,209,74,.10);
   --foco:0 0 0 1.5px var(--ac),0 0 26px rgba(195,209,74,.16);
 }
@@ -661,7 +661,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   --destaque-bg:#1A1A1A; --destaque-ink:#FFFFFF;
   --ok:#2A5C0B; --ok-bg:#EEF3E8; --warn:#8A5A00; --warn-bg:#FBF3E4;
   --err:#B3261E; --err-bg:#FBEAE9; --info:#1F5FAD; --info-bg:#E9F0F9;
-  --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-reserva:#A3542A;
+  --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-reserva:#A3542A; --eq-ink:#FFFFFF;
   --brilho-ia:0 0 0 1px rgba(42,92,11,.10),0 0 22px rgba(42,92,11,.10);
   --foco:0 0 0 1.5px var(--ac),0 0 22px rgba(42,92,11,.14);
 }
@@ -673,7 +673,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
     --destaque-bg:#1A1A1A; --destaque-ink:#FFFFFF;
     --ok:#2A5C0B; --ok-bg:#EEF3E8; --warn:#8A5A00; --warn-bg:#FBF3E4;
     --err:#B3261E; --err-bg:#FBEAE9; --info:#1F5FAD; --info-bg:#E9F0F9;
-    --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-reserva:#A3542A;
+    --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-reserva:#A3542A; --eq-ink:#FFFFFF;
     --brilho-ia:0 0 0 1px rgba(42,92,11,.10),0 0 22px rgba(42,92,11,.10);
     --foco:0 0 0 1.5px var(--ac),0 0 22px rgba(42,92,11,.14);
   }
@@ -687,7 +687,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   --color-destaque-bg: var(--destaque-bg); --color-destaque-ink: var(--destaque-ink);
   --color-ok: var(--ok); --color-ok-bg: var(--ok-bg); --color-warn: var(--warn); --color-warn-bg: var(--warn-bg);
   --color-err: var(--err); --color-err-bg: var(--err-bg); --color-info: var(--info); --color-info-bg: var(--info-bg);
-  --color-eq-escritorio: var(--eq-escritorio); --color-eq-producao: var(--eq-producao); --color-eq-guardioes: var(--eq-guardioes); --color-eq-manutencao: var(--eq-manutencao); --color-eq-reserva: var(--eq-reserva);
+  --color-eq-escritorio: var(--eq-escritorio); --color-eq-producao: var(--eq-producao); --color-eq-guardioes: var(--eq-guardioes); --color-eq-manutencao: var(--eq-manutencao); --color-eq-reserva: var(--eq-reserva); --color-eq-ink: var(--eq-ink);
   --radius-pilula: var(--raio-pilula); --radius-moldura: var(--raio-moldura); --radius-bloco: var(--raio-bloco); --radius-cartao: var(--raio-cartao); --radius-interno: var(--raio-interno);
   --font-display: var(--fonte-display); --font-texto: var(--fonte-texto);
   --shadow-brilho-ia: var(--brilho-ia); --shadow-foco: var(--foco);
