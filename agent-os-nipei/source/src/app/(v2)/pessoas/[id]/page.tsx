@@ -260,7 +260,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
                 className="inline-flex items-center gap-1.5 text-sm underline"><MessageCircle size={14} />{t.enviarWhats}</a>
             </div>
           ) : <p className="text-xs text-neutral-500 mb-2">{t.semContato}</p>}
-          <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 px-2 py-1.5 text-xs font-mono" />
+          <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 px-2 py-1.5 text-xs" />
         </div>
       ))}
       {gerir && !temAcesso && <p className="text-xs text-neutral-500">{t.equipeSemAcesso}</p>}

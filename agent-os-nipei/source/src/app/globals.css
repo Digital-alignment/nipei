@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alata&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+/* v1 fonts load only on v1 screens: components/fontesV1.ts + Shell.tsx */
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -609,7 +609,9 @@ blockquote cite {
 
 
 /* v2 (Hoje/Equipes/…): plain, light/dark by system — opt out of the v1 theme */
-.v2 { position: relative; z-index: 2; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.v2 { position: relative; z-index: 2; font-family: var(--fonte-texto); }
+/* no monospace in the v2 (design system rule 11): code, ids and stack traces use the text face */
+.v2 code, .v2 pre, .v2 kbd, .v2 samp, .v2 .mono { font-family: inherit; }
 .v2 h1, .v2 h2, .v2 h3 { font-family: inherit; color: inherit; letter-spacing: normal; }
 /* v1 forces `nav, header { position: relative }` unlayered, which beats Tailwind's layered .fixed/.sticky */
 .v2 blockquote { margin: 0.75rem 0; padding: 0 0 0 0.75rem; font-family: inherit; font-size: inherit; border-left: 2px solid #fbbf24; } /* v1's quote style is for the landing pages */
@@ -642,7 +644,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   --brilho-ia:0 0 0 1px rgba(195,209,74,.10),0 0 22px rgba(195,209,74,.10);
   --foco:0 0 0 1.5px var(--ac),0 0 26px rgba(195,209,74,.16);
   --raio-pilula:999px; --raio-moldura:28px; --raio-bloco:20px; --raio-cartao:16px; --raio-interno:12px;
-  --fonte-display:"Outfit",system-ui,sans-serif; --fonte-texto:"Google Sans",system-ui,sans-serif;
+  --fonte-display:var(--font-outfit),system-ui,sans-serif; --fonte-texto:var(--font-google-sans),system-ui,sans-serif;
 }
 @media (min-width:1024px) { .v2 { --raio-cartao:12px; } }
 /* claro: escolhido, ou "Sistema" com o aparelho no claro (mesmos valores nos dois blocos) */
@@ -699,4 +701,27 @@ html[data-lote] .v2 .lote-caixa { display: block; }
     animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important; scroll-behavior: auto !important;
   }
+}
+
+/* Tipografia (DESIGN-SYSTEM.md seção 4) — celular primeiro, computador a partir de 1024 px.
+   Outfit = títulos, números, rótulos de seção; Google Sans = todo o resto. Mínimo 12 px no celular. */
+.v2 .titulo-pagina   { font-family: var(--fonte-display); font-weight: 700; font-size: 40px; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
+.v2 .saudacao        { font-family: var(--fonte-display); font-weight: 300; font-size: 30px; line-height: 1.15; text-wrap: balance; }
+.v2 .numero-display  { font-family: var(--fonte-display); font-weight: 200; font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; }
+.v2 .titulo-secao    { font-family: var(--fonte-display); font-weight: 600; font-size: 19px; line-height: 1.25; text-wrap: balance; }
+.v2 .titulo-cartao   { font-family: var(--fonte-display); font-weight: 600; font-size: 17px; line-height: 1.3; text-wrap: balance; }
+.v2 .corpo           { font-family: var(--fonte-texto); font-weight: 400; font-size: 15px; line-height: 1.5; }
+.v2 .botao-texto     { font-family: var(--fonte-texto); font-weight: 600; font-size: 16px; line-height: 1.2; }
+.v2 .rotulo-campo    { font-family: var(--fonte-texto); font-weight: 500; font-size: 12px; line-height: 1.3; }
+.v2 .meta            { font-family: var(--fonte-texto); font-weight: 500; font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.v2 .rotulo-maiusculo { font-family: var(--fonte-display); font-weight: 500; font-size: 12px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; }
+@media (min-width: 1024px) {
+  .v2 .titulo-pagina   { font-size: 60px; }
+  .v2 .saudacao        { font-size: 40px; }
+  .v2 .numero-display  { font-size: 58px; }
+  .v2 .titulo-secao    { font-size: 20px; }
+  .v2 .corpo           { font-size: 14px; }
+  .v2 .botao-texto     { font-size: 15px; }
+  .v2 .meta            { font-size: 12.5px; }
+  .v2 .rotulo-maiusculo { font-size: 11px; }
 }

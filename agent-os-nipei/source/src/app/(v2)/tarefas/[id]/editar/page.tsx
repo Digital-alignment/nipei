@@ -34,7 +34,7 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
 
   return (
     <>
-      <Title sub={<span className="font-mono text-xs">{tarefa.id}</span>}>{t.editarTarefa}</Title>
+      <Title sub={<span className="text-xs tabular-nums">{tarefa.id}</span>}>{t.editarTarefa}</Title>
       <form action={updateTarefaAction} className="grid gap-4">
         <input type="hidden" name="id" value={tarefa.id} />
         <input type="hidden" name="back" value={back} />

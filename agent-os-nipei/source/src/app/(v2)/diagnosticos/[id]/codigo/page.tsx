@@ -47,7 +47,7 @@ export default async function Codigo({ params }: { params: Promise<{ id: string 
           </form>
           {c.texto && (
             <form action={codigoAction} className="grid gap-2">{hidden}
-              <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm font-mono" />
+              <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm" />
               <div className="flex flex-wrap gap-2">
                 <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} className={btn}>{t.salvarRascunho}</BotaoEnviar>
                 <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium">{t.publicarVersao}</BotaoEnviar>

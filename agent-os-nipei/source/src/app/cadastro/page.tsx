@@ -21,7 +21,7 @@ export default async function Cadastro({ searchParams }: { searchParams: Promise
         {!p ? <p className="text-sm">{t.linkInvalido}</p> : (
           <>
             <h1 className="text-2xl font-semibold">{t.cadastroTitulo}</h1>
-            <p className="text-sm text-neutral-500 mt-1 mb-6">{t.cadastroIntro} <span className="font-mono">ID {p.nipeiId}</span></p>
+            <p className="text-sm text-neutral-500 mt-1 mb-6">{t.cadastroIntro} <span className="tabular-nums">ID {p.nipeiId}</span></p>
             <PerfilForm inicial={inicialPerfil(p)} t={t} cadastro={q.token} />
           </>
         )}

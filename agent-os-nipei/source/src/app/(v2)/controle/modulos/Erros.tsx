@@ -31,7 +31,7 @@ export default function Erros({ q }: ModuloProps) {
           <li key={i} className={`${CARTAO} p-3 grid gap-1`}>
             <p className="text-sm font-medium text-red-700 dark:text-red-400 break-words">{e.msg}</p>
             <p className="text-xs text-neutral-500">{n}× · último {quando(e.em)} · {[...onde].slice(0, 3).join(" · ")}{onde.size > 3 ? ` +${onde.size - 3}` : ""}</p>
-            {e.pilha && <details className="text-xs text-neutral-500"><summary className="cursor-pointer">Onde no código</summary><p className="mt-1 font-mono break-all">{e.pilha.split(" | ").map((l, j) => <span key={j} className="block">{l}</span>)}</p></details>}
+            {e.pilha && <details className="text-xs text-neutral-500"><summary className="cursor-pointer">Onde no código</summary><p className="mt-1 break-all">{e.pilha.split(" | ").map((l, j) => <span key={j} className="block">{l}</span>)}</p></details>}
           </li>
         ))}
       </ul>
