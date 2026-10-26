@@ -256,7 +256,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
         <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={grande ? 2 : 1} maxLength={2000} aria-label={labels.placeholder}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
           placeholder={labels.placeholder}
-          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande ? "min-h-12" : "max-h-32 self-center py-2"}`} />
+          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande ? "min-h-12" : "max-h-32 min-h-11 self-center py-2.5"}`} />
       )}
       <span className="flex items-center justify-end gap-1.5">
         {texto.trim() && !ouvindo

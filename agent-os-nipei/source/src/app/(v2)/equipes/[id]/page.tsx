@@ -1,11 +1,18 @@
 import Link from "next/link";
+import { AbasComPainel } from "@/components/ds/Abas";
+import ChipDS from "@/components/ds/Chip";
+import { EstadoVazio } from "@/components/ds/Estados";
+import AvatarDS from "@/components/ds/Avatar";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import Campo from "@/components/ds/Campo";
+import Cartao from "@/components/ds/Cartao";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { Avatar, Card, Chip, Empty, Progress, TaskRow } from "@/components/v2/ui";
-import Abas from "@/components/v2/Abas";
+import { TaskRow } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
@@ -16,10 +23,6 @@ import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/
 import { getT } from "@/lib/v2/i18n";
 import { atribuirAction, reatribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
-const CARTAO = "rounded-cartao bg-s1 p-4 mb-3";
-const BOTAO = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
-const ROTULO = "rotulo-maiusculo text-t3 mb-2";
-const sel = "anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco max-w-36";
 
 export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string }> }) {
   const { id } = await params;
@@ -61,14 +64,11 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       {gerir && !y.responsaveis.length && (
         <form action={atribuirAction} className="flex items-center gap-1">
           <input type="hidden" name="id" value={y.id} />
-          <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={sel}>
-            <option value="" disabled>{t.escolherPessoa}</option>
-            {responsaveisPara(id).map((g) => (
+          <Campo tipo="selecao" rotulo={t.escolherPessoa} name="pessoa" defaultValue=""><option value="" disabled>{t.escolherPessoa}</option>{responsaveisPara(id).map((g) => (
               <optgroup key={g.grupo} label={t.gruposResp[g.grupo]}>
                 {g.pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}{p.suspenso ? ` (${t.suspensoLbl})` : ""}</option>)}
               </optgroup>
-            ))}
-          </select>
+            ))}</Campo>
           <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{t.atribuirPessoa}</BotaoEnviar>
         </form>
       )}
@@ -87,20 +87,20 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
     <>
       <div className="flex items-center gap-2 mt-3 mb-2">
       <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-        <Chip href={url({ pessoa: undefined })} on={!q.pessoa}>{t.todas}</Chip>
-        {me.pessoa && ids.includes(me.pessoa.id) && <Chip href={url({ pessoa: me.pessoa.id })} on={q.pessoa === me.pessoa.id}>{t.minhasLbl}</Chip>}
-        <Chip href={url({ pessoa: "sem" })} on={q.pessoa === "sem"}>{t.semDonoLbl} ({semDono})</Chip>
-        {pessoaFiltro && pessoaFiltro.id !== me.pessoa?.id && <Chip href={url({ pessoa: undefined })} on>✕ {pessoaFiltro.name.split(" ")[0]}</Chip>}
+        <ChipDS ativo={!q.pessoa} href={url({ pessoa: undefined })}>{t.todas}</ChipDS>
+        {me.pessoa && ids.includes(me.pessoa.id) && <ChipDS ativo={q.pessoa === me.pessoa.id} href={url({ pessoa: me.pessoa.id })}>{t.minhasLbl}</ChipDS>}
+        <ChipDS ativo={q.pessoa === "sem"} href={url({ pessoa: "sem" })}>{t.semDonoLbl} ({semDono})</ChipDS>
+        {pessoaFiltro && pessoaFiltro.id !== me.pessoa?.id && <ChipDS ativo={true} href={url({ pessoa: undefined })}>✕ {pessoaFiltro.name.split(" ")[0]}</ChipDS>}
       </div>
         {gerir && filtradas.length > 0 && <LoteToggle formId="lote-equipe" label={t.selecionarLbl} cancelar={t.cancelar} />}
       </div>
       {e.areas.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 mb-3 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-          <Chip href={url({ area: undefined })} on={!q.area}>{t.todasAreas}</Chip>
-          {e.areas.map((a) => <Chip key={a} href={url({ area: a })} on={q.area === a}>{a}</Chip>)}
+          <ChipDS ativo={!q.area} href={url({ area: undefined })}>{t.todasAreas}</ChipDS>
+          {e.areas.map((a) => <ChipDS ativo={q.area === a} key={a} href={url({ area: a })}>{a}</ChipDS>)}
         </div>
       )}
-      {filtradas.length === 0 ? <Empty>{t.nadaPendente}</Empty> : (
+      {filtradas.length === 0 ? <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> : (
         <>
           {grupo(t.agora, ordenarAgora(filtradas.filter((x) => x.prazo && x.prazo <= hoje), ctx), true)}
           {grupo(t.proximas, ordenarProximas(filtradas.filter((x) => x.prazo > hoje), ctx))}
@@ -125,8 +125,8 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const estado = new Map(bal?.cargas.map((c) => [c.id, c.estado]) ?? []);
   const titulo = (tid: string) => todas.find((x) => x.id === tid)?.title ?? tid;
   const equilibrio = bal && (bal.sugestoes.length > 0 || bal.cargas.some((c) => c.estado === "sobrecarga")) && (
-    <div className={`${CARTAO} mt-3`}>
-      <p className={`${ROTULO} inline-flex items-center gap-1.5`}><Icone nome="pessoas" tamanho={16} />{t.equilibrarCarga}</p>
+    <Cartao className="mb-3 mt-3">
+      <p className="rotulo-maiusculo text-t3 mb-2 inline-flex items-center gap-1.5"><Icone nome="pessoas" tamanho={16} />{t.equilibrarCarga}</p>
       <p className="text-xs text-t2 mb-2">{t.equilibrarIntro.replace("{media}", bal.media.toFixed(1))}</p>
       {bal.sugestoes.length === 0 ? <p className="text-sm text-t2">{t.semSugestoesCarga}</p> : (
         <ul>
@@ -144,7 +144,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           ))}
         </ul>
       )}
-    </div>
+    </Cartao>
   );
   const pessoasAba = (
     <>
@@ -156,7 +156,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           <li key={p.id} className="rounded-cartao bg-s1">
             <details>
               <summary className="list-none cursor-pointer p-3 flex items-center gap-3">
-                <Avatar name={p.name} size={36} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} />
+                <AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={32} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">
                     {p.name}
@@ -174,7 +174,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
                 </div>
               </summary>
               <div className="px-3 pb-3">
-                {suas.length ? <ul>{suas.slice(0, 8).map((x) => <TaskRow key={x.id} t={x} {...rowProps} />)}</ul> : <Empty>{t.nadaPendente}</Empty>}
+                {suas.length ? <ul>{suas.slice(0, 8).map((x) => <TaskRow key={x.id} t={x} {...rowProps} />)}</ul> : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
                 <div className="flex flex-wrap gap-3 mt-2 text-xs">
                   {suas.length > 8 && <Link href={url({ pessoa: p.id })} className="underline">{t.verTodas} ({suas.length})</Link>}
                   <Link href={`/pessoas/${p.id}`} className="underline">{t.verFicha}</Link>
@@ -195,14 +195,14 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       {objetivos.map((o) => {
         const p = progresso(o.id, todas);
         return (
-          <Card key={o.id} href={`/objetivos?ano=${o.ano}#${o.id}`}>
+          <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos?ano=${o.ano}#${o.id}`}>
             <p className="text-sm font-medium">{o.titulo} <span className="text-t2 font-normal">· {o.ano}{o.equipe !== id ? ` · ${t.apoio}` : ""}</span></p>
-            {p && <div className="mt-2"><Progress {...p} /></div>}
-          </Card>
+            {p && <div className="mt-2"><BarraProgresso valor={p.done} max={p.total} rotulo={`${p.total ? Math.round((p.done / p.total) * 100) : 0}% · ${p.done}/${p.total}`} /></div>}
+          </Cartao>
         );
       })}
     </div>
-  ) : <Empty>—</Empty>;
+  ) : <EstadoVazio compacto titulo={<>—</>} />;
 
   const toggle = (action: typeof setEquipeAcessoAction, campo: string, valor: boolean, on: string, off: string) => (
     <form action={action}>
@@ -212,20 +212,20 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   );
   const config = (
     <div className="mt-3">
-      <div className={CARTAO}>
-        <p className={ROTULO}>{t.acessoPlataforma}</p>
+      <Cartao className="mb-3">
+        <p className="rotulo-maiusculo text-t3 mb-2">{t.acessoPlataforma}</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <span className={e.acesso ? "text-ok" : "text-t2"}>{e.acesso ? t.acessoLigado : t.acessoDesligado}</span>
           {me.gestao && !e.gestao && toggle(setEquipeAcessoAction, "acesso", e.acesso, t.ligar, t.desligar)}
         </div>
-      </div>
-      <div className={CARTAO}>
-        <p className={ROTULO}>{t.avisosWhats}</p>
+      </Cartao>
+      <Cartao className="mb-3">
+        <p className="rotulo-maiusculo text-t3 mb-2">{t.avisosWhats}</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <span className={e.avisos ? "text-ok" : "text-t2"}>{e.avisos ? t.avisosEquipeLigado : t.avisosEquipeDesligado}</span>
           {me.gestao && toggle(setEquipeAvisosAction, "avisos", e.avisos, t.ligarAvisos, t.desligarAvisos)}
         </div>
-      </div>
+      </Cartao>
     </div>
   );
 
@@ -251,11 +251,11 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         <Num v={semDono} label={t.semDonoLbl} cor="text-warn" href={url({ pessoa: "sem" })} />
         <Num v={feitas30.length} label={t.feitas30} cor="text-ok" />
       </div>
-      <Abas id="equipe" inicial={q.pessoa || q.area ? "tarefas" : undefined} abas={[
-        { id: "tarefas", label: t.tarefasLbl, count: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
-        { id: "pessoas", label: t.membros, count: gente.length, conteudo: pessoasAba },
-        { id: "objetivos", label: t.objetivos, count: objetivos.length, conteudo: objetivosAba },
-        ...(gerir ? [{ id: "config", label: t.configuracao, count: 0, conteudo: config }] : []),
+      <AbasComPainel id="equipe" inicial={q.pessoa || q.area ? "tarefas" : undefined} abas={[
+        { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
+        { id: "pessoas", rotulo: t.membros, contagem: gente.length, conteudo: pessoasAba },
+        { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
+        ...(gerir ? [{ id: "config", rotulo: t.configuracao, contagem: 0, conteudo: config }] : []),
       ]} />
     </>
   );

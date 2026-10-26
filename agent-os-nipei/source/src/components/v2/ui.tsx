@@ -1,21 +1,9 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import StatusBotao from "@/components/v2/StatusBotao";
 import { can, type Equipe, type Me, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, type Lang } from "@/lib/v2/i18n";
-import ChipDS from "@/components/ds/Chip";
-import AvatarDS, { TAMANHOS_AVATAR, iniciais } from "@/components/ds/Avatar";
 import { chaveEquipe } from "@/components/ds/equipes";
 import LinhaTarefa from "@/components/ds/padroes/LinhaTarefa";
-import Cartao from "@/components/ds/Cartao";
-import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
-import { BarraProgresso } from "@/components/ds/Progresso";
-import { EstadoVazio } from "@/components/ds/Estados";
-
-/** Compatibilidade: o título antigo agora é o <CabecalhoPagina> do design system. */
-export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
-  return <CabecalhoPagina titulo={children} subtitulo={sub} />;
-}
 
 /** Seção de página (título `titulo-secao` + contagem em pílula). */
 export function Section({ title, count, children }: { title: ReactNode; count?: number; children: ReactNode }) {
@@ -28,27 +16,6 @@ export function Section({ title, count, children }: { title: ReactNode; count?: 
       {children}
     </section>
   );
-}
-
-/** Compatibilidade: o Card antigo (href / cor) agora é o <Cartao> do design system; `cor` de equipe vira a barra lateral. */
-export function Card({ children, href, cor }: { children: ReactNode; href?: string; cor?: string }) {
-  return <Cartao variante={href ? "clicavel" : "padrao"} href={href} equipe={cor} className="block">{children}</Cartao>;
-}
-
-/** Compatibilidade: o Chip antigo (cor / on) agora é o <Chip> do design system (components/ds/Chip). */
-export function Chip({ children, cor, href, on }: { children: ReactNode; cor?: string; href?: string; on?: boolean }) {
-  const equipe = chaveEquipe(cor);
-  return <ChipDS tipo={equipe ? "equipe" : "filtro"} equipe={equipe} ativo={on} href={href}>{children}</ChipDS>;
-}
-
-/** Compatibilidade: a barra antiga (done / total) agora é a <BarraProgresso> do design system. */
-export function Progress({ done, total }: { done: number; total: number }) {
-  return <BarraProgresso valor={done} max={total} rotulo={`${total ? Math.round((done / total) * 100) : 0}% · ${done}/${total}`} />;
-}
-
-/** Compatibilidade: o "nada aqui" antigo agora é o <EstadoVazio compacto> do design system. */
-export function Empty({ children }: { children: ReactNode }) {
-  return <EstadoVazio compacto titulo={children} />;
 }
 
 /** One task as the design system's <LinhaTarefa>; the circle (StatusBotao) marks it done and works offline. */
@@ -92,14 +59,6 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arr
 
 export function TaskList({ tarefas, selos, ...rest }: { tarefas: Tarefa[]; extra?: (t: Tarefa) => ReactNode; selos?: Record<string, string[]> } & RowProps) {
   return <ul className="overflow-hidden rounded-cartao bg-s1">{tarefas.map((t) => <TaskRow key={t.id} t={t} selos={selos?.[t.id]} {...rest} />)}</ul>;
-}
-
-export const initials = iniciais;
-
-/** Compatibilidade: o Avatar antigo (name / size / src) agora é o <Avatar> do design system; o tamanho vai para o mais próximo de 24·32·40·56·80. */
-export function Avatar({ name, size = 32, src, equipe }: { name: string; size?: number; src?: string; equipe?: string }) {
-  const tamanho = TAMANHOS_AVATAR.reduce((a, b) => (Math.abs(b - size) < Math.abs(a - size) ? b : a));
-  return <AvatarDS nome={name} foto={src} tamanho={tamanho} equipe={equipe} />;
 }
 
 /** Sort: overdue first, then by due date, undated last. */

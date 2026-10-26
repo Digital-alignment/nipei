@@ -60,6 +60,6 @@ export function ChipPinu({ children = "Sugerido pelo Pinu", onClick }: { childre
   const cls = "inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-pilula bg-ac-soft pl-2 pr-3.5 font-texto text-sm font-semibold text-ac-text";
   const dentro = <><MiniAnelPinu tamanho={18} />{children}</>;
   return onClick
-    ? <button type="button" onClick={onClick} className={`anel-foco ${cls} transition-[filter] duration-150 hover:brightness-110`}>{dentro}</button>
+    ? <button type="button" onClick={onClick} className={`anel-foco alvo-toque ${cls} transition-[filter] duration-150 hover:brightness-110`}>{dentro}</button>
     : <span className={cls}>{dentro}</span>;
 }

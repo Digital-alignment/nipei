@@ -138,7 +138,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
       </fieldset>
 
       <details className="group">
-        <summary className={`${rotulo} anel-foco min-h-9 cursor-pointer list-none rounded-pilula`}><Icone nome="tarefa" tamanho={16} />{l.checklist}<Icone nome="abrir" tamanho={16} className="transition-transform group-open:rotate-180" /></summary>
+        <summary className={`${rotulo} anel-foco alvo-toque min-h-9 cursor-pointer list-none rounded-pilula`}><Icone nome="tarefa" tamanho={16} />{l.checklist}<Icone nome="abrir" tamanho={16} className="transition-transform group-open:rotate-180" /></summary>
         <Campo tipo="area" name="checklist" rotulo={l.checklist} rows={4} maxLength={3000} placeholder={l.checklistPh} className="mt-2" />
       </details>
 

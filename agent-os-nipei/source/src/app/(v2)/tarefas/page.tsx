@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { TaskRow, Empty } from "@/components/v2/ui";
+import { EstadoVazio } from "@/components/ds/Estados";
+import { TaskRow } from "@/components/v2/ui";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import QuadroTarefas from "@/components/v2/QuadroTarefas";
 import { AbasLinks, SegmentadoLinks } from "@/components/v2/VistaLinks";
@@ -120,7 +121,7 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
           };
         })} rotulos={{ colunas: { todo: t.aFazer, doing: t.fazendo, done: t.feito }, moverPara: t.moverPara, abrir: t.abrir, adicionar: t.adicionarTarefa, vazio: t.nadaPendente, arrastar: t.dicaQuadro, mostrarMais: t.mostrarMais }} />
       ) : abertas.length === 0 ? (
-        <Empty>{q.q || q.equipe ? t.nenhumResultado : t.nadaPendente}</Empty>
+        <EstadoVazio compacto titulo={<>{q.q || q.equipe ? t.nenhumResultado : t.nadaPendente}</>} />
       ) : vista === "grade" ? (
         <GradeBento>
           {ordem.tarefas.slice(0, 60).map((x, i) => {

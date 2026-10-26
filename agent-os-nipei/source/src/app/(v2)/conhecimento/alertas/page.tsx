@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Empty, Section } from "@/components/v2/ui";
+import { EstadoVazio } from "@/components/ds/Estados";
+import { Section } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
@@ -51,7 +52,7 @@ export default async function Alertas() {
 
       <Section title={t.propostas} count={propostas.length}>
         <p className="meta text-t2">{t.propostasIntro}</p>
-        {propostas.length === 0 ? <Empty>{t.semPropostas}</Empty> : (
+        {propostas.length === 0 ? <EstadoVazio compacto titulo={<>{t.semPropostas}</>} /> : (
           <ul className="grid gap-3">
             {propostas.map((p) => {
               const tarefa = tarefas.find((x) => x.id === p.tarefa);
@@ -85,7 +86,7 @@ export default async function Alertas() {
       </Section>
 
       <Section title={t.alertas} count={abertas.length}>
-        {abertas.length === 0 ? <Empty>{t.semAlertas}</Empty> : (
+        {abertas.length === 0 ? <EstadoVazio compacto titulo={<>{t.semAlertas}</>} /> : (
           <ul className="grid gap-3">
             {abertas.map((a) => {
               const f = fato(a.fato);

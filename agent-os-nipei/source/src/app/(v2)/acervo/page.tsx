@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Empty } from "@/components/v2/ui";
+import { EstadoVazio } from "@/components/ds/Estados";
+
 import AcervoForm, { FiltroAuto, type AcervoFormLabels } from "@/components/v2/AcervoForm";
 import CopiarBotao from "@/components/v2/CopiarBotao";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
-import Recolhivel, { BotaoSecao } from "@/components/v2/Recolhivel";
+import Recolhivel, { BotaoSecao } from "@/components/ds/SecaoRecolhivel";
 import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, getProjetos, podeEditarAcervo, type AcervoItem } from "@/lib/v2/data";
 import { tipoLink } from "@/lib/v2/acervoLinks";
 import { getFatos, getFontes } from "@/lib/v2/conhecimento";
@@ -133,7 +134,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
       </FiltroAuto>
       {filtrando && <p className="meta mb-3 tabular-nums text-t2">{itens.length} {t.itensN}</p>}
 
-      {todos.length === 0 ? <Empty>{t.acervoVazio}</Empty> : itens.length === 0 ? <Empty>{t.semItens}</Empty> : filtrando ? <Lista lista={itens} /> : (
+      {todos.length === 0 ? <EstadoVazio compacto titulo={<>{t.acervoVazio}</>} /> : itens.length === 0 ? <EstadoVazio compacto titulo={<>{t.semItens}</>} /> : filtrando ? <Lista lista={itens} /> : (
         <div className="grid gap-7">
           {ACERVO_TIPOS.filter((tp) => itens.some((i) => i.tipo === tp)).map((tp) => (
             <section key={tp} className="grid gap-3">

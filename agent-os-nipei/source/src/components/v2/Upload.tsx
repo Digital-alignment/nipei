@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Icone from "@/components/ds/Icone";
+import Botao from "@/components/ds/Botao";
 
 type Labels = { arquivo: string; foto: string; enviando: string; maximo: string };
 
@@ -52,13 +53,12 @@ export default function Upload({ id, action, accept, labels, extra = {}, soFoto 
     });
   }
 
-  const btn = "anel-foco inline-flex h-11 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4 disabled:opacity-50";
   return (
     <div className="flex flex-wrap items-center gap-2">
       <input ref={arquivo} type="file" accept={accept} className="hidden" onChange={() => enviar(arquivo.current)} />
       <input ref={foto} type="file" accept="image/*" capture="environment" className="hidden" onChange={() => enviar(foto.current)} />
-      <button type="button" disabled={pending} onClick={() => arquivo.current?.click()} className={btn}>{soFoto ? <Icone nome="imagem" tamanho={18} /> : <Icone nome="mais" tamanho={18} />}{labels.arquivo}</button>
-      {!soFoto && <button type="button" disabled={pending} onClick={() => foto.current?.click()} className={btn}><Icone nome="imagem" tamanho={18} />{labels.foto}</button>}
+      <Botao variante="tonal" tamanho="M" icone={soFoto ? "imagem" : "mais"} carregando={pending} onClick={() => arquivo.current?.click()}>{labels.arquivo}</Botao>
+      {!soFoto && <Botao variante="tonal" tamanho="M" icone="imagem" desativado={pending} onClick={() => foto.current?.click()}>{labels.foto}</Botao>}
       {pending && <span className="meta text-t2">{labels.enviando}</span>}
       {erro && <span role="alert" className="meta inline-flex items-center gap-1 text-err"><Icone nome="erro" tamanho={16} />{erro}</span>}
     </div>

@@ -1,11 +1,13 @@
 import Link from "next/link";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import { EstadoVazio } from "@/components/ds/Estados";
+import Campo from "@/components/ds/Campo";
 import Icone from "@/components/ds/Icone";
-import { Empty, Section, Title, byPrazo } from "@/components/v2/ui";
+import { Section, byPrazo } from "@/components/v2/ui";
 import { can, currentUser, getEquipes, getPessoas, getTarefas } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { updateTarefaAction } from "../../actions";
 
-const small = "anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco max-w-[11rem]";
 
 // Triage for tasks that have no team yet: pick a team (and optionally one person) per task.
 export default async function SemEquipe() {
@@ -18,9 +20,9 @@ export default async function SemEquipe() {
   return (
     <>
       <Link href="/equipes" className="inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{t.equipes}</Link>
-      <Title sub={t.semEquipeIntro}>{t.semEquipe}</Title>
+      <CabecalhoPagina titulo={<>{t.semEquipe}</>} subtitulo={t.semEquipeIntro} />
       <Section title={t.tarefasAbertas} count={tarefas.length}>
-        {tarefas.length === 0 ? <Empty>{t.semTarefas}</Empty> : (
+        {tarefas.length === 0 ? <EstadoVazio compacto titulo={<>{t.semTarefas}</>} /> : (
           <ul>
             {tarefas.map((x) => (
               <li key={x.id} className="py-3 border-b border-s2 last:border-0">
@@ -36,13 +38,8 @@ export default async function SemEquipe() {
                     <input type="hidden" name="projeto" value={x.projeto} />
                     <input type="hidden" name="objetivo" value={x.objetivo} />
                     {x.responsaveis.map((r) => <input key={r} type="hidden" name="responsaveis" value={r} />)}
-                    <select name="equipe" required aria-label={t.equipe} className={small}>
-                      {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-                    </select>
-                    <select name="responsaveis" aria-label={t.responsaveis} className={small} defaultValue="">
-                      <option value="">{t.ninguem}</option>
-                      {pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                    <Campo tipo="selecao" rotulo={t.equipe} name="equipe" required>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
+                    <Campo tipo="selecao" rotulo={t.responsaveis} name="responsaveis" defaultValue=""><option value="">{t.ninguem}</option>{pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Campo>
                     <button className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.atribuir}</button>
                   </form>
                 )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AvatarDS from "@/components/ds/Avatar";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao from "@/components/ds/Botao";
 import ChipDS from "@/components/ds/Chip";
@@ -7,7 +8,7 @@ import Selo from "@/components/ds/Selo";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import Icone from "@/components/ds/Icone";
-import { Avatar, Chip } from "@/components/v2/ui";
+
 import { can, currentUser, getEquipes, getPessoas, type Pessoa } from "@/lib/v2/data";
 import { resumoPessoas } from "@/lib/v2/pessoasInfo";
 import { NIVEL_COR } from "@/lib/v2/participacao";
@@ -62,7 +63,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       <li className="relative rounded-cartao bg-s1 p-4 transition-colors hover:bg-s2">
         {me.gestao && <input type="checkbox" name="ids" value={p.id} form="lote-pessoas" aria-label={p.name} className="lote-caixa absolute top-3 right-3 z-10 w-4 h-4 accent-ac" />}
         <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 after:absolute after:inset-0">
-          <Avatar name={p.name} size={40} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} />
+          <AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={40} />
           <div className="min-w-0 flex-1">
             <p className="titulo-cartao truncate">{p.name}</p>
             <p className={`text-xs truncate ${papel ? "text-t2" : "text-t3 italic"}`}>{papel || t.funcaoNaoDefinida}</p>
@@ -93,8 +94,8 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       <CabecalhoPagina selo="mao" rotulo={`${ativas.length} ${t.membros.toLowerCase()}`} titulo={t.pessoas}
         acoes={me.gestao && <Botao href="/pessoas/organizar" variante="tonal" icone="pessoas" tamanho="M">{t.organizarEquipes}</Botao>}
         filtros={<>
-          <Chip href={link({ equipe: undefined })} on={!q.equipe}>{t.todas}</Chip>
-          {[...equipes].sort((a, b) => Number(b.id === q.equipe) - Number(a.id === q.equipe)).map((e) => <Chip key={e.id} href={link({ equipe: e.id })} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
+          <ChipDS ativo={!q.equipe} href={link({ equipe: undefined })}>{t.todas}</ChipDS>
+          {[...equipes].sort((a, b) => Number(b.id === q.equipe) - Number(a.id === q.equipe)).map((e) => <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} ativo={q.equipe === e.id} key={e.id} href={link({ equipe: e.id })}>{e.nome}</ChipDS>)}
         </>} />
       <form className="mb-3">
         {q.equipe && <input type="hidden" name="equipe" value={q.equipe} />}
@@ -115,8 +116,8 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
       {me.gestao && (
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-            <Chip href={link({ situacao: undefined })} on={!situacao}>{t.todasSituacoes}</Chip>
-            {SITUACOES.map((x) => { const qtd = daEquipe.filter(naSituacao[x]).length; return qtd > 0 && <Chip key={x} href={link({ situacao: situacao === x ? undefined : x })} on={situacao === x}>{t.situacoes[x]} ({qtd})</Chip>; })}
+            <ChipDS ativo={!situacao} href={link({ situacao: undefined })}>{t.todasSituacoes}</ChipDS>
+            {SITUACOES.map((x) => { const qtd = daEquipe.filter(naSituacao[x]).length; return qtd > 0 && <ChipDS ativo={situacao === x} key={x} href={link({ situacao: situacao === x ? undefined : x })}>{t.situacoes[x]} ({qtd})</ChipDS>; })}
           </div>
           <LoteToggle formId="lote-pessoas" label={t.selecionarLbl} cancelar={t.cancelar} />
         </div>
@@ -145,7 +146,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           <ul className="px-4 pb-2">
             {inativas.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 py-2.5 border-t border-s2">
-                <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 flex-1 min-w-32"><Avatar name={p.name} size={28} /><span className="text-sm">{p.name}</span></Link>
+                <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 flex-1 min-w-32"><AvatarDS nome={p.name} tamanho={24} /><span className="text-sm">{p.name}</span></Link>
                 {gerenciaveis.length > 0 && (
                   <EscolherEquipes pessoaId={p.id} equipes={gerenciaveis.filter((e) => !e.gestao || me.gestao)} t={t} comNota={me.gestao} />
                 )}

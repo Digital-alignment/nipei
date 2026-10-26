@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import ChipDS from "@/components/ds/Chip";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { Chip, Progress } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import RespostaCampo from "@/components/v2/RespostaCampo";
 import { currentUser, getPessoas } from "@/lib/v2/data";
@@ -9,8 +11,6 @@ import { PALAVRAS_MINIMAS, SECOES_IA, diagnosticosAbertos, getDiagnostico, getRe
 import { getT } from "@/lib/v2/i18n";
 import { rascunhoIAAction, salvarRespostasAction } from "../../../actions";
 
-const btn = "rounded-interno bg-s2 px-4 py-2 text-sm";
-const primario = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]";
 
 // "Minhas respostas": a person's answers to the individual part of an assessment (private: the person and gestão).
 export default async function Respostas({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ d?: string; secao?: string }> }) {
@@ -37,12 +37,12 @@ export default async function Respostas({ params, searchParams }: { params: Prom
       <p className="text-xs uppercase tracking-wide text-t2">{t.diagnostico} · {en ? d.modelo.titulo_en : d.modelo.titulo}</p>
       <h1 className="text-2xl font-semibold tracking-tight mt-1">{proprio ? t.minhasRespostas : p.name}</h1>
       <p className="text-sm text-t2 mt-1 mb-3">{d.titulo} · {t.privadoDiag}</p>
-      <div className="mb-4"><Progress done={pr.respondidas} total={pr.total} /></div>
+      <div className="mb-4"><BarraProgresso valor={pr.respondidas} max={pr.total} rotulo={`${pr.total ? Math.round((pr.respondidas / pr.total) * 100) : 0}% · ${pr.respondidas}/${pr.total}`} /></div>
 
       <div className="flex flex-wrap gap-2 mb-5">
         {secoes.map((x) => {
           const feitas = x.perguntas.filter((qq) => r[qq.id]?.status === "respondida").length;
-          return <Chip key={x.id} href={url(x.id)} on={x.id === sec.id}>{en ? x.titulo_en : x.titulo} · {feitas}/{x.perguntas.length}</Chip>;
+          return <ChipDS ativo={x.id === sec.id} key={x.id} href={url(x.id)}>{en ? x.titulo_en : x.titulo} · {feitas}/{x.perguntas.length}</ChipDS>;
         })}
       </div>
 
@@ -52,7 +52,7 @@ export default async function Respostas({ params, searchParams }: { params: Prom
       {proprio && SECOES_IA.includes(sec.id) && (
         <form action={rascunhoIAAction} className="mb-5 rounded-interno p-3">
           <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={sec.id} />
-          <BotaoEnviar enviando={t.processando} className={`${btn} inline-flex items-center gap-1.5`}><Icone nome="gerar-outra"  tamanho={14} />{t.rascunhoIA}</BotaoEnviar>
+          <BotaoEnviar enviando={t.processando} icone="gerar-outra" variante="tonal" className="inline-flex items-center gap-1.5">{t.rascunhoIA}</BotaoEnviar>
           <p className="text-xs text-t2 mt-2">{t.rascunhoIAAviso}</p>
         </form>
       )}
@@ -80,8 +80,8 @@ export default async function Respostas({ params, searchParams }: { params: Prom
         })}
         {proprio && (
           <div className="flex flex-wrap gap-2 sticky bottom-16 md:bottom-4 bg-bg/95 py-2">
-            <BotaoEnviar name="acao" value="rascunho" enviando={t.salvando} className={btn}>{t.salvarRascunho}</BotaoEnviar>
-            <BotaoEnviar name="acao" value="responder" enviando={t.salvando} className={primario}>{t.salvarResponder}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="rascunho" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarRascunho}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="responder" enviando={t.salvando} icone="confirmar" variante="primario">{t.salvarResponder}</BotaoEnviar>
             {proxima && <Link href={url(proxima.id)} className="self-center text-sm underline text-t2">{en ? proxima.titulo_en : proxima.titulo} →</Link>}
           </div>
         )}

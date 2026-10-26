@@ -34,7 +34,7 @@ export default async function Saude(_: ModuloProps) {
               const V = VISUAL[d.estado];
               return (
                 <details key={d.id} className="group rounded-cartao bg-s1 p-3.5" open={d.estado === "erro"}>
-                  <summary className="anel-foco flex cursor-pointer list-none items-start gap-3 rounded-interno">
+                  <summary className="anel-foco flex min-h-11 cursor-pointer list-none items-start gap-3 rounded-interno">
                     <span className={`grid size-9 shrink-0 place-items-center rounded-pilula ${V.cls}`}><Icone nome={V.icone} tamanho={18} aria-label={V.rotulo} /></span>
                     <span className="min-w-0 flex-1"><span className="block font-texto text-[15px] font-semibold text-t1">{d.nome}</span><span className="meta block text-t2">{d.resumo}</span></span>
                     <span className="meta tabular-nums text-t3">{d.ms} ms</span>

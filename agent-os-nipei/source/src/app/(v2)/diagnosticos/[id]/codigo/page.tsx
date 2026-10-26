@@ -9,7 +9,6 @@ import { getColetivo, getDiagnostico, participa, participantes } from "@/lib/v2/
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { aceitarCodigoAction, codigoAction } from "../../../actions";
 
-const btn = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 // D4: code of agreements — gestão drafts (AI) and publishes versions; each participant accepts the published one.
 export default async function Codigo({ params }: { params: Promise<{ id: string }> }) {
@@ -42,14 +41,14 @@ export default async function Codigo({ params }: { params: Promise<{ id: string 
       {me.gestao && (
         <div className="grid gap-3 mb-8">
           <form action={codigoAction}>{hidden}
-            <BotaoEnviar name="acao" value="ia" enviando={t.processando} className={`${btn} inline-flex items-center gap-1.5`}><Icone nome="gerar-outra"  tamanho={14} />{c.texto ? t.atualizarIA : t.gerarIA}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="ia" enviando={t.processando} icone="gerar-outra" variante="tonal" className="inline-flex items-center gap-1.5">{c.texto ? t.atualizarIA : t.gerarIA}</BotaoEnviar>
             <p className="text-xs text-t2 mt-2">{t.codigoAviso}</p>
           </form>
           {c.texto && (
             <form action={codigoAction} className="grid gap-2">{hidden}
               <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
               <div className="flex flex-wrap gap-2">
-                <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} className={btn}>{t.salvarRascunho}</BotaoEnviar>
+                <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarRascunho}</BotaoEnviar>
                 <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.publicarVersao}</BotaoEnviar>
               </div>
             </form>

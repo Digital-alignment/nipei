@@ -1,11 +1,12 @@
 import Link from "next/link";
+import AvatarDS from "@/components/ds/Avatar";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao from "@/components/ds/Botao";
 import Selo from "@/components/ds/Selo";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import Icone from "@/components/ds/Icone";
-import { Avatar } from "@/components/v2/ui";
+
 import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, today, type Equipe } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
@@ -41,7 +42,7 @@ export default async function Equipes() {
           </div>
           <div className="flex items-center mt-3">
             <span className="flex -space-x-1.5">
-              {pessoasEq.slice(0, 6).map((id) => { const p = pessoa(id); return p && <span key={id} className="rounded-pilula ring-2 ring-s1"><Avatar name={p.name} size={26} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} /></span>; })}
+              {pessoasEq.slice(0, 6).map((id) => { const p = pessoa(id); return p && <span key={id} className="rounded-pilula ring-2 ring-s1"><AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={24} /></span>; })}
             </span>
             {pessoasEq.length > 6 && <span className="ml-1.5 text-xs text-t2">+{pessoasEq.length - 6}</span>}
             <span className="ml-auto text-xs text-t2">{e.coordenadores.map((c) => pessoa(c)?.name.split(" ")[0]).filter(Boolean).join(", ")}</span>

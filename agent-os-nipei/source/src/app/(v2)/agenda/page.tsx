@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { EstadoVazio } from "@/components/ds/Estados";
 import { headers } from "next/headers";
 import { Suspense, type CSSProperties } from "react";
-import { TaskRow, Empty } from "@/components/v2/ui";
+import { TaskRow } from "@/components/v2/ui";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import ArrastarAgenda from "@/components/v2/ArrastarAgenda";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
@@ -117,8 +118,8 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
       <CabecalhoPagina selo="lua" rotulo={quem === "minhas" ? t.minhas : quem === "equipe" ? t.minhaEquipe : equipe ? equipes.find((e) => e.id === equipe)?.nome : t.todas}
         titulo={t.agenda}
         subtitulo={<>
-          <a href="#atrasadas" className={atrasadas.length ? "text-err hover:underline" : undefined}>{atrasadas.length} {t.atrasadasLbl}</a>
-          {" · "}{deHoje} {t.hoje.toLowerCase()} · {proximos7} {t.proximos7.toLowerCase()} · <a href="#sem-prazo" className="hover:underline">{semPrazo.length} {t.semPrazoTitulo.toLowerCase()}</a>
+          <a href="#atrasadas" className={`alvo-toque inline-block ${atrasadas.length ? "text-err hover:underline" : ""}`}>{atrasadas.length} {t.atrasadasLbl}</a>
+          {" · "}{deHoje} {t.hoje.toLowerCase()} · {proximos7} {t.proximos7.toLowerCase()} · <a href="#sem-prazo" className="alvo-toque inline-block hover:underline">{semPrazo.length} {t.semPrazoTitulo.toLowerCase()}</a>
         </>}
         acoes={<>
           <BotaoIcone icone="tarefa" aria-label={`${t.novaTarefa}`} href={`/tarefas/nova?back=/agenda${diaAlvo >= hoje ? `&prazo=${diaAlvo}` : ""}`} />
@@ -172,12 +173,12 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
             <p className="meta text-t3">{t.semPrazoAjuda}</p>
             {semPrazo.length > 8 && <div><Botao href="/tarefas?vista=lista" variante="fantasma" tamanho="P" icone="avancar">{t.verTodas} ({semPrazo.length})</Botao></div>}
           </>
-        ) : <Empty>{t.tudoComPrazo}</Empty>}
+        ) : <EstadoVazio compacto titulo={<>{t.tudoComPrazo}</>} />}
       </section>
 
       {semDia.length > 0 && (
         <details className="group mt-4 rounded-cartao bg-s1 p-4">
-          <summary className="anel-foco flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
+          <summary className="anel-foco alvo-toque flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
             <span className="titulo-cartao">{t.aDefinirData}</span><span className="rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2">{semDia.length}</span>
             <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
           </summary>
@@ -196,7 +197,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
       )}
 
       <details className="group mt-4 rounded-cartao bg-s1 p-4">
-        <summary className="anel-foco flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
+        <summary className="anel-foco alvo-toque flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
           <Icone nome="calendario" tamanho={18} className="text-t2" /><span className="titulo-cartao">{t.googleTitulo}</span>
           <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
         </summary>
@@ -428,7 +429,7 @@ function Lista(c: Comum) {
     ...eventos.filter((e) => e.inicio.length === 10 && (e.fim || e.inicio) >= hoje).map((e) => (e.inicio < hoje ? hoje : e.inicio)),
     ...c.gevs.filter((e) => e.dia >= hoje).map((e) => e.dia),
   ])].sort();
-  if (!dias.length) return <Empty>{t.semTarefas}</Empty>;
+  if (!dias.length) return <EstadoVazio compacto titulo={<>{t.semTarefas}</>} />;
   const limite = somar(hoje, 30);
   const perto = dias.filter((d) => d <= limite);
   const meses = new Map<string, string[]>();
@@ -438,7 +439,7 @@ function Lista(c: Comum) {
       {perto.map((d) => <Dia key={d} d={d} {...c} vazio={false} />)}
       {[...meses].map(([m, ds]) => (
         <details key={m} className="group rounded-cartao bg-s1 p-3">
-          <summary className="anel-foco flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
+          <summary className="anel-foco alvo-toque flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
             <span className="titulo-cartao first-letter:uppercase">{fmtDate(m, lang)}</span><span className="rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2">{ds.length}</span>
             <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
           </summary>

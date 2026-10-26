@@ -1,7 +1,9 @@
 import Link from "next/link";
+import ChipDS from "@/components/ds/Chip";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { Chip, Progress } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import RespostaCampo from "@/components/v2/RespostaCampo";
 import { currentUser, getPessoas, getTarefas } from "@/lib/v2/data";
@@ -10,8 +12,6 @@ import { getT } from "@/lib/v2/i18n";
 import { enviarConhecimentoAction, rascunhoColetivoAction, salvarColetivoAction, tarefasLacunasAction } from "../../../actions";
 import { Calendario, Financas, Itens } from "./listas";
 
-const btn = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
-const primario = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]";
 
 // D2: the team answers the collective sections (owner per section, AI drafts with sources, gaps → tasks).
 export default async function Coletivo({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ secao?: string }> }) {
@@ -40,24 +40,24 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
       <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{d.titulo}</Link>
       <p className="text-xs uppercase tracking-wide text-t2">{t.diagnostico} · {t.parteColetiva}</p>
       <div className="flex flex-wrap gap-2 my-4">
-        {secoes.map((x) => <Chip key={x.id} href={`/diagnosticos/${d.id}/coletivo?secao=${x.id}`} on={x.id === sec.id}>{en ? x.titulo_en : x.titulo} · {feitas(x.id)}/{x.perguntas.length}</Chip>)}
+        {secoes.map((x) => <ChipDS ativo={x.id === sec.id} key={x.id} href={`/diagnosticos/${d.id}/coletivo?secao=${x.id}`}>{en ? x.titulo_en : x.titulo} · {feitas(x.id)}/{x.perguntas.length}</ChipDS>)}
       </div>
 
       <h1 className="text-2xl font-semibold tracking-tight">{en ? sec.titulo_en : sec.titulo}</h1>
       <p className="text-sm text-t2 mt-1">{sec.intro}</p>
       <p className="text-sm mt-2">{t.responsavel}: <b>{pessoas.find((p) => p.id === c.responsaveis[sec.id])?.name ?? t.semResponsavel}</b></p>
-      <div className="my-3"><Progress done={feitas(sec.id)} total={sec.perguntas.length} /></div>
+      <div className="my-3"><BarraProgresso valor={feitas(sec.id)} max={sec.perguntas.length} rotulo={`${sec.perguntas.length ? Math.round((feitas(sec.id) / sec.perguntas.length) * 100) : 0}% · ${feitas(sec.id)}/${sec.perguntas.length}`} /></div>
       {!pode && <p className="text-xs text-t2 mb-4">{t.soResponsavel}</p>}
 
       {pode && (
         <div className="flex flex-wrap gap-2 mb-6">
           <form action={rascunhoColetivoAction}>{hidden}
-            <BotaoEnviar enviando={t.processando} className={`${btn} inline-flex items-center gap-1.5`}><Icone nome="gerar-outra"  tamanho={14} />{t.rascunhoIA}</BotaoEnviar>
+            <BotaoEnviar enviando={t.processando} icone="gerar-outra" variante="tonal" className="inline-flex items-center gap-1.5">{t.rascunhoIA}</BotaoEnviar>
           </form>
-          {lacunas > 0 && <form action={tarefasLacunasAction}>{hidden}<BotaoEnviar enviando={t.salvando} className={btn}>{t.criarTarefasFalta} ({lacunas})</BotaoEnviar></form>}
+          {lacunas > 0 && <form action={tarefasLacunasAction}>{hidden}<BotaoEnviar enviando={t.salvando} icone="tarefa" variante="tonal">{t.criarTarefasFalta}({lacunas})</BotaoEnviar></form>}
           {feitas(sec.id) > 0 && (
             <form action={enviarConhecimentoAction}>{hidden}
-              <BotaoEnviar enviando={t.salvando} className={btn}>{c.enviadas[sec.id] ? `${t.enviarConhecimento} ↻` : t.enviarConhecimento}</BotaoEnviar>
+              <BotaoEnviar enviando={t.salvando} icone="enviar" variante="tonal">{c.enviadas[sec.id] ? `${t.enviarConhecimento}` : t.enviarConhecimento}</BotaoEnviar>
             </form>
           )}
           <p className="text-xs text-t2 basis-full">{t.rascunhoColetivoAviso}</p>
@@ -104,8 +104,8 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
         })}
         {pode && (
           <div className="flex flex-wrap gap-2 sticky bottom-16 md:bottom-4 bg-bg/95 py-2">
-            <BotaoEnviar name="acao" value="rascunho" enviando={t.salvando} className={btn}>{t.salvarRascunho}</BotaoEnviar>
-            <BotaoEnviar name="acao" value="responder" enviando={t.salvando} className={primario}>{t.salvarResponder}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="rascunho" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarRascunho}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="responder" enviando={t.salvando} icone="confirmar" variante="primario">{t.salvarResponder}</BotaoEnviar>
           </div>
         )}
       </form>

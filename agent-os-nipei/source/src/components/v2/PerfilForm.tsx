@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Campo from "@/components/ds/Campo";
+import Botao from "@/components/ds/Botao";
 import Icone from "@/components/ds/Icone";
 import { useRouter } from "next/navigation";
 import Upload from "@/components/v2/Upload";
@@ -11,9 +13,6 @@ import { enviarCodigoAction, salvarPerfilAction, uploadFotoAction, verificarCodi
 
 type Inicial = DadosPerfil & { id: string; nipeiId: string; whatsappVerificado: boolean; temFoto: boolean };
 
-const field = "w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco";
-const btn = "rounded-interno bg-s2 px-3 py-2 text-sm disabled:opacity-50";
-const primario = "rounded-interno bg-ac text-ac-ink px-5 py-2.5 text-sm font-medium disabled:opacity-50";
 const IDIOMA_NOME: Record<string, string> = { pt: "Português", en: "English", es: "Español" };
 
 /** "+5573999606170" → { cc: "55", local: "73999606170" } (longest matching country code). */
@@ -109,8 +108,8 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
         </label>
         {erro && <p className="text-sm text-err">{erro}</p>}
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setPasso(1)} className={btn}>{t.corrigir}</button>
-          <button type="button" disabled={!lgpd || pending} onClick={salvar} className={primario}>{pending ? t.salvando : t.confirmarSalvar}</button>
+          <Botao type="button" onClick={() => setPasso(1)} icone="voltar" variante="tonal" tamanho="M">{t.corrigir}</Botao>
+          <Botao type="button" desativado={!lgpd || pending} onClick={salvar} icone="confirmar" variante="primario" tamanho="M">{pending ? t.salvando : t.confirmarSalvar}</Botao>
         </div>
       </div>
     );
@@ -126,26 +125,23 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
         <div className="grid gap-1">
           <Upload id={inicial.id} action={fotoAction} accept="image/*" soFoto extra={cadastro ? { cadastro } : {}}
             labels={{ arquivo: t.trocarFoto, foto: t.foto, enviando: t.salvando, maximo: "Máx. 3 MB" }} />
-          {foto > 0 && cadastro && <span className="text-xs text-ok">✓ {t.foto}</span>}
+          {foto > 0 && cadastro && <span className="inline-flex items-center gap-1 meta text-ok"><Icone nome="sucesso" tamanho={14} />{t.foto}</span>}
         </div>
       </div>
 
-      <label className="grid gap-1 text-sm">{t.nome}<input value={d.name} onChange={set("name")} required maxLength={120} className={field} /></label>
-      <label className="grid gap-1 text-sm">{t.apelido}<input value={d.apelido} onChange={set("apelido")} maxLength={60} className={field} /></label>
-      <label className="grid gap-1 text-sm">{t.nomeNativo}<input value={d.native_name} onChange={set("native_name")} maxLength={120} className={field} /></label>
+      <Campo tipo="texto" rotulo={t.nome} value={d.name} onChange={set("name")} required maxLength={120} />
+      <Campo tipo="texto" rotulo={t.apelido} value={d.apelido} onChange={set("apelido")} maxLength={60} />
+      <Campo tipo="texto" rotulo={t.nomeNativo} value={d.native_name} onChange={set("native_name")} maxLength={120} />
       <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-1 text-sm">{t.dataNascimento}<input type="date" value={d.data_nascimento} onChange={set("data_nascimento")} className={field} /></label>
-        <label className="grid gap-1 text-sm">{t.nacionalidade}<input value={d.nacionalidade} onChange={set("nacionalidade")} maxLength={60} className={field} /></label>
+        <Campo tipo="data" rotulo={t.dataNascimento} value={d.data_nascimento} onChange={set("data_nascimento")} />
+        <Campo tipo="texto" rotulo={t.nacionalidade} value={d.nacionalidade} onChange={set("nacionalidade")} maxLength={60} />
       </div>
 
       <fieldset className="grid gap-2 rounded-interno p-3">
         <legend className="px-1 text-sm">WhatsApp</legend>
         <div className="grid grid-cols-[auto_1fr] gap-2">
-          <select aria-label={t.codigoPais} value={fone.cc} onChange={(e) => setFone({ ...fone, cc: e.target.value })} className={field}>
-            {PAISES.map((p) => <option key={p.cc + p.nome} value={p.cc}>{p.nome} +{p.cc}</option>)}
-          </select>
-          <input aria-label={t.numero} type="tel" inputMode="tel" value={fone.local} onChange={(e) => setFone({ ...fone, local: e.target.value })}
-            placeholder={fone.cc === "55" ? "73 99999 9999" : ""} maxLength={20} className={field} />
+          <Campo tipo="selecao" rotulo={t.codigoPais} value={fone.cc} onChange={(e) => setFone({ ...fone, cc: e.target.value })}>{PAISES.map((p) => <option key={p.cc + p.nome} value={p.cc}>{p.nome} +{p.cc}</option>)}</Campo>
+          <Campo tipo="texto" rotulo={t.numero} type="tel" inputMode="tel" value={fone.local} onChange={(e) => setFone({ ...fone, local: e.target.value })} placeholder={fone.cc === "55" ? "73 99999 9999" : ""} maxLength={20} />
         </div>
         {verificado ? (
           <p className="inline-flex items-center gap-1 text-sm text-ok"><Icone nome="sucesso"  tamanho={16} />{t.verificado}</p>
@@ -156,41 +152,36 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
               <>
                 <p className="text-xs text-t2">{t.codigoEnviado} {numero}</p>
                 <div className="flex gap-2">
-                  <input aria-label={t.codigoRecebido} placeholder={t.codigoRecebido} inputMode="numeric" autoComplete="one-time-code" maxLength={6}
-                    value={codigo} onChange={(e) => setCodigo(e.target.value)} className={field} />
-                  <button type="button" disabled={pending || codigo.replace(/\D/g, "").length !== 6} onClick={verificar} className={btn}>{t.verificar}</button>
+                  <Campo tipo="texto" rotulo={t.codigoRecebido} placeholder={t.codigoRecebido} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+                  <Botao type="button" desativado={pending || codigo.replace(/\D/g, "").length !== 6} onClick={verificar} icone="confirmar" variante="tonal" tamanho="M">{t.verificar}</Botao>
                 </div>
                 <button type="button" disabled={pending} onClick={enviarCodigo} className="justify-self-start text-xs underline text-t2">{t.reenviarCodigo}</button>
               </>
             ) : (
-              <button type="button" disabled={pending} onClick={enviarCodigo} className={`${btn} justify-self-start`}>{t.enviarCodigo}</button>
+              <Botao type="button" desativado={pending} onClick={enviarCodigo} icone="enviar" variante="tonal" tamanho="M" className="justify-self-start">{t.enviarCodigo}</Botao>
             )}
           </div>
         ) : null}
       </fieldset>
 
-      <label className="grid gap-1 text-sm">{t.email}<input type="email" value={d.email} onChange={set("email")} maxLength={120} className={field} /></label>
+      <Campo tipo="texto" rotulo={t.email} type="email" value={d.email} onChange={set("email")} maxLength={120} />
       <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-1 text-sm">{t.cidade}<input value={d.cidade} onChange={set("cidade")} maxLength={80} className={field} /></label>
-        <label className="grid gap-1 text-sm">{t.pais}<input value={d.pais} onChange={set("pais")} maxLength={60} className={field} /></label>
+        <Campo tipo="texto" rotulo={t.cidade} value={d.cidade} onChange={set("cidade")} maxLength={80} />
+        <Campo tipo="texto" rotulo={t.pais} value={d.pais} onChange={set("pais")} maxLength={60} />
       </div>
-      <label className="grid gap-1 text-sm">{t.idiomaPref}
-        <select value={d.idioma || "pt"} onChange={set("idioma")} className={field}>
-          {Object.entries(IDIOMA_NOME).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-      </label>
-      <label className="grid gap-1 text-sm">{t.area}<input value={d.area} onChange={set("area")} maxLength={200} className={field} /></label>
-      <label className="grid gap-1 text-sm">{t.funcao}<textarea value={d.funcao} onChange={set("funcao")} rows={3} maxLength={300} className={field} /></label>
-      <label className="grid gap-1 text-sm">{t.disponibilidade}<input value={d.disponibilidade} onChange={set("disponibilidade")} maxLength={200} className={field} /></label>
+      <Campo tipo="selecao" rotulo={t.idiomaPref} value={d.idioma || "pt"} onChange={set("idioma")}>{Object.entries(IDIOMA_NOME).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Campo>
+      <Campo tipo="texto" rotulo={t.area} value={d.area} onChange={set("area")} maxLength={200} />
+      <Campo tipo="area" rotulo={t.funcao} value={d.funcao} onChange={set("funcao")} rows={3} maxLength={300} />
+      <Campo tipo="texto" rotulo={t.disponibilidade} value={d.disponibilidade} onChange={set("disponibilidade")} maxLength={200} />
 
       <fieldset className="grid gap-2 rounded-interno p-3">
         <legend className="px-1 text-sm">{t.emergencia} <span className="text-xs text-t3">({t.privado})</span></legend>
-        <input aria-label={t.emergenciaNome} placeholder={t.emergenciaNome} value={d.emergencia_nome} onChange={set("emergencia_nome")} maxLength={120} className={field} />
-        <input aria-label={t.emergenciaWhats} placeholder={`${t.emergenciaWhats} (+55 73 9…)`} type="tel" inputMode="tel" value={d.emergencia_whatsapp} onChange={set("emergencia_whatsapp")} maxLength={30} className={field} />
+        <Campo tipo="texto" rotulo={t.emergenciaNome} placeholder={t.emergenciaNome} value={d.emergencia_nome} onChange={set("emergencia_nome")} maxLength={120} />
+        <Campo tipo="texto" rotulo={t.emergenciaWhats} placeholder={`${t.emergenciaWhats} (+55 73 9…)`} type="tel" inputMode="tel" value={d.emergencia_whatsapp} onChange={set("emergencia_whatsapp")} maxLength={30} />
       </fieldset>
 
       {erro && <p className="text-sm text-err">{erro}</p>}
-      <button className={primario}>{t.continuar}</button>
+      <Botao type="submit"  icone="avancar" variante="primario" tamanho="M">{t.continuar}</Botao>
     </form>
   );
 }

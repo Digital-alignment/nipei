@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { TaskRow, Empty, byPrazo } from "@/components/v2/ui";
-import Abas from "@/components/v2/Abas";
+import { AbasComPainel } from "@/components/ds/Abas";
+import { EstadoVazio } from "@/components/ds/Estados";
+import { TaskRow, byPrazo } from "@/components/v2/ui";
+
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import { CampoAssistente } from "@/components/v2/AssistenteGlobal";
 import EscolherEquipes from "@/components/v2/EscolherEquipes";
@@ -108,7 +110,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     const gs = defs.map((d) => ({ ...d, itens: ts.filter(d.dentro) })).filter((g) => g.itens.length);
     return gs.length
       ? <div>{gs.map((g) => <GrupoTarefas key={g.id} titulo={g.titulo} contagem={g.itens.length} alerta={g.alerta}>{g.itens.map((x) => linha(x, grupo, selos))}</GrupoTarefas>)}</div>
-      : <Empty>{t.nadaPendente}</Empty>;
+      : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />;
   };
   const doDia = diaSel ? ordenarAgora(minhas.filter((x) => x.prazo === diaSel), ctx) : null;
   const eventosDoDia = diaSel ? getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)) : [];
@@ -157,7 +159,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
               {missao.metas.map((m) => (
                 <li key={m.id}>
                   <Link href={{ perfis: `/pessoas?equipe=${missao.missao.equipe}`, fatos: "/conhecimento", fontes: "/conhecimento", tarefas: "/pulso", atrasadas: "/pulso?ver=atrasadas", carga: `/equipes/${missao.missao.equipe}`, objetivos: "/objetivos", diagnostico: me ? `/pessoas/${me.id}/respostas` : "/hoje" }[m.id]}
-                    className="anel-foco group/m block rounded-interno py-1.5">
+                    className="anel-foco group/m block min-h-11 rounded-interno py-1.5">
                     <span className="flex items-baseline justify-between gap-2 text-sm">
                       <span className="min-w-0 group-hover/m:underline">{t.metas[m.id]}</span>
                       <span className="meta inline-flex shrink-0 items-center gap-1 tabular-nums">{m.pct >= 100 ? <Icone nome="confirmar" tamanho={16} aria-label="100%" /> : m.texto}</span>
@@ -213,7 +215,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
               <ul className="grid gap-3">
                 {org.semEquipe.slice(0, 3).map((pe) => (
                   <li key={pe.id} className="grid gap-1.5">
-                    <Link href={`/pessoas/${pe.id}`} className="anel-foco truncate rounded-interno text-[15px] font-medium text-t1 hover:underline">{pe.name}</Link>
+                    <Link href={`/pessoas/${pe.id}`} className="anel-foco alvo-toque min-w-0 rounded-interno text-[15px] font-medium text-t1 hover:underline"><span className="block truncate">{pe.name}</span></Link>
                     <EscolherEquipes pessoaId={pe.id} equipes={equipes} t={t} />
                   </li>
                 ))}
@@ -259,24 +261,24 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           )}
           {doDia.tarefas.length
             ? <GrupoTarefas titulo={t.minhasTarefas} contagem={doDia.tarefas.length}>{doDia.tarefas.map((x) => linha(x, "datadas", doDia.selos))}</GrupoTarefas>
-            : <Empty>{t.nadaPendente}</Empty>}
+            : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
         </section>
       )}
 
       {me && !doDia && (
-        <Abas id="hoje" inicial={q.aba === "novidades" ? "novidades" : undefined} abas={[
-          { id: "agora", label: t.agora, count: agora.length, alerta: atrasadas > 0, conteudo: grupos(agora, "datadas", oAgora.selos, [
+        <AbasComPainel id="hoje" inicial={q.aba === "novidades" ? "novidades" : undefined} abas={[
+          { id: "agora", rotulo: t.agora, contagem: agora.length, alerta: atrasadas > 0, conteudo: grupos(agora, "datadas", oAgora.selos, [
             { id: "atrasadas", titulo: t.atrasadas, dentro: (x) => x.prazo < hoje, alerta: true },
             { id: "hoje", titulo: t.grpHoje, dentro: (x) => x.prazo === hoje },
           ]) },
-          { id: "proximas", label: t.proximas, count: proximas.length, conteudo: grupos(proximas, "datadas", oProx.selos, [
+          { id: "proximas", rotulo: t.proximas, contagem: proximas.length, conteudo: grupos(proximas, "datadas", oProx.selos, [
             { id: "amanha", titulo: t.grpAmanha, dentro: (x) => x.prazo === dia(1) },
             { id: "semana", titulo: t.grpSemana, dentro: (x) => x.prazo > dia(1) && x.prazo <= dia(7) },
             { id: "depois", titulo: t.grpDepois, dentro: (x) => x.prazo > dia(7) },
           ]) },
-          { id: "semdata", label: t.semData, count: semData.length, conteudo: grupos(semData, "semdata", oSem.selos, [{ id: "semdata", titulo: t.semData, dentro: () => true }]) },
+          { id: "semdata", rotulo: t.semData, contagem: semData.length, conteudo: grupos(semData, "semdata", oSem.selos, [{ id: "semdata", titulo: t.semData, dentro: () => true }]) },
           {
-            id: "novidades", label: t.novidades, count: novidades.length, conteudo: novidades.length ? (
+            id: "novidades", rotulo: t.novidades, contagem: novidades.length, conteudo: novidades.length ? (
               <ul className="overflow-hidden rounded-cartao bg-s1">
                 {novidades.map((n, i) => (
                   <li key={`${n.tarefaId}${n.quando}${i}`} className="border-t border-s2 px-4 py-3 first:border-t-0">
@@ -285,7 +287,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                   </li>
                 ))}
               </ul>
-            ) : <Empty>{t.nadaPendente}</Empty>,
+            ) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />,
           },
         ]} />
       )}

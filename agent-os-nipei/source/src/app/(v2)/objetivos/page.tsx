@@ -1,5 +1,9 @@
-import { Chip, Empty, Progress } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import ChipDS from "@/components/ds/Chip";
+import { chaveEquipe } from "@/components/ds/equipes";
+import { EstadoVazio } from "@/components/ds/Estados";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Cartao from "@/components/ds/Cartao";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
@@ -22,12 +26,12 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
     <>
       <div className="-ml-3 mb-2"><Botao href="/projetos" variante="fantasma" tamanho="P" icone="voltar">{t.projetos}</Botao></div>
       <CabecalhoPagina rotulo={`${ano} · ${objetivos.length}`} titulo={t.objetivos}
-        abas={<div className="flex gap-2">{[2026, 2027].map((a) => <Chip key={a} href={`/objetivos?ano=${a}${q.equipe ? `&equipe=${q.equipe}` : ""}`} on={ano === a}>{a}</Chip>)}</div>}
+        abas={<div className="flex gap-2">{[2026, 2027].map((a) => <ChipDS ativo={ano === a} key={a} href={`/objetivos?ano=${a}${q.equipe ? `&equipe=${q.equipe}` : ""}`}>{a}</ChipDS>)}</div>}
         filtros={<>
-          <Chip href={`/objetivos?ano=${ano}`} on={!q.equipe}>{t.todas}</Chip>
-          {equipes.map((e) => <Chip key={e.id} href={`/objetivos?ano=${ano}&equipe=${e.id}`} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
+          <ChipDS ativo={!q.equipe} href={`/objetivos?ano=${ano}`}>{t.todas}</ChipDS>
+          {equipes.map((e) => <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} ativo={q.equipe === e.id} key={e.id} href={`/objetivos?ano=${ano}&equipe=${e.id}`}>{e.nome}</ChipDS>)}
         </>} />
-      {objetivos.length === 0 && <Empty>{t.semItens}</Empty>}
+      {objetivos.length === 0 && <EstadoVazio compacto titulo={<>{t.semItens}</>} />}
       <div className="grid gap-3">
         {objetivos.map((o) => {
           const p = progresso(o.id, tarefas);
@@ -47,11 +51,11 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
                   </details>
                 ) : <p className="corpo whitespace-pre-line text-t2">{o.descricao}</p>)}
                 <div className="flex flex-wrap gap-2">
-                  {dono && <Chip cor={dono.cor}>{dono.nome}</Chip>}
-                  {o.apoio.map((a) => { const e = eq(a); return e && <Chip key={a} cor={e.cor}>{t.apoio}: {e.nome}</Chip>; })}
-                  {o.projeto && <Chip href={`/projetos/${o.projeto}`}>{projetos.find((x) => x.id === o.projeto)?.nome ?? o.projeto}</Chip>}
+                  {dono && <ChipDS tipo={chaveEquipe(dono.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(dono.cor)}>{dono.nome}</ChipDS>}
+                  {o.apoio.map((a) => { const e = eq(a); return e && <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} key={a}>{t.apoio}: {e.nome}</ChipDS>; })}
+                  {o.projeto && <ChipDS href={`/projetos/${o.projeto}`}>{projetos.find((x) => x.id === o.projeto)?.nome ?? o.projeto}</ChipDS>}
                 </div>
-                {p ? <Progress {...p} /> : <p className="meta text-t3">{t.semTarefasLigadas}</p>}
+                {p ? <BarraProgresso valor={p.done} max={p.total} rotulo={`${p.total ? Math.round((p.done / p.total) * 100) : 0}% · ${p.done}/${p.total}`} /> : <p className="meta text-t3">{t.semTarefasLigadas}</p>}
                 {can.editObjetivo(me) && (
                   <details className="group">
                     <summary className="anel-foco meta inline-flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-pilula text-t2 hover:text-t1"><Icone nome="editar" tamanho={16} />{t.editar}: {t.donoEquipe} / {t.apoio}</summary>

@@ -1,4 +1,6 @@
 import Icone from "@/components/ds/Icone";
+import Cartao from "@/components/ds/Cartao";
+import Botao from "@/components/ds/Botao";
 import BotaoEnviar from "./BotaoEnviar";
 import InterruptorAcao from "./InterruptorAcao";
 import { ListaConfiguracoes } from "@/components/ds/Controles";
@@ -12,8 +14,6 @@ import { getConexoes } from "@/lib/v2/conexoes";
 import { googleConfigurado, temGmail } from "@/lib/v2/google";
 import type { Dict } from "@/lib/v2/i18n";
 
-const CARTAO = "rounded-cartao bg-s1 p-4";
-const sec = "inline-flex items-center gap-1.5 anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 const quando = (iso?: string) => (iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Bahia", dateStyle: "short", timeStyle: "short" }) : "");
 
 /** "Conexões" tab — only on the person's own profile: their Google account, what Nipëi may touch, backups. */
@@ -28,7 +28,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
       <p className="text-sm text-t2">{c.intro}</p>
       <ToastAoAbrir texto={ok ? c.conectadoOk : undefined} parametro="google" />
 
-      <div className={`${CARTAO} grid gap-3`}>
+      <Cartao className="grid gap-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-interno bg-s2 flex items-center justify-center font-semibold">G</span>
           <div className="flex-1 min-w-0">
@@ -65,17 +65,17 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
               </div>
             )}
             <div className="flex flex-wrap gap-2">
-              <form action={backupAgoraAction}><BotaoEnviar enviando="…" className={sec}><Icone nome="baixar"  tamanho={14} />{c.backupAgora}</BotaoEnviar></form>
-              {g.backup?.pastaId && <a href={`https://drive.google.com/drive/folders/${g.backup.pastaId}`} target="_blank" rel="noreferrer" className={sec}><Icone nome="abrir-fora"  tamanho={14} />{c.abrirPasta}</a>}
+              <form action={backupAgoraAction}><BotaoEnviar enviando="…" icone="baixar" variante="tonal">{c.backupAgora}</BotaoEnviar></form>
+              {g.backup?.pastaId && <Botao href={`https://drive.google.com/drive/folders/${g.backup.pastaId}`} target="_blank" rel="noreferrer" icone="abrir-fora" variante="tonal" tamanho="M">{c.abrirPasta}</Botao>}
               <form action={desconectarGoogleAction} className="ml-auto">
                 <ConfirmarBotao pergunta={c.desconectarPergunta} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4">{c.desconectar}</ConfirmarBotao>
               </form>
             </div>
           </>
         )}
-      </div>
+      </Cartao>
 
-      <div className={`${CARTAO} grid gap-3`}>
+      <Cartao className="grid gap-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-interno bg-s2 flex items-center justify-center"><Icone nome="gerar-outra"  tamanho={17} /></span>
           <div className="flex-1 min-w-0"><p className="font-medium">{c.iaTitulo}</p><p className="text-xs text-t2">{c.iaSub}</p></div>
@@ -103,10 +103,10 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
             ))}
           </ul>
         )}
-      </div>
+      </Cartao>
 
       {gestao && (
-        <div className={`${CARTAO} grid gap-3`}>
+        <Cartao className="grid gap-3">
           <div className="flex items-center gap-3">
             <span className="w-9 h-9 rounded-interno bg-s2 flex items-center justify-center"><Icone nome="cadeado"  tamanho={17} /></span>
             <div className="flex-1 min-w-0"><p className="font-medium">{c.chaveTitulo}</p><p className="text-xs text-t2">{c.chaveSub}</p></div>
@@ -135,7 +135,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
               <p className="text-xs text-t2">{c.chaveAviso}</p>
             </form>
           </details>
-        </div>
+        </Cartao>
       )}
 
     </div>

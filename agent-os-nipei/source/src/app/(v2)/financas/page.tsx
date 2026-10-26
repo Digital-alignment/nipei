@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { EstadoVazio } from "@/components/ds/Estados";
 import Icone from "@/components/ds/Icone";
 import { redirect } from "next/navigation";
-import { Empty, Section } from "@/components/v2/ui";
+import { Section } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Cartao from "@/components/ds/Cartao";
@@ -139,7 +140,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
       </Section>
 
       <Section title={t.lancamentos} count={lista.length}>
-        <Tabela rotulo={t.lancamentos} vazio={<Empty>{t.semLancamentos}</Empty>} ordemInicial={{ id: "data", desc: true }} colunas={[
+        <Tabela rotulo={t.lancamentos} vazio={<EstadoVazio compacto titulo={<>{t.semLancamentos}</>} />} ordemInicial={{ id: "data", desc: true }} colunas={[
           { id: "desc", rotulo: t.descricao, ordenavel: true }, { id: "data", rotulo: t.data, ordenavel: true }, { id: "cat", rotulo: t.categoria, ordenavel: true },
           { id: "proj", rotulo: t.projeto, soComputador: true }, { id: "por", rotulo: t.registradoPorLbl, soComputador: true }, { id: "valor", rotulo: t.valor, numero: true, ordenavel: true },
         ]} linhas={lista.map((l) => ({

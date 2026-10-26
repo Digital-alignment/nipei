@@ -11,13 +11,6 @@
   /* Solid Nipei OS Level 0-3 Palette (Matte Black Base) */
   --bg-deep:    #050608;
   --bg-bento:   #0a0f18;
-  --bg-hero:    #070705;
-
-  /* Scope Personal & Empresa */
-  --personal-primary: #706c61;
-  --personal-glow: #8D897C;
-  --empresa-primary:  #B49B43;
-  --empresa-glow:  #c2ac5b;
 
   --cream:      #f3f4f6;
   --cream-soft: #e5e7eb;
@@ -27,12 +20,9 @@
   --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.75);
 
   --bg: var(--bg-deep);
-  --bg-2: var(--bg-bento);
   --panel: var(--bg-bento);
   --panel-border: rgba(255, 255, 255, 0.12);
   --fg: var(--cream);
-
-  --glow: 0 0 0 0;
 }
 
 .font-alata {
@@ -696,6 +686,10 @@ html[data-lote] .v2 .lote-caixa { display: block; }
 /* Utilitários do design system */
 /* hachurado = planejado / pendente (regra 6): linhas finas a 135° */
 .v2 .hachurado { background-color: var(--s2); background-image: repeating-linear-gradient(135deg, var(--s4) 0 1px, transparent 1px 7px); }
+/* alvo de toque (seção 6, mínimo 44 px): um ::after invisível estende a área clicável sem mudar o desenho.
+   Para controles compactos (chips, linhas, links de lista). Não use em elemento com overflow:hidden (o ::after seria cortado). */
+.v2 .alvo-toque { position: relative; }
+.v2 .alvo-toque::after { content: ""; position: absolute; inset: min(0px, calc((100% - 44px) / 2)); }
 /* brilho = só o que é do Pinu (regra 4) */
 .v2 .brilho-ia { box-shadow: var(--brilho-ia); }
 /* anel de foco: aparece no foco por teclado (e em campos, seção 9.5) */

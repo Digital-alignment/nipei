@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import ChipDS from "@/components/ds/Chip";
 import { notFound } from "next/navigation";
-import { Chip, Title } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import { currentUser, getTarefas, responsaveisPara, today } from "@/lib/v2/data";
@@ -23,11 +26,10 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
     && (ver === "atrasadas" ? x.prazo && x.prazo < hoje : !x.responsaveis.length))
     .sort((a, b) => (a.prazo || "9999").localeCompare(b.prazo || "9999")).slice(0, 80);
   const url = (o: Record<string, string | undefined>) => "/pulso?" + new URLSearchParams(Object.entries({ equipe: q.equipe, ver, ...o }).filter(([, v]) => v !== undefined) as [string, string][]);
-  const sel = "anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco max-w-36";
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Title sub={t.pulsoIntro}>{t.pulso}</Title>
+      <CabecalhoPagina titulo={<>{t.pulso}</>} subtitulo={t.pulsoIntro} />
 
       <table className="w-full text-sm mb-6">
         <thead><tr className="text-xs text-t2 text-left"><th className="font-normal py-1"></th><th className="font-normal text-right">{t.tarefasAbertasLbl}</th><th className="font-normal text-right">{t.atrasadasLbl}</th><th className="font-normal text-right">{t.semDonoLbl}</th></tr></thead>
@@ -45,9 +47,9 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
       </table>
 
       <div className="flex flex-wrap gap-2 mb-3">
-        <Chip href={url({ ver: "semdono" })} on={ver === "semdono"}>{t.semDonoLbl} ({p.semDono})</Chip>
-        <Chip href={url({ ver: "atrasadas" })} on={ver === "atrasadas"}>{t.atrasadasLbl} ({p.atrasadas})</Chip>
-        {q.equipe !== undefined && <Chip href={url({ equipe: undefined })}>✕ {p.linhas.find((l) => l.id === q.equipe)?.nome || t.semEquipeLbl}</Chip>}
+        <ChipDS ativo={ver === "semdono"} href={url({ ver: "semdono" })}>{t.semDonoLbl} ({p.semDono})</ChipDS>
+        <ChipDS ativo={ver === "atrasadas"} href={url({ ver: "atrasadas" })}>{t.atrasadasLbl} ({p.atrasadas})</ChipDS>
+        {q.equipe !== undefined && <ChipDS href={url({ equipe: undefined })}>✕ {p.linhas.find((l) => l.id === q.equipe)?.nome || t.semEquipeLbl}</ChipDS>}
       </div>
 
       <ul>
@@ -59,7 +61,7 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
             </div>
             <form action={atribuirAction} className="flex items-center gap-1">
               <input type="hidden" name="id" value={x.id} />
-              <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={sel}>
+              <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={`${CAMPO_COMPACTO} max-w-36`}>
                 <option value="" disabled>{t.escolherPessoa}</option>
                 {responsaveisPara(x.equipe).map((g) => (
                   <optgroup key={g.grupo} label={t.gruposResp[g.grupo]}>

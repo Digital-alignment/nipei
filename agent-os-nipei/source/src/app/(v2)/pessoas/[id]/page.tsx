@@ -1,12 +1,18 @@
 import Link from "next/link";
+import { AbasComPainel } from "@/components/ds/Abas";
+import { EstadoVazio } from "@/components/ds/Estados";
+import AvatarDS from "@/components/ds/Avatar";
+import { chaveEquipe } from "@/components/ds/equipes";
+import ChipDS from "@/components/ds/Chip";
+import Cartao from "@/components/ds/Cartao";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import LinhaDoTempo, { deAtividade } from "@/components/ds/padroes/LinhaDoTempo";
 import Icone from "@/components/ds/Icone";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Avatar, Chip, Empty, TaskRow } from "@/components/v2/ui";
-import Abas from "@/components/v2/Abas";
+import { TaskRow } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Md from "@/components/v2/Md";
 import PrazoRapido from "@/components/v2/PrazoRapido";
@@ -31,8 +37,6 @@ import { getNotas } from "@/lib/v2/notasInternas";
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
 const digits = (n: string) => n.replace(/\D/g, "");
-const CARTAO = "rounded-cartao bg-s1 p-4";
-const ROTULO = "rotulo-maiusculo text-t3 mb-2";
 
 // A person's profile in tabs: Resumo (numbers, and for gestão Participação + AI study), Tarefas,
 // Perfil (details, role from the assessment) and Gestão (links, notices, teams).
@@ -64,7 +68,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
     return o.tarefas.length ? (
       <ul>{o.tarefas.map((x) => <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]?.map((s) => rotSelo[s])}
         extra={(y) => y.status !== "done" && can.editTarefa(me, y) ? <PrazoRapido id={y.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} /> : null} />)}</ul>
-    ) : <Empty>{t.nadaPendente}</Empty>;
+    ) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />;
   };
   const grupos: [string, Tarefa[]][] = [
     [t.agora, abertas.filter((x) => x.prazo && x.prazo <= hoje)],
@@ -99,15 +103,15 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
   const resumo = (
     <div className="grid gap-3 pt-3">
       {(p.funcao || p.area || p.disponibilidade) && (
-        <div className={CARTAO}>
+        <Cartao>
           <dl className="grid gap-3 sm:grid-cols-2">
             <Campo k={t.funcaoLbl} v={p.funcao} /><Campo k={t.areaLbl} v={p.area} /><Campo k={t.dispLbl} v={p.disponibilidade} />
           </dl>
-        </div>
+        </Cartao>
       )}
       {part && (
-        <div className={CARTAO}>
-          <div className="flex items-center justify-between"><p className={ROTULO + " mb-0"}>{t.participacao}</p><span className="inline-flex items-center gap-1 text-xs text-t3"><Icone nome="cadeado"  tamanho={11} />{t.soGestao}</span></div>
+        <Cartao>
+          <div className="flex items-center justify-between"><p className="rotulo-maiusculo text-t3">{t.participacao}</p><span className="inline-flex items-center gap-1 text-xs text-t3"><Icone nome="cadeado"  tamanho={11} />{t.soGestao}</span></div>
           {part.total == null ? <p className="text-sm text-t2 mt-2">{t.dadosInsuficientes}</p> : (
             <>
               <div className="flex items-baseline gap-2 mt-1">
@@ -124,12 +128,12 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
             ))}
           </dl>
           <p className="text-xs text-t3 mt-2">{t.participacaoNota}</p>
-        </div>
+        </Cartao>
       )}
       {me.gestao && (
         <div className="rounded-cartao p-4 shadow-brilho-ia" style={{ background: "linear-gradient(160deg, var(--ac-soft), var(--s1) 70%)" }}>
           <div className="flex items-center justify-between gap-2">
-            <p className={ROTULO + " mb-0 inline-flex items-center gap-1"}><Icone nome="gerar-outra"  tamanho={12} className="text-info" />{t.estudoIA}</p>
+            <p className="rotulo-maiusculo inline-flex items-center gap-1 text-t3"><Icone nome="gerar-outra"  tamanho={12} className="text-info" />{t.estudoIA}</p>
             <form action={estudoAction}><input type="hidden" name="pessoa" value={p.id} />
               <BotaoEnviar enviando={t.processando} className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{estudo ? t.atualizarEstudo : t.estudarPessoa}</BotaoEnviar>
             </form>
@@ -140,7 +144,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               <div className="mt-2"><Md>{estudo.texto}</Md></div>
               {estudo.sugestoes.length > 0 && (
                 <div className="mt-3">
-                  <p className={ROTULO}>{t.tarefasSugeridas}</p>
+                  <p className="rotulo-maiusculo text-t3 mb-2">{t.tarefasSugeridas}</p>
                   <ul className="grid gap-2">
                     {estudo.sugestoes.map((s) => {
                       const x = semDono.find((y) => y.id === s.tarefa);
@@ -160,7 +164,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
           ) : <p className="text-sm text-t2 mt-2">{t.estudoAviso}</p>}
         </div>
       )}
-      {!me.gestao && abertas.length > 0 && <div className={CARTAO}><p className={ROTULO}>{t.proximasTarefas}</p>{lista(abertas.slice(0, 3))}</div>}
+      {!me.gestao && abertas.length > 0 && <Cartao><p className="rotulo-maiusculo text-t3 mb-2">{t.proximasTarefas}</p>{lista(abertas.slice(0, 3))}</Cartao>}
     </div>
   );
 
@@ -171,20 +175,20 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
       )}
       {grupos.filter(([, ts]) => ts.length).map(([titulo, ts]) => (
         <section key={titulo} className="mb-4">
-          <p className={ROTULO}>{titulo} <span className="font-normal">({ts.length})</span></p>
+          <p className="rotulo-maiusculo text-t3 mb-2">{titulo} <span className="font-normal">({ts.length})</span></p>
           {lista(ts)}
         </section>
       ))}
-      {!minhas.length && <Empty>{t.nadaPendente}</Empty>}
+      {!minhas.length && <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
     </div>
   );
 
   const perfil = (
     <div className="grid gap-3 pt-3">
       {me.pessoa?.id === p.id && (
-        <div className={`${CARTAO} flex flex-wrap items-center justify-between gap-3`}>
+        <Cartao className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className={ROTULO + " !mb-0.5"}>{t.idiomaPlataforma}</p>
+            <p className="rotulo-maiusculo mb-0.5 text-t3">{t.idiomaPlataforma}</p>
             <p className="text-xs text-t2">{t.idiomaPlataformaAjuda}</p>
           </div>
           <form action={toggleLangAction} className="flex h-9 rounded-pilula bg-s2 p-0.5 text-sm font-medium">
@@ -192,10 +196,10 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               ? <span key={l} aria-current="true" className="flex items-center px-3 rounded-pilula bg-ac text-ac-ink">{l === "pt" ? "Português" : "English"}</span>
               : <button key={l} className="flex items-center px-3 rounded-pilula text-t2 hover:text-t1">{l === "pt" ? "Português" : "English"}</button>)}
           </form>
-        </div>
+        </Cartao>
       )}
-      <div className={CARTAO}>
-        <p className={ROTULO}>{t.contato}</p>
+      <Cartao>
+        <p className="rotulo-maiusculo text-t3 mb-2">{t.contato}</p>
         <dl className="grid gap-3 sm:grid-cols-2">
           <Campo k="WhatsApp" v={p.whatsapp && <span className="inline-flex flex-wrap items-center gap-2">
             <a className="underline" href={`https://wa.me/${digits(p.whatsapp)}`} target="_blank" rel="noreferrer">{p.whatsapp}</a>
@@ -206,16 +210,16 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
           <Campo k={t.cidade} v={[p.cidade, p.pais].filter(Boolean).join(", ")} />
           <Campo k={t.idiomaPref} v={p.idioma && { pt: "Português", en: "English", es: "Español" }[p.idioma]} />
         </dl>
-      </div>
+      </Cartao>
       {proprio && (p.dataNascimento || p.nacionalidade || p.emergenciaNome || p.emergenciaWhatsapp) && (
-        <div className={CARTAO}>
-          <p className={`${ROTULO} inline-flex items-center gap-1`}><Icone nome="cadeado"  tamanho={11} />{t.privadoLbl}</p>
+        <Cartao>
+          <p className="rotulo-maiusculo text-t3 mb-2 inline-flex items-center gap-1"><Icone nome="cadeado"  tamanho={11} />{t.privadoLbl}</p>
           <dl className="grid gap-3 sm:grid-cols-2">
             <Campo k={t.dataNascimento} v={p.dataNascimento && p.dataNascimento.split("-").reverse().join("/")} />
             <Campo k={t.nacionalidade} v={p.nacionalidade} />
             <Campo k={t.emergencia} v={[p.emergenciaNome, p.emergenciaWhatsapp].filter(Boolean).join(" · ")} />
           </dl>
-        </div>
+        </Cartao>
       )}
       {proprio && getDiagnosticos().filter((d) => participa(d, p)).map((d) => {
         const r = getRespostas(d.id, p.id);
@@ -223,8 +227,8 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         const cod = getColetivo(d.id).codigo;
         const aceite = cod.aceites[p.id];
         return (
-          <div key={d.id} className={CARTAO}>
-            <div className="flex items-center justify-between gap-2"><p className={ROTULO + " mb-0"}>{t.meuPapel}</p><span className="text-xs text-t3">{pr.respondidas}/{pr.total} · {t.privadoDiag}</span></div>
+          <Cartao key={d.id}>
+            <div className="flex items-center justify-between gap-2"><p className="rotulo-maiusculo text-t3">{t.meuPapel}</p><span className="text-xs text-t3">{pr.respondidas}/{pr.total} · {t.privadoDiag}</span></div>
             {d.modelo.secoes.filter((x) => x.destino === "perfil").map((sec) => {
               const resp = sec.perguntas.filter((q) => r[q.id]?.texto);
               return resp.length ? (
@@ -240,7 +244,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               </p>
             )}
             <Link href={`/pessoas/${p.id}/respostas?d=${d.id}`} className="inline-block text-sm underline mt-2">{me.pessoa?.id === p.id ? t.responderDiag : t.verRespostas} →</Link>
-          </div>
+          </Cartao>
         );
       })}
       {p.dadosConfirmadosEm ? <p className="text-xs text-t3">{t.dadosConfirmados} {fmtDate(p.dadosConfirmadosEm, lang)}</p> : p.incompleta && <p className="text-xs text-warn">{t.fichaIncompleta}</p>}
@@ -250,8 +254,8 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
   const gestao = (
     <div className="grid gap-3 pt-3">
       {links.map((l) => (
-        <div key={l.titulo} className={CARTAO}>
-          <p className={ROTULO}>{l.titulo}</p>
+        <Cartao key={l.titulo}>
+          <p className="rotulo-maiusculo text-t3 mb-2">{l.titulo}</p>
           {p.whatsapp ? (
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <form action={enviarLinkAction}>
@@ -264,12 +268,12 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
             </div>
           ) : <p className="text-xs text-t2 mb-2">{t.semContato}</p>}
           <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-interno bg-s2 px-2 py-1.5 text-xs" />
-        </div>
+        </Cartao>
       ))}
       {gerir && !temAcesso && <p className="text-xs text-t2">{t.equipeSemAcesso}</p>}
       {enviados.length > 0 && (
-        <div className={CARTAO}>
-          <p className={ROTULO}>{t.notificacoesEnviadas}</p>
+        <Cartao>
+          <p className="rotulo-maiusculo text-t3 mb-2">{t.notificacoesEnviadas}</p>
           <ul className="grid gap-2">
             {enviados.map((e, i) => (
               <li key={i} className="text-sm">
@@ -278,11 +282,11 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               </li>
             ))}
           </ul>
-        </div>
+        </Cartao>
       )}
       {proprio && (
-        <div className={CARTAO}>
-          <p className={ROTULO}>{t.avisosWhats}</p>
+        <Cartao>
+          <p className="rotulo-maiusculo text-t3 mb-2">{t.avisosWhats}</p>
           {!p.equipes.some((e) => equipes.find((x) => x.id === e)?.avisos) ? <p className="text-sm text-t2">{t.avisosSemEquipe}</p>
             : !p.whatsapp ? <p className="text-sm text-t2">{t.avisosSemFone}</p> : (
             <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -293,11 +297,11 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               </form>
             </div>
           )}
-        </div>
+        </Cartao>
       )}
       {me.gestao && (
-        <div className={CARTAO}>
-          <p className={ROTULO}>{t.acessoPlataforma}</p>
+        <Cartao>
+          <p className="rotulo-maiusculo text-t3 mb-2">{t.acessoPlataforma}</p>
           <div className="flex flex-wrap items-center gap-3 text-sm">
             {p.externo ? <span className="text-t2">{t.ehContatoExterno}</span>
               : p.suspenso ? <span className="inline-flex items-center gap-1.5 text-warn"><Icone nome="cadeado"  tamanho={14} />{t.acessoSuspensoTexto}</span>
@@ -314,11 +318,11 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
             </form>
           </div>
           <p className="text-xs text-t2 mt-2">{t.suspensoAjuda}</p>
-        </div>
+        </Cartao>
       )}
       {(me.gestao || podeAdicionar.length > 0) && (
-        <div className={CARTAO}>
-          <p className={ROTULO}>{t.equipes}</p>
+        <Cartao>
+          <p className="rotulo-maiusculo text-t3 mb-2">{t.equipes}</p>
           {p.equipes.length === 0 && !equipes.some((e) => e.coordenadores.includes(p.id)) && <p className="text-sm text-t2 mb-2">{t.semEquipeAinda}</p>}
           <ul className="grid gap-1 mb-3">
             {[...p.equipes, ...equipes.filter((e) => e.coordenadores.includes(p.id) && !p.equipes.includes(e.id)).map((e) => e.id)].map((id) => {
@@ -353,13 +357,13 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
           {podeAdicionar.length > 0 && (
             <EscolherEquipes pessoaId={p.id} equipes={podeAdicionar.filter((e) => !e.gestao || me.gestao)} t={t} comNota={false} />
           )}
-        </div>
+        </Cartao>
       )}
       {gerir && mudancas.length > 0 && (
-        <div className={CARTAO}>
-          <p className={ROTULO}>{t.historicoPessoa}</p>
+        <Cartao>
+          <p className="rotulo-maiusculo text-t3 mb-2">{t.historicoPessoa}</p>
           <LinhaDoTempo itens={mudancas.map((h) => deAtividade({ quando: h.quando, quem: h.quem, texto: h.oque }, (d) => (d === hoje ? t.hoje : fmtDate(d, lang))))} />
-        </div>
+        </Cartao>
       )}
       {me.gestao && <NotasInternas pessoaId={p.id} notas={getNotas(p.id)} t={t} />}
     </div>
@@ -370,7 +374,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
       <div className="-ml-3 mb-2"><Botao href="/pessoas" variante="fantasma" tamanho="P" icone="voltar">{t.pessoas}</Botao></div>
 
       <div className="flex items-start gap-4">
-        <span className="mt-6 shrink-0"><Avatar name={p.name} size={80} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} /></span>
+        <span className="mt-6 shrink-0"><AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={80} /></span>
         <div className="min-w-0 flex-1">
           <CabecalhoPagina selo="mao" rotulo={[p.apelido, p.nativeName, p.funcao].filter(Boolean).join(" · ") || p.nipeiId}
             titulo={<>{p.name}{p.suspenso && <Icone nome="cadeado" tamanho={28} aria-label={t.acessoSuspensoTexto} className="ml-2 inline align-middle text-warn" />}</>}
@@ -387,7 +391,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               {proprio && <BotaoIcone icone="editar" aria-label={t.editarPerfil} tamanho={44} href={`/pessoas/${p.id}/editar`} />}
             </>}
             filtros={<>
-              {p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={`/equipes/${eid}`} cor={e.cor}>{e.nome}{p.coordena.includes(eid) ? ` · ${t.coordenacao}` : ""}</Chip>; })}
+              {p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} key={eid} href={`/equipes/${eid}`}>{e.nome}{p.coordena.includes(eid) ? ` · ${t.coordenacao}` : ""}</ChipDS>; })}
               {p.equipes.length === 0 && <span className="corpo text-t2">{t.semEquipe}</span>}
             </>} />
         </div>
@@ -400,14 +404,14 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         <Num v={n.ultimoUso ? (n.ultimoUso === hoje ? t.hoje : fmtDate(n.ultimoUso, lang)) : "—"} label={t.ultimoUso} />
       </div>
 
-      <Abas id="pessoa" inicial={(q.aba === "conexoes" || q.aba === "seguranca") && me.pessoa?.id === p.id ? q.aba : undefined} abas={[
-        { id: "resumo", label: t.resumoLbl, count: 0, conteudo: resumo },
-        { id: "tarefas", label: t.tarefasLbl, count: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
-        { id: "perfil", label: t.perfilLbl, count: 0, conteudo: perfil },
-        ...(gerir || proprio || enviados.length ? [{ id: "gestao", label: t.gestaoLbl, count: 0, conteudo: gestao }] : []),
+      <AbasComPainel id="pessoa" inicial={(q.aba === "conexoes" || q.aba === "seguranca") && me.pessoa?.id === p.id ? q.aba : undefined} abas={[
+        { id: "resumo", rotulo: t.resumoLbl, contagem: 0, conteudo: resumo },
+        { id: "tarefas", rotulo: t.tarefasLbl, contagem: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
+        { id: "perfil", rotulo: t.perfilLbl, contagem: 0, conteudo: perfil },
+        ...(gerir || proprio || enviados.length ? [{ id: "gestao", rotulo: t.gestaoLbl, contagem: 0, conteudo: gestao }] : []),
         // only on one's own profile: nobody sees or touches someone else's connections
-        ...(me.pessoa?.id === p.id && !me.vendoComo ? [{ id: "conexoes", label: t.cx.aba, count: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },
-          { id: "seguranca", label: t.sg.aba, count: 0, conteudo: <Seguranca p={p} t={t} ok={q.aba === "seguranca" ? q.ok : undefined} /> }] : []),
+        ...(me.pessoa?.id === p.id && !me.vendoComo ? [{ id: "conexoes", rotulo: t.cx.aba, contagem: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },
+          { id: "seguranca", rotulo: t.sg.aba, contagem: 0, conteudo: <Seguranca p={p} t={t} ok={q.aba === "seguranca" ? q.ok : undefined} /> }] : []),
       ]} />
     </>
   );

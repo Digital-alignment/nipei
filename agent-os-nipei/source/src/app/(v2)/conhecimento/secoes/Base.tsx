@@ -1,5 +1,6 @@
-import { Empty } from "@/components/v2/ui";
+
 import Chip from "@/components/ds/Chip";
+import { EstadoVazio } from "@/components/ds/Estados";
 import Campo from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import { chaveEquipe } from "@/components/ds/equipes";
@@ -44,7 +45,7 @@ export default function Base({ ctx }: { ctx: Ctx }) {
           </ul>
           {lista.length > MAX && <p className="meta text-t2">{t.mostrando} {MAX} / {lista.length} — {t.refineBusca}</p>}
         </>
-      ) : <Empty>{t.semItens}</Empty>}
+      ) : <EstadoVazio compacto titulo={<>{t.semItens}</>} />}
     </div>
   );
 }

@@ -1,7 +1,10 @@
 import Link from "next/link";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import AvatarDS from "@/components/ds/Avatar";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { Avatar, Progress, Section, Title } from "@/components/v2/ui";
+import { Section } from "@/components/v2/ui";
 import { currentUser, getProjetos } from "@/lib/v2/data";
 import { TEMAS_REUNIAO, getColetivo, getDiagnostico, participantes, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { definirResponsavelAction, estadoDiagnosticoAction, reuniaoAction } from "../../actions";
@@ -22,7 +25,7 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
   return (
     <div className="max-w-2xl mx-auto">
       {projeto && <Link href={`/projetos/${projeto.id}`} className="inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{projeto.nome}</Link>}
-      <Title sub={`${en ? d.modelo.titulo_en : d.modelo.titulo} · ${d.modelo.autor} · ${d.status === "aberto" ? t.aberto : t.encerrado}`}>{d.titulo}</Title>
+      <CabecalhoPagina titulo={<>{d.titulo}</>} subtitulo={`${en ? d.modelo.titulo_en : d.modelo.titulo} · ${d.modelo.autor} · ${d.status === "aberto" ? t.aberto : t.encerrado}`} />
       <div className="flex flex-wrap gap-3 items-center mb-5 text-sm">
         <Link href="/diagnosticos" className="underline text-t2">{t.diagnosticos}</Link>
         <Link href={`/projetos/${d.projeto}/visao`} className="underline text-t2">{t.visaoHolistica}</Link>
@@ -39,10 +42,10 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
             return (
               <li key={p.id}>
                 <Link href={`/pessoas/${p.id}/respostas?d=${d.id}`} className="flex items-center gap-3">
-                  <Avatar name={p.name} size={28} />
+                  <AvatarDS nome={p.name} tamanho={24} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm">{p.name} <span className="text-xs text-t2">· {pr.respondidas}/{pr.total} {t.respondidas}{pr.rascunhos ? ` · ${pr.rascunhos} ${t.rascunhos}` : ""}</span></p>
-                    <Progress done={pr.respondidas} total={pr.total} />
+                    <BarraProgresso valor={pr.respondidas} max={pr.total} rotulo={`${pr.total ? Math.round((pr.respondidas / pr.total) * 100) : 0}% · ${pr.respondidas}/${pr.total}`} />
                   </div>
                 </Link>
               </li>
@@ -58,7 +61,7 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
             return (
               <li key={s.id} className="grid gap-1.5">
                 <Link href={`/diagnosticos/${d.id}/coletivo?secao=${s.id}`} className="text-sm font-medium underline">{en ? s.titulo_en : s.titulo}</Link>
-                <Progress done={feitas} total={s.perguntas.length} />
+                <BarraProgresso valor={feitas} max={s.perguntas.length} rotulo={`${s.perguntas.length ? Math.round((feitas / s.perguntas.length) * 100) : 0}% · ${feitas}/${s.perguntas.length}`} />
                 <form action={definirResponsavelAction} className="flex items-center gap-2 text-xs">
                   <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={s.id} />
                   <span className="text-t2">{t.responsavel}:</span>

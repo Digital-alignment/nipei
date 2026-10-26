@@ -300,6 +300,8 @@ Pílula `superfície 2` com ícones; ativo = `superfície 3` + contorno de 1 px.
 - Tipos: texto, título grande (Outfit 300, 26 px), área de texto, busca (ícone à esquerda; ação à direita), seleção (valor + ▼), data (valor + `calendario`).
 - **Busca do Pinu**: mini-anel à esquerda + microfone em acento à direita.
 - **Sugestão do Pinu no campo**: linha abaixo do texto com mini-anel + sugestão + ✓ usar + ⟳ gerar outra.
+- **Senha** (`tipo="senha"`): campo de uma linha com `type="password"`; o `type` HTML também passa direto nos outros tipos de uma linha (`number`, `email`, `time`…).
+- **Compacto** (`CAMPO_COMPACTO`, exportado de `components/ds/Campo.tsx`): só dentro de linhas densas (tabela editável, barra de lote, atribuir numa lista); pílula `superfície 2`, sem rótulo visível (usar `aria-label`), 44 px no celular e 36 px a partir de `sm`.
 
 ### 9.6 Chip
 - **Filtro**: pílula `superfície 2` + ícone + texto + contagem; **ativo = `superfície 3` + contorno interno sutil + ✓ em acento**.
@@ -474,7 +476,7 @@ Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
 
 - Contrastes da seção 3 (todos os pares de texto ≥ 4,5:1).
 - Foco visível em tudo que é clicável (anel de acento; cantoneiras HUD em cartões focados por teclado).
-- Área de toque ≥ 44 px; texto ≥ 12 px no celular.
+- Área de toque ≥ 44 px; texto ≥ 12 px no celular. Quando o desenho é menor (chip de 36 px, link numa linha, resumo de seção), a classe `alvo-toque` (globals.css) estende a área clicável com um `::after` invisível até 44 px, sem mudar o desenho; o `Chip` já faz isso sozinho. Não usar em elemento com `overflow: hidden` (o `::after` seria cortado: ponha o corte num `span` interno).
 - Botões só com ícone: `aria-label` + tooltip.
 - Estado nunca só por cor (ícone + texto); equipe nunca só por cor (selo + nome).
 - `prefers-reduced-motion` respeitado (seção 8).
@@ -536,11 +538,18 @@ Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
 | `text-[10px]`, `text-[11px]` | estilos da seção 4 (mín. 12 px no celular) |
 | Novos | Menu ⋯, Interruptor, Tooltip, Skeleton, Estado vazio, Quadro, Linha do tempo, Pinu (orbe, chat, proposta) |
 
+Situação em 2026-10-26: todas as linhas acima foram cumpridas na v2 (`src/app/(v2)`, `src/app/login`, `src/components/v2`). Os embrulhos de compatibilidade (`Title`, `Card`, `Chip`, `Progress`, `Empty`, `Avatar`, `initials` de `components/v2/ui.tsx`, `components/v2/Abas.tsx` e `components/v2/Recolhivel.tsx`) foram apagados: as telas importam direto de `components/ds`. Em `ui.tsx` ficam só os adaptadores de dados (`TaskRow`, `TaskList`, `Section`, `byPrazo`). As telas v1 (fora da v2) continuam com lucide e as fontes antigas (`components/fontesV1.ts`).
+
 ### 13.3 Regra para código novo
 1. Nenhuma cor, raio ou fonte literal: só tokens.
 2. Nenhum componente visual novo sem antes existir aqui.
 3. Todo componente em claro **e** escuro, celular **e** computador, com os estados da seção 9.
 4. Revisar contraste quando criar um par texto/fundo novo.
+
+### 13.4 Verificação automática
+- `npm run verificar:ds` = `scripts/verificar-ds.mjs` (falha com `arquivo:linha` se aparecer lucide, `dark:`, cor do Tailwind, hex literal, `text-[10px]/[11px]`, `confirm()/alert()`, emoji ou monospace em `src/app/(v2)`, `src/app/login`, `src/components/v2`, `src/components/ds`) + `scripts/ds-contraste.mjs` (lê os tokens de `globals.css` e confere os pares da seção 3.5 nos dois temas; o bloco "Sistema" precisa repetir o claro).
+- Roda sozinho antes de todo `npm run build` (`prebuild`), inclusive no deploy (Dockerfile).
+- Exceção pontual e justificada: `ds-permitido: <motivo>` na linha ou na linha anterior (hoje: o logo oficial do Google no Login e o mapa das cores antigas de equipe em `components/ds/equipes.ts`).
 
 ---
 
@@ -549,8 +558,13 @@ Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
 - Escala tipográfica final (a da seção 4 é a v1).
 - Uso de cada padrão em cada página (ex.: onde entra o painel direito de 3 colunas no computador).
 - Pinu: modo voz em tela cheia, o que abre primeiro, curvas de nível, lista de capacidades, deslizar para confirmar.
-- Ícones P2/P3 restantes (`ICONES.md`), incluindo `semana` e `mes` para as abas da Agenda.
+- Ícones P2/P3 restantes (`ICONES.md`): `quadro`, `grade`, `semana`, `mes`, `copiar`, `ver`/`ocultar`, `sem-conexao`, `documento`, `planilha`, `apresentacao`, `video`, `audio`, `pasta`. No código estão com um provisório e `TODO(ícones)`.
 - Barra do celular: ampliar/melhorar.
+- Pulso: o ponto de cada equipe ainda usa a cor gravada no vault (`cor` da equipe), não o token `eq-*`.
+- Sugestão do Pinu na Nova tarefa: o slot (`SugestaoPinu`) existe, falta o endpoint.
+- Pinu ainda não recebe arquivos (sem "+"/imagem no campo).
+- Painel do Notificar (ficha da pessoa) e o painel do Pinu usam sobreposição própria; falta um componente de folha/painel lateral no sistema.
+- Telas v1 (fora de `(v2)`): fora do design system; lucide e as fontes antigas continuam só nelas.
 
 ---
 

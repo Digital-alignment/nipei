@@ -1,17 +1,17 @@
 import Link from "next/link";
+import ChipDS from "@/components/ds/Chip";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Imprimir from "@/components/v2/Imprimir";
 import Md from "@/components/v2/Md";
-import { Chip } from "@/components/v2/ui";
+
 import { currentUser } from "@/lib/v2/data";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { getDiagnostico, getDocumento } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { documentoAction } from "../../../actions";
 
-const btn = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 // D4: the final document for Lynn, in Portuguese and English, printable to PDF.
 export default async function Documento({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ lang?: string }> }) {
@@ -31,15 +31,15 @@ export default async function Documento({ params, searchParams }: { params: Prom
         <h1 className="text-2xl font-semibold tracking-tight">{t.documentoFinal}</h1>
         <p className="text-sm text-t2 mt-1 mb-3">{doc?.geradoEm ? `${t.geradoEm} ${fmtDate(diaLocal(doc.geradoEm), lang)}` : t.naoGerado}</p>
         <div className="flex flex-wrap gap-2 mb-3">
-          <Chip href={`/diagnosticos/${d.id}/documento`} on={idioma === "pt"}>Português</Chip>
-          <Chip href={`/diagnosticos/${d.id}/documento?lang=en`} on={idioma === "en"}>English</Chip>
+          <ChipDS ativo={idioma === "pt"} href={`/diagnosticos/${d.id}/documento`}>Português</ChipDS>
+          <ChipDS ativo={idioma === "en"} href={`/diagnosticos/${d.id}/documento?lang=en`}>English</ChipDS>
         </div>
         <div className="flex flex-wrap gap-2 mb-2">
           <form action={documentoAction}><input type="hidden" name="diagnostico" value={d.id} />
-            <BotaoEnviar name="acao" value="montar" enviando={t.processando} className={btn}>{t.montarPT}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="montar" enviando={t.processando} icone="tarefa" variante="tonal">{t.montarPT}</BotaoEnviar>
           </form>
           <form action={documentoAction}><input type="hidden" name="diagnostico" value={d.id} />
-            <BotaoEnviar name="acao" value="traduzir" enviando={t.processando} className={btn}>{t.traduzirEN}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="traduzir" enviando={t.processando} icone="gerar-outra" variante="tonal">{t.traduzirEN}</BotaoEnviar>
           </form>
           {doc && <Imprimir label={t.imprimir} />}
         </div>

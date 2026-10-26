@@ -1,5 +1,6 @@
 import { ToastAoAbrir } from "@/components/ds/Toast";
-import { Title } from "@/components/v2/ui";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+
 import NovaTarefaForm from "@/components/v2/NovaTarefaForm";
 import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
@@ -20,7 +21,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Title>{t.novaTarefa}</Title>
+      <CabecalhoPagina titulo={<>{t.novaTarefa}</>} />
       <ToastAoAbrir texto={criada ? `${t.tarefaCriada}: ${criada.title}` : undefined} parametro="criada" acao={criada ? { rotulo: t.abrir, href: `/tarefas/${criada.id}` } : undefined} />
       <NovaTarefaForm
         equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}

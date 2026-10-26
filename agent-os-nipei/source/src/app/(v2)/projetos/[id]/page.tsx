@@ -1,4 +1,9 @@
 import Link from "next/link";
+import { AbasComPainel } from "@/components/ds/Abas";
+import ChipDS from "@/components/ds/Chip";
+import { chaveEquipe } from "@/components/ds/equipes";
+import { EstadoVazio } from "@/components/ds/Estados";
+import AvatarDS from "@/components/ds/Avatar";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Campo from "@/components/ds/Campo";
@@ -6,8 +11,8 @@ import { BarraProgresso } from "@/components/ds/Progresso";
 import LinhaDoTempo from "@/components/ds/padroes/LinhaDoTempo";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { Avatar, Chip, Empty, Progress, TaskRow } from "@/components/v2/ui";
-import Abas from "@/components/v2/Abas";
+import { TaskRow } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import PrazoRapido from "@/components/v2/PrazoRapido";
@@ -17,8 +22,6 @@ import { getDiagnosticos } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { anotarProjetoAction } from "../../actions";
 
-const ROTULO = "rotulo-maiusculo text-t3 mb-2";
-const BOTAO = "shrink-0 anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 export default async function ProjetoDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ equipe?: string; pessoa?: string }> }) {
   const { id } = await params;
@@ -58,14 +61,14 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
     <div className="mt-3">
       <div className="flex items-center gap-2 mb-3">
       <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-        <Chip href={url({ equipe: undefined, pessoa: undefined })} on={!q.equipe && !q.pessoa}>{t.todas}</Chip>
-        {semDono > 0 && <Chip href={url({ pessoa: q.pessoa === "sem" ? undefined : "sem" })} on={q.pessoa === "sem"}>{t.semDonoLbl} ({semDono})</Chip>}
-        {pessoaFiltro && <Chip href={url({ pessoa: undefined })} on>✕ {primeiro(pessoaFiltro)}</Chip>}
-        {p.equipes.length > 1 && p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={url({ equipe: q.equipe === eid ? undefined : eid })} cor={e.cor} on={q.equipe === eid}>{e.nome}</Chip>; })}
+        <ChipDS ativo={!q.equipe && !q.pessoa} href={url({ equipe: undefined, pessoa: undefined })}>{t.todas}</ChipDS>
+        {semDono > 0 && <ChipDS ativo={q.pessoa === "sem"} href={url({ pessoa: q.pessoa === "sem" ? undefined : "sem" })}>{t.semDonoLbl} ({semDono})</ChipDS>}
+        {pessoaFiltro && <ChipDS ativo={true} href={url({ pessoa: undefined })}>✕ {primeiro(pessoaFiltro)}</ChipDS>}
+        {p.equipes.length > 1 && p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} ativo={q.equipe === eid} key={eid} href={url({ equipe: q.equipe === eid ? undefined : eid })}>{e.nome}</ChipDS>; })}
       </div>
         {gerir && filtradas.length > 0 && <LoteToggle formId="lote-projeto" label={t.selecionarLbl} cancelar={t.cancelar} />}
       </div>
-      {filtradas.length === 0 ? <Empty>{t.nadaPendente}</Empty> : (
+      {filtradas.length === 0 ? <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> : (
         <>
           {grupo(t.agora, ordenarAgora(filtradas.filter((x) => x.prazo && x.prazo <= hoje), ctx), true)}
           {grupo(t.proximas, ordenarProximas(filtradas.filter((x) => x.prazo > hoje), ctx))}
@@ -84,7 +87,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   // ---- objectives tab
   const objetivosAba = (
     <div className="mt-3 grid gap-2">
-      {objetivos.length === 0 && <Empty>{t.semObjetivosProjeto}</Empty>}
+      {objetivos.length === 0 && <EstadoVazio compacto titulo={<>{t.semObjetivosProjeto}</>} />}
       {objetivos.map((o) => {
         const pr = progresso(o.id, todas);
         const dono = equipes.find((e) => e.id === o.equipe);
@@ -95,7 +98,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
               <span className="text-xs text-t3 tabular-nums">{o.ano}</span>
             </div>
             <div className="mt-2 flex items-center gap-3">
-              <div className="flex-1">{pr ? <Progress {...pr} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
+              <div className="flex-1">{pr ? <BarraProgresso valor={pr.done} max={pr.total} rotulo={`${pr.total ? Math.round((pr.done / pr.total) * 100) : 0}% · ${pr.done}/${pr.total}`} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
               <Link href={`/tarefas/nova?objetivo=${o.id}&projeto=${id}&equipe=${o.equipe}&back=/projetos/${id}`} aria-label={t.novaTarefa} title={t.novaTarefa} className="text-t3 hover:text-t1"><Icone nome="mais"  tamanho={18} /></Link>
             </div>
           </div>
@@ -111,12 +114,12 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
     return { pessoa: pessoas.find((x) => x.id === pid), id: pid, n: suas.length, atr: suas.filter((x) => x.prazo && x.prazo < hoje).length };
   }).sort((a, b) => b.n - a.n);
   const maxN = Math.max(1, ...envolvidos.map((x) => x.n));
-  const pessoasAba = envolvidos.length === 0 ? <div className="mt-3"><Empty>{t.nadaPendente}</Empty></div> : (
+  const pessoasAba = envolvidos.length === 0 ? <div className="mt-3"><EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /></div> : (
     <ul className="mt-3 grid gap-1">
       {envolvidos.map((x) => (
         <li key={x.id}>
           <Link href={url({ pessoa: x.id, equipe: undefined })} className="flex items-center gap-3 rounded-interno px-2 py-2 hover:bg-s2">
-            <Avatar name={x.pessoa?.name ?? x.id} size={32} src={x.pessoa?.foto ? `/pessoas/${x.id}/foto?v=${encodeURIComponent(x.pessoa.fotoEm || x.pessoa.dadosConfirmadosEm)}` : undefined} />
+            <AvatarDS nome={x.pessoa?.name ?? x.id} foto={x.pessoa?.foto ? `/pessoas/${x.id}/foto?v=${encodeURIComponent(x.pessoa.fotoEm || x.pessoa.dadosConfirmadosEm)}` : undefined} tamanho={32} />
             <span className="text-sm flex-1 min-w-0 truncate">{x.pessoa?.name ?? x.id}</span>
             <div className="hidden sm:block h-1.5 w-24 rounded-pilula bg-s2 overflow-hidden"><div className="h-full bg-t3" style={{ width: `${(x.n / maxN) * 100}%` }} /></div>
             <span className="text-xs text-t2 tabular-nums w-16 text-right">{x.n} {t.abertasLbl}</span>
@@ -138,7 +141,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
           <BotaoEnviar enviando="…" icone="enviar" variante="primario" tamanho="G">{t.publicar}</BotaoEnviar>
         </form>
       )}
-      {atualizacoes.length === 0 ? <Empty>{t.semAtualizacoes}</Empty> : (
+      {atualizacoes.length === 0 ? <EstadoVazio compacto titulo={<>{t.semAtualizacoes}</>} /> : (
         <LinhaDoTempo itens={atualizacoes.slice(0, 30).map((a) => ({ dia: a.data ? fmtDate(a.data, lang) : "—", tipo: "comentou" as const, quem: a.quem || "—", texto: t.publicar.toLowerCase(), comentario: a.texto }))} />
       )}
     </div>
@@ -161,7 +164,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
           {diags.map((d) => <BotaoIcone key={d.id} icone="tarefa" aria-label={t.diagnostico} href={`/diagnosticos/${d.id}`} />)}
           <Botao href={`/tarefas/nova?projeto=${id}${q.equipe ? `&equipe=${q.equipe}` : ""}&back=/projetos/${id}`} icone="mais" folha>{t.novaTarefa}</Botao>
         </>}
-        filtros={p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={`/equipes/${eid}`} cor={e.cor}>{e.nome}</Chip>; })} />
+        filtros={p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} key={eid} href={`/equipes/${eid}`}>{e.nome}</ChipDS>; })} />
       {p.descricao && (longa ? (
         <details className="-mt-3 mb-5 group">
           <summary className="anel-foco corpo cursor-pointer list-none rounded-interno text-t2"><span className="line-clamp-2 group-open:hidden">{p.descricao}</span><span className="meta underline group-open:hidden">{t.lerMais}</span></summary>
@@ -178,11 +181,11 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
       <div className="mb-6"><BarraProgresso valor={pct} planejado rotuloAcessivel={t.concluidoLbl} /></div>
 
 
-      <Abas id="projeto" inicial={q.equipe || q.pessoa ? "tarefas" : undefined} abas={[
-        { id: "tarefas", label: t.tarefasLbl, count: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
-        { id: "objetivos", label: t.objetivos, count: objetivos.length, conteudo: objetivosAba },
-        { id: "pessoas", label: t.pessoas, count: envolvidos.length, conteudo: pessoasAba },
-        { id: "atualizacoes", label: t.atualizacoes, count: 0, conteudo: atualizacoesAba },
+      <AbasComPainel id="projeto" inicial={q.equipe || q.pessoa ? "tarefas" : undefined} abas={[
+        { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
+        { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
+        { id: "pessoas", rotulo: t.pessoas, contagem: envolvidos.length, conteudo: pessoasAba },
+        { id: "atualizacoes", rotulo: t.atualizacoes, contagem: 0, conteudo: atualizacoesAba },
       ]} />
     </>
   );

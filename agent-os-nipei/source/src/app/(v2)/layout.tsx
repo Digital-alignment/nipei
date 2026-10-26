@@ -83,7 +83,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
               </span>
               {/* computador: avatar = meu perfil (as configurações estão no menu); celular: abre as configurações */}
               <Link href={perfilHref} aria-label={t.meuPerfil} title={t.meuPerfil} className="anel-foco hidden rounded-pilula md:block"><Avatar nome={name} foto={foto} tamanho={40} /></Link>
-              <button type="button" popoverTarget="nipei-conta-cel" aria-label={t.configuracoesLbl} className="anel-foco rounded-pilula md:hidden"><Avatar nome={name} foto={foto} tamanho={40} /></button>
+              <button type="button" popoverTarget="nipei-conta-cel" aria-label={t.configuracoesLbl} className="anel-foco alvo-toque rounded-pilula md:hidden"><Avatar nome={name} foto={foto} tamanho={40} /></button>
               <div id="nipei-conta-cel" popover="auto" className="fixed inset-auto right-4 top-[68px] m-0 overflow-visible border-0 bg-transparent p-0 md:hidden">{conta}</div>
             </div>
           </header>

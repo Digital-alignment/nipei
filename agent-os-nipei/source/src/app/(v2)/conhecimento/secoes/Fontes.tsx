@@ -1,11 +1,12 @@
-import { Empty } from "@/components/v2/ui";
+
 import LinhaFonte from "./LinhaFonte";
+import { EstadoVazio } from "@/components/ds/Estados";
 import type { Ctx } from "./index";
 
 /** Every source, newest first; past the first 15 behind "see all". */
 export default function Fontes({ ctx }: { ctx: Ctx }) {
   const { fontes, t } = ctx;
-  if (!fontes.length) return <Empty>{t.semItens}</Empty>;
+  if (!fontes.length) return <EstadoVazio compacto titulo={<>{t.semItens}</>} />;
   return (
     <div className="overflow-hidden rounded-cartao bg-s1">
       <ul>{fontes.slice(0, 15).map((f) => <LinhaFonte key={f.id} f={f} ctx={ctx} />)}</ul>

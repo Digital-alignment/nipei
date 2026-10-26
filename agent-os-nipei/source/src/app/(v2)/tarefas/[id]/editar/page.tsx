@@ -1,13 +1,15 @@
 import Link from "next/link";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import { EstadoVazio } from "@/components/ds/Estados";
+import Campo from "@/components/ds/Campo";
 import Icone from "@/components/ds/Icone";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Empty, Title } from "@/components/v2/ui";
+
 import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, responsaveisPara } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { updateTarefaAction } from "../../../actions";
 
-const field = "w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco";
 
 export default async function EditarTarefa({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }) {
   const { id } = await params;
@@ -24,7 +26,7 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
   const back = raw.startsWith("/") && !raw.startsWith("//") && !raw.endsWith("/editar") ? raw : `/tarefas/${id}`;
 
   if (!can.editTarefa(me, tarefa) && !can.assumir(me, tarefa)) {
-    return (<><Title>{tarefa.title}</Title><Empty>{t.semPermissao}</Empty><Link href={back} className="text-sm underline">{t.cancelar}</Link></>);
+    return (<><CabecalhoPagina titulo={<>{tarefa.title}</>} /><EstadoVazio compacto titulo={<>{t.semPermissao}</>} /><Link href={back} className="text-sm underline">{t.cancelar}</Link></>);
   }
 
   const equipes = getEquipes().filter((e) => e.id === tarefa.equipe || can.criarEm(me, e.id));
@@ -34,40 +36,22 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
 
   return (
     <>
-      <Title sub={<span className="text-xs tabular-nums">{tarefa.id}</span>}>{t.editarTarefa}</Title>
+      <CabecalhoPagina titulo={<>{t.editarTarefa}</>} subtitulo={<span className="text-xs tabular-nums">{tarefa.id}</span>} />
       <form action={updateTarefaAction} className="grid gap-4">
         <input type="hidden" name="id" value={tarefa.id} />
         <input type="hidden" name="back" value={back} />
-        <label className="grid gap-1 text-sm">{t.titulo}<input name="title" defaultValue={tarefa.title} required maxLength={200} className={field} /></label>
+        <Campo tipo="texto" rotulo={t.titulo} name="title" defaultValue={tarefa.title} required maxLength={200} />
         <div className="grid grid-cols-2 gap-3">
-          <label className="grid gap-1 text-sm">{t.equipe}
-            <select name="equipe" defaultValue={tarefa.equipe} className={field}>
-              {(me.gestao || !tarefa.equipe) && <option value="">{t.semEquipe}</option>}
-              {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">{t.status}
-            <select name="status" defaultValue={tarefa.status} className={field}>
-              <option value="todo">{t.aFazer}</option><option value="doing">{t.fazendo}</option><option value="done">{t.feito}</option>
-            </select>
-          </label>
+          <Campo tipo="selecao" rotulo={t.equipe} name="equipe" defaultValue={tarefa.equipe}>{(me.gestao || !tarefa.equipe) && <option value="">{t.semEquipe}</option>}{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
+          <Campo tipo="selecao" rotulo={t.status} name="status" defaultValue={tarefa.status}><option value="todo">{t.aFazer}</option><option value="doing">{t.fazendo}</option><option value="done">{t.feito}</option></Campo>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <label className="grid gap-1 text-sm">{t.prazo}<input type="date" name="prazo" defaultValue={tarefa.prazo} className={field} /></label>
-          <label className="grid gap-1 text-sm">{t.projeto}
-            <select name="projeto" defaultValue={tarefa.projeto} className={field}><option value="">{t.nenhum}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>
-          </label>
-          <label className="grid gap-1 text-sm">{t.objetivo}
-            <select name="objetivo" defaultValue={tarefa.objetivo} className={field}><option value="">{t.nenhum}</option>{objetivos.map((o) => <option key={o.id} value={o.id}>{o.ano} · {o.titulo}</option>)}</select>
-          </label>
+          <Campo tipo="data" rotulo={t.prazo} name="prazo" defaultValue={tarefa.prazo} />
+          <Campo tipo="selecao" rotulo={t.projeto} name="projeto" defaultValue={tarefa.projeto}><option value="">{t.nenhum}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
+          <Campo tipo="selecao" rotulo={t.objetivo} name="objetivo" defaultValue={tarefa.objetivo}><option value="">{t.nenhum}</option>{objetivos.map((o) => <option key={o.id} value={o.id}>{o.ano} · {o.titulo}</option>)}</Campo>
         </div>
         <div className="grid grid-cols-2 gap-3 items-end">
-          <label className="grid gap-1 text-sm">{t.repetir}
-            <select name="recorrencia" defaultValue={tarefa.recorrencia} className={field}>
-              <option value="">{t.naoRepete}</option><option value="semanal">{t.semanal}</option>
-              <option value="quinzenal">{t.quinzenal}</option><option value="mensal">{t.mensal}</option>
-            </select>
-          </label>
+          <Campo tipo="selecao" rotulo={t.repetir} name="recorrencia" defaultValue={tarefa.recorrencia}><option value="">{t.naoRepete}</option><option value="semanal">{t.semanal}</option><option value="quinzenal">{t.quinzenal}</option><option value="mensal">{t.mensal}</option></Campo>
           <p className="text-xs text-t2 pb-1">{t.repeteAviso}</p>
         </div>
         <fieldset className="grid gap-1 text-sm">

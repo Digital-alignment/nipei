@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import type { Pessoa, Tarefa } from "@/lib/v2/data";
 import { lancamentosDoPeriodo, resumoFinanceiro, type Coletivo, type Diagnostico, type Pergunta } from "@/lib/v2/diagnostico";
@@ -7,9 +8,6 @@ import { calendarioAction, periodoAction, salvarItensAction } from "../../../act
 
 // D3 panels of the collective page: improvement items (espaço), marketing calendar, finance period.
 
-const cel = "w-full anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco";
-const btn = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
-const primario = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]";
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 
 type P = { d: Diagnostico; c: Coletivo; t: Dict; pode: boolean; pessoas: Pessoa[]; tarefas: Tarefa[] };
@@ -22,7 +20,7 @@ const LinkTarefa = ({ id, tarefas }: { id: string; tarefas: Tarefa[] }) => {
 };
 
 const Pessoas = ({ name, valor, pessoas, t, disabled }: { name: string; valor: string; pessoas: Pessoa[]; t: Dict; disabled?: boolean }) => (
-  <select name={name} defaultValue={valor} disabled={disabled} className={cel}>
+  <select name={name} defaultValue={valor} disabled={disabled} className={`${CAMPO_COMPACTO} w-full`}>
     <option value="">{t.semResponsavel}</option>
     {pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
   </select>
@@ -38,7 +36,7 @@ export function Itens({ d, c, t, pode, pessoas, tarefas, q }: P & { q: Pergunta 
       <p className="rotulo-maiusculo text-t3 mb-2">{t.itens}{total ? ` · ${t.totalEstimado}: ${brl(total)}` : ""}</p>
       {!itens.length && pode && (
         <form action={salvarItensAction} className="mb-2"><Oculto d={d} secao="espaco" /><input type="hidden" name="pergunta" value={q.id} />
-          <BotaoEnviar name="acao" value="sugerir" enviando={t.salvando} className={btn}>{t.sugerirItens}</BotaoEnviar>
+          <BotaoEnviar name="acao" value="sugerir" enviando={t.salvando} icone="gerar-outra" variante="tonal">{t.sugerirItens}</BotaoEnviar>
         </form>
       )}
       {linhas.length > 0 && (
@@ -47,20 +45,20 @@ export function Itens({ d, c, t, pode, pessoas, tarefas, q }: P & { q: Pergunta 
           {linhas.map((i, n) => (
             <div key={i?.id ?? `novo${n}`} className="grid grid-cols-2 md:grid-cols-[2fr_1fr_1fr_2fr_1.3fr_auto] gap-1.5 items-center border-b border-s2 pb-2">
               <input type="hidden" name={`i:${n}:id`} value={i?.id ?? ""} />
-              <input name={`i:${n}:titulo`} defaultValue={i?.titulo} placeholder={t.itens} disabled={!pode} className={`${cel} col-span-2 md:col-span-1`} />
-              <select name={`i:${n}:prioridade`} defaultValue={i?.prioridade ?? "media"} disabled={!pode} aria-label={t.prioridade} className={cel}>
+              <input name={`i:${n}:titulo`} defaultValue={i?.titulo} placeholder={t.itens} disabled={!pode} className={`${CAMPO_COMPACTO} w-full  col-span-2 md:col-span-1`} />
+              <select name={`i:${n}:prioridade`} defaultValue={i?.prioridade ?? "media"} disabled={!pode} aria-label={t.prioridade} className={`${CAMPO_COMPACTO} w-full`}>
                 <option value="alta">{t.prio_alta}</option><option value="media">{t.prio_media}</option><option value="baixa">{t.prio_baixa}</option>
               </select>
-              <input name={`i:${n}:custo`} type="number" min={0} step={10} defaultValue={i?.custo || ""} placeholder={t.custoAprox} disabled={!pode} className={cel} />
-              <input name={`i:${n}:requisitos`} defaultValue={i?.requisitos} placeholder={t.requisitos} disabled={!pode} className={`${cel} col-span-2 md:col-span-1`} />
+              <input name={`i:${n}:custo`} type="number" min={0} step={10} defaultValue={i?.custo || ""} placeholder={t.custoAprox} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} />
+              <input name={`i:${n}:requisitos`} defaultValue={i?.requisitos} placeholder={t.requisitos} disabled={!pode} className={`${CAMPO_COMPACTO} w-full  col-span-2 md:col-span-1`} />
               <Pessoas name={`i:${n}:responsavel`} valor={i?.responsavel ?? ""} pessoas={pessoas} t={t} disabled={!pode} />
               {i?.tarefa ? <LinkTarefa id={i.tarefa} tarefas={tarefas} /> : <span />}
             </div>
           ))}
           {pode && (
             <div className="flex flex-wrap gap-2">
-              <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} className={btn}>{t.salvar}</BotaoEnviar>
-              <BotaoEnviar name="acao" value="tarefas" enviando={t.salvando} className={primario}>{t.criarTarefasItens}</BotaoEnviar>
+              <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvar}</BotaoEnviar>
+              <BotaoEnviar name="acao" value="tarefas" enviando={t.salvando} icone="tarefa" variante="primario">{t.criarTarefasItens}</BotaoEnviar>
             </div>
           )}
         </form>
@@ -78,8 +76,8 @@ export function Calendario({ d, c, t, pode, pessoas, tarefas }: P) {
       {pode && (
         <form action={calendarioAction} className="flex flex-wrap items-end gap-2 mb-2">
           <Oculto d={d} secao="marketing" />
-          <label className="grid gap-1 text-xs text-t2">{t.dataRetiro}<input type="date" name="dataRetiro" defaultValue={c.calendario.dataRetiro} required className={cel} /></label>
-          <BotaoEnviar name="acao" value="gerar" enviando={t.salvando} className={btn}>{t.gerarCalendario}</BotaoEnviar>
+          <label className="grid gap-1 text-xs text-t2">{t.dataRetiro}<input type="date" name="dataRetiro" defaultValue={c.calendario.dataRetiro} required className={`${CAMPO_COMPACTO} w-full`} /></label>
+          <BotaoEnviar name="acao" value="gerar" enviando={t.salvando} icone="calendario" variante="tonal">{t.gerarCalendario}</BotaoEnviar>
           <p className="text-xs text-t2 basis-full">{t.gerarCalendarioAviso}</p>
         </form>
       )}
@@ -89,16 +87,16 @@ export function Calendario({ d, c, t, pode, pessoas, tarefas }: P) {
           {e.map((x, n) => (
             <div key={x.id} className="grid grid-cols-[8.5rem_1fr] md:grid-cols-[8.5rem_3fr_1.3fr_auto] gap-1.5 items-center">
               <input type="hidden" name={`e:${n}:id`} value={x.id} />
-              <input type="date" name={`e:${n}:data`} defaultValue={x.data} disabled={!pode} className={cel} />
-              <input name={`e:${n}:acao`} defaultValue={x.acao} disabled={!pode} className={cel} />
+              <input type="date" name={`e:${n}:data`} defaultValue={x.data} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} />
+              <input name={`e:${n}:acao`} defaultValue={x.acao} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} />
               <Pessoas name={`e:${n}:responsavel`} valor={x.responsavel} pessoas={pessoas} t={t} disabled={!pode} />
               {x.tarefa ? <LinkTarefa id={x.tarefa} tarefas={tarefas} /> : <span className="hidden md:block" />}
             </div>
           ))}
           {pode && (
             <div className="flex flex-wrap gap-2 mt-1">
-              <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} className={btn}>{t.salvar}</BotaoEnviar>
-              <BotaoEnviar name="acao" value="tarefas" enviando={t.salvando} className={primario}>{t.criarTarefasCalendario}</BotaoEnviar>
+              <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvar}</BotaoEnviar>
+              <BotaoEnviar name="acao" value="tarefas" enviando={t.salvando} icone="calendario" variante="primario">{t.criarTarefasCalendario}</BotaoEnviar>
             </div>
           )}
         </form>
@@ -121,9 +119,9 @@ export function Financas({ d, c, t, pode }: P) {
       <p className="rotulo-maiusculo text-t3 mb-2">{t.periodo}</p>
       <form action={periodoAction} className="flex flex-wrap items-end gap-2 mb-3">
         <Oculto d={d} secao="financas" />
-        <label className="grid gap-1 text-xs text-t2">{t.de}<input type="date" name="de" defaultValue={c.periodo.de} disabled={!pode} className={cel} /></label>
-        <label className="grid gap-1 text-xs text-t2">{t.ate}<input type="date" name="ate" defaultValue={c.periodo.ate} disabled={!pode} className={cel} /></label>
-        {pode && <BotaoEnviar enviando={t.salvando} className={btn}>{t.salvar}</BotaoEnviar>}
+        <label className="grid gap-1 text-xs text-t2">{t.de}<input type="date" name="de" defaultValue={c.periodo.de} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} /></label>
+        <label className="grid gap-1 text-xs text-t2">{t.ate}<input type="date" name="ate" defaultValue={c.periodo.ate} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} /></label>
+        {pode && <BotaoEnviar enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvar}</BotaoEnviar>}
       </form>
       {r.n === 0 ? <p className="text-sm text-warn">{t.semLancPeriodo} <Link href="/financas" className="underline">{t.financas}</Link></p> : (
         <div className="grid md:grid-cols-2 gap-4">

@@ -1,7 +1,10 @@
+import Cartao from "@/components/ds/Cartao";
 import Link from "next/link";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { Card, Progress, Section, Title } from "@/components/v2/ui";
+import { Section } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Imprimir from "@/components/v2/Imprimir";
 import Md from "@/components/v2/Md";
@@ -35,7 +38,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
   return (
     <div className="max-w-3xl mx-auto">
       <Link href={`/projetos/${id}`} className="print:hidden inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{v.projeto.nome}</Link>
-      <Title sub={t.visaoIntro}>{t.visaoHolistica} · {v.projeto.nome}</Title>
+      <CabecalhoPagina titulo={<>{t.visaoHolistica} · {v.projeto.nome}</>} subtitulo={t.visaoIntro} />
 
       <Section title={t.numeros}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -71,10 +74,10 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
         <Section title={t.objetivos} count={v.objetivos.length}>
           <div className="grid gap-2">
             {v.objetivos.map((o) => (
-              <Card key={o.id} href={`/objetivos?ano=${o.ano}#${o.id}`}>
+              <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos?ano=${o.ano}#${o.id}`}>
                 <p className="text-sm font-medium">{o.titulo} <span className="text-t2 font-normal">· {o.ano}</span></p>
-                <div className="mt-2">{o.progresso ? <Progress {...o.progresso} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
-              </Card>
+                <div className="mt-2">{o.progresso ? <BarraProgresso valor={o.progresso.done} max={o.progresso.total} rotulo={`${o.progresso.total ? Math.round((o.progresso.done / o.progresso.total) * 100) : 0}% · ${o.progresso.done}/${o.progresso.total}`} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
+              </Cartao>
             ))}
           </div>
         </Section>

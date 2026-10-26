@@ -38,9 +38,11 @@ export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, p
       {antes}
       {concluir}
       <div className="grid min-w-0 flex-1 gap-0.5 py-1">
-        <Link href={href} className={`anel-foco line-clamp-2 break-words rounded-interno font-texto text-[15px] font-medium hover:underline md:line-clamp-1 ${feita ? "text-t3 line-through" : "text-t1"}`}>
+        <Link href={href} className={`anel-foco alvo-toque block rounded-interno font-texto text-[15px] font-medium hover:underline ${feita ? "text-t3 line-through" : "text-t1"}`}>
+          <span className="line-clamp-2 break-words md:line-clamp-1">
           {prioridade && <Icone nome="atencao" tamanho={15} aria-label={prioridade.rotulo} className={`mr-1 inline align-[-2px] ${prioridade.nivel === "urgente" ? "text-err" : "text-warn"}`} />}
           {titulo}
+          </span>
         </Link>
         {(eq || nomeEquipe || prazo) && (
           <span className="meta flex min-w-0 items-center gap-1.5 text-t3">

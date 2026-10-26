@@ -3,7 +3,7 @@ import { BarraProgresso } from "@/components/ds/Progresso";
 import Aviso from "@/components/ds/Aviso";
 import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
-import Recolhivel, { AtalhosSecao } from "@/components/v2/Recolhivel";
+import Recolhivel, { AtalhosSecao } from "@/components/ds/SecaoRecolhivel";
 import { currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { getFatos, getFontes, podeRevisar } from "@/lib/v2/conhecimento";
 import { auditoriaSemanal, getAlertas } from "@/lib/v2/auditor";
