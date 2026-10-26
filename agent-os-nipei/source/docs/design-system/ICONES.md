@@ -43,6 +43,9 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | filtrar | — (novo) | P2 |
 | vista quadro (kanban) | — (novo; provisório: `filtrar`) | P2 |
 | vista grade | — (novo; provisório: `imagem`) | P2 |
+| vista semana (Agenda) | — (novo; provisório: `calendario`) | P2 |
+| vista mês (Agenda) | — (novo; provisório: `calendario`) | P2 |
+| copiar | — (pedido; provisório: `baixar`) | P2 |
 | mais opções ⋯ | — (novo) | P1 |
 | selecionar em lote | CheckSquare, Square | P3 |
 
