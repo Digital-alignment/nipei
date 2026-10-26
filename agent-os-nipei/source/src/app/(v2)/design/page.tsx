@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
 import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
 import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
-import { DemoMenu, DemoAbas, DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoControles, DemoEtapas, DemoRecolhivel, DemoSegmentado } from "./Demos";
+import { DemoPinu, DemoMenu, DemoAbas, DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoControles, DemoEtapas, DemoRecolhivel, DemoSegmentado } from "./Demos";
 import Chip, { BadgeEstado, Contagem } from "@/components/ds/Chip";
 import Avatar, { GrupoAvatares, LinhaPessoa } from "@/components/ds/Avatar";
 import Cartao, { CabecalhoCartao, GradeBento, NumeroKpi } from "@/components/ds/Cartao";
@@ -261,6 +261,10 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
   menu: {
     sub: "Cartão flutuante s2 + contorno de 1 px; itens de 44 px; divisor antes das ações sensíveis; “Remover…” abre o diálogo (o vermelho fica lá). O ⋯ ganha anel de acento aberto.",
     conteudo: <DemoMenu />,
+  },
+  pinu: {
+    sub: "Orbe: forma orgânica que respira e gira; repouso 9 s · ouvindo 4 s (cresce com a voz) · pensando 2,4 s (gira e encolhe) · falando 5 s (pulsa). Mini-anel = avatar do Pinu. Brilho só no que é do Pinu. Com menos movimento pedido, o orbe fica parado.",
+    conteudo: <DemoPinu />,
   },
   segmentado: {
     sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",

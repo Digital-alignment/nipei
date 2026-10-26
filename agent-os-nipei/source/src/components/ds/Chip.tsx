@@ -31,7 +31,7 @@ export default function Chip({ tipo = "filtro", icone, ativo, contagem, equipe, 
   const estilo = eq && ativo ? { boxShadow: `inset 0 0 0 1.5px ${EQUIPES_DS[eq].cor}` } : undefined;
   const dentro = (
     <>
-      {tipo === "pinu" ? <span className="mini-anel scale-75" aria-hidden="true" />
+      {tipo === "pinu" ? <span className="mini-anel" aria-hidden="true" style={{ "--anel": "18px" } as React.CSSProperties} />
         : eq ? <Selo nome={EQUIPES_DS[eq].selo} tamanho={20} style={{ color: EQUIPES_DS[eq].cor }} />
         : tipo === "filtro" && ativo ? <Icone nome="confirmar" tamanho={16} className="text-ac-text" />
         : icone ? <Icone nome={icone} tamanho={meta ? 14 : 16} /> : null}

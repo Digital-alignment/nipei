@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Botao from "@/components/ds/Botao";
 import Segmentado from "@/components/ds/Segmentado";
 import { Etapas } from "@/components/ds/Bloco";
@@ -8,6 +8,7 @@ import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
 import MenuAcoes from "@/components/ds/MenuAcoes";
+import { ChipPinu, MiniAnelPinu, OrbePinu, type EstadoPinu } from "@/components/ds/Pinu";
 import Abas, { AbasComPainel } from "@/components/ds/Abas";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import { ControleDeslizante, Interruptor, LinhaConfiguracao, ListaConfiguracoes } from "@/components/ds/Controles";
@@ -200,4 +201,40 @@ export function DemoMenu() {
       <span className="meta text-t2">{ultimo ? `escolhido: ${ultimo}` : "Abra com o mouse ou com Tab + Enter; ↑ ↓ navegam, Esc fecha."}</span>
     </div>
   );
+}
+
+export function DemoPinu() {
+  const [estado, setEstado] = useState<EstadoPinu>("repouso");
+  const [voz, setVoz] = useState(40);
+  const [usarVoz, setUsarVoz] = useState(false);
+  const frase: Record<EstadoPinu, ReactNode> = {
+    repouso: <>Oi! Sou o Pinu. <span className="text-t3">Como posso ajudar hoje?</span></>,
+    ouvindo: <>Quais tarefas da equipe <span className="text-t3">vencem esta semana</span></>,
+    pensando: <span className="text-t3">Buscando nas tarefas…</span>,
+    falando: <>São 4 tarefas. A mais urgente <span className="text-t3">é a reunião dos Guardiões.</span></>,
+  };
+  return (
+    <div className="grid justify-items-center gap-5 rounded-cartao bg-s1 px-4 py-8">
+      <OrbePinu estado={estado} tamanho={220} nivelAudio={estado === "ouvindo" && usarVoz ? voz / 100 : undefined} />
+      <p className="saudacao min-h-[2.6em] max-w-[22ch] text-center">{frase[estado]}</p>
+      <Segmentado rotulo="Estado do Pinu" valor={estado} onChange={setEstado} opcoes={[
+        { valor: "repouso", rotulo: "Repouso", icone: "tema-escuro" }, { valor: "ouvindo", rotulo: "Ouvindo", icone: "microfone" },
+        { valor: "pensando", rotulo: "Pensando", icone: "gerar-outra" }, { valor: "falando", rotulo: "Falando", icone: "mensagem" },
+      ]} />
+      {estado === "ouvindo" && (
+        <div className="grid w-full max-w-sm gap-2">
+          <LinhaConfiguracaoSimples rotulo="Simular o nível da voz" ligado={usarVoz} onChange={setUsarVoz} />
+          {usarVoz && <ControleDeslizante rotulo="Nível da voz" valor={voz} onChange={setVoz} formatar={(v) => `${v}%`} />}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        <MiniAnelPinu tamanho={14} /><MiniAnelPinu /><MiniAnelPinu tamanho={32} />
+        <ChipPinu /><ChipPinu onClick={() => setEstado("falando")}>Pinu sugere: Guardiões</ChipPinu>
+      </div>
+    </div>
+  );
+}
+
+function LinhaConfiguracaoSimples({ rotulo, ligado, onChange }: { rotulo: string; ligado: boolean; onChange: (v: boolean) => void }) {
+  return <ListaConfiguracoes><LinhaConfiguracao rotulo={rotulo} interruptor={{ ligado, onChange }} /></ListaConfiguracoes>;
 }
