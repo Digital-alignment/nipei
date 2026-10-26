@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Link2 } from "lucide-react";
 import BotaoEnviar from "./BotaoEnviar";
+import Campo from "@/components/ds/Campo";
 import { tipoLink } from "@/lib/v2/acervoLinks";
-
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-3 py-2 text-sm";
 
 export type AcervoFormLabels = {
   link: string; titulo: string; tipo: string; projeto: string; ano: string; descricao: string; nenhum: string; salvar: string; enviando: string; detectado: string;
@@ -32,24 +30,20 @@ export default function AcervoForm({ action, tipos, projetos, labels, inicial, i
   return (
     <form action={action} className="grid gap-3">
       {id && <input type="hidden" name="id" value={id} />}
-      <label className="grid gap-1 text-sm">{labels.link}
-        <input name="url" type="url" required pattern="https://.*" value={url} onChange={(e) => mudarUrl(e.target.value)} placeholder="https://drive.google.com/…" className={field} />
-        {det && url.startsWith("https://") && <span className="inline-flex items-center gap-1 text-xs text-neutral-500"><Link2 size={12} />{labels.detectado}: {det.rotulo}</span>}
-      </label>
-      <label className="grid gap-1 text-sm">{labels.titulo}<input name="titulo" required maxLength={150} defaultValue={inicial?.titulo} className={field} /></label>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <label className="grid gap-1 text-sm">{labels.tipo}
-          <select name="tipo" value={tipo || "outros"} onChange={(e) => { setTipo(e.target.value); setEscolheu(true); }} className={field}>
-            {tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-          </select>
-        </label>
-        <label className="grid gap-1 text-sm">{labels.ano}<input name="ano" inputMode="numeric" pattern="\d{4}" maxLength={4} defaultValue={inicial ? inicial.ano : String(new Date().getFullYear())} className={field} /></label>
-        <label className="grid gap-1 text-sm col-span-2 md:col-span-1">{labels.projeto}
-          <select name="projeto" defaultValue={inicial?.projeto ?? ""} className={field}><option value="">{labels.nenhum}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>
-        </label>
+      <Campo name="url" rotulo={labels.link} inputMode="url" required pattern="https://.*" value={url} onChange={(e) => mudarUrl(e.target.value)} placeholder="https://drive.google.com/…"
+        ajuda={det && url.startsWith("https://") ? `${labels.detectado}: ${det.rotulo}` : undefined} />
+      <Campo name="titulo" rotulo={labels.titulo} required maxLength={150} defaultValue={inicial?.titulo} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <Campo tipo="selecao" name="tipo" rotulo={labels.tipo} value={tipo || "outros"} onChange={(e) => { setTipo(e.target.value); setEscolheu(true); }}>
+          {tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+        </Campo>
+        <Campo name="ano" rotulo={labels.ano} inputMode="numeric" pattern="\d{4}" maxLength={4} defaultValue={inicial ? inicial.ano : String(new Date().getFullYear())} />
+        <div className="col-span-2 md:col-span-1">
+          <Campo tipo="selecao" name="projeto" rotulo={labels.projeto} defaultValue={inicial?.projeto ?? ""}><option value="">{labels.nenhum}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
+        </div>
       </div>
-      <label className="grid gap-1 text-sm">{labels.descricao}<input name="descricao" maxLength={300} defaultValue={inicial?.descricao} className={field} /></label>
-      <BotaoEnviar enviando={labels.enviando} className="justify-self-start rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-5 py-2 text-sm font-medium">{labels.salvar}</BotaoEnviar>
+      <Campo name="descricao" rotulo={labels.descricao} maxLength={300} defaultValue={inicial?.descricao} />
+      <div><BotaoEnviar enviando={labels.enviando} icone="confirmar" variante="primario">{labels.salvar}</BotaoEnviar></div>
     </form>
   );
 }

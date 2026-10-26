@@ -17,11 +17,13 @@ export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode 
   return <CabecalhoPagina titulo={children} subtitulo={sub} />;
 }
 
-export function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
+/** Seção de página (título `titulo-secao` + contagem em pílula). */
+export function Section({ title, count, children }: { title: ReactNode; count?: number; children: ReactNode }) {
   return (
-    <section className="mb-7">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">
-        {title}{count != null && <span className="ml-1 font-normal">({count})</span>}
+    <section className="mb-8 grid gap-3">
+      <h2 className="flex items-center gap-2">
+        <span className="titulo-secao text-t1">{title}</span>
+        {count != null && <span className="rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2">{count}</span>}
       </h2>
       {children}
     </section>
