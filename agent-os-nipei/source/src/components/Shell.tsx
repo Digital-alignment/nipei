@@ -18,7 +18,7 @@ const FontesV1 = () => (
   </>
 );
 
-const V2_PATHS = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/legacy", "/cadastro", "/financas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/oauth", "/privacidade", "/controle"]; // /oauth + /privacidade: standalone pages; /controle: admin panel (v2 chrome)
+const V2_PATHS = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/legacy", "/cadastro", "/financas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/oauth", "/privacidade", "/controle", "/design"]; // /oauth + /privacidade: standalone pages; /controle: admin panel; /design: design system reference (v2 chrome)
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

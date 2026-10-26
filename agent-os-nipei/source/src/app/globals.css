@@ -632,8 +632,17 @@ html[data-lote] .v2 .lote-caixa { display: block; }
    segue prefers-color-scheme. O atributo é posto antes da hidratação (app/layout.tsx) a
    partir do cookie nipei_tema (components/ds/Tema.tsx).
    color-scheme fica de fora até as telas migrarem (senão campos/rolagem já mudariam).
+   Um trecho da página pode forçar um tema com data-tema="escuro"|"claro" num elemento
+   dentro da .v2 (ex.: /design mostra os dois lado a lado).
    ───────────────────────────────────────────────────────────────────────────── */
+/* forma e fonte: iguais nos dois temas */
 .v2 {
+  --raio-pilula:999px; --raio-moldura:28px; --raio-bloco:20px; --raio-cartao:16px; --raio-interno:12px;
+  --fonte-display:var(--font-outfit),system-ui,sans-serif; --fonte-texto:var(--font-google-sans),system-ui,sans-serif;
+}
+@media (min-width:1024px) { .v2 { --raio-cartao:12px; } }
+/* escuro: padrão, ou forçado num trecho */
+.v2, .v2 [data-tema="escuro"] {
   --bg:#0A0A0A; --s1:#141414; --s2:#1A1A1A; --s3:#303030; --s4:#424242;
   --t1:#FFFFFF; --t2:#B3B3B3; --t3:#858585;
   --ac:#C3D14A; --ac-press:#A8B81A; --ac-ink:#0A0A0A; --ac-text:#C3D14A; --ac-soft:#1B2410; --ac-apoio:#808F12;
@@ -643,12 +652,9 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   --eq-escritorio:#2BB3A6; --eq-producao:#A68CF0; --eq-guardioes:#E37AB0; --eq-manutencao:#8FA6B8; --eq-reserva:#E08A5C;
   --brilho-ia:0 0 0 1px rgba(195,209,74,.10),0 0 22px rgba(195,209,74,.10);
   --foco:0 0 0 1.5px var(--ac),0 0 26px rgba(195,209,74,.16);
-  --raio-pilula:999px; --raio-moldura:28px; --raio-bloco:20px; --raio-cartao:16px; --raio-interno:12px;
-  --fonte-display:var(--font-outfit),system-ui,sans-serif; --fonte-texto:var(--font-google-sans),system-ui,sans-serif;
 }
-@media (min-width:1024px) { .v2 { --raio-cartao:12px; } }
-/* claro: escolhido, ou "Sistema" com o aparelho no claro (mesmos valores nos dois blocos) */
-[data-tema="claro"] .v2 {
+/* claro: escolhido, forçado num trecho, ou "Sistema" com o aparelho no claro (mesmos valores nos dois blocos) */
+[data-tema="claro"] .v2, .v2 [data-tema="claro"] {
   --bg:#FFFFFF; --s1:#F5F5F5; --s2:#EDEDED; --s3:#DEDEDE; --s4:#B3B3B3;
   --t1:#1A1A1A; --t2:#424242; --t3:#6B6B6B;
   --ac:#2A5C0B; --ac-press:#042608; --ac-ink:#FFFFFF; --ac-text:#2A5C0B; --ac-soft:#EEF3E8;
