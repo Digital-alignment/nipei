@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
 import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
 import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
-import { DemoAbas, DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoControles, DemoEtapas, DemoRecolhivel, DemoSegmentado } from "./Demos";
+import { DemoMenu, DemoAbas, DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoControles, DemoEtapas, DemoRecolhivel, DemoSegmentado } from "./Demos";
 import Chip, { BadgeEstado, Contagem } from "@/components/ds/Chip";
 import Avatar, { GrupoAvatares, LinhaPessoa } from "@/components/ds/Avatar";
 import Cartao, { CabecalhoCartao, GradeBento, NumeroKpi } from "@/components/ds/Cartao";
+import { AnelProgresso, BarraProgresso, SemanaAneis } from "@/components/ds/Progresso";
+import { Carregando, EstadoVazio, Skeleton, SkeletonCartao, SkeletonLista } from "@/components/ds/Estados";
 import { BadgeEstado as Estado } from "@/components/ds/Chip";
 import Selo, { SELOS, type NomeSelo } from "@/components/ds/Selo";
 import TemaLocal, { ValorToken } from "@/components/ds/TemaLocal";
@@ -207,6 +209,58 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
   controles: {
     sub: "Controle deslizante (trilho de 64 px, rótulo à esquerda e valor à direita; também escolhe entre opções), interruptor (52 × 32) e linhas de configuração agrupadas.",
     conteudo: <DemoControles />,
+  },
+  progresso: {
+    sub: "Barra de 6 px em acento: com valor, resto hachurado (meta planejada), com marcador, em segmentos (subtarefas) e envio (azul). Anel com número no centro (140 · 72 · 48 · 24). Semana em anéis.",
+    conteudo: (
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid content-start gap-4">
+          <BarraProgresso valor={68} rotulo="68%" rotuloAcessivel="Progresso" />
+          <BarraProgresso valor={40} planejado rotulo="40 de 100 planejadas" />
+          <BarraProgresso valor={72} marcador rotuloAcessivel="Meta da semana" />
+          <BarraProgresso valor={3} segmentos={5} rotulo="3/5 subtarefas" />
+          <BarraProgresso valor={45} variante="info" rotulo="Enviando 45%" />
+        </div>
+        <div className="grid content-start gap-4">
+          <span className="flex flex-wrap items-center gap-4">
+            <AnelProgresso valor={72} tamanho={140} rotulo="Missão da semana" />
+            <AnelProgresso valor={48} tamanho={72} />
+            <AnelProgresso valor={30} tamanho={48} />
+            <AnelProgresso valor={90} tamanho={24} rotulo="Hoje" />
+          </span>
+          <SemanaAneis dias={[{ rotulo: "S", valor: 100 }, { rotulo: "T", valor: 80 }, { rotulo: "Q", valor: 60, hoje: true }, { rotulo: "Q", valor: 0 }, { rotulo: "S", valor: 0 }, { rotulo: "S", valor: 0 }, { rotulo: "D", valor: 0 }]} />
+        </div>
+      </div>
+    ),
+  },
+  vazio: {
+    sub: "Selo grande num círculo, título, uma frase que diz o que fazer, uma ação. Destaque = padrão de selos a 5% + selo verde. Compacto = dentro de listas.",
+    conteudo: (
+      <div className="grid gap-3">
+        <GradeBento>
+          <EstadoVazio selo="sol" titulo="Nada para hoje" texto="Aproveite para revisar as tarefas sem prazo." acao={<Botao icone="tarefa" variante="tonal" tamanho="M">Ver sem prazo</Botao>} />
+          <EstadoVazio selo="quadrados" titulo="Acervo vazio" texto="Adicione o link de uma pasta ou arquivo do Google Drive." acao={<Botao icone="mais" tamanho="M">Adicionar</Botao>} destaque />
+          <EstadoVazio selo="olho" titulo="Nenhum resultado" texto="Tente outra palavra ou limpe os filtros." acao={<Botao icone="fechar" variante="fantasma" tamanho="M">Limpar filtros</Botao>} />
+        </GradeBento>
+        <EstadoVazio compacto selo="espiral" titulo="Nenhum fato confirmado ainda." />
+      </div>
+    ),
+  },
+  skeleton: {
+    sub: "A forma real do conteúdo (avatar, título, linhas, chips) com brilho lento. Carregando = arco girando; com menos movimento, vira o texto “Carregando…”.",
+    conteudo: (
+      <div className="grid gap-4 md:grid-cols-2">
+        <SkeletonCartao />
+        <div className="grid content-start gap-4">
+          <SkeletonLista linhas={3} />
+          <span className="flex items-center gap-4"><Carregando tamanho={16} /><Carregando /><Carregando tamanho={40} /><Skeleton forma="pilula" /><Skeleton forma="bloco" largura={120} /></span>
+        </div>
+      </div>
+    ),
+  },
+  menu: {
+    sub: "Cartão flutuante s2 + contorno de 1 px; itens de 44 px; divisor antes das ações sensíveis; “Remover…” abre o diálogo (o vermelho fica lá). O ⋯ ganha anel de acento aberto.",
+    conteudo: <DemoMenu />,
   },
   segmentado: {
     sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",

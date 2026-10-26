@@ -7,6 +7,8 @@ import ChipDS from "@/components/ds/Chip";
 import AvatarDS, { TAMANHOS_AVATAR, iniciais } from "@/components/ds/Avatar";
 import { chaveEquipe } from "@/components/ds/equipes";
 import Cartao from "@/components/ds/Cartao";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import { EstadoVazio } from "@/components/ds/Estados";
 
 export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
@@ -39,20 +41,14 @@ export function Chip({ children, cor, href, on }: { children: ReactNode; cor?: s
   return <ChipDS tipo={equipe ? "equipe" : "filtro"} equipe={equipe} ativo={on} href={href}>{children}</ChipDS>;
 }
 
+/** Compatibilidade: a barra antiga (done / total) agora é a <BarraProgresso> do design system. */
 export function Progress({ done, total }: { done: number; total: number }) {
-  const pct = Math.round((done / total) * 100);
-  return (
-    <div className="flex items-center gap-2 text-xs text-neutral-500">
-      <div className="flex-1 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
-        <div className="h-full bg-neutral-800 dark:bg-neutral-200" style={{ width: `${pct}%` }} />
-      </div>
-      {pct}% · {done}/{total}
-    </div>
-  );
+  return <BarraProgresso valor={done} max={total} rotulo={`${total ? Math.round((done / total) * 100) : 0}% · ${done}/${total}`} />;
 }
 
+/** Compatibilidade: o "nada aqui" antigo agora é o <EstadoVazio compacto> do design system. */
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-neutral-500 py-3">{children}</p>;
+  return <EstadoVazio compacto titulo={children} />;
 }
 
 /** One task: a tap on the circle marks it done (or reopens it). Plain form → works without JS. */

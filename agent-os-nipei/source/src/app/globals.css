@@ -759,3 +759,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   -webkit-mask: radial-gradient(circle 30px at calc(100% - 28px) 28px, transparent 29px, #000 30px);
   mask: radial-gradient(circle 30px at calc(100% - 28px) 28px, transparent 29px, #000 30px);
 }
+/* Skeleton (seção 9.17): a forma real do conteúdo com um brilho lento passando a cada 1,6 s.
+   Com menos movimento pedido, a regra global da .v2 para a animação e fica o tom parado. */
+@keyframes ds-brilho-passando { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.v2 .skeleton { background: linear-gradient(90deg, var(--s2) 0%, var(--s3) 50%, var(--s2) 100%); background-size: 200% 100%; animation: ds-brilho-passando 1.6s ease-in-out infinite; }

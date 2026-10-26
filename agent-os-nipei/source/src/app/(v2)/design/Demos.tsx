@@ -7,6 +7,7 @@ import { Etapas } from "@/components/ds/Bloco";
 import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
+import MenuAcoes from "@/components/ds/MenuAcoes";
 import Abas, { AbasComPainel } from "@/components/ds/Abas";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import { ControleDeslizante, Interruptor, LinhaConfiguracao, ListaConfiguracoes } from "@/components/ds/Controles";
@@ -182,6 +183,21 @@ export function DemoControles() {
         <LinhaConfiguracao rotulo="Idioma" valor="Português" onClick={() => {}} />
         <LinhaConfiguracao rotulo="Versão" valor="2.59" />
       </ListaConfiguracoes>
+    </div>
+  );
+}
+
+export function DemoMenu() {
+  const [ultimo, setUltimo] = useState("");
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <MenuAcoes itens={[
+        { icone: "editar", rotulo: "Editar", onSelect: () => setUltimo("Editar") },
+        { icone: "abrir-fora", rotulo: "Abrir em nova aba", onSelect: () => setUltimo("Abrir") },
+        { icone: "pessoa", rotulo: "Atribuir a…", onSelect: () => setUltimo("Atribuir") },
+        { icone: "lixeira", rotulo: "Remover…", sensivel: true, confirmar: { titulo: "Remover esta tarefa?", mensagem: "Ela sai da lista da equipe. Dá para desfazer pelo histórico.", confirmarRotulo: "Remover", perigoso: true }, onSelect: () => setUltimo("Removida") },
+      ]} />
+      <span className="meta text-t2">{ultimo ? `escolhido: ${ultimo}` : "Abra com o mouse ou com Tab + Enter; ↑ ↓ navegam, Esc fecha."}</span>
     </div>
   );
 }
