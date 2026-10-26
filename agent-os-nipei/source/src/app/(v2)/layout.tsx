@@ -70,7 +70,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       )}
       <div className="flex">
         <Nav fechadoInicial={menuFechado} pinu={comAssistente && !user.vendoComo} conta={conta} contagens={contagens} extras={{ financas: user.gestao, painel: ehAdmin(user) }}
-          rotulos={{ hoje: t.hoje, agenda: t.agenda, projetos: t.projetos, objetivos: t.objetivos, equipes: t.equipes, pessoas: t.pessoas, conhecimento: t.conhecimento, acervo: t.acervo,
+          rotulos={{ hoje: t.hoje, tarefas: t.tarefasTitulo, agenda: t.agenda, projetos: t.projetos, objetivos: t.objetivos, equipes: t.equipes, pessoas: t.pessoas, conhecimento: t.conhecimento, acervo: t.acervo,
             financas: t.financas, painel: t.painelLbl, principal: t.grupoPrincipal, equipe: t.grupoEquipe, gestao: t.grupoGestao, recolher: t.recolherMenu, expandir: t.expandirMenu,
             configuracoes: t.configuracoesLbl, falarPinu: t.falarPinu, novidade: t.novidadeLbl }} />
         <div className="flex min-w-0 flex-1 flex-col">

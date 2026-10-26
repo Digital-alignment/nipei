@@ -4,7 +4,7 @@ import NovaTarefaForm from "@/components/v2/NovaTarefaForm";
 import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
-type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string };
+type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string; status?: string };
 
 export default async function NovaTarefa({ searchParams }: { searchParams: Promise<Q> }) {
   const q = await searchParams;
@@ -24,13 +24,14 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
       <ToastAoAbrir texto={criada ? `${t.tarefaCriada}: ${criada.title}` : undefined} parametro="criada" acao={criada ? { rotulo: t.abrir, href: `/tarefas/${criada.id}` } : undefined} />
       <NovaTarefaForm
         equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}
-        pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso }))}
+        pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso, foto: p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined }))}
         projetos={getProjetos().map((p) => ({ id: p.id, nome: p.nome }))}
         objetivos={getObjetivos().map((o) => ({ id: o.id, titulo: o.titulo, ano: o.ano, projeto: o.projeto }))}
         inicial={{
           equipe: equipeInicial, projeto: q.projeto ?? "", objetivo: q.objetivo ?? "",
           prazo: /^\d{4}-\d{2}-\d{2}$/.test(q.prazo ?? "") ? q.prazo! : "",
           responsaveis: q.responsavel ? [q.responsavel] : !q.criada && me ? [me.id] : [],
+          status: q.status === "doing" || q.status === "done" ? q.status : undefined,
         }}
         podeSemEquipe={user.gestao} meId={me?.id ?? ""} back={back}
         l={{

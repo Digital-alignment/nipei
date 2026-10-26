@@ -13,12 +13,13 @@ import { ABRIR_ASSISTENTE } from "./AssistenteGlobal";
 // Computador: menu lateral flutuante, recolhido por padrão (cookie nipei_menu, lido em app/(v2)/layout.tsx).
 // Celular: barra inferior em pílula com o orbe do Pinu no centro, ligado por uma "ponte líquida" (filtro SVG).
 
-type Chave = "hoje" | "agenda" | "projetos" | "objetivos" | "equipes" | "pessoas" | "conhecimento" | "acervo" | "financas" | "painel";
+type Chave = "hoje" | "tarefas" | "agenda" | "projetos" | "objetivos" | "equipes" | "pessoas" | "conhecimento" | "acervo" | "financas" | "painel";
 type Item = { href: string; chave: Chave; selo?: NomeSelo; icone?: NomeIcone };
 
 const GRUPOS: { chave: "principal" | "equipe" | "gestao"; itens: Item[] }[] = [
   { chave: "principal", itens: [
     { href: "/hoje", chave: "hoje", selo: "sol" },
+    { href: "/tarefas", chave: "tarefas", icone: "tarefa" },
     { href: "/agenda", chave: "agenda", selo: "lua" },
     { href: "/projetos", chave: "projetos", selo: "broto" },
     { href: "/objetivos", chave: "objetivos", icone: "sucesso" },
