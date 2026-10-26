@@ -1,7 +1,12 @@
 import Link from "next/link";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
+import Campo from "@/components/ds/Campo";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import LinhaDoTempo from "@/components/ds/padroes/LinhaDoTempo";
+import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ClipboardList, Compass, Plus, Target } from "lucide-react";
-import { Avatar, Chip, Empty, Progress, TaskRow, Title } from "@/components/v2/ui";
+import { Avatar, Chip, Empty, Progress, TaskRow } from "@/components/v2/ui";
 import Abas from "@/components/v2/Abas";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
@@ -12,8 +17,8 @@ import { getDiagnosticos } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { anotarProjetoAction } from "../../actions";
 
-const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2";
-const BOTAO = "shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900";
+const ROTULO = "rotulo-maiusculo text-t3 mb-2";
+const BOTAO = "shrink-0 anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 export default async function ProjetoDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ equipe?: string; pessoa?: string }> }) {
   const { id } = await params;
@@ -44,7 +49,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   const extra = (y: Tarefa) => can.editTarefa(me, y) ? <PrazoRapido id={y.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} /> : null;
   const grupo = (titulo: string, o: { tarefas: Tarefa[]; selos: Record<string, Selo[]> }, alerta = false) => o.tarefas.length > 0 && (
     <div className="mb-5">
-      <p className={`${ROTULO} ${alerta ? "!text-red-600 dark:!text-red-400" : ""}`}>{titulo} <span className="font-normal">({o.tarefas.length})</span></p>
+      <h3 className="mb-2 flex items-center gap-2"><span className="titulo-cartao">{titulo}</span><span className={`rounded-pilula px-2.5 py-0.5 text-xs font-semibold tabular-nums ${alerta ? "bg-err-bg text-err" : "bg-s2 text-t2"}`}>{o.tarefas.length}</span></h3>
       <ul>{o.tarefas.map((x) => <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]?.map((s) => rotSelo[s])} extra={extra} selecionar={gerir ? "lote-projeto" : undefined} />)}</ul>
     </div>
   );
@@ -84,19 +89,19 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         const pr = progresso(o.id, todas);
         const dono = equipes.find((e) => e.id === o.equipe);
         return (
-          <div key={o.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 pl-4 border-l-4" style={{ borderLeftColor: dono?.cor }}>
+          <div key={o.id} className="rounded-cartao bg-s1 p-3 pl-4 border-l-4" style={{ borderLeftColor: dono?.cor }}>
             <div className="flex items-start gap-2">
               <Link href={`/objetivos?ano=${o.ano}#${o.id}`} className="text-sm font-medium leading-snug flex-1 hover:underline">{o.titulo}</Link>
-              <span className="text-xs text-neutral-400 tabular-nums">{o.ano}</span>
+              <span className="text-xs text-t3 tabular-nums">{o.ano}</span>
             </div>
             <div className="mt-2 flex items-center gap-3">
-              <div className="flex-1">{pr ? <Progress {...pr} /> : <span className="text-xs text-neutral-500">{t.semTarefasLigadas}</span>}</div>
-              <Link href={`/tarefas/nova?objetivo=${o.id}&projeto=${id}&equipe=${o.equipe}&back=/projetos/${id}`} aria-label={t.novaTarefa} title={t.novaTarefa} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Plus size={18} /></Link>
+              <div className="flex-1">{pr ? <Progress {...pr} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
+              <Link href={`/tarefas/nova?objetivo=${o.id}&projeto=${id}&equipe=${o.equipe}&back=/projetos/${id}`} aria-label={t.novaTarefa} title={t.novaTarefa} className="text-t3 hover:text-t1"><Icone nome="mais"  tamanho={18} /></Link>
             </div>
           </div>
         );
       })}
-      <Link href="/objetivos" className="justify-self-start text-xs underline text-neutral-500 mt-1">{t.todosObjetivos}</Link>
+      <Link href="/objetivos" className="justify-self-start text-xs underline text-t2 mt-1">{t.todosObjetivos}</Link>
     </div>
   );
 
@@ -110,12 +115,12 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
     <ul className="mt-3 grid gap-1">
       {envolvidos.map((x) => (
         <li key={x.id}>
-          <Link href={url({ pessoa: x.id, equipe: undefined })} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-900">
+          <Link href={url({ pessoa: x.id, equipe: undefined })} className="flex items-center gap-3 rounded-interno px-2 py-2 hover:bg-s2">
             <Avatar name={x.pessoa?.name ?? x.id} size={32} src={x.pessoa?.foto ? `/pessoas/${x.id}/foto?v=${encodeURIComponent(x.pessoa.fotoEm || x.pessoa.dadosConfirmadosEm)}` : undefined} />
             <span className="text-sm flex-1 min-w-0 truncate">{x.pessoa?.name ?? x.id}</span>
-            <div className="hidden sm:block h-1.5 w-24 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><div className="h-full bg-neutral-400 dark:bg-neutral-500" style={{ width: `${(x.n / maxN) * 100}%` }} /></div>
-            <span className="text-xs text-neutral-500 tabular-nums w-16 text-right">{x.n} {t.abertasLbl}</span>
-            <span className={`text-xs tabular-nums w-14 text-right ${x.atr ? "text-red-600 dark:text-red-400" : "text-neutral-300 dark:text-neutral-700"}`}>{x.atr} {t.atrasadasLbl}</span>
+            <div className="hidden sm:block h-1.5 w-24 rounded-pilula bg-s2 overflow-hidden"><div className="h-full bg-t3" style={{ width: `${(x.n / maxN) * 100}%` }} /></div>
+            <span className="text-xs text-t2 tabular-nums w-16 text-right">{x.n} {t.abertasLbl}</span>
+            <span className={`text-xs tabular-nums w-14 text-right ${x.atr ? "text-err" : "text-t3"}`}>{x.atr} {t.atrasadasLbl}</span>
           </Link>
         </li>
       ))}
@@ -129,63 +134,49 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
       {gerir && (
         <form action={anotarProjetoAction} className="flex gap-2 mb-4">
           <input type="hidden" name="projeto" value={id} />
-          <input name="texto" required maxLength={500} placeholder={t.novaAtualizacao} className="flex-1 min-w-0 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm" />
-          <BotaoEnviar enviando="…" className="shrink-0 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-2 text-sm font-medium">{t.publicar}</BotaoEnviar>
+          <div className="min-w-0 flex-1"><Campo name="texto" rotulo={t.novaAtualizacao} required maxLength={500} /></div>
+          <BotaoEnviar enviando="…" icone="enviar" variante="primario" tamanho="G">{t.publicar}</BotaoEnviar>
         </form>
       )}
       {atualizacoes.length === 0 ? <Empty>{t.semAtualizacoes}</Empty> : (
-        <ol className="relative border-l border-neutral-200 dark:border-neutral-800 ml-1.5">
-          {atualizacoes.slice(0, 30).map((a, i) => (
-            <li key={i} className="ml-4 pb-4 last:pb-0">
-              <span className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded-full bg-neutral-300 dark:bg-neutral-600" />
-              {a.data && <p className="text-xs text-neutral-500">{fmtDate(a.data, lang)}{a.quem && ` · ${a.quem}`}</p>}
-              <p className="text-sm">{a.texto}</p>
-            </li>
-          ))}
-        </ol>
+        <LinhaDoTempo itens={atualizacoes.slice(0, 30).map((a) => ({ dia: a.data ? fmtDate(a.data, lang) : "—", tipo: "comentou" as const, quem: a.quem || "—", texto: t.publicar.toLowerCase(), comentario: a.texto }))} />
       )}
     </div>
   );
 
   const Num = ({ v, label, cor, href }: { v: number | string; label: string; cor?: string; href?: string }) => {
-    const c = <><p className={`text-lg font-semibold tabular-nums ${cor ?? ""}`}>{v}</p><p className="text-[11px] text-neutral-500 leading-tight">{label}</p></>;
-    const cls = "rounded-lg bg-neutral-100 dark:bg-neutral-900 px-2 py-2 text-center";
-    return href ? <Link href={href} className={`${cls} hover:ring-1 hover:ring-neutral-300 dark:hover:ring-neutral-700`}>{c}</Link> : <div className={cls}>{c}</div>;
+    const c = <><p className={`font-display text-2xl font-light leading-none tabular-nums md:text-3xl ${cor || "text-t1"}`}>{v}</p><p className="meta text-t2">{label}</p></>;
+    const cls = "grid gap-0.5 rounded-cartao bg-s1 px-3 py-3";
+    return href ? <Link href={href} className={`anel-foco ${cls} transition-colors hover:bg-s2`}>{c}</Link> : <div className={cls}>{c}</div>;
   };
   const longa = p.descricao.length > 220;
 
   return (
     <>
-      <Link href="/projetos" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.projetos}</Link>
-      <Title>{p.nome}</Title>
+      <div className="-ml-3 mb-2"><Botao href="/projetos" variante="fantasma" tamanho="P" icone="voltar">{t.projetos}</Botao></div>
+      <CabecalhoPagina selo="broto" rotulo={t.projetos} titulo={p.nome}
+        acoes={<>
+          <BotaoIcone icone="informacao" aria-label={t.visaoHolistica} href={`/projetos/${id}/visao`} />
+          <BotaoIcone icone="sucesso" aria-label={t.objetivos} href="/objetivos" />
+          {diags.map((d) => <BotaoIcone key={d.id} icone="tarefa" aria-label={t.diagnostico} href={`/diagnosticos/${d.id}`} />)}
+          <Botao href={`/tarefas/nova?projeto=${id}${q.equipe ? `&equipe=${q.equipe}` : ""}&back=/projetos/${id}`} icone="mais" folha>{t.novaTarefa}</Botao>
+        </>}
+        filtros={p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <Chip key={eid} href={`/equipes/${eid}`} cor={e.cor}>{e.nome}</Chip>; })} />
       {p.descricao && (longa ? (
-        <details className="-mt-3 mb-4 group">
-          <summary className="list-none cursor-pointer text-sm text-neutral-500"><span className="group-open:hidden line-clamp-2">{p.descricao}</span><span className="text-xs underline group-open:hidden">{t.lerMais}</span></summary>
-          <p className="text-sm text-neutral-500 whitespace-pre-line">{p.descricao}</p>
+        <details className="-mt-3 mb-5 group">
+          <summary className="anel-foco corpo cursor-pointer list-none rounded-interno text-t2"><span className="line-clamp-2 group-open:hidden">{p.descricao}</span><span className="meta underline group-open:hidden">{t.lerMais}</span></summary>
+          <p className="corpo whitespace-pre-line text-t2">{p.descricao}</p>
         </details>
-      ) : <p className="-mt-3 mb-4 text-sm text-neutral-500">{p.descricao}</p>)}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && (
-          <Link key={eid} href={`/equipes/${eid}`} className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-xs text-neutral-600 dark:text-neutral-300 hover:underline">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: e.cor }} />{e.nome}
-          </Link>
-        ); })}
-      </div>
+      ) : <p className="corpo -mt-3 mb-5 text-t2">{p.descricao}</p>)}
 
-      <div className="grid grid-cols-4 gap-2 mb-2">
+      <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Num v={abertas.length} label={t.abertasLbl} />
-        <Num v={atrasadas} label={t.atrasadasLbl} cor={atrasadas ? "text-red-600 dark:text-red-400" : ""} />
-        <Num v={semDono} label={t.semDonoLbl} cor={semDono ? "text-amber-700 dark:text-amber-400" : ""} href={semDono ? url({ pessoa: "sem", equipe: undefined }) : undefined} />
-        <Num v={`${pct}%`} label={t.concluidoLbl} cor="text-green-700 dark:text-green-400" />
+        <Num v={atrasadas} label={t.atrasadasLbl} cor={atrasadas ? "text-err" : ""} />
+        <Num v={semDono} label={t.semDonoLbl} cor={semDono ? "text-warn" : ""} href={semDono ? url({ pessoa: "sem", equipe: undefined }) : undefined} />
+        <Num v={`${pct}%`} label={t.concluidoLbl} cor="text-ok" />
       </div>
-      <div className="h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden mb-4"><div className="h-full bg-green-500" style={{ width: `${pct}%` }} /></div>
+      <div className="mb-6"><BarraProgresso valor={pct} planejado rotuloAcessivel={t.concluidoLbl} /></div>
 
-      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-2">
-        <Link href={`/tarefas/nova?projeto=${id}${q.equipe ? `&equipe=${q.equipe}` : ""}&back=/projetos/${id}`} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium"><Plus size={15} />{t.novaTarefa}</Link>
-        <Link href={`/projetos/${id}/visao`} className={BOTAO}><Compass size={15} />{t.visaoHolistica}</Link>
-        <Link href="/objetivos" className={BOTAO}><Target size={15} />{t.objetivos}</Link>
-        {diags.map((d) => <Link key={d.id} href={`/diagnosticos/${d.id}`} className={BOTAO}><ClipboardList size={15} />{t.diagnostico}</Link>)}
-      </div>
 
       <Abas id="projeto" inicial={q.equipe || q.pessoa ? "tarefas" : undefined} abas={[
         { id: "tarefas", label: t.tarefasLbl, count: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },

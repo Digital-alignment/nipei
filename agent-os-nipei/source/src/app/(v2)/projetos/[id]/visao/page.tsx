@@ -1,6 +1,6 @@
 import Link from "next/link";
+import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Sparkles } from "lucide-react";
 import { Card, Progress, Section, Title } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Imprimir from "@/components/v2/Imprimir";
@@ -14,9 +14,9 @@ import { visaoAction } from "../../../actions";
 
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 const Num = ({ n, label, alerta }: { n: number | string; label: string; alerta?: boolean }) => (
-  <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 py-2">
-    <p className={`text-xl font-semibold tabular-nums ${alerta ? "text-amber-700 dark:text-amber-400" : ""}`}>{n}</p>
-    <p className="text-xs text-neutral-500">{label}</p>
+  <div className="rounded-interno px-3 py-2">
+    <p className={`text-xl font-semibold tabular-nums ${alerta ? "text-warn" : ""}`}>{n}</p>
+    <p className="text-xs text-t2">{label}</p>
   </div>
 );
 
@@ -34,7 +34,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Link href={`/projetos/${id}`} className="print:hidden inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{v.projeto.nome}</Link>
+      <Link href={`/projetos/${id}`} className="print:hidden inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{v.projeto.nome}</Link>
       <Title sub={t.visaoIntro}>{t.visaoHolistica} · {v.projeto.nome}</Title>
 
       <Section title={t.numeros}>
@@ -54,17 +54,17 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
         {me.gestao && (
           <form action={visaoAction} className="print:hidden flex flex-wrap items-center gap-2 mb-3">
             <input type="hidden" name="projeto" value={id} />
-            <BotaoEnviar enviando={t.processando} className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm inline-flex items-center gap-1.5">
-              <Sparkles size={14} />{sintese ? t.atualizarSintese : t.gerarSintese}
+            <BotaoEnviar enviando={t.processando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4 inline-flex items-center gap-1.5">
+              <Icone nome="gerar-outra"  tamanho={14} />{sintese ? t.atualizarSintese : t.gerarSintese}
             </BotaoEnviar>
             {sintese && <Imprimir label={t.imprimir} />}
-            <p className="text-xs text-neutral-500 basis-full">{t.sinteseAviso}</p>
+            <p className="text-xs text-t2 basis-full">{t.sinteseAviso}</p>
           </form>
         )}
         {sintese && <div className="print:hidden mb-3"><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "visao", id }} formatos={[{ formato: "doc", label: t.cx.exportarDoc }, { formato: "slides", label: t.cx.exportarSlides }]} /></div>}
         {sintese
-          ? <><p className="text-xs text-neutral-500 mb-2">{t.geradoEm} {fmtDate(diaLocal(sintese.geradaEm), lang)}</p><Md>{sintese.texto}</Md></>
-          : <p className="text-sm text-neutral-500">{t.naoGerado}</p>}
+          ? <><p className="text-xs text-t2 mb-2">{t.geradoEm} {fmtDate(diaLocal(sintese.geradaEm), lang)}</p><Md>{sintese.texto}</Md></>
+          : <p className="text-sm text-t2">{t.naoGerado}</p>}
       </Section>
 
       {v.objetivos.length > 0 && (
@@ -72,8 +72,8 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
           <div className="grid gap-2">
             {v.objetivos.map((o) => (
               <Card key={o.id} href={`/objetivos?ano=${o.ano}#${o.id}`}>
-                <p className="text-sm font-medium">{o.titulo} <span className="text-neutral-500 font-normal">· {o.ano}</span></p>
-                <div className="mt-2">{o.progresso ? <Progress {...o.progresso} /> : <span className="text-xs text-neutral-500">{t.semTarefasLigadas}</span>}</div>
+                <p className="text-sm font-medium">{o.titulo} <span className="text-t2 font-normal">· {o.ano}</span></p>
+                <div className="mt-2">{o.progresso ? <Progress {...o.progresso} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
               </Card>
             ))}
           </div>
@@ -84,7 +84,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
         <Section title={t.melhoriasLbl}>
           <ul className="grid gap-1 text-sm">
             {[...v.melhorias].sort((a, b) => ["alta", "media", "baixa"].indexOf(a.prioridade) - ["alta", "media", "baixa"].indexOf(b.prioridade)).slice(0, 12).map((i) => (
-              <li key={i.id} className="flex justify-between gap-3"><span>{i.titulo} <span className="text-xs text-neutral-500">· {prio[i.prioridade]}{i.responsavel ? ` · ${nome(i.responsavel)}` : ""}</span></span><span className="tabular-nums text-neutral-500">{i.custo ? brl(i.custo) : "—"}</span></li>
+              <li key={i.id} className="flex justify-between gap-3"><span>{i.titulo} <span className="text-xs text-t2">· {prio[i.prioridade]}{i.responsavel ? ` · ${nome(i.responsavel)}` : ""}</span></span><span className="tabular-nums text-t2">{i.custo ? brl(i.custo) : "—"}</span></li>
             ))}
           </ul>
         </Section>
@@ -112,7 +112,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
             {me.gestao && <li><Link href={`/diagnosticos/${d.id}/documento`} className="underline">{t.documentoFinal}</Link></li>}
           </ul>
         ) : (
-          <p className="text-sm text-neutral-500">{t.semDiagnosticoProjeto} {me.gestao && <Link href={`/diagnosticos?projeto=${id}`} className="underline">{t.novoDiagnostico}</Link>}</p>
+          <p className="text-sm text-t2">{t.semDiagnosticoProjeto} {me.gestao && <Link href={`/diagnosticos?projeto=${id}`} className="underline">{t.novoDiagnostico}</Link>}</p>
         )}
       </Section>
     </div>
