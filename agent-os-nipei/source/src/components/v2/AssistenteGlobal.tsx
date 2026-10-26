@@ -3,11 +3,16 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowLeft, BotMessageSquare, Brain, Check, CheckCheck, ExternalLink, Mic, RotateCcw, Send, Square, Trash2, Volume2, VolumeX, X } from "lucide-react";
 import { assistenteAction, assistenteConversaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
 import Campo from "@/components/ds/Campo";
-import Chip from "@/components/ds/Chip";
+import Chip, { BadgeEstado } from "@/components/ds/Chip";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
+import Icone from "@/components/ds/Icone";
+import Cartao from "@/components/ds/Cartao";
+import MenuAcoes from "@/components/ds/MenuAcoes";
+import { MiniAnelPinu, OrbePinu, type EstadoPinu } from "@/components/ds/Pinu";
+import { Skeleton } from "@/components/ds/Estados";
 import type { Lembranca, MsgSalva } from "@/lib/v2/assistente";
 
 export const ABRIR_ASSISTENTE = "nipei:assistente"; // window event; detail: { texto?: string }
@@ -17,9 +22,12 @@ type Labels = {
   nova: string; pensando: string; fechar: string; intro: string; abrir: string; semVoz: string;
   memoria: string; memoriaIntro: string; memoriaVazia: string; esquecer: string; categorias: Record<Lembranca["categoria"], string>;
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
+  oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
+  copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
+const CHAVE_RECENTES = "nipei:pinu:recentes"; // últimas perguntas neste aparelho (início do Pinu)
 const SILENCIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
 
 /** What gets read aloud: plain sentences, no markdown, cut at a sentence near ~600 chars; cards are announced. */
@@ -48,11 +56,12 @@ const SUGESTOES: Record<string, { pt: string[]; en: string[] }> = {
 };
 
 /**
- * The assistant on every page (Equipe 1): a button bottom-right on desktop, the middle item of the
- * phone bar, or any `window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail: { texto } }))`.
+ * The assistant on every page (Equipe 1), with the Pinu identity (DESIGN-SYSTEM.md 10.11): full screen on the
+ * phone, side panel on desktop. Opened by the orb (menu / phone bar), the header field, Hoje's field or any
+ * `window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail: { texto } }))`.
  * It sends the current page with each message; the conversation is stored per person on the server.
  */
-export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; labels: Labels }) {
+export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | "en"; nome: string; labels: Labels }) {
   const path = usePathname() ?? "/hoje";
   const busca = useSearchParams();
   const pagina = path + (busca?.toString() ? `?${busca}` : "");
@@ -69,7 +78,13 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
   const vozRef = useRef(false);
   const porVoz = useRef(false);                   // last question was spoken → keep the conversation going
   const ouvirDeNovo = useRef<() => void>(() => {});
-  useEffect(() => { try { const v = localStorage.getItem(CHAVE_VOZ) === "1"; setVoz(v); vozRef.current = v; } catch { /* private mode */ } }, []);
+  const [recentes, setRecentes] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(CHAVE_VOZ) === "1"; setVoz(v); vozRef.current = v;
+      setRecentes(JSON.parse(localStorage.getItem(CHAVE_RECENTES) ?? "[]"));
+    } catch { /* private mode */ }
+  }, []);
 
   // Phones only play audio started by a tap: unlock one <audio> element on the first tap and reuse it.
   const desbloquear = () => {
@@ -129,6 +144,7 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
     if (!q) return;
     setTexto(""); setErro("");
     setMsgs((m) => [...(m ?? []), { role: "user", content: q, em: new Date().toISOString() }]);
+    setRecentes((r) => { const n = [q.slice(0, 140), ...r.filter((x) => x !== q.slice(0, 140))].slice(0, 4); try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(n)); } catch { /* private mode */ } return n; });
     start(async () => {
       const r = await assistenteAction(q, pagina).catch(() => ({ error: "Falha de conexão" } as { error: string }));
       if ("error" in r && r.error) return setErro(r.error);
@@ -213,110 +229,212 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
   const secao = path.split("/")[1] || "hoje";
   const sugestoes = (SUGESTOES[secao] ?? SUGESTOES.hoje)[lang];
   const vazio = msgs !== null && msgs.length === 0;
+  const estadoOrbe: EstadoPinu = ouvindo ? "ouvindo" : falando >= 0 ? "falando" : pending ? "pensando" : "repouso";
+  const ultimaPergunta = [...(msgs ?? [])].reverse().find((m) => m.role === "user")?.content ?? "";
+  const ultimaResposta = msgs ? msgs.map((m) => m.role).lastIndexOf("assistant") : -1;
+  const ajustar = (resumo: string) => { setTexto(`${labels.ajustarTexto} ${resumo}: `); setTimeout(() => campo.current?.focus(), 30); };
+  const cancelarTodas = (mi: number) => start(async () => {
+    const cs = msgs?.[mi]?.cartoes ?? [];
+    let ultimo: MsgSalva[] | null = null;
+    for (let ci = 0; ci < cs.length; ci++) {
+      if (cs[ci].estado !== "pendente") continue;
+      const r = await decidirCartaoAction(mi, ci, false).catch(() => null);
+      if (r && "msgs" in r && r.msgs) ultimo = r.msgs;
+    }
+    if (ultimo) setMsgs(ultimo);
+  });
+
+  // campo do Pinu: grande no início, em pílula na conversa; ouvindo = o orbe toma o lugar do texto
+  const campoPinu = (grande: boolean) => (
+    <form onSubmit={(e) => { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); }}
+      className={`flex shrink-0 gap-2 bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      {ouvindo ? (
+        <span className="flex min-h-11 flex-1 items-center gap-3" aria-live="polite">
+          <OrbePinu estado="ouvindo" tamanho={40} /><span className="corpo text-t1">{labels.ouvindo}</span>
+        </span>
+      ) : (
+        <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={grande ? 2 : 1} maxLength={2000} aria-label={labels.placeholder}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
+          placeholder={labels.placeholder}
+          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande ? "min-h-12" : "max-h-32 self-center py-2"}`} />
+      )}
+      <span className="flex items-center justify-end gap-1.5">
+        {texto.trim() && !ouvindo
+          ? <BotaoIcone type="submit" icone="enviar" aria-label={labels.enviar} tamanho={44} variante="acento" disabled={pending} />
+          : <BotaoIcone icone={ouvindo ? "fechar" : "microfone"} aria-label={ouvindo ? labels.parar : labels.falarPinu} tamanho={44} variante="acento" onClick={falar} />}
+      </span>
+    </form>
+  );
 
   return (
     <>
       {aberto && (
-        <>
-          <div className="print:hidden md:hidden fixed inset-0 z-[90] bg-black/50" onClick={() => setAberto(false)} aria-hidden />
-          <section role="dialog" aria-label={labels.titulo}
-            className="print:hidden fixed z-[100] flex flex-col bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl
-              inset-x-0 bottom-0 h-[88dvh] rounded-t-2xl pb-[env(safe-area-inset-bottom)]
-              md:inset-auto md:right-6 md:bottom-6 md:w-[420px] md:h-[min(680px,calc(100dvh-7rem))] md:rounded-2xl md:pb-0">
-            <header className="flex items-center gap-2 px-4 h-14 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
-              {memoria !== null
-                ? <button type="button" onClick={() => setMemoria(null)} aria-label={labels.titulo} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-800"><ArrowLeft size={18} /></button>
-                : <span className="w-8 h-8 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center shrink-0"><BotMessageSquare size={16} /></span>}
-              <p className="font-semibold text-sm flex-1">{memoria !== null ? labels.memoria : labels.titulo}</p>
-              {memoria === null && (
-                <button type="button" onClick={alternarVoz} aria-pressed={voz} title={voz ? labels.vozDesligar : labels.vozLigar} aria-label={voz ? labels.vozDesligar : labels.vozLigar}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${voz ? "bg-green-600/15 text-green-700 dark:text-green-400" : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>
-                  {voz ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                </button>
-              )}
-              {memoria === null && <button type="button" onClick={verMemoria} disabled={pending} title={labels.memoria} aria-label={labels.memoria} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><Brain size={16} /></button>}
-              {memoria === null && !vazio && <button type="button" onClick={nova} disabled={pending} title={labels.nova} aria-label={labels.nova} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-40"><RotateCcw size={16} /></button>}
-              <button type="button" onClick={() => setAberto(false)} title={labels.fechar} aria-label={labels.fechar} className="w-9 h-9 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><X size={18} /></button>
-            </header>
+        <section role="dialog" aria-modal="true" aria-label={labels.titulo}
+          className="print:hidden fixed inset-0 z-[100] flex flex-col pb-[env(safe-area-inset-bottom)] text-t1 md:inset-y-0 md:left-auto md:right-0 md:w-[460px] md:shadow-[-1px_0_0_var(--s3)]"
+          // fundo com gradiente verde/oliva vindo do topo (mais forte no início, discreto na conversa)
+          style={{ background: `radial-gradient(130% ${vazio ? "55%" : "28%"} at 50% -5%, color-mix(in srgb, var(--ac) ${vazio ? 34 : 20}%, transparent), transparent 75%), var(--bg)` }}>
+          <header className="flex h-16 shrink-0 items-center gap-2 px-3">
+            {memoria !== null
+              ? <BotaoIcone icone="voltar" aria-label={labels.titulo} tamanho={44} variante="fantasma" onClick={() => setMemoria(null)} />
+              : <BotaoIcone icone="fechar" aria-label={labels.fechar} tamanho={44} variante="fantasma" onClick={() => setAberto(false)} />}
+            <span className="mx-auto inline-flex items-center gap-2 rounded-pilula bg-s1/70 py-1.5 pl-1.5 pr-3.5 font-display text-[15px] font-semibold">
+              {estadoOrbe === "repouso" ? <MiniAnelPinu tamanho={24} /> : <OrbePinu estado={estadoOrbe} tamanho={24} />}
+              {memoria !== null ? labels.memoria : "Pinu"}
+            </span>
+            {memoria === null ? (
+              <MenuAcoes rotulo={labels.maisOpcoes} itens={[
+                { icone: "microfone", rotulo: voz ? labels.vozDesligar : labels.vozLigar, onSelect: alternarVoz },
+                { icone: "informacao", rotulo: labels.memoria, onSelect: verMemoria },
+                ...(!vazio ? [{ icone: "mais" as const, rotulo: labels.nova, onSelect: nova }] : []),
+              ]} />
+            ) : <span className="size-11" />}
+          </header>
 
-            {memoria !== null ? (
-              <div className="flex-1 overflow-y-auto px-4 py-3 grid content-start gap-3 text-sm">
-                <p className="text-neutral-500 leading-relaxed">{memoria.length ? labels.memoriaIntro : labels.memoriaVazia}</p>
-                {(Object.keys(labels.categorias) as Lembranca["categoria"][]).filter((cat) => memoria.some((x) => x.categoria === cat)).map((cat) => (
-                  <div key={cat} className="grid gap-1.5">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{labels.categorias[cat]}</p>
-                    {memoria.filter((x) => x.categoria === cat).map((x) => (
-                      <div key={x.id} className="flex items-start gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 py-2">
-                        <p className="flex-1 min-w-0">{x.texto}</p>
-                        <button type="button" onClick={() => apagar(x.id)} disabled={pending} title={labels.esquecer} aria-label={`${labels.esquecer}: ${x.texto}`} className="shrink-0 text-neutral-400 hover:text-red-600 disabled:opacity-40"><Trash2 size={15} /></button>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ) : (<>
-            <div className="flex-1 overflow-y-auto px-4 py-3 grid content-start gap-3 text-sm">
-              {msgs === null && <p className="text-xs text-neutral-500 animate-pulse">{labels.pensando}</p>}
-              {vazio && <p className="text-neutral-500 leading-relaxed">{labels.intro}</p>}
-              {msgs?.map((m, mi) => m.role === "user" ? (
-                <p key={mi} className="justify-self-end max-w-[85%] rounded-2xl rounded-br-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-2 whitespace-pre-wrap">{m.content}</p>
-              ) : (
-                <div key={mi} className="grid gap-2 max-w-[95%]">
-                  {m.content && <div className="leading-relaxed"><Md>{m.content}</Md></div>}
-                  {m.content && (
-                    <button type="button" onClick={() => { desbloquear(); if (falando === mi) pararFala(); else { porVoz.current = false; void falarMsg(m, mi); } }}
-                      className={`justify-self-start inline-flex items-center gap-1 text-[11px] ${falando === mi ? "text-green-700 dark:text-green-400" : "text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"}`}>
-                      {falando === mi ? <><Square size={11} className="fill-current" />{labels.parar}</> : <><Volume2 size={12} />{labels.ouvir}</>}
-                    </button>
-                  )}
-                  {m.cartoes?.map((c, ci) => (
-                    <div key={ci} className={`rounded-xl border px-3 py-2.5 grid gap-1 ${c.estado === "pendente" ? "border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/30" : "border-neutral-200 dark:border-neutral-800"}`}>
-                      <p className={`font-medium ${c.estado === "cancelado" ? "line-through text-neutral-400" : ""}`}>{c.resumo}</p>
-                      {c.detalhe && <p className="text-xs text-neutral-500 whitespace-pre-wrap line-clamp-6">{c.detalhe}</p>}
-                      {c.estado === "erro" && <p className="text-xs text-red-600 dark:text-red-400">{c.erro}</p>}
-                      {c.estado === "pendente" ? (
-                        <div className="flex gap-2 mt-1">
-                          <button type="button" disabled={pending} onClick={() => decidir(mi, ci, true)} className="inline-flex items-center gap-1 rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs font-medium disabled:opacity-50"><Check size={13} />{labels.confirmar}</button>
-                          <button type="button" disabled={pending} onClick={() => decidir(mi, ci, false)} className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2.5 py-1 text-xs disabled:opacity-50">{labels.cancelar}</button>
-                        </div>
-                      ) : c.estado === "feito" && (
-                        <p className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400"><Check size={13} />{labels.feito}
-                          {c.link && <Link href={c.link} onClick={() => setAberto(false)} className="inline-flex items-center gap-0.5 underline text-neutral-500"><ExternalLink size={11} />{labels.abrir}</Link>}
-                        </p>
-                      )}
+          {memoria !== null ? (
+            <div className="grid flex-1 content-start gap-4 overflow-y-auto px-4 pb-4">
+              <p className="corpo text-t2">{memoria.length ? labels.memoriaIntro : labels.memoriaVazia}</p>
+              {(Object.keys(labels.categorias) as Lembranca["categoria"][]).filter((cat) => memoria.some((x) => x.categoria === cat)).map((cat) => (
+                <div key={cat} className="grid gap-2">
+                  <p className="rotulo-maiusculo text-t3">{labels.categorias[cat]}</p>
+                  {memoria.filter((x) => x.categoria === cat).map((x) => (
+                    <div key={x.id} className="flex items-center gap-2 rounded-[16px] bg-s1 py-1.5 pl-4 pr-1.5">
+                      <p className="corpo min-w-0 flex-1">{x.texto}</p>
+                      <BotaoIcone icone="fechar" aria-label={`${labels.esquecer}: ${x.texto}`} tamanho={40} variante="fantasma" onClick={() => apagar(x.id)} disabled={pending} />
                     </div>
                   ))}
-                  {(m.cartoes?.filter((c) => c.estado === "pendente").length ?? 0) > 1 && (
-                    <button type="button" disabled={pending} onClick={() => todas(mi)} className="justify-self-start inline-flex items-center gap-1 rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs font-medium disabled:opacity-50"><CheckCheck size={13} />{labels.confirmarTodas}</button>
+                </div>
+              ))}
+            </div>
+          ) : vazio ? (
+            // início: saudação em dois tons · bento (Falar com o Pinu em folha = o destaque) · Recentes · campo grande
+            <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
+              <h2 className="saudacao mt-2"><span className="text-t1">{labels.oi}, {nome}.</span><br /><span className="text-t2">{labels.ajudar}</span></h2>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={falar}
+                  className="anel-foco row-span-2 flex min-h-[216px] flex-col justify-between rounded-[8px_32px_8px_32px] bg-ac p-4 text-left text-ac-ink transition-[filter] hover:brightness-[.96]">
+                  <OrbePinu estado={ouvindo ? "ouvindo" : "repouso"} tamanho={44} />
+                  <span className="font-display text-2xl font-semibold leading-tight">{labels.falarPinu}</span>
+                  <span className="grid size-11 place-items-center self-end rounded-pilula bg-ac-ink text-ac"><Icone nome="microfone" tamanho={20} /></span>
+                </button>
+                {sugestoes.slice(0, 2).map((x) => (
+                  <button key={x} type="button" onClick={() => enviar(x)} disabled={pending}
+                    className="anel-foco flex min-h-[104px] flex-col justify-between gap-3 rounded-[18px] bg-s1/90 p-3.5 text-left hover:bg-s2">
+                    <Icone nome="mensagem" tamanho={18} className="text-ac-text" />
+                    <span className="font-texto text-sm font-medium leading-snug text-t1">{x}</span>
+                  </button>
+                ))}
+              </div>
+              {recentes.length > 0 && (
+                <div className="grid gap-2">
+                  <p className="titulo-cartao">{labels.recentes}</p>
+                  {recentes.map((r) => (
+                    <button key={r} type="button" onClick={() => enviar(r)} disabled={pending}
+                      className="anel-foco flex min-h-11 items-center gap-2.5 rounded-[14px] bg-s1 px-3 text-left font-texto text-sm text-t2 hover:bg-s2 hover:text-t1">
+                      <Icone nome="mensagem" tamanho={18} className="shrink-0 text-ac-text" /><span className="min-w-0 flex-1 truncate">{r}</span><Icone nome="avancar" tamanho={16} className="shrink-0 text-t3" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="meta text-t3">{labels.intro}</p>
+              {erro && <p role="alert" className="meta inline-flex items-center gap-1.5 text-err"><Icone nome="erro" tamanho={16} />{erro}</p>}
+              <div className="mt-auto">{campoPinu(true)}</div>
+            </div>
+          ) : (<>
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pb-3" aria-live="polite">
+              {msgs === null && <div className="grid gap-2"><Skeleton largura="70%" /><Skeleton largura="40%" /></div>}
+              {msgs?.map((m, mi) => m.role === "user" ? (
+                // a pessoa: balão tonal à direita
+                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{m.content}</p>
+              ) : (
+                <div key={mi} className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2 font-display text-sm font-semibold">
+                    {falando === mi ? <OrbePinu estado="falando" tamanho={20} /> : <MiniAnelPinu tamanho={18} />}Pinu
+                  </span>
+                  {m.content && (
+                    // o Pinu: balão tingido de verde à esquerda
+                    <div className="max-w-[88%] self-start rounded-[18px_18px_18px_6px] px-3.5 py-2.5 font-texto text-[15px] leading-relaxed text-t1 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ac)_14%,transparent)]"
+                      style={{ background: "linear-gradient(160deg, color-mix(in srgb, var(--ac) 16%, transparent), var(--s1) 80%)" }}>
+                      <Md>{m.content}</Md>
+                    </div>
+                  )}
+                  {(m.cartoes?.length ?? 0) > 0 && (() => {
+                    const cs = m.cartoes!;
+                    const pend = cs.filter((c) => c.estado === "pendente").length;
+                    return (
+                      // cartão de proposta: título + "Proposta" · o que será feito · Confirmar / Ajustar / Cancelar
+                      <Cartao variante="pinu" className="max-w-[94%] self-start">
+                        <div className="flex items-center gap-2">
+                          <Icone nome="tarefa" tamanho={20} className="text-ac-text" />
+                          <span className="titulo-cartao min-w-0 flex-1">{cs.length === 1 ? cs[0].resumo : labels.propostas.replace("{n}", String(cs.length))}</span>
+                          {pend > 0 ? <BadgeEstado estado="andamento">{labels.proposta}</BadgeEstado> : <BadgeEstado estado="feita">{labels.feito}</BadgeEstado>}
+                        </div>
+                        <ul className="grid gap-2">
+                          {cs.map((c, ci) => (
+                            <li key={ci} className="flex items-start gap-2.5">
+                              <span className={`mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-pilula ${c.estado === "feito" ? "bg-ac text-ac-ink" : c.estado === "erro" ? "bg-err-bg text-err" : "shadow-[inset_0_0_0_2px_var(--s4)]"}`}>
+                                {c.estado === "feito" && <Icone nome="confirmar" tamanho={12} />}{c.estado === "erro" && <Icone nome="erro" tamanho={12} />}
+                              </span>
+                              <span className="grid min-w-0 flex-1 gap-0.5">
+                                {cs.length > 1 && <span className={`font-texto text-sm font-medium ${c.estado === "cancelado" ? "text-t3 line-through" : "text-t1"}`}>{c.resumo}</span>}
+                                {c.detalhe && <span className="meta line-clamp-4 whitespace-pre-wrap text-t2">{c.detalhe}</span>}
+                                {c.estado === "erro" && <span className="meta text-err">{c.erro}</span>}
+                                {c.estado === "feito" && c.link && <Link href={c.link} onClick={() => setAberto(false)} className="meta inline-flex items-center gap-1 text-ac-text underline"><Icone nome="abrir-fora" tamanho={14} />{labels.abrir}</Link>}
+                              </span>
+                              {c.estado === "pendente" && cs.length > 1 && <BotaoIcone icone="fechar" aria-label={`${labels.cancelar}: ${c.resumo}`} tamanho={40} variante="fantasma" disabled={pending} onClick={() => decidir(mi, ci, false)} />}
+                            </li>
+                          ))}
+                        </ul>
+                        {pend > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            <Botao type="button" icone="confirmar" tamanho="M" carregando={pending} onClick={() => (pend > 1 ? todas(mi) : decidir(mi, cs.findIndex((c) => c.estado === "pendente"), true))}>{pend > 1 ? labels.confirmarTodas : labels.confirmar}</Botao>
+                            <Botao type="button" variante="tonal" icone="editar" tamanho="M" desativado={pending} onClick={() => ajustar(cs.length === 1 ? cs[0].resumo : labels.propostas.replace("{n}", String(cs.length)))}>{labels.ajustar}</Botao>
+                            <Botao type="button" variante="fantasma" icone="fechar" tamanho="M" desativado={pending} onClick={() => cancelarTodas(mi)}>{labels.cancelar}</Botao>
+                          </div>
+                        )}
+                      </Cartao>
+                    );
+                  })()}
+                  {m.content && (
+                    // ações da resposta: gerar outra · editar (a pergunta) · ⋯ (ouvir, copiar)
+                    <div className="-ml-2 flex items-center gap-0.5 text-t3">
+                      {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="gerar-outra" aria-label={labels.gerarOutra} tamanho={40} variante="fantasma" disabled={pending} onClick={() => enviar(ultimaPergunta)} />}
+                      {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="editar" aria-label={labels.editarPergunta} tamanho={40} variante="fantasma" onClick={() => { setTexto(ultimaPergunta); setTimeout(() => campo.current?.focus(), 30); }} />}
+                      <MenuAcoes rotulo={labels.maisOpcoes} alinhar="esquerda" itens={[
+                        falando === mi
+                          ? { icone: "fechar", rotulo: labels.parar, onSelect: pararFala }
+                          : { icone: "microfone", rotulo: labels.ouvir, onSelect: () => { desbloquear(); porVoz.current = false; void falarMsg(m, mi); } },
+                        { icone: "baixar", rotulo: labels.copiar, onSelect: () => { void navigator.clipboard?.writeText(m.content); } },
+                      ]} />
+                    </div>
                   )}
                 </div>
               ))}
-              {pending && msgs !== null && <p className="text-xs text-neutral-500 animate-pulse">{labels.pensando}</p>}
-              {erro && <p className="text-xs text-red-600 dark:text-red-400">{erro}</p>}
+              {pending && msgs !== null && (
+                // pensando: mini-orbe + frase + skeleton de 2 linhas
+                <div className="grid gap-2">
+                  <span className="flex items-center gap-2 font-display text-sm font-semibold"><OrbePinu estado="pensando" tamanho={20} />{labels.pensando}</span>
+                  <Skeleton largura="70%" altura={10} /><Skeleton largura="40%" altura={10} />
+                </div>
+              )}
+              {erro && <p role="alert" className="meta inline-flex items-center gap-1.5 text-err"><Icone nome="erro" tamanho={16} />{erro}</p>}
               <div ref={fim} />
             </div>
 
-            {(vazio || (msgs !== null && !pending && msgs.length < 2)) && (
-              <div className="flex gap-1.5 overflow-x-auto px-4 pb-2 shrink-0">
-                {sugestoes.map((x) => (
-                  <button key={x} type="button" onClick={() => enviar(x)} disabled={pending}
-                    className="shrink-0 whitespace-nowrap rounded-full border border-neutral-200 dark:border-neutral-700 px-3 h-8 text-xs text-neutral-600 dark:text-neutral-300 hover:border-neutral-400">{x}</button>
-                ))}
+            {falando >= 0 && (
+              <div className="mx-4 mb-2 flex shrink-0 items-center gap-3 rounded-pilula bg-s1 py-1 pl-2 pr-1">
+                <OrbePinu estado="falando" tamanho={32} /><span className="meta flex-1 text-t2">Pinu</span>
+                <Botao type="button" variante="fantasma" tamanho="P" icone="fechar" onClick={pararFala}>{labels.parar}</Botao>
               </div>
             )}
-
-            <form onSubmit={(e) => { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); }} className="flex items-end gap-2 px-3 py-3 border-t border-neutral-100 dark:border-neutral-800 shrink-0">
-              <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={1} maxLength={2000}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
-                placeholder={ouvindo ? labels.ouvindo : labels.placeholder}
-                className="min-w-0 flex-1 resize-none max-h-32 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-4 py-2.5 text-sm leading-snug" />
-              {texto.trim()
-                ? <button aria-label="Enviar" disabled={pending} className="w-10 h-10 shrink-0 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center disabled:opacity-50"><Send size={16} /></button>
-                : <button type="button" onClick={falar} aria-label={labels.ouvindo} className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${ouvindo ? "bg-red-600 text-white animate-pulse" : "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"}`}><Mic size={16} /></button>}
-            </form>
-            </>)}
-          </section>
-        </>
+            {msgs !== null && !pending && (
+              // continuações sugeridas, acima do campo
+              <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-2">
+                {sugestoes.map((x) => <Chip key={x} icone="mensagem" onClick={() => enviar(x)}>{x}</Chip>)}
+              </div>
+            )}
+            <div className="shrink-0 px-3 pb-3">{campoPinu(false)}</div>
+          </>)}
+        </section>
       )}
     </>
   );

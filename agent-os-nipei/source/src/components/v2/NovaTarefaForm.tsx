@@ -54,7 +54,9 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
       <input type="hidden" name="back" value={back} />
       {inicial.status && <input type="hidden" name="status" value={inicial.status} />}
       <div className="grid gap-3">
-        <Campo tipo="titulo" name="title" required autoFocus maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh} />
+        {/* TODO(pinu): ainda não há endpoint de sugestão para um título novo (proporIAAction só serve tarefas que já existem).
+            Quando houver, passe sugestao={<SugestaoPinu texto={...} onUsar={...} onOutra={...} />} (components/ds/Campo). */}
+        <Campo tipo="titulo" name="title" required autoFocus maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh} sugestao={undefined} />
         <Campo tipo="area" name="descricao" rows={2} maxLength={4000} rotulo={l.descricao} placeholder={l.descricaoPh} />
       </div>
 
