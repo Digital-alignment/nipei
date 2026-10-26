@@ -81,6 +81,9 @@ export async function createTarefaAction(form: FormData) {
     descricao: String(form.get("descricao") ?? "").replace(/\r/g, "").trim().slice(0, 4000) || undefined,
     checklist: checklist.map((texto) => ({ feito: false, texto })),
   });
+  // "+" de uma coluna do Quadro: a tarefa já nasce no estado da coluna
+  const estado = pick(form.get("status"), ["doing", "done"]);
+  if (estado) setTarefaStatus(id, estado as Status, actorName(me));
   revalidatePath("/", "layout");
   if (form.get("outra")) {
     // keep the context (team, project, objective, where to go back) for the next task

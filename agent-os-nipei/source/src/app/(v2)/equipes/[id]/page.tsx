@@ -1,8 +1,18 @@
 import Link from "next/link";
+import { AbasComPainel } from "@/components/ds/Abas";
+import ChipDS from "@/components/ds/Chip";
+import { EstadoVazio } from "@/components/ds/Estados";
+import AvatarDS from "@/components/ds/Avatar";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import Campo from "@/components/ds/Campo";
+import Cartao from "@/components/ds/Cartao";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
+import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
+import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Plus, Scale, Users } from "lucide-react";
-import { Avatar, Card, Chip, Empty, Progress, TaskRow, Title } from "@/components/v2/ui";
-import Abas from "@/components/v2/Abas";
+import { TaskRow } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
@@ -13,10 +23,6 @@ import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/
 import { getT } from "@/lib/v2/i18n";
 import { atribuirAction, reatribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
-const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 mb-3";
-const BOTAO = "inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900";
-const ROTULO = "text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2";
-const sel = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs max-w-36";
 
 export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string }> }) {
   const { id } = await params;
@@ -58,15 +64,12 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       {gerir && !y.responsaveis.length && (
         <form action={atribuirAction} className="flex items-center gap-1">
           <input type="hidden" name="id" value={y.id} />
-          <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={sel}>
-            <option value="" disabled>{t.escolherPessoa}</option>
-            {responsaveisPara(id).map((g) => (
+          <Campo tipo="selecao" rotulo={t.escolherPessoa} name="pessoa" defaultValue=""><option value="" disabled>{t.escolherPessoa}</option>{responsaveisPara(id).map((g) => (
               <optgroup key={g.grupo} label={t.gruposResp[g.grupo]}>
                 {g.pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}{p.suspenso ? ` (${t.suspensoLbl})` : ""}</option>)}
               </optgroup>
-            ))}
-          </select>
-          <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2 py-1 text-xs">{t.atribuirPessoa}</BotaoEnviar>
+            ))}</Campo>
+          <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{t.atribuirPessoa}</BotaoEnviar>
         </form>
       )}
       {can.editTarefa(me, y) && <PrazoRapido id={y.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} />}
@@ -74,7 +77,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   );
   const grupo = (titulo: string, o: { tarefas: Tarefa[]; selos: Record<string, Selo[]> }, alerta = false) => o.tarefas.length > 0 && (
     <div className="mb-5">
-      <p className={`${ROTULO} ${alerta ? "!text-red-600 dark:!text-red-400" : ""}`}>{titulo} <span className="font-normal">({o.tarefas.length})</span></p>
+      <h3 className="mb-2 flex items-center gap-2"><span className="titulo-cartao">{titulo}</span><span className={`rounded-pilula px-2.5 py-0.5 text-xs font-semibold tabular-nums ${alerta ? "bg-err-bg text-err" : "bg-s2 text-t2"}`}>{o.tarefas.length}</span></h3>
       <ul>{o.tarefas.map((x) => <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]?.map((s) => rotSelo[s])} extra={extra} selecionar={gerir ? "lote-equipe" : undefined} />)}</ul>
     </div>
   );
@@ -84,20 +87,20 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
     <>
       <div className="flex items-center gap-2 mt-3 mb-2">
       <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-        <Chip href={url({ pessoa: undefined })} on={!q.pessoa}>{t.todas}</Chip>
-        {me.pessoa && ids.includes(me.pessoa.id) && <Chip href={url({ pessoa: me.pessoa.id })} on={q.pessoa === me.pessoa.id}>{t.minhasLbl}</Chip>}
-        <Chip href={url({ pessoa: "sem" })} on={q.pessoa === "sem"}>{t.semDonoLbl} ({semDono})</Chip>
-        {pessoaFiltro && pessoaFiltro.id !== me.pessoa?.id && <Chip href={url({ pessoa: undefined })} on>✕ {pessoaFiltro.name.split(" ")[0]}</Chip>}
+        <ChipDS ativo={!q.pessoa} href={url({ pessoa: undefined })}>{t.todas}</ChipDS>
+        {me.pessoa && ids.includes(me.pessoa.id) && <ChipDS ativo={q.pessoa === me.pessoa.id} href={url({ pessoa: me.pessoa.id })}>{t.minhasLbl}</ChipDS>}
+        <ChipDS ativo={q.pessoa === "sem"} href={url({ pessoa: "sem" })}>{t.semDonoLbl} ({semDono})</ChipDS>
+        {pessoaFiltro && pessoaFiltro.id !== me.pessoa?.id && <ChipDS ativo={true} href={url({ pessoa: undefined })}>✕ {pessoaFiltro.name.split(" ")[0]}</ChipDS>}
       </div>
         {gerir && filtradas.length > 0 && <LoteToggle formId="lote-equipe" label={t.selecionarLbl} cancelar={t.cancelar} />}
       </div>
       {e.areas.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 mb-3 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-          <Chip href={url({ area: undefined })} on={!q.area}>{t.todasAreas}</Chip>
-          {e.areas.map((a) => <Chip key={a} href={url({ area: a })} on={q.area === a}>{a}</Chip>)}
+          <ChipDS ativo={!q.area} href={url({ area: undefined })}>{t.todasAreas}</ChipDS>
+          {e.areas.map((a) => <ChipDS ativo={q.area === a} key={a} href={url({ area: a })}>{a}</ChipDS>)}
         </div>
       )}
-      {filtradas.length === 0 ? <Empty>{t.nadaPendente}</Empty> : (
+      {filtradas.length === 0 ? <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> : (
         <>
           {grupo(t.agora, ordenarAgora(filtradas.filter((x) => x.prazo && x.prazo <= hoje), ctx), true)}
           {grupo(t.proximas, ordenarProximas(filtradas.filter((x) => x.prazo > hoje), ctx))}
@@ -111,7 +114,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
           prioridades: { urgente: t.prioUrgente, alta: t.prioAlta, "média": t.prioMedia, baixa: t.prioBaixa } }} />}
       {feitas30.length > 0 && (
         <details className="mt-2">
-          <summary className="cursor-pointer text-sm text-neutral-500">{t.concluidasRecentes} ({feitas30.length})</summary>
+          <summary className="cursor-pointer text-sm text-t2">{t.concluidasRecentes} ({feitas30.length})</summary>
           <ul className="mt-2">{feitas30.sort((a, b) => b.concluidoEm.localeCompare(a.concluidoEm)).slice(0, 20).map((x) => <TaskRow key={x.id} t={x} {...rowProps} />)}</ul>
         </details>
       )}
@@ -122,26 +125,26 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const estado = new Map(bal?.cargas.map((c) => [c.id, c.estado]) ?? []);
   const titulo = (tid: string) => todas.find((x) => x.id === tid)?.title ?? tid;
   const equilibrio = bal && (bal.sugestoes.length > 0 || bal.cargas.some((c) => c.estado === "sobrecarga")) && (
-    <div className={`${CARTAO} mt-3`}>
-      <p className={`${ROTULO} inline-flex items-center gap-1.5`}><Scale size={13} />{t.equilibrarCarga}</p>
-      <p className="text-xs text-neutral-500 mb-2">{t.equilibrarIntro.replace("{media}", bal.media.toFixed(1))}</p>
-      {bal.sugestoes.length === 0 ? <p className="text-sm text-neutral-500">{t.semSugestoesCarga}</p> : (
+    <Cartao className="mb-3 mt-3">
+      <p className="rotulo-maiusculo text-t3 mb-2 inline-flex items-center gap-1.5"><Icone nome="pessoas" tamanho={16} />{t.equilibrarCarga}</p>
+      <p className="text-xs text-t2 mb-2">{t.equilibrarIntro.replace("{media}", bal.media.toFixed(1))}</p>
+      {bal.sugestoes.length === 0 ? <p className="text-sm text-t2">{t.semSugestoesCarga}</p> : (
         <ul>
           {bal.sugestoes.map((s) => (
-            <li key={s.tarefa} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+            <li key={s.tarefa} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-s2 last:border-0">
               <div className="min-w-0 flex-1">
                 <Link href={`/tarefas/${s.tarefa}`} className="block text-sm leading-snug hover:underline">{titulo(s.tarefa)}</Link>
-                <p className="text-xs text-neutral-500">{s.de ? primeiro(s.de) : t.semDonoLbl} → <span className="text-neutral-800 dark:text-neutral-200 font-medium">{primeiro(s.para)}</span></p>
+                <p className="text-xs text-t2">{s.de ? primeiro(s.de) : t.semDonoLbl} → <span className="text-t1 font-medium">{primeiro(s.para)}</span></p>
               </div>
               <form action={reatribuirAction}>
                 <input type="hidden" name="id" value={s.tarefa} /><input type="hidden" name="de" value={s.de} /><input type="hidden" name="para" value={s.para} />
-                <BotaoEnviar enviando="…" className="rounded-md border border-neutral-300 dark:border-neutral-700 px-2.5 py-1 text-xs">{s.de ? t.moverPara : t.atribuirA} {primeiro(s.para)}</BotaoEnviar>
+                <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{s.de ? t.moverPara : t.atribuirA} {primeiro(s.para)}</BotaoEnviar>
               </form>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Cartao>
   );
   const pessoasAba = (
     <>
@@ -150,28 +153,28 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       {gente.map(({ p, n, coord, fora }) => {
         const suas = ordenarAgora(abertasEq.filter((x) => x.responsaveis.includes(p.id)), ctx).tarefas;
         return (
-          <li key={p.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          <li key={p.id} className="rounded-cartao bg-s1">
             <details>
               <summary className="list-none cursor-pointer p-3 flex items-center gap-3">
-                <Avatar name={p.name} size={36} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} />
+                <AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={32} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">
                     {p.name}
-                    {coord && <span className="ml-1.5 rounded bg-neutral-100 dark:bg-neutral-800 px-1 text-[10px] font-normal text-neutral-600 dark:text-neutral-300">{t.coordLbl}</span>}
-                    {estado.get(p.id) === "sobrecarga" && <span className="ml-1.5 rounded bg-red-50 dark:bg-red-950/40 px-1 text-[10px] font-normal text-red-700 dark:text-red-400">{t.sobrecarga}</span>}
-                    {estado.get(p.id) === "folga" && <span className="ml-1.5 rounded bg-green-50 dark:bg-green-950/40 px-1 text-[10px] font-normal text-green-700 dark:text-green-400">{t.temFolga}</span>}
-                    {fora && <span className="ml-1.5 rounded bg-amber-50 dark:bg-amber-950/40 px-1 text-[10px] font-normal text-amber-700 dark:text-amber-400">{t.foraEquipe}</span>}
+                    {coord && <span className="ml-1.5 rounded bg-s2 px-1 text-xs font-normal text-t2">{t.coordLbl}</span>}
+                    {estado.get(p.id) === "sobrecarga" && <span className="ml-1.5 rounded bg-err-bg px-1 text-xs font-normal text-err">{t.sobrecarga}</span>}
+                    {estado.get(p.id) === "folga" && <span className="ml-1.5 rounded bg-ok-bg px-1 text-xs font-normal text-ok">{t.temFolga}</span>}
+                    {fora && <span className="ml-1.5 rounded bg-warn-bg px-1 text-xs font-normal text-warn">{t.foraEquipe}</span>}
                   </p>
                   <div className="mt-1 flex items-center gap-2">
-                    <div className="h-1.5 w-24 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><div className="h-full" style={{ width: `${(n.abertas / maxCarga) * 100}%`, background: e.cor }} /></div>
-                    <span className="text-xs text-neutral-500 tabular-nums">{n.abertas} {t.abertasLbl}</span>
-                    {n.atrasadas > 0 && <span className="text-xs text-red-600 dark:text-red-400 tabular-nums">{n.atrasadas} {t.atrasadasLbl}</span>}
-                    {n.feitas30 > 0 && <span className="text-xs text-green-700 dark:text-green-400 tabular-nums">✓ {n.feitas30}</span>}
+                    <div className="h-1.5 w-24 rounded-pilula bg-s2 overflow-hidden"><div className="h-full" style={{ width: `${(n.abertas / maxCarga) * 100}%`, background: e.cor }} /></div>
+                    <span className="text-xs text-t2 tabular-nums">{n.abertas} {t.abertasLbl}</span>
+                    {n.atrasadas > 0 && <span className="text-xs text-err tabular-nums">{n.atrasadas} {t.atrasadasLbl}</span>}
+                    {n.feitas30 > 0 && <span className="inline-flex items-center gap-1 text-xs text-ok tabular-nums"><Icone nome="confirmar" tamanho={12} />{n.feitas30}</span>}
                   </div>
                 </div>
               </summary>
               <div className="px-3 pb-3">
-                {suas.length ? <ul>{suas.slice(0, 8).map((x) => <TaskRow key={x.id} t={x} {...rowProps} />)}</ul> : <Empty>{t.nadaPendente}</Empty>}
+                {suas.length ? <ul>{suas.slice(0, 8).map((x) => <TaskRow key={x.id} t={x} {...rowProps} />)}</ul> : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
                 <div className="flex flex-wrap gap-3 mt-2 text-xs">
                   {suas.length > 8 && <Link href={url({ pessoa: p.id })} className="underline">{t.verTodas} ({suas.length})</Link>}
                   <Link href={`/pessoas/${p.id}`} className="underline">{t.verFicha}</Link>
@@ -192,68 +195,67 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       {objetivos.map((o) => {
         const p = progresso(o.id, todas);
         return (
-          <Card key={o.id} href={`/objetivos?ano=${o.ano}#${o.id}`}>
-            <p className="text-sm font-medium">{o.titulo} <span className="text-neutral-500 font-normal">· {o.ano}{o.equipe !== id ? ` · ${t.apoio}` : ""}</span></p>
-            {p && <div className="mt-2"><Progress {...p} /></div>}
-          </Card>
+          <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos?ano=${o.ano}#${o.id}`}>
+            <p className="text-sm font-medium">{o.titulo} <span className="text-t2 font-normal">· {o.ano}{o.equipe !== id ? ` · ${t.apoio}` : ""}</span></p>
+            {p && <div className="mt-2"><BarraProgresso valor={p.done} max={p.total} rotulo={`${p.total ? Math.round((p.done / p.total) * 100) : 0}% · ${p.done}/${p.total}`} /></div>}
+          </Cartao>
         );
       })}
     </div>
-  ) : <Empty>—</Empty>;
+  ) : <EstadoVazio compacto titulo={<>—</>} />;
 
   const toggle = (action: typeof setEquipeAcessoAction, campo: string, valor: boolean, on: string, off: string) => (
     <form action={action}>
       <input type="hidden" name="equipe" value={e.id} /><input type="hidden" name={campo} value={String(!valor)} />
-      <button className="rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs">{valor ? off : on}</button>
+      <button className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{valor ? off : on}</button>
     </form>
   );
   const config = (
     <div className="mt-3">
-      <div className={CARTAO}>
-        <p className={ROTULO}>{t.acessoPlataforma}</p>
+      <Cartao className="mb-3">
+        <p className="rotulo-maiusculo text-t3 mb-2">{t.acessoPlataforma}</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className={e.acesso ? "text-green-700 dark:text-green-400" : "text-neutral-500"}>{e.acesso ? t.acessoLigado : t.acessoDesligado}</span>
+          <span className={e.acesso ? "text-ok" : "text-t2"}>{e.acesso ? t.acessoLigado : t.acessoDesligado}</span>
           {me.gestao && !e.gestao && toggle(setEquipeAcessoAction, "acesso", e.acesso, t.ligar, t.desligar)}
         </div>
-      </div>
-      <div className={CARTAO}>
-        <p className={ROTULO}>{t.avisosWhats}</p>
+      </Cartao>
+      <Cartao className="mb-3">
+        <p className="rotulo-maiusculo text-t3 mb-2">{t.avisosWhats}</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <span className={e.avisos ? "text-green-700 dark:text-green-400" : "text-neutral-500"}>{e.avisos ? t.avisosEquipeLigado : t.avisosEquipeDesligado}</span>
+          <span className={e.avisos ? "text-ok" : "text-t2"}>{e.avisos ? t.avisosEquipeLigado : t.avisosEquipeDesligado}</span>
           {me.gestao && toggle(setEquipeAvisosAction, "avisos", e.avisos, t.ligarAvisos, t.desligarAvisos)}
         </div>
-      </div>
+      </Cartao>
     </div>
   );
 
   const Num = ({ v, label, cor, href }: { v: number; label: string; cor?: string; href?: string }) => {
-    const c = <><p className={`text-lg font-semibold tabular-nums ${v ? cor ?? "" : ""}`}>{v}</p><p className="text-[11px] text-neutral-500">{label}</p></>;
-    return href ? <Link href={href} className="rounded-lg bg-neutral-100 dark:bg-neutral-900 px-2 py-2 text-center hover:ring-1 hover:ring-neutral-300">{c}</Link>
-      : <div className="rounded-lg bg-neutral-100 dark:bg-neutral-900 px-2 py-2 text-center">{c}</div>;
+    const c = <><p className={`font-display text-2xl font-light leading-none tabular-nums md:text-3xl ${v ? cor ?? "text-t1" : "text-t1"}`}>{v}</p><p className="meta text-t2">{label}</p></>;
+    return href ? <Link href={href} className="anel-foco grid gap-0.5 rounded-cartao bg-s1 px-3 py-3 transition-colors hover:bg-s2">{c}</Link>
+      : <div className="grid gap-0.5 rounded-cartao bg-s1 px-3 py-3">{c}</div>;
   };
 
   return (
     <>
-      <Link href="/equipes" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.equipes}</Link>
-      <Title sub={e.coordenadores.length > 0 && <span className="text-sm text-neutral-500">{t.coordenacao}: {e.coordenadores.map(primeiro).join(", ")}</span>}>
-        <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-full" style={{ background: e.cor }} />{e.nome}</span>
-      </Title>
-      <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
-        <Link href={`/tarefas/nova?equipe=${id}${pessoaFiltro ? `&responsavel=${pessoaFiltro.id}` : ""}&back=/equipes/${id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium"><Plus size={15} />{t.novaTarefa}</Link>
-        <Link href={`/equipes/${id}/reuniao`} className={BOTAO}><CalendarDays size={15} />{t.reuniaoEquipe}</Link>
-        <Link href={`/pessoas?equipe=${id}`} className={BOTAO}><Users size={15} />{t.pessoas}</Link>
-      </div>
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="-ml-3 mb-2"><Botao href="/equipes" variante="fantasma" tamanho="P" icone="voltar">{t.equipes}</Botao></div>
+      <CabecalhoPagina selo={chaveEquipe(e.id) ? EQUIPES_DS[chaveEquipe(e.id)!].selo : "broto"} rotulo={e.coordenadores.length > 0 ? `${t.coordenacao}: ${e.coordenadores.map(primeiro).join(", ")}` : t.equipes}
+        titulo={e.nome}
+        acoes={<>
+          <BotaoIcone icone="calendario" aria-label={t.reuniaoEquipe} href={`/equipes/${id}/reuniao`} />
+          <BotaoIcone icone="pessoas" aria-label={t.pessoas} href={`/pessoas?equipe=${id}`} />
+          <Botao href={`/tarefas/nova?equipe=${id}${pessoaFiltro ? `&responsavel=${pessoaFiltro.id}` : ""}&back=/equipes/${id}`} icone="mais" folha>{t.novaTarefa}</Botao>
+        </>} />
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Num v={abertasEq.length} label={t.abertasLbl} />
-        <Num v={atrasadas} label={t.atrasadasLbl} cor="text-red-600 dark:text-red-400" />
-        <Num v={semDono} label={t.semDonoLbl} cor="text-amber-700 dark:text-amber-400" href={url({ pessoa: "sem" })} />
-        <Num v={feitas30.length} label={t.feitas30} cor="text-green-700 dark:text-green-400" />
+        <Num v={atrasadas} label={t.atrasadasLbl} cor="text-err" />
+        <Num v={semDono} label={t.semDonoLbl} cor="text-warn" href={url({ pessoa: "sem" })} />
+        <Num v={feitas30.length} label={t.feitas30} cor="text-ok" />
       </div>
-      <Abas id="equipe" inicial={q.pessoa || q.area ? "tarefas" : undefined} abas={[
-        { id: "tarefas", label: t.tarefasLbl, count: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
-        { id: "pessoas", label: t.membros, count: gente.length, conteudo: pessoasAba },
-        { id: "objetivos", label: t.objetivos, count: objetivos.length, conteudo: objetivosAba },
-        ...(gerir ? [{ id: "config", label: `🔒 ${t.configuracao}`, count: 0, conteudo: config }] : []),
+      <AbasComPainel id="equipe" inicial={q.pessoa || q.area ? "tarefas" : undefined} abas={[
+        { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
+        { id: "pessoas", rotulo: t.membros, contagem: gente.length, conteudo: pessoasAba },
+        { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
+        ...(gerir ? [{ id: "config", rotulo: t.configuracao, contagem: 0, conteudo: config }] : []),
       ]} />
     </>
   );

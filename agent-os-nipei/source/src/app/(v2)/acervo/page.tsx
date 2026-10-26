@@ -1,25 +1,29 @@
 import Link from "next/link";
-import { Brain, CheckCircle2, ExternalLink, FileText, Folder, GraduationCap, Image as ImageIcon, Music, Palette, Pencil, Plus, Video, type LucideIcon } from "lucide-react";
-import { Empty, Title } from "@/components/v2/ui";
+import { EstadoVazio } from "@/components/ds/Estados";
+
 import AcervoForm, { FiltroAuto, type AcervoFormLabels } from "@/components/v2/AcervoForm";
 import CopiarBotao from "@/components/v2/CopiarBotao";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
-import Recolhivel, { BotaoSecao } from "@/components/v2/Recolhivel";
+import Recolhivel, { BotaoSecao } from "@/components/ds/SecaoRecolhivel";
 import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, getProjetos, podeEditarAcervo, type AcervoItem } from "@/lib/v2/data";
 import { tipoLink } from "@/lib/v2/acervoLinks";
 import { getFatos, getFontes } from "@/lib/v2/conhecimento";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { arquivarAcervoAction, createAcervoAction, ensinarAcervoAction, updateAcervoAction } from "../actions";
+import { ToastAoAbrir } from "@/components/ds/Toast";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Campo from "@/components/ds/Campo";
+import Chip from "@/components/ds/Chip";
+import Icone, { type NomeIcone } from "@/components/ds/Icone";
+import { BotaoIcone } from "@/components/ds/Botao";
+import { MiniAnelPinu } from "@/components/ds/Pinu";
 
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
-const sel = "rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm min-w-0";
-const ICONE: Record<string, LucideIcon> = { fotos: ImageIcon, videos: Video, audios: Music, cursos: GraduationCap, documentos: FileText, marca: Palette, outros: Folder };
-const COR: Record<string, string> = {
-  fotos: "text-sky-600 bg-sky-50 dark:bg-sky-950/50", videos: "text-red-600 bg-red-50 dark:bg-red-950/50", audios: "text-violet-600 bg-violet-50 dark:bg-violet-950/50",
-  cursos: "text-amber-600 bg-amber-50 dark:bg-amber-950/50", documentos: "text-blue-600 bg-blue-50 dark:bg-blue-950/50", marca: "text-pink-600 bg-pink-50 dark:bg-pink-950/50", outros: "text-neutral-500 bg-neutral-100 dark:bg-neutral-800",
-};
+// tipo = ícone + texto (nunca só a cor). TODO(ícones): vídeo, áudio, pasta, documento, marca (pedidos em ICONES.md)
+const ICONE: Record<string, NomeIcone> = { fotos: "imagem", videos: "imagem", audios: "microfone", cursos: "sucesso", documentos: "tarefa", marca: "editar", outros: "abrir-fora" };
 const ORDENS = ["ano", "recentes", "az"] as const;
+const ACAO = "anel-foco inline-flex min-h-9 items-center gap-1.5 rounded-pilula px-2 font-texto text-[13px] font-medium text-t2 hover:bg-s2 hover:text-t1";
+const CONTA = "rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2";
 
 // Acervo: index of Google Drive links (files stay in Drive). Search + type chips with counts + project/year/
 // sort selects; with no filter the list is grouped by type. Add/edit with link detection (lib/v2/acervoLinks.ts);
@@ -55,37 +59,40 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
     return { f, conf: meus.filter((x) => x.status === "confirmado").length, prop: meus.filter((x) => x.status === "proposto").length };
   };
   const labels: AcervoFormLabels = { link: t.link, titulo: t.titulo, tipo: t.tipo, projeto: t.projeto, ano: t.ano, descricao: t.descricao, nenhum: t.nenhum, salvar: t.salvar, enviando: t.salvando, detectado: t.linkDetectado };
-  const chip = (on: boolean) => `shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs border ${on ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white" : "border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300"}`;
 
-  const Cartao = ({ i }: { i: AcervoItem }) => {
-    const Icone = ICONE[i.tipo] ?? Folder, tl = tipoLink(i.url), ia = naIA(i.id), pasta = tl?.rotulo === "Pasta do Drive";
+  const Item = ({ i }: { i: AcervoItem }) => {
+    const tl = tipoLink(i.url), ia = naIA(i.id), pasta = tl?.rotulo === "Pasta do Drive";
     return (
-      <li id={i.id} className="scroll-mt-20 target:ring-2 target:ring-neutral-400 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 grid gap-2">
+      <li id={i.id} className="grid scroll-mt-20 gap-2.5 rounded-cartao bg-s1 p-4 target:shadow-[inset_0_0_0_1.5px_var(--ac)]">
         <div className="flex items-start gap-3">
-          <span className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${COR[i.tipo] ?? COR.outros}`}><Icone size={18} /></span>
+          <span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome={ICONE[i.tipo] ?? "abrir-fora"} tamanho={20} /></span>
           <div className="min-w-0 flex-1">
-            <a href={i.url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline break-words">{i.titulo}</a>
-            <p className="text-xs text-neutral-500 mt-0.5">{[t.tipos[i.tipo] ?? i.tipo, tl?.rotulo, i.ano, i.projeto && (projetos.find((p) => p.id === i.projeto)?.nome ?? i.projeto)].filter(Boolean).join(" · ")}</p>
-            {i.descricao && <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">{i.descricao}</p>}
+            <a href={i.url} target="_blank" rel="noreferrer" className="anel-foco titulo-cartao break-words rounded-interno hover:underline">{i.titulo}</a>
+            <p className="meta mt-0.5 text-t3">{[t.tipos[i.tipo] ?? i.tipo, tl?.rotulo, i.ano, i.projeto && (projetos.find((p) => p.id === i.projeto)?.nome ?? i.projeto)].filter(Boolean).join(" · ")}</p>
+            {i.descricao && <p className="corpo mt-1 text-t2">{i.descricao}</p>}
           </div>
-          <a href={i.url} target="_blank" rel="noreferrer" aria-label={t.abrir} title={t.abrir} className="shrink-0 p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"><ExternalLink size={16} /></a>
+          <BotaoIcone icone="abrir-fora" aria-label={`${t.abrir}: ${i.titulo}`} tamanho={40} variante="fantasma" href={i.url} />
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-400">
+        <div className="-ml-2 flex flex-wrap items-center gap-x-1 gap-y-1">
           {ia ? (
-            <Link href={`/conhecimento/${ia.f.id}`} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${ia.f.status === "erro" ? "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"}`}>
-              <Brain size={12} />{t.naIA}: {ia.f.status === "processando" ? t.lendoIA : ia.f.status === "erro" ? t.erroIA : [ia.conf && `${ia.conf} ${t.fatosConfirmadosMin}`, ia.prop && `${ia.prop} ${t.fatosParaRevisar}`].filter(Boolean).join(" · ") || t.semFatos}
+            <Link href={`/conhecimento/${ia.f.id}`} className={`anel-foco inline-flex min-h-9 items-center gap-1.5 rounded-pilula px-3 font-texto text-[13px] font-semibold ${ia.f.status === "erro" ? "bg-err-bg text-err" : "bg-ac-soft text-ac-text"}`}>
+              {ia.f.status === "erro" ? <Icone nome="erro" tamanho={14} /> : <MiniAnelPinu tamanho={16} />}
+              {t.naIA}: {ia.f.status === "processando" ? t.lendoIA : ia.f.status === "erro" ? t.erroIA : [ia.conf && `${ia.conf} ${t.fatosConfirmadosMin}`, ia.prop && `${ia.prop} ${t.fatosParaRevisar}`].filter(Boolean).join(" · ") || t.semFatos}
             </Link>
           ) : !pasta && (
-            <form action={ensinarAcervoAction}><input type="hidden" name="id" value={i.id} /><BotaoEnviar enviando="…" className="inline-flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200"><Brain size={12} />{t.ensinarIA}</BotaoEnviar></form>
+            <form action={ensinarAcervoAction}><input type="hidden" name="id" value={i.id} /><BotaoEnviar enviando="…" className={ACAO}><MiniAnelPinu tamanho={16} />{t.ensinarIA}</BotaoEnviar></form>
           )}
-          {i.adicionadoPor && <span>{t.adicionadoPorLbl} {nome(i.adicionadoPor)}{i.adicionadoEm && ` · ${fmtDate(i.adicionadoEm.slice(0, 10), lang)}`}</span>}
-          <CopiarBotao texto={i.url} label={t.copiarLinkCurto} copiado={t.copiado} className="ml-auto inline-flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200" />
+          {i.adicionadoPor && <span className="meta px-2 text-t3">{t.adicionadoPorLbl} {nome(i.adicionadoPor)}{i.adicionadoEm && ` · ${fmtDate(i.adicionadoEm.slice(0, 10), lang)}`}</span>}
+          <span className="ml-auto"><CopiarBotao texto={i.url} label={t.copiarLinkCurto} copiado={t.copiado} className={ACAO} /></span>
           {podeEditarAcervo(me, i) && (
             <details className="group/ed w-full [&:not([open])]:w-auto">
-              <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer inline-flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-200"><Pencil size={12} />{t.editar}</summary>
-              <div className="mt-3 grid gap-3 text-neutral-800 dark:text-neutral-200">
+              <summary className={`${ACAO} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}><Icone nome="editar" tamanho={14} />{t.editar}</summary>
+              <div className="mt-3 grid gap-3 rounded-[16px] bg-s2 p-3">
                 <AcervoForm action={updateAcervoAction} id={i.id} tipos={tiposOpc} projetos={projetos} labels={labels} inicial={i} />
-                <form action={arquivarAcervoAction}><input type="hidden" name="id" value={i.id} /><ConfirmarBotao pergunta={t.removerAcervoPergunta} className="text-xs text-red-600 dark:text-red-400 underline">{t.removerDoAcervo}</ConfirmarBotao></form>
+                <form action={arquivarAcervoAction}><input type="hidden" name="id" value={i.id} />
+                  {/* "remover" nunca é vermelho fora do diálogo (regra 9) */}
+                  <ConfirmarBotao pergunta={t.removerAcervoPergunta} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4"><Icone nome="lixeira" tamanho={16} />{t.removerDoAcervo}</ConfirmarBotao>
+                </form>
               </div>
             </details>
           )}
@@ -93,15 +100,21 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
       </li>
     );
   };
-  const Lista = ({ lista }: { lista: AcervoItem[] }) => <ul className="grid gap-2 md:grid-cols-2">{lista.map((i) => <Cartao key={i.id} i={i} />)}</ul>;
+  const Lista = ({ lista }: { lista: AcervoItem[] }) => <ul className="grid gap-3 md:grid-cols-2">{lista.map((i) => <Item key={i.id} i={i} />)}</ul>;
 
   return (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <Title sub={t.acervoIntro}>{t.acervo}</Title>
-        {podeAdicionar && <BotaoSecao id="novo" className="shrink-0 mt-1 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-2 text-sm font-medium"><Plus size={16} />{t.adicionar}</BotaoSecao>}
-      </div>
-      {q.ok && !q.erro && <p className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm"><CheckCircle2 size={16} className="text-green-600 shrink-0" />{q.ok}</p>}
+      <CabecalhoPagina selo="quadrados" rotulo={`${todos.length} ${t.itensN}`} titulo={t.acervo} subtitulo={t.acervoIntro}
+        acoes={podeAdicionar && <BotaoSecao id="novo" className="anel-foco forma-folha inline-flex h-14 items-center gap-2 bg-ac px-6 font-texto text-base font-semibold text-ac-ink hover:brightness-[.94]"><Icone nome="mais" tamanho={22} />{t.adicionar}</BotaoSecao>}
+        filtros={<>
+          <Chip href={link({ tipo: undefined })} ativo={!q.tipo} contagem={semTipo.length}>{t.todas}</Chip>
+          {ACERVO_TIPOS.map((tp) => {
+            const n = semTipo.filter((i) => i.tipo === tp).length;
+            return (n > 0 || q.tipo === tp) && <Chip key={tp} href={link({ tipo: tp })} ativo={q.tipo === tp} icone={ICONE[tp]} contagem={n}>{t.tipos[tp]}</Chip>;
+          })}
+          {filtrando && <Chip href="/acervo" icone="fechar">{t.limpar}</Chip>}
+        </>} />
+      <ToastAoAbrir texto={q.erro ? undefined : q.ok} />
 
       {podeAdicionar && (
         <Recolhivel id="novo" titulo={t.novoItem} aberto={todos.length === 0}>
@@ -109,36 +122,23 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
         </Recolhivel>
       )}
 
-      <FiltroAuto className="grid gap-2 mb-3">
+      {/* busca + filtros (10.2): os seletores aplicam-se sozinhos */}
+      <FiltroAuto className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-[minmax(0,1fr)_repeat(3,11rem)]">
         {q.tipo && <input type="hidden" name="tipo" value={q.tipo} />}
-        <input name="q" type="search" defaultValue={q.q} placeholder={t.buscar} className={field} />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          <select name="projeto" defaultValue={q.projeto ?? ""} aria-label={t.projeto} className={sel}><option value="">{t.todosProjetos}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>
-          <select name="ano" defaultValue={q.ano ?? ""} aria-label={t.ano} className={sel}><option value="">{t.todosAnos}</option>{anos.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-          <select name="ordem" defaultValue={ordem} aria-label={t.ordenar} className={`${sel} col-span-2 md:col-span-1`}>
-            <option value="ano">{t.ordemAno}</option><option value="recentes">{t.ordemRecentes}</option><option value="az">{t.ordemAz}</option>
-          </select>
-        </div>
+        <div className="col-span-2 md:col-span-1"><Campo tipo="busca" name="q" rotulo={t.buscar} defaultValue={q.q} /></div>
+        <Campo tipo="selecao" name="projeto" rotulo={t.projeto} defaultValue={q.projeto ?? ""}><option value="">{t.todosProjetos}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
+        <Campo tipo="selecao" name="ano" rotulo={t.ano} defaultValue={q.ano ?? ""}><option value="">{t.todosAnos}</option>{anos.map((a) => <option key={a} value={a}>{a}</option>)}</Campo>
+        <div className="col-span-2 md:col-span-1"><Campo tipo="selecao" name="ordem" rotulo={t.ordenar} defaultValue={ordem}>
+          <option value="ano">{t.ordemAno}</option><option value="recentes">{t.ordemRecentes}</option><option value="az">{t.ordemAz}</option>
+        </Campo></div>
       </FiltroAuto>
+      {filtrando && <p className="meta mb-3 tabular-nums text-t2">{itens.length} {t.itensN}</p>}
 
-      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1 mb-3">
-        <a href={link({ tipo: undefined })} className={chip(!q.tipo)}>{t.todas} <span className="opacity-60 tabular-nums">{semTipo.length}</span></a>
-        {ACERVO_TIPOS.map((tp) => {
-          const n = semTipo.filter((i) => i.tipo === tp).length;
-          return (n > 0 || q.tipo === tp) && <a key={tp} href={link({ tipo: tp })} className={chip(q.tipo === tp)}>{t.tipos[tp]} <span className="opacity-60 tabular-nums">{n}</span></a>;
-        })}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-neutral-500 mb-3">
-        <span className="tabular-nums">{itens.length} {t.itensN}</span>
-        {filtrando && <a href="/acervo" className="underline">{t.limpar}</a>}
-      </div>
-
-      {todos.length === 0 ? <Empty>{t.acervoVazio}</Empty> : itens.length === 0 ? <Empty>{t.semItens}</Empty> : filtrando ? <Lista lista={itens} /> : (
-        <div className="grid gap-5">
+      {todos.length === 0 ? <EstadoVazio compacto titulo={<>{t.acervoVazio}</>} /> : itens.length === 0 ? <EstadoVazio compacto titulo={<>{t.semItens}</>} /> : filtrando ? <Lista lista={itens} /> : (
+        <div className="grid gap-7">
           {ACERVO_TIPOS.filter((tp) => itens.some((i) => i.tipo === tp)).map((tp) => (
-            <section key={tp}>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">{t.tipos[tp]} <span className="font-normal">({itens.filter((i) => i.tipo === tp).length})</span></h2>
+            <section key={tp} className="grid gap-3">
+              <h2 className="flex items-center gap-2"><Icone nome={ICONE[tp]} tamanho={20} className="text-t2" /><span className="titulo-secao">{t.tipos[tp]}</span><span className={CONTA}>{itens.filter((i) => i.tipo === tp).length}</span></h2>
               <Lista lista={itens.filter((i) => i.tipo === tp)} />
             </section>
           ))}

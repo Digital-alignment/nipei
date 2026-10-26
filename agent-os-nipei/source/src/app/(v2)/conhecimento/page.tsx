@@ -1,7 +1,9 @@
-import Link from "next/link";
-import { Title } from "@/components/v2/ui";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import Aviso from "@/components/ds/Aviso";
+import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
-import Recolhivel, { AtalhosSecao } from "@/components/v2/Recolhivel";
+import Recolhivel, { AtalhosSecao } from "@/components/ds/SecaoRecolhivel";
 import { currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
 import { getFatos, getFontes, podeRevisar } from "@/lib/v2/conhecimento";
 import { auditoriaSemanal, getAlertas } from "@/lib/v2/auditor";
@@ -38,20 +40,16 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   return (
     <>
       <AutoRefresh ativo={fontes.some((f) => f.status === "processando")} />
-      <Title sub={t.conhecimentoIntro}>{t.conhecimento}</Title>
+      <CabecalhoPagina selo="espiral" rotulo={`${fatos.length} ${t.fatos.toLowerCase()} · ${fontes.length} ${t.fontesMin}`} titulo={t.conhecimento} subtitulo={t.conhecimentoIntro} />
 
       <AtalhosSecao itens={secoes.filter((s) => s.atalho).map((s) => ({ id: s.id, label: s.atalho!(ctx), valor: s.contagem?.(ctx) ?? 0, alerta: s.alerta && (s.contagem?.(ctx) ?? 0) > 0 }))} />
       {fatos.length > 0 && (
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-neutral-500 mb-1"><span>{t.baseRevisada}</span><span className="tabular-nums">{revisados}/{fatos.length} · {pct}%</span></div>
-          <div className="h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden"><div className="h-full bg-green-600" style={{ width: `${pct}%` }} /></div>
+        <div className="mb-5 grid gap-1.5">
+          <span className="rotulo-maiusculo text-t3">{t.baseRevisada}</span>
+          <BarraProgresso valor={revisados} max={fatos.length} planejado rotulo={`${revisados}/${fatos.length} · ${pct}%`} rotuloAcessivel={t.baseRevisada} />
         </div>
       )}
-      {alertas > 0 && (
-        <Link href="/conhecimento/alertas" className="block rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm mb-4">
-          ⚠️ {alertas} · <span className="underline font-medium">{t.alertasEPropostas}</span>
-        </Link>
-      )}
+      {alertas > 0 && <Aviso estado="atencao" className="mb-4" titulo={`${alertas} · ${t.alertasEPropostas}`} acoes={<Botao href="/conhecimento/alertas" icone="atencao" variante="tonal" tamanho="M" iconeDireita="avancar">{t.abrir}</Botao>} />}
 
       {secoes.map((s) => (
         <Recolhivel key={s.id} id={s.id} titulo={s.titulo(ctx)} contagem={s.contagem?.(ctx)} alerta={s.alerta} aberto={s.aberto(ctx)} forcar={s.forcar?.(ctx)}>

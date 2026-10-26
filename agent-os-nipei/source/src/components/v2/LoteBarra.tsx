@@ -1,7 +1,8 @@
 "use client";
 
+import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import { useEffect, useState } from "react";
-import { CheckSquare, X } from "lucide-react";
+import Icone from "@/components/ds/Icone";
 import { loteAction } from "@/app/(v2)/actions";
 import BotaoEnviar from "./BotaoEnviar";
 
@@ -25,8 +26,8 @@ export function LoteToggle({ formId, label, cancelar }: { formId: string; label:
     }
   };
   return (
-    <button type="button" onClick={toggle} className={`shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${on ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"}`}>
-      {on ? <X size={12} /> : <CheckSquare size={12} />}{on ? cancelar : label}
+    <button type="button" onClick={toggle} className={`shrink-0 whitespace-nowrap anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula px-3.5 font-texto text-sm font-medium ${on ? "bg-s3 text-t1 shadow-[inset_0_0_0_1px_var(--s4)]" : "bg-s2 text-t2 hover:bg-s3"}`}>
+      {on ? <Icone nome="fechar"  tamanho={12} /> : <Icone nome="confirmar" tamanho={16} />}{on ? cancelar : label}
     </button>
   );
 }
@@ -50,26 +51,25 @@ export default function LoteBarra({ formId, pessoas, equipes, labels }: {
   });
   const marcar = (v: boolean) => { caixas().forEach((c) => { c.checked = v; }); setN(v ? caixas().length : 0); };
   if (!n) return null;
-  const campo = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm";
   return (
     <form id={formId} action={async (f) => { await loteAction(f); marcar(false); }}
-      className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4 z-40 my-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-lg p-3 flex flex-wrap items-center gap-2">
+      className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4 z-40 my-3 rounded-cartao bg-s2 p-3 shadow-[0_0_0_1px_var(--s3)] flex flex-wrap items-center gap-2">
       <span className="text-sm font-medium tabular-nums">{n} {labels.selecionadas}</span>
-      <button type="button" onClick={() => marcar(true)} className="text-xs underline text-neutral-500">{labels.todas}</button>
-      <button type="button" onClick={() => marcar(false)} className="text-xs underline text-neutral-500">{labels.limpar}</button>
+      <button type="button" onClick={() => marcar(true)} className="text-xs underline text-t2">{labels.todas}</button>
+      <button type="button" onClick={() => marcar(false)} className="text-xs underline text-t2">{labels.limpar}</button>
       <span className="basis-full sm:basis-auto sm:ml-auto" />
-      <select name="acao" value={acao} onChange={(e) => setAcao(e.target.value)} aria-label={labels.acao} className={campo}>
+      <select name="acao" value={acao} onChange={(e) => setAcao(e.target.value)} aria-label={labels.acao} className={CAMPO_COMPACTO}>
         <option value="atribuir">{labels.atribuir}</option>
         <option value="prazo">{labels.prazo}</option>
         <option value="prioridade">{labels.prioridade}</option>
         <option value="concluir">{labels.concluir}</option>
         {equipes.length > 1 && <option value="equipe">{labels.mover}</option>}
       </select>
-      {acao === "atribuir" && <select name="pessoa" required className={campo} aria-label={labels.atribuir}>{pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>}
-      {acao === "prazo" && <input type="date" name="prazo" required className={campo} aria-label={labels.prazo} />}
-      {acao === "prioridade" && <select name="prioridade" className={campo} aria-label={labels.prioridade}>{Object.entries(labels.prioridades).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>}
-      {acao === "equipe" && <select name="equipe" className={campo} aria-label={labels.mover}>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select>}
-      <BotaoEnviar enviando="…" className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm font-medium">{labels.aplicar}</BotaoEnviar>
+      {acao === "atribuir" && <select name="pessoa" required className={CAMPO_COMPACTO} aria-label={labels.atribuir}>{pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select>}
+      {acao === "prazo" && <input type="date" name="prazo" required className={CAMPO_COMPACTO} aria-label={labels.prazo} />}
+      {acao === "prioridade" && <select name="prioridade" className={CAMPO_COMPACTO} aria-label={labels.prioridade}>{Object.entries(labels.prioridades).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>}
+      {acao === "equipe" && <select name="equipe" className={CAMPO_COMPACTO} aria-label={labels.mover}>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select>}
+      <BotaoEnviar enviando="…" className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{labels.aplicar}</BotaoEnviar>
     </form>
   );
 }

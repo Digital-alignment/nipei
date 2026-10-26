@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import ChipDS from "@/components/ds/Chip";
+import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { Chip, Progress } from "@/components/v2/ui";
+
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import RespostaCampo from "@/components/v2/RespostaCampo";
 import { currentUser, getPessoas } from "@/lib/v2/data";
@@ -9,8 +11,6 @@ import { PALAVRAS_MINIMAS, SECOES_IA, diagnosticosAbertos, getDiagnostico, getRe
 import { getT } from "@/lib/v2/i18n";
 import { rascunhoIAAction, salvarRespostasAction } from "../../../actions";
 
-const btn = "rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm";
-const primario = "rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium";
 
 // "Minhas respostas": a person's answers to the individual part of an assessment (private: the person and gestão).
 export default async function Respostas({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ d?: string; secao?: string }> }) {
@@ -33,30 +33,30 @@ export default async function Respostas({ params, searchParams }: { params: Prom
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link href={`/pessoas/${id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{p.name}</Link>
-      <p className="text-xs uppercase tracking-wide text-neutral-500">{t.diagnostico} · {en ? d.modelo.titulo_en : d.modelo.titulo}</p>
+      <Link href={`/pessoas/${id}`} className="inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{p.name}</Link>
+      <p className="text-xs uppercase tracking-wide text-t2">{t.diagnostico} · {en ? d.modelo.titulo_en : d.modelo.titulo}</p>
       <h1 className="text-2xl font-semibold tracking-tight mt-1">{proprio ? t.minhasRespostas : p.name}</h1>
-      <p className="text-sm text-neutral-500 mt-1 mb-3">{d.titulo} · {t.privadoDiag}</p>
-      <div className="mb-4"><Progress done={pr.respondidas} total={pr.total} /></div>
+      <p className="text-sm text-t2 mt-1 mb-3">{d.titulo} · {t.privadoDiag}</p>
+      <div className="mb-4"><BarraProgresso valor={pr.respondidas} max={pr.total} rotulo={`${pr.total ? Math.round((pr.respondidas / pr.total) * 100) : 0}% · ${pr.respondidas}/${pr.total}`} /></div>
 
       <div className="flex flex-wrap gap-2 mb-5">
         {secoes.map((x) => {
           const feitas = x.perguntas.filter((qq) => r[qq.id]?.status === "respondida").length;
-          return <Chip key={x.id} href={url(x.id)} on={x.id === sec.id}>{en ? x.titulo_en : x.titulo} · {feitas}/{x.perguntas.length}</Chip>;
+          return <ChipDS ativo={x.id === sec.id} key={x.id} href={url(x.id)}>{en ? x.titulo_en : x.titulo} · {feitas}/{x.perguntas.length}</ChipDS>;
         })}
       </div>
 
       <h2 className="text-lg font-semibold">{en ? sec.titulo_en : sec.titulo}</h2>
-      <p className="text-sm text-neutral-500 mt-1 mb-4">{sec.intro}</p>
+      <p className="text-sm text-t2 mt-1 mb-4">{sec.intro}</p>
 
       {proprio && SECOES_IA.includes(sec.id) && (
-        <form action={rascunhoIAAction} className="mb-5 rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
+        <form action={rascunhoIAAction} className="mb-5 rounded-interno p-3">
           <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={sec.id} />
-          <BotaoEnviar enviando={t.processando} className={`${btn} inline-flex items-center gap-1.5`}><Sparkles size={14} />{t.rascunhoIA}</BotaoEnviar>
-          <p className="text-xs text-neutral-500 mt-2">{t.rascunhoIAAviso}</p>
+          <BotaoEnviar enviando={t.processando} icone="gerar-outra" variante="tonal" className="inline-flex items-center gap-1.5">{t.rascunhoIA}</BotaoEnviar>
+          <p className="text-xs text-t2 mt-2">{t.rascunhoIAAviso}</p>
         </form>
       )}
-      {!proprio && <p className="text-xs text-neutral-500 mb-4">{t.soLeitura}</p>}
+      {!proprio && <p className="text-xs text-t2 mb-4">{t.soLeitura}</p>}
 
       <form action={salvarRespostasAction} className="grid gap-6">
         <input type="hidden" name="diagnostico" value={d.id} />
@@ -66,23 +66,23 @@ export default async function Respostas({ params, searchParams }: { params: Prom
           return (
             <div key={qq.id} className="grid gap-2">
               <p className="text-sm font-medium">{i + 1}. {en ? qq.texto_en : qq.texto}
-                {status && <span className={`ml-2 text-[11px] font-normal ${resp?.status === "respondida" ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>{status}</span>}
+                {status && <span className={`ml-2 text-xs font-normal ${resp?.status === "respondida" ? "text-ok" : "text-warn"}`}>{status}</span>}
               </p>
-              <details open={!resp?.texto} className="text-xs text-neutral-500">
+              <details open={!resp?.texto} className="text-xs text-t2">
                 <summary className="cursor-pointer">{t.guiaResposta}</summary>
                 <ul className="list-disc pl-5 mt-1 grid gap-0.5">{qq.guia.map((g, j) => <li key={j}>{g}</li>)}</ul>
               </details>
               {proprio
                 ? <RespostaCampo key={`${qq.id}:${resp?.em ?? ""}`} name={`r:${qq.id}`} inicial={resp?.texto ?? ""} minimo={PALAVRAS_MINIMAS} labels={{ palavras: t.palavras, curta: t.respostaCurta }} />
-                : <p className="text-sm whitespace-pre-wrap rounded-lg bg-neutral-100 dark:bg-neutral-900 px-3 py-2">{resp?.texto || t.vazio}</p>}
+                : <p className="text-sm whitespace-pre-wrap rounded-interno bg-s2 px-3 py-2">{resp?.texto || t.vazio}</p>}
             </div>
           );
         })}
         {proprio && (
-          <div className="flex flex-wrap gap-2 sticky bottom-16 md:bottom-4 bg-neutral-50/95 dark:bg-neutral-950/95 py-2">
-            <BotaoEnviar name="acao" value="rascunho" enviando={t.salvando} className={btn}>{t.salvarRascunho}</BotaoEnviar>
-            <BotaoEnviar name="acao" value="responder" enviando={t.salvando} className={primario}>{t.salvarResponder}</BotaoEnviar>
-            {proxima && <Link href={url(proxima.id)} className="self-center text-sm underline text-neutral-500">{en ? proxima.titulo_en : proxima.titulo} →</Link>}
+          <div className="flex flex-wrap gap-2 sticky bottom-16 md:bottom-4 bg-bg/95 py-2">
+            <BotaoEnviar name="acao" value="rascunho" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarRascunho}</BotaoEnviar>
+            <BotaoEnviar name="acao" value="responder" enviando={t.salvando} icone="confirmar" variante="primario">{t.salvarResponder}</BotaoEnviar>
+            {proxima && <Link href={url(proxima.id)} className="self-center text-sm underline text-t2">{en ? proxima.titulo_en : proxima.titulo} →</Link>}
           </div>
         )}
       </form>

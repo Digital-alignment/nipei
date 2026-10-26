@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import Icone from "@/components/ds/Icone";
 import { cadastroLoteAction } from "@/app/(v2)/actions";
 import BotaoEnviar from "./BotaoEnviar";
 
@@ -30,18 +30,18 @@ export default function CadastroLote({ formId, labels }: { formId: string; label
       setMsg("error" in r && r.error ? r.error : labels.resultado.replace("{ok}", String(r.enviados ?? 0)).replace("{sem}", String(r.semWhats ?? 0)) + (r.parou ? ` ${r.parou}` : ""));
       marcar(false);
     }}
-      className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4 z-40 my-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 backdrop-blur shadow-lg p-3 grid gap-2">
+      className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4 z-40 my-3 rounded-cartao bg-s2 bg-white/95 backdrop-blur shadow-lg p-3 grid gap-2">
       {n > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium tabular-nums">{n} {labels.selecionadas}</span>
-          <button type="button" onClick={() => marcar(true)} className="text-xs underline text-neutral-500">{labels.todas}</button>
-          <button type="button" onClick={() => marcar(false)} className="text-xs underline text-neutral-500">{labels.limpar}</button>
+          <button type="button" onClick={() => marcar(true)} className="text-xs underline text-t2">{labels.todas}</button>
+          <button type="button" onClick={() => marcar(false)} className="text-xs underline text-t2">{labels.limpar}</button>
           <span className="basis-full sm:basis-auto sm:ml-auto" />
-          <BotaoEnviar enviando="…" className="inline-flex items-center gap-1.5 rounded-md bg-green-600 text-white px-3 py-1.5 text-sm font-medium"><Send size={14} />{labels.enviar}</BotaoEnviar>
+          <BotaoEnviar enviando="…" className="inline-flex items-center gap-1.5 rounded-interno bg-ac text-ac-ink px-3 py-1.5 text-sm font-medium"><Icone nome="enviar"  tamanho={14} />{labels.enviar}</BotaoEnviar>
         </div>
       )}
-      {n > 0 && <p className="text-[11px] text-neutral-500">{labels.aviso}</p>}
-      {msg && <p className="text-sm flex items-center justify-between gap-2"><span>{msg}</span><button type="button" onClick={() => setMsg("")} className="text-xs underline text-neutral-500">OK</button></p>}
+      {n > 0 && <p className="text-xs text-t2">{labels.aviso}</p>}
+      {msg && <p className="text-sm flex items-center justify-between gap-2"><span>{msg}</span><button type="button" onClick={() => setMsg("")} className="text-xs underline text-t2">OK</button></p>}
     </form>
   );
 }

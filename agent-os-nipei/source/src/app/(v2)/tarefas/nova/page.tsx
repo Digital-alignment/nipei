@@ -1,11 +1,11 @@
-import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
-import { Title } from "@/components/v2/ui";
+import { ToastAoAbrir } from "@/components/ds/Toast";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+
 import NovaTarefaForm from "@/components/v2/NovaTarefaForm";
 import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
-type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string };
+type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string; status?: string };
 
 export default async function NovaTarefa({ searchParams }: { searchParams: Promise<Q> }) {
   const q = await searchParams;
@@ -21,22 +21,18 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Title>{t.novaTarefa}</Title>
-      {criada && (
-        <p className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm">
-          <CheckCircle2 size={16} className="text-green-600 shrink-0" /><span className="flex-1 min-w-0 truncate">{t.tarefaCriada}: {criada.title}</span>
-          <Link href={`/tarefas/${criada.id}`} className="underline shrink-0">{t.abrir}</Link>
-        </p>
-      )}
+      <CabecalhoPagina titulo={<>{t.novaTarefa}</>} />
+      <ToastAoAbrir texto={criada ? `${t.tarefaCriada}: ${criada.title}` : undefined} parametro="criada" acao={criada ? { rotulo: t.abrir, href: `/tarefas/${criada.id}` } : undefined} />
       <NovaTarefaForm
         equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}
-        pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso }))}
+        pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso, foto: p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined }))}
         projetos={getProjetos().map((p) => ({ id: p.id, nome: p.nome }))}
         objetivos={getObjetivos().map((o) => ({ id: o.id, titulo: o.titulo, ano: o.ano, projeto: o.projeto }))}
         inicial={{
           equipe: equipeInicial, projeto: q.projeto ?? "", objetivo: q.objetivo ?? "",
           prazo: /^\d{4}-\d{2}-\d{2}$/.test(q.prazo ?? "") ? q.prazo! : "",
           responsaveis: q.responsavel ? [q.responsavel] : !q.criada && me ? [me.id] : [],
+          status: q.status === "doing" || q.status === "done" ? q.status : undefined,
         }}
         podeSemEquipe={user.gestao} meId={me?.id ?? ""} back={back}
         l={{

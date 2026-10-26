@@ -15,9 +15,9 @@ export default function ArrastarAgenda({ dica }: { dica: string }) {
   useEffect(() => {
     let alvo: HTMLElement | null = null;
     const marcar = (el: HTMLElement | null) => {
-      alvo?.classList.remove("ring-2", "ring-sky-500");
+      alvo?.classList.remove("shadow-[inset_0_0_0_2px_var(--ac)]");
       alvo = el;
-      alvo?.classList.add("ring-2", "ring-sky-500");
+      alvo?.classList.add("shadow-[inset_0_0_0_2px_var(--ac)]");
     };
     const inicio = (e: DragEvent) => {
       const li = (e.target as HTMLElement).closest?.("[data-tarefa]") as HTMLElement | null;
@@ -58,5 +58,5 @@ export default function ArrastarAgenda({ dica }: { dica: string }) {
       document.removeEventListener("dragend", fim);
     };
   }, [router]);
-  return <p className="hidden md:block text-[11px] text-neutral-400 mb-2">{msg || dica}</p>;
+  return <p className="meta mb-2 hidden text-t3 md:block">{msg || dica}</p>;
 }

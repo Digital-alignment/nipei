@@ -1,6 +1,14 @@
-import Link from "next/link";
-import { ArrowLeft, Plus } from "lucide-react";
-import { Chip, Progress, Title } from "@/components/v2/ui";
+
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import ChipDS from "@/components/ds/Chip";
+import { chaveEquipe } from "@/components/ds/equipes";
+import { EstadoVazio } from "@/components/ds/Estados";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Cartao from "@/components/ds/Cartao";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
+import Campo from "@/components/ds/Campo";
+import Icone from "@/components/ds/Icone";
 import { can, currentUser, getEquipes, getObjetivos, getProjetos, getTarefas, progresso } from "@/lib/v2/data";
 import { updateObjetivoAction } from "../actions";
 import { getT } from "@/lib/v2/i18n";
@@ -16,58 +24,63 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <Link href="/projetos" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.projetos}</Link>
-      <Title>{t.objetivos}</Title>
-      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 mb-5 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-        {[2026, 2027].map((a) => <Chip key={a} href={`/objetivos?ano=${a}${q.equipe ? `&equipe=${q.equipe}` : ""}`} on={ano === a}>{a}</Chip>)}
-        <span className="w-px bg-neutral-200 dark:bg-neutral-800 mx-1" />
-        <Chip href={`/objetivos?ano=${ano}`} on={!q.equipe}>{t.todas}</Chip>
-        {equipes.map((e) => <Chip key={e.id} href={`/objetivos?ano=${ano}&equipe=${e.id}`} cor={e.cor} on={q.equipe === e.id}>{e.nome}</Chip>)}
-      </div>
+      <div className="-ml-3 mb-2"><Botao href="/projetos" variante="fantasma" tamanho="P" icone="voltar">{t.projetos}</Botao></div>
+      <CabecalhoPagina rotulo={`${ano} · ${objetivos.length}`} titulo={t.objetivos}
+        abas={<div className="flex gap-2">{[2026, 2027].map((a) => <ChipDS ativo={ano === a} key={a} href={`/objetivos?ano=${a}${q.equipe ? `&equipe=${q.equipe}` : ""}`}>{a}</ChipDS>)}</div>}
+        filtros={<>
+          <ChipDS ativo={!q.equipe} href={`/objetivos?ano=${ano}`}>{t.todas}</ChipDS>
+          {equipes.map((e) => <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} ativo={q.equipe === e.id} key={e.id} href={`/objetivos?ano=${ano}&equipe=${e.id}`}>{e.nome}</ChipDS>)}
+        </>} />
+      {objetivos.length === 0 && <EstadoVazio compacto titulo={<>{t.semItens}</>} />}
       <div className="grid gap-3">
         {objetivos.map((o) => {
           const p = progresso(o.id, tarefas);
           const dono = eq(o.equipe);
           return (
-            <article key={o.id} id={o.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900 scroll-mt-20" style={dono ? { borderLeft: `4px solid ${dono.cor}` } : undefined}>
-              <p className="font-semibold">{o.titulo}
-                {!o.donoConfirmado && <span className="ml-2 align-middle text-[11px] font-normal text-amber-700 dark:text-amber-400">{t.donoProposto}</span>}
-              </p>
-              {o.descricao && (o.descricao.length > 200 ? (
-                <details className="mt-1 group">
-                  <summary className="list-none cursor-pointer text-sm text-neutral-600 dark:text-neutral-400"><span className="group-open:hidden line-clamp-2">{o.descricao}</span><span className="text-xs underline text-neutral-500 group-open:hidden">{t.lerMais}</span></summary>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">{o.descricao}</p>
-                </details>
-              ) : <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 whitespace-pre-line">{o.descricao}</p>)}
-              <div className="flex flex-wrap gap-1.5 mt-3 text-xs">
-                {dono && <Chip cor={dono.cor}>{dono.nome}</Chip>}
-                {o.apoio.map((a) => { const e = eq(a); return e && <Chip key={a} cor={e.cor}>{t.apoio}: {e.nome}</Chip>; })}
-                {o.projeto && <Chip href={`/projetos/${o.projeto}`}>{projetos.find((x) => x.id === o.projeto)?.nome ?? o.projeto}</Chip>}
-              </div>
-              <div className="mt-3 flex items-center gap-3">
-                <div className="flex-1">{p ? <Progress {...p} /> : <span className="text-xs text-neutral-500">{t.semTarefasLigadas}</span>}</div>
-                <Link href={`/tarefas/nova?objetivo=${o.id}&equipe=${o.equipe}&back=/objetivos?ano=${ano}`} aria-label={t.novaTarefa} className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white"><Plus size={18} /></Link>
-              </div>
-              {can.editObjetivo(me) && (
-                <details className="mt-3 text-sm">
-                  <summary className="cursor-pointer text-xs text-neutral-500">{t.editar}: {t.donoEquipe} / {t.apoio}</summary>
-                  <form action={updateObjetivoAction} className="grid gap-2 mt-2">
-                    <input type="hidden" name="id" value={o.id} />
-                    <input type="hidden" name="back" value={`/objetivos?ano=${ano}#${o.id}`} />
-                    <label className="grid gap-1 text-xs">{t.donoEquipe}
-                      <select name="equipe" defaultValue={o.equipe} className="rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm">
+            <div key={o.id} id={o.id} className="scroll-mt-20">
+              <Cartao equipe={dono?.id}>
+                <div className="flex items-start gap-2">
+                  <p className="titulo-cartao min-w-0 flex-1">{o.titulo}</p>
+                  {!o.donoConfirmado && <span className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pilula px-2.5 font-texto text-[13px] font-medium hachurado text-t1 shadow-[inset_0_0_0_1px_var(--s3)]"><Icone nome="prazo" tamanho={14} />{t.donoProposto}</span>}
+                  <BotaoIcone icone="mais" aria-label={t.novaTarefa} tamanho={40} variante="fantasma" href={`/tarefas/nova?objetivo=${o.id}&equipe=${o.equipe}&back=/objetivos?ano=${ano}`} />
+                </div>
+                {o.descricao && (o.descricao.length > 200 ? (
+                  <details className="group">
+                    <summary className="anel-foco corpo cursor-pointer list-none rounded-interno text-t2"><span className="line-clamp-2 group-open:hidden">{o.descricao}</span><span className="meta underline group-open:hidden">{t.lerMais}</span></summary>
+                    <p className="corpo whitespace-pre-line text-t2">{o.descricao}</p>
+                  </details>
+                ) : <p className="corpo whitespace-pre-line text-t2">{o.descricao}</p>)}
+                <div className="flex flex-wrap gap-2">
+                  {dono && <ChipDS tipo={chaveEquipe(dono.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(dono.cor)}>{dono.nome}</ChipDS>}
+                  {o.apoio.map((a) => { const e = eq(a); return e && <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} key={a}>{t.apoio}: {e.nome}</ChipDS>; })}
+                  {o.projeto && <ChipDS href={`/projetos/${o.projeto}`}>{projetos.find((x) => x.id === o.projeto)?.nome ?? o.projeto}</ChipDS>}
+                </div>
+                {p ? <BarraProgresso valor={p.done} max={p.total} rotulo={`${p.total ? Math.round((p.done / p.total) * 100) : 0}% · ${p.done}/${p.total}`} /> : <p className="meta text-t3">{t.semTarefasLigadas}</p>}
+                {can.editObjetivo(me) && (
+                  <details className="group">
+                    <summary className="anel-foco meta inline-flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-pilula text-t2 hover:text-t1"><Icone nome="editar" tamanho={16} />{t.editar}: {t.donoEquipe} / {t.apoio}</summary>
+                    <form action={updateObjetivoAction} className="mt-2 grid gap-3 rounded-[16px] bg-s2 p-3">
+                      <input type="hidden" name="id" value={o.id} />
+                      <input type="hidden" name="back" value={`/objetivos?ano=${ano}#${o.id}`} />
+                      <Campo tipo="selecao" name="equipe" rotulo={t.donoEquipe} defaultValue={o.equipe} className="bg-s1!">
                         {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-                      </select>
-                    </label>
-                    <fieldset className="flex flex-wrap gap-3 text-xs">
-                      <legend className="mb-1">{t.apoio}</legend>
-                      {equipes.map((e) => <label key={e.id} className="inline-flex items-center gap-1"><input type="checkbox" name="apoio" value={e.id} defaultChecked={o.apoio.includes(e.id)} />{e.nome}</label>)}
-                    </fieldset>
-                    <button className="justify-self-start rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-xs">{t.confirmarDono}</button>
-                  </form>
-                </details>
-              )}
-            </article>
+                      </Campo>
+                      <fieldset className="grid gap-2">
+                        <legend className="rotulo-campo mb-2 text-t3">{t.apoio}</legend>
+                        <div className="flex flex-wrap gap-2">
+                          {equipes.map((e) => (
+                            <label key={e.id} className="anel-foco inline-flex h-9 cursor-pointer items-center gap-2 rounded-pilula bg-s1 px-3.5 font-texto text-sm text-t2 has-[:checked]:bg-s3 has-[:checked]:text-t1 has-[:checked]:shadow-[inset_0_0_0_1px_var(--s4)]">
+                              <input type="checkbox" name="apoio" value={e.id} defaultChecked={o.apoio.includes(e.id)} className="size-4 accent-ac" />{e.nome}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.confirmarDono}</BotaoEnviar></div>
+                    </form>
+                  </details>
+                )}
+              </Cartao>
+            </div>
           );
         })}
       </div>

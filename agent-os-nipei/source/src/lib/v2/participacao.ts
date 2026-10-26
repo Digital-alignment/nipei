@@ -18,7 +18,7 @@ export type Fontes = {
 };
 
 /** Text colour per level (list and profile). */
-export const NIVEL_COR = { alta: "text-green-700 dark:text-green-400", media: "text-amber-700 dark:text-amber-400", baixa: "text-red-600 dark:text-red-400", sem: "text-neutral-400" } as const;
+export const NIVEL_COR = { alta: "text-ok", media: "text-warn", baixa: "text-err", sem: "text-t3" } as const; // tokens do design system
 
 const DIA = 86_400_000;
 /** Completion dates and last use are recorded from this day on: before 30 days of data, Ritmo and the trend stay empty. */

@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import Icone from "@/components/ds/Icone";
+import Campo from "@/components/ds/Campo";
+import { BadgeEstado } from "@/components/ds/Chip";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { getEquipes, getPessoas, meDaPessoa, type Pessoa } from "@/lib/v2/data";
 import { podeEntrar, temSenha } from "@/lib/v2/seguranca";
@@ -7,7 +9,6 @@ import { getConexoes } from "@/lib/v2/conexoes";
 import { iniciarVerComoAction } from "../acoes";
 import type { ModuloProps } from "./index";
 
-const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900";
 export const PAGINAS_VER_COMO: Record<string, string> = { "/hoje": "Hoje", "/agenda": "Agenda", "/equipes": "Equipes", "/projetos": "Projetos", "/conhecimento": "Conhecimento", ficha: "Ficha da pessoa" };
 
 /** Why a person can or can't get in, how, and what they'd see — the support view behind "ver como". */
@@ -31,33 +32,34 @@ export default function VerComo({ q }: ModuloProps) {
     .sort((a, b) => Number(!!b.d.me) - Number(!!a.d.me) || a.p.name.localeCompare(b.p.name, "pt"));
   return (
     <div className="grid gap-4">
-      <div className={`${CARTAO} p-4 text-sm text-neutral-600 dark:text-neutral-300 grid gap-1`}>
-        <p><strong>Ver como</strong> abre a plataforma exatamente como a pessoa vê (menu, permissões, Hoje, equipes), por 30 minutos.</p>
-        <p className="text-xs text-neutral-500">Somente leitura: nenhum formulário, botão ou API grava nada; não conta uso nem acesso para ela; o assistente, as Conexões e a Segurança dela ficam ocultos. Cada início e saída fica no Registro do painel.</p>
+      <div className="corpo grid gap-1 rounded-cartao bg-s1 p-4 text-t2">
+        <p><strong className="text-t1">Ver como</strong> abre a plataforma exatamente como a pessoa vê (menu, permissões, Hoje, equipes), por 30 minutos.</p>
+        <p className="meta text-t2">Somente leitura: nenhum formulário, botão ou API grava nada; não conta uso nem acesso para ela; o assistente, as Conexões e a Segurança dela ficam ocultos. Cada início e saída fica no Registro do painel.</p>
       </div>
-      {q.erro && <p className="text-sm text-red-600 dark:text-red-400">{q.erro}</p>}
-      <form className="flex gap-2"><input type="hidden" name="m" value="vercomo" />
-        <input name="busca" defaultValue={q.busca} placeholder="Buscar pessoa…" className="flex-1 sm:flex-none sm:w-72 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-1.5 text-sm" />
-        <button className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm">Buscar</button>
+      {q.erro && <p role="alert" className="meta inline-flex items-center gap-1.5 text-err"><Icone nome="erro" tamanho={16} />{q.erro}</p>}
+      <form className="max-w-md"><input type="hidden" name="m" value="vercomo" />
+        <Campo tipo="busca" name="busca" rotulo="Buscar pessoa…" defaultValue={q.busca} />
       </form>
       <ul className="grid gap-2">
         {pessoas.map(({ p, d }) => (
-          <li key={p.id} className={`${CARTAO} p-3 grid gap-2 md:grid-cols-[1fr_auto] md:items-center`}>
-            <div className="min-w-0 grid gap-0.5">
-              <p className="text-sm"><Link href={`/pessoas/${p.id}`} className="font-medium hover:underline">{p.name}</Link>
-                <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] ${d.me ? "bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300" : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"}`}>{d.me ? "entra" : "não entra"}</span></p>
-              <p className="text-xs text-neutral-500">{d.bloqueio ? `Bloqueio: ${d.bloqueio}` : `Papel: ${d.papel}`}{d.equipes.length ? ` · ${d.equipes.join(", ")}` : ""}</p>
-              <p className="text-xs text-neutral-500">Como entra: {d.metodos.join(", ") || "nenhuma forma configurada"}{d.extras.length ? ` · ${d.extras.join(" · ")}` : ""}</p>
+          <li key={p.id} className="grid gap-2 rounded-cartao bg-s1 p-4 md:grid-cols-[1fr_auto] md:items-center">
+            <div className="grid min-w-0 gap-1">
+              <p className="flex flex-wrap items-center gap-2">
+                <Link href={`/pessoas/${p.id}`} className="anel-foco titulo-cartao rounded-interno hover:underline">{p.name}</Link>
+                {d.me ? <BadgeEstado estado="feita">entra</BadgeEstado> : <BadgeEstado estado="interna">não entra</BadgeEstado>}
+              </p>
+              <p className="meta text-t2">{d.bloqueio ? `Bloqueio: ${d.bloqueio}` : `Papel: ${d.papel}`}{d.equipes.length ? ` · ${d.equipes.join(", ")}` : ""}</p>
+              <p className="meta text-t2">Como entra: {d.metodos.join(", ") || "nenhuma forma configurada"}{d.extras.length ? ` · ${d.extras.join(" · ")}` : ""}</p>
             </div>
             {d.me ? (
-              <form action={iniciarVerComoAction} className="flex items-center gap-1.5">
+              <form action={iniciarVerComoAction} className="flex items-center gap-2">
                 <input type="hidden" name="pessoa" value={p.id} />
-                <select name="pagina" defaultValue="/hoje" className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-xs">
+                <select name="pagina" defaultValue="/hoje" aria-label="Página inicial" className="anel-foco h-10 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco">
                   {Object.entries(PAGINAS_VER_COMO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
-                <BotaoEnviar enviando="…" className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 text-black px-3 py-1.5 text-sm font-medium"><Eye size={14} />Ver como</BotaoEnviar>
+                <BotaoEnviar enviando="…" icone="informacao" tamanho="P">Ver como</BotaoEnviar>
               </form>
-            ) : <span className="text-xs text-neutral-400">não dá para ver como (não entra)</span>}
+            ) : <span className="meta text-t3">não dá para ver como (não entra)</span>}
           </li>
         ))}
       </ul>

@@ -1,25 +1,38 @@
 import Link from "next/link";
+import { EstadoVazio } from "@/components/ds/Estados";
 import { headers } from "next/headers";
-import { AlertTriangle, CalendarClock, CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, Inbox, Plus, Sun } from "lucide-react";
-import { Empty, TaskRow, Title } from "@/components/v2/ui";
+import { Suspense, type CSSProperties } from "react";
+import { TaskRow } from "@/components/v2/ui";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import ArrastarAgenda from "@/components/v2/ArrastarAgenda";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import CopiarBotao from "@/components/v2/CopiarBotao";
 import LembrarVista from "@/components/v2/LembrarVista";
-import { Suspense } from "react";
+import { AbasLinks } from "@/components/v2/VistaLinks";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
+import Chip from "@/components/ds/Chip";
+import Icone from "@/components/ds/Icone";
+import Selo from "@/components/ds/Selo";
+import MenuAcoes from "@/components/ds/MenuAcoes";
+import { GrupoTarefas } from "@/components/ds/padroes/LinhaTarefa";
+import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import { signToken } from "@/lib/auth";
 import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Evento, type Tarefa } from "@/lib/v2/data";
-import { ordenarAgora, type Selo } from "@/lib/v2/ordem";
+import { ordenarAgora, type Selo as SeloOrdem } from "@/lib/v2/ordem";
 import { fmtDate, getT, type Lang } from "@/lib/v2/i18n";
 import { loteAction } from "../actions";
 import { getConexoes } from "@/lib/v2/conexoes";
 import { eventosGoogle, type EventoGoogle } from "@/lib/v2/google";
 
+// Agenda (DESIGN-SYSTEM.md 10.5 e 10.6): Dia (faixa da semana + grade de horas), Semana e Lista (dia a dia,
+// número display) e Mês (pontos por equipe; lista do dia embaixo no celular, ao lado a partir de 1024 px).
+// Arrastar uma tarefa (li[data-tarefa]) para um dia (data-dia) muda o prazo (ArrastarAgenda).
+
 const ICS_TTL = 60 * 60 * 24 * 365 * 3;
 type T = Awaited<ReturnType<typeof getT>>["t"];
 type Quem = "minhas" | "equipe" | "todas";
-type Vista = "semana" | "lista" | "mes";
+type Vista = "dia" | "semana" | "lista" | "mes";
 
 const somar = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const segunda = (iso: string) => somar(iso, -((new Date(`${iso}T12:00:00Z`).getUTCDay() + 6) % 7));
@@ -27,40 +40,23 @@ const addMonths = (ym: string, n: number) => {
   const [y, m] = ym.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
 };
+const ehDia = (x?: string) => /^\d{4}-\d{2}-\d{2}$/.test(x ?? "");
 /** A dated event covers every day from inicio to fim. */
 const noDia = (e: Evento, d: string) => e.inicio.length === 10 && e.inicio <= d && (e.fim || e.inicio) >= d;
-const porHora = (a: Evento, b: Evento) => (a.hora || "99").localeCompare(b.hora || "99");
+const porHora = (a: { hora: string }, b: { hora: string }) => (a.hora || "99").localeCompare(b.hora || "99");
 /** From this many tasks due in one day, the day is flagged as full. */
 const SOBRECARGA = 5;
-const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900";
+const corEquipe = (id?: string) => { const k = chaveEquipe(id); return k ? EQUIPES_DS[k].cor : "var(--s4)"; };
+/** Bloco tingido: a cor da equipe misturada com a superfície 1 (tinta, não brilho). */
+const tinta = (id?: string): CSSProperties => ({ background: `color-mix(in srgb, ${corEquipe(id)} 24%, var(--s1))` });
+const minutos = (h: string) => { const [a, b] = h.split(":").map(Number); return a * 60 + (b || 0); };
 
-function EventoRow({ e, lang, t, cor, mostrarData = true }: { e: Evento; lang: Lang; t: T; cor: string; mostrarData?: boolean }) {
-  const aConfirmar = e.status !== "confirmado";
-  return (
-    <li className="flex items-start gap-3 py-2 pl-2.5 border-l-2 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0" style={{ borderLeftColor: cor }}>
-      <span className={`mt-0.5 shrink-0 text-xs tabular-nums w-11 ${e.hora ? "text-sky-700 dark:text-sky-400 font-medium" : "text-neutral-400"}`}>{e.hora || "—"}</span>
-      <div className="min-w-0 flex-1">
-        <Link href={`/eventos/${encodeURIComponent(e.id)}`} className={`text-sm hover:underline ${aConfirmar ? "text-neutral-500" : "font-medium"}`}>{e.titulo}</Link>
-        <p className="text-xs text-neutral-500">
-          {mostrarData && e.inicio.length === 10 ? fmtDate(e.inicio, lang) : ""}{e.fim ? ` → ${fmtDate(e.fim, lang)}` : ""}
-          {aConfirmar && <span className="ml-1 rounded border border-dashed border-neutral-400 px-1 text-[10px]">{t.aConfirmar}</span>}
-        </p>
-      </div>
-    </li>
-  );
-}
-
-/** Segmented control made of links (state lives in the URL). */
-function Segmento({ itens }: { itens: { href: string; on: boolean; label: string }[] }) {
-  return (
-    <div className="inline-flex rounded-lg border border-neutral-300 dark:border-neutral-700 p-0.5">
-      {itens.map((i) => (
-        <Link key={i.href} href={i.href} aria-current={i.on ? "page" : undefined}
-          className={`rounded-md px-3 py-1 text-sm whitespace-nowrap ${i.on ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-medium" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}>{i.label}</Link>
-      ))}
-    </div>
-  );
-}
+type Comum = {
+  hoje: string; comPrazo: Tarefa[]; eventos: Evento[]; gevs: EventoGoogle[]; linhas: (ts: Tarefa[], max?: number) => React.ReactNode[];
+  t: T; lang: Lang; podeEvento: boolean; link: (p: Record<string, string | undefined>) => string;
+  /** a pessoa pode mudar o prazo desta tarefa (arrastar) */
+  mover: (x: Tarefa) => boolean;
+};
 
 export default async function Agenda({ searchParams }: { searchParams: Promise<{ equipe?: string; vista?: string; m?: string; dia?: string; s?: string; quem?: string }> }) {
   const q = await searchParams;
@@ -69,9 +65,9 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const user = (await currentUser())!;
   const me = user.pessoa;
   const equipes = getEquipes(), pessoas = getPessoas();
-  const vista: Vista = q.vista === "lista" ? "lista" : q.vista === "mes" ? "mes" : "semana";
-  // whose agenda: everyone starts with their own (gestão sees the whole picture in /pulso)
-  const quem: Quem = q.quem === "equipe" || q.quem === "todas" ? q.quem : "minhas";
+  const vista: Vista = q.vista === "dia" || q.vista === "lista" || q.vista === "mes" ? q.vista : "semana";
+  // whose agenda: everyone starts with their own; a team chip shows that team (gestão sees the whole picture in /pulso)
+  const quem: Quem = q.equipe ? "todas" : q.quem === "equipe" || q.quem === "todas" ? q.quem : "minhas";
   const equipe = quem === "todas" ? q.equipe : undefined;
 
   const visivel = (x: Tarefa) => quem === "minhas" ? !!me && x.responsaveis.includes(me.id)
@@ -82,137 +78,116 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const eventos = getEventos().filter((e) => quem === "todas" ? !equipe || e.equipe === equipe : !e.equipe || user.equipes.includes(e.equipe) || user.gestao);
 
   const ctx = { hoje, comNovidade: new Set(novidadesPara(user, 3, 50).map((n) => n.tarefaId)) };
-  const rotSelo: Record<Selo, string> = { urgente: t.seloUrgente, andamento: t.seloAndamento, novidade: t.seloNovidade, quasePronta: t.seloQuasePronta, parada: t.seloParada };
-  const ordenar = (ts: Tarefa[]) => {
-    const o = ordenarAgora(ts, ctx);
-    return { tarefas: o.tarefas, selos: Object.fromEntries(Object.entries(o.selos).map(([k, v]) => [k, v.map((x) => rotSelo[x])])) };
-  };
+  const rotSelo: Record<SeloOrdem, string> = { urgente: t.seloUrgente, andamento: t.seloAndamento, novidade: t.seloNovidade, quasePronta: t.seloQuasePronta, parada: t.seloParada };
   const opcoes = [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: somar(hoje, 1) }, { label: t.maisSemana, data: somar(hoje, 7) }];
   const rowProps = { equipes, pessoas, lang, hoje, me: user };
   const linhas = (ts: Tarefa[], max = Infinity) => {
-    const o = ordenar(ts);
+    const o = ordenarAgora(ts, ctx);
     return o.tarefas.slice(0, max).map((x) => (
-      <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]} arrastavel={can.editTarefa(user, x)}
+      <TaskRow key={x.id} t={x} {...rowProps} selos={o.selos[x.id]?.map((s) => rotSelo[s])} arrastavel={can.editTarefa(user, x)}
         extra={(y) => can.editTarefa(user, y) ? <PrazoRapido id={y.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} /> : null} />
     ));
   };
-  const cor = (id: string) => equipes.find((e) => e.id === id)?.cor ?? "#a3a3a3";
   const link = (p: Record<string, string | undefined>) =>
     "/agenda?" + new URLSearchParams(Object.entries({ quem: q.quem, equipe, vista: q.vista, ...p }).filter(([, v]) => v) as [string, string][]).toString();
 
   const atrasadas = comPrazo.filter((x) => x.prazo < hoje);
   const reprogramaveis = atrasadas.filter((x) => user.gestao || can.editTarefa(user, x));
-  const deHoje = comPrazo.filter((x) => x.prazo === hoje);
-  const proximos7 = comPrazo.filter((x) => x.prazo > hoje && x.prazo <= somar(hoje, 7));
-  const eventosProx = eventos.filter((e) => e.inicio.length === 10 && (e.fim || e.inicio) >= hoje && e.inicio <= somar(hoje, 30));
+  const deHoje = comPrazo.filter((x) => x.prazo === hoje).length + eventos.filter((e) => noDia(e, hoje)).length;
+  const proximos7 = comPrazo.filter((x) => x.prazo > hoje && x.prazo <= somar(hoje, 7)).length;
   const podeEvento = equipes.some((e) => can.gerirEquipe(user, e.id));
   // events with only a month or a year: shown as "to be scheduled" (they don't fit a day)
   const semDia = eventos.filter((e) => e.inicio.length < 10 && e.inicio >= hoje.slice(0, e.inicio.length)).sort((a, b) => a.inicio.localeCompare(b.inicio));
 
-  // the person's own Google Calendar (read-only here), for the range on screen
-  const semanaIni = /^\d{4}-\d{2}-\d{2}$/.test(q.s ?? "") ? segunda(q.s!) : segunda(hoje);
+  const diaSel = ehDia(q.dia) ? q.dia! : hoje;
+  const semanaIni = ehDia(q.s) ? segunda(q.s!) : segunda(vista === "dia" ? diaSel : hoje);
   const mesSel = /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7);
-  const [gDe, gAte] = vista === "semana" ? [semanaIni, somar(semanaIni, 6)] : vista === "mes" ? [`${mesSel}-01`, `${addMonths(mesSel, 1)}-01`] : [hoje, somar(hoje, 30)];
+  // the person's own Google Calendar (read-only here), for the range on screen
+  const [gDe, gAte] = vista === "dia" ? [diaSel, somar(diaSel, 1)] : vista === "semana" ? [semanaIni, somar(semanaIni, 6)] : vista === "mes" ? [`${mesSel}-01`, `${addMonths(mesSel, 1)}-01`] : [hoje, somar(hoje, 30)];
   let gevs: EventoGoogle[] = [], gErro = "";
   if (me && getConexoes(me.id).google) gevs = await eventosGoogle(me.id, gDe, gAte).catch((e: Error) => { gErro = e.message; return []; });
 
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const icsUrl = `${origin}/api/agenda/ics?token=${signToken("ics", user.username, ICS_TTL)}${equipe ? `&equipe=${equipe}` : ""}`;
-  // summary cards jump to the matching block; "today" always lives in the week view
-  const resumo = [
-    { n: atrasadas.length, label: t.atrasadas, href: "#atrasadas", icon: AlertTriangle, cls: atrasadas.length ? "text-red-600 dark:text-red-400" : "" },
-    { n: deHoje.length + eventos.filter((e) => noDia(e, hoje)).length, label: t.hoje, href: vista === "semana" && !q.s ? `#d-${hoje}` : link({ vista: "semana", s: undefined }) + `#d-${hoje}`, icon: Sun, cls: "" },
-    { n: proximos7.length, label: t.proximos7, href: link({ vista: "lista" }), icon: CalendarDays, cls: "" },
-    { n: eventosProx.length, label: t.eventos30, href: link({ vista: "lista" }), icon: CalendarClock, cls: "" },
-    { n: semPrazo.length, label: t.semPrazoTitulo, href: "#sem-prazo", icon: Inbox, cls: semPrazo.length ? "text-amber-700 dark:text-amber-400" : "" },
-  ];
+  const c: Comum = { hoje, comPrazo, eventos, gevs, linhas, t, lang, podeEvento, link, mover: (x) => can.editTarefa(user, x) };
+  const diaAlvo = vista === "dia" ? diaSel : vista === "mes" && ehDia(q.dia) ? q.dia! : hoje;
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <Title sub={t.agendaSub}>{t.agenda}</Title>
-        <div className="flex gap-2 shrink-0 mb-3 sm:mb-0">
-          <Link href="/tarefas/nova?back=/agenda" className="inline-flex items-center gap-1 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm font-medium"><Plus size={14} />{t.tarefaLbl}</Link>
-          {podeEvento && <Link href="/eventos/novo" className="inline-flex items-center gap-1 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm"><CalendarPlus size={14} />{t.eventoLbl}</Link>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
-        {resumo.map((r) => (
-          <a key={r.label} href={r.n || r.href.startsWith("/") ? r.href : undefined}
-            className={`${CARTAO} px-3 py-2.5 flex flex-col gap-0.5 ${r.n ? "hover:border-neutral-400 dark:hover:border-neutral-600" : "opacity-60"} last:col-span-2 sm:last:col-span-1`}>
-            <span className={`flex items-center gap-1.5 text-xs text-neutral-500 ${r.cls}`}><r.icon size={13} />{r.label}</span>
-            <span className={`text-xl font-semibold tabular-nums ${r.cls}`}>{r.n}</span>
-          </a>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-        <Segmento itens={(["semana", "lista", "mes"] as const).map((v) => ({ href: link({ vista: v, quem, dia: undefined, m: undefined, s: undefined }), on: vista === v, label: v === "semana" ? t.semanaLbl : v === "lista" ? t.lista : t.mes }))} />
-        <Segmento itens={(["minhas", "equipe", "todas"] as const).map((x) => ({ href: link({ quem: x, vista, equipe: undefined }), on: quem === x, label: x === "minhas" ? t.minhas : x === "equipe" ? t.minhaEquipe : t.todas }))} />
-      </div>
-      {quem === "todas" && (
-        <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
-          {[{ id: "", nome: t.todasEquipes, cor: "" }, ...equipes].map((e) => (
-            <Link key={e.id} href={link({ equipe: e.id || undefined })}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs border ${(equipe ?? "") === e.id ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900" : "border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300"}`}>
-              {e.cor && <span className="w-2 h-2 rounded-full" style={{ background: e.cor }} />}{e.nome}
-            </Link>
+      <CabecalhoPagina selo="lua" rotulo={quem === "minhas" ? t.minhas : quem === "equipe" ? t.minhaEquipe : equipe ? equipes.find((e) => e.id === equipe)?.nome : t.todas}
+        titulo={t.agenda}
+        subtitulo={<>
+          <a href="#atrasadas" className={`alvo-toque inline-block ${atrasadas.length ? "text-err hover:underline" : ""}`}>{atrasadas.length} {t.atrasadasLbl}</a>
+          {" · "}{deHoje} {t.hoje.toLowerCase()} · {proximos7} {t.proximos7.toLowerCase()} · <a href="#sem-prazo" className="alvo-toque inline-block hover:underline">{semPrazo.length} {t.semPrazoTitulo.toLowerCase()}</a>
+        </>}
+        acoes={<>
+          <BotaoIcone icone="tarefa" aria-label={`${t.novaTarefa}`} href={`/tarefas/nova?back=/agenda${diaAlvo >= hoje ? `&prazo=${diaAlvo}` : ""}`} />
+          {podeEvento && <Botao href={`/eventos/novo${diaAlvo >= hoje ? `?inicio=${diaAlvo}` : ""}`} icone="calendario" folha>{t.novoEvento}</Botao>}
+        </>}
+        abas={<AbasLinks rotulo={t.agenda} ativa={vista === "lista" ? "semana" : vista} itens={[
+          { id: "dia", rotulo: t.diaLbl, icone: "tema-claro", href: link({ vista: "dia", dia: undefined, s: undefined, m: undefined }) },
+          // TODO(ícones): trocar "calendario" pelos ícones `semana` e `mes` quando existirem (pedidos em ICONES.md)
+          { id: "semana", rotulo: t.semanaLbl, icone: "calendario", href: link({ vista: "semana", dia: undefined, s: undefined, m: undefined }) },
+          { id: "mes", rotulo: t.mes, icone: "calendario", href: link({ vista: "mes", dia: undefined, s: undefined, m: undefined }) },
+        ]} />}
+        filtros={<>
+          {me && <Chip href={link({ quem: "minhas", equipe: undefined })} ativo={quem === "minhas"} icone="pessoa">{t.minhas}</Chip>}
+          <Chip href={link({ quem: "equipe", equipe: undefined })} ativo={quem === "equipe"} icone="pessoas">{t.minhaEquipe}</Chip>
+          <Chip href={link({ quem: "todas", equipe: undefined })} ativo={quem === "todas" && !equipe} icone="calendario">{t.todas}</Chip>
+          {equipes.filter((e) => chaveEquipe(e.id)).map((e) => (
+            <Chip key={e.id} tipo="equipe" equipe={e.id} ativo={equipe === e.id} href={link({ quem: "todas", equipe: equipe === e.id ? undefined : e.id })}>{e.nome}</Chip>
           ))}
-        </div>
-      )}
-      <p className="text-xs text-neutral-500 mb-5">{quem === "minhas" ? t.vendoMinhas : quem === "equipe" ? t.vendoEquipe : t.vendoTodas}</p>
+        </>}
+      />
 
       {atrasadas.length > 0 && (
-        <details id="atrasadas" open={atrasadas.length <= 8} className="mb-5 scroll-mt-20 rounded-xl border border-red-200 dark:border-red-900/60">
-          <summary className="cursor-pointer px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-sm font-medium text-red-700 dark:text-red-400">{t.atrasadas} ({atrasadas.length})</span>
-            <span className="text-xs text-neutral-500 flex-1">{t.atrasadasAjuda}</span>
-          </summary>
+        <section id="atrasadas" className="mb-6 grid scroll-mt-20 gap-2">
           {reprogramaveis.length > 1 && (
-            <form action={loteAction} className="flex flex-wrap items-center gap-2 px-3 pb-2 text-xs">
+            <form action={loteAction} className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="acao" value="prazo" />
               {reprogramaveis.map((x) => <input key={x.id} type="hidden" name="ids" value={x.id} />)}
-              <span className="text-neutral-500">{t.moverTodasPara.replace("{n}", String(reprogramaveis.length))}</span>
-              <BotaoEnviar name="prazo" value={hoje} enviando="…" className="rounded-full border border-neutral-300 dark:border-neutral-700 px-2.5 py-0.5">{t.paraHoje}</BotaoEnviar>
-              <BotaoEnviar name="prazo" value={somar(hoje, 1)} enviando="…" className="rounded-full border border-neutral-300 dark:border-neutral-700 px-2.5 py-0.5">{t.amanha}</BotaoEnviar>
-              <BotaoEnviar name="prazo" value={segunda(somar(hoje, 7))} enviando="…" className="rounded-full border border-neutral-300 dark:border-neutral-700 px-2.5 py-0.5">{t.proximaSemana}</BotaoEnviar>
+              <span className="meta text-t2">{t.moverTodasPara.replace("{n}", String(reprogramaveis.length))}</span>
+              {[[t.paraHoje, hoje], [t.amanha, somar(hoje, 1)], [t.proximaSemana, segunda(somar(hoje, 7))]].map(([rot, d]) => (
+                <BotaoEnviar key={d} name="prazo" value={d} enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s2 px-3.5 font-texto text-sm font-medium text-t2 hover:bg-s3 hover:text-t1"><Icone nome="prazo" tamanho={16} />{rot}</BotaoEnviar>
+              ))}
             </form>
           )}
-          <ul className="px-1 pb-1">{linhas(atrasadas)}</ul>
-        </details>
+          <GrupoTarefas titulo={t.atrasadas} contagem={atrasadas.length} alerta>{linhas(atrasadas)}</GrupoTarefas>
+          <p className="meta text-t3">{t.atrasadasAjuda}</p>
+        </section>
       )}
 
-      {gErro && <p className="mb-3 text-xs text-amber-700 dark:text-amber-400">{t.cx.doGoogle}: {gErro}</p>}
+      {gErro && <p className="meta mb-3 inline-flex items-center gap-1.5 text-warn"><Icone nome="atencao" tamanho={16} />{t.cx.doGoogle}: {gErro}</p>}
       <Suspense><LembrarVista chave="agenda" params={["vista", "quem"]} /></Suspense>
-      {vista !== "lista" && <ArrastarAgenda dica={t.dicaArrastar} />}
-      {vista === "semana" && <Semana {...{ inicio: semanaIni, hoje, comPrazo, eventos, gevs, linhas, cor, link, t, lang, podeEvento }} />}
-      {vista === "lista" && <Lista {...{ hoje, comPrazo, eventos, gevs, linhas, cor, t, lang, podeEvento }} />}
-      {vista === "mes" && <Mes {...{ mes: mesSel, dia: q.dia, hoje, comPrazo, eventos, gevs, linhas, cor, link, t, lang, podeEvento }} />}
+      <ArrastarAgenda dica={t.dicaArrastar} />
+      {vista === "dia" && <DiaGrade d={diaSel} inicioSemana={semanaIni} {...c} />}
+      {vista === "semana" && <Semana inicio={semanaIni} {...c} />}
+      {vista === "lista" && <Lista {...c} />}
+      {vista === "mes" && <Mes mes={mesSel} dia={q.dia} {...c} />}
 
-      <section id="sem-prazo" className={`${CARTAO} mt-8 scroll-mt-20`}>
-        <div className="px-4 pt-3 pb-1 flex flex-wrap items-baseline gap-x-3">
-          <p className="text-sm font-semibold flex items-center gap-1.5"><Inbox size={15} className="text-amber-600" />{t.semPrazoTitulo} ({semPrazo.length})</p>
-          <p className="text-xs text-neutral-500 flex-1">{t.semPrazoAjuda}</p>
-        </div>
+      <section id="sem-prazo" className="mt-8 grid scroll-mt-20 gap-2">
         {semPrazo.length ? (
           <>
-            <ul className="px-1">{linhas(semPrazo, 8)}</ul>
-            {semPrazo.length > 8 && <Link href="/hoje" className="block px-4 py-2 text-xs underline text-neutral-500">{t.verTodas} ({semPrazo.length})</Link>}
+            <GrupoTarefas titulo={t.semPrazoTitulo} contagem={semPrazo.length}>{linhas(semPrazo, 8)}</GrupoTarefas>
+            <p className="meta text-t3">{t.semPrazoAjuda}</p>
+            {semPrazo.length > 8 && <div><Botao href="/tarefas?vista=lista" variante="fantasma" tamanho="P" icone="avancar">{t.verTodas} ({semPrazo.length})</Botao></div>}
           </>
-        ) : <p className="px-4 pb-3 text-sm text-neutral-500">{t.tudoComPrazo}</p>}
+        ) : <EstadoVazio compacto titulo={<>{t.tudoComPrazo}</>} />}
       </section>
 
       {semDia.length > 0 && (
-        <details className={`${CARTAO} mt-4`}>
-          <summary className="cursor-pointer px-4 py-3 text-sm font-medium">{t.aDefinirData} ({semDia.length}) <span className="ml-1 text-xs font-normal text-neutral-500">{t.aDefinirAjuda}</span></summary>
-          <ul className="px-4 pb-3 grid gap-1.5 sm:grid-cols-2">
+        <details className="group mt-4 rounded-cartao bg-s1 p-4">
+          <summary className="anel-foco alvo-toque flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
+            <span className="titulo-cartao">{t.aDefinirData}</span><span className="rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2">{semDia.length}</span>
+            <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
+          </summary>
+          <p className="meta mt-1 text-t3">{t.aDefinirAjuda}</p>
+          <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
             {semDia.map((e) => (
               <li key={e.id}>
-                <Link href={`/eventos/${encodeURIComponent(e.id)}`} title={t.definirData} className="flex items-center gap-2 text-sm hover:underline">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cor(e.equipe) }} />
-                  <span className="text-xs text-neutral-500 tabular-nums shrink-0 w-16">{e.inicio.length === 7 ? fmtDate(e.inicio, lang) : e.inicio}</span>
+                <Link href={`/eventos/${encodeURIComponent(e.id)}`} title={t.definirData} className="anel-foco flex min-h-11 items-center gap-2.5 rounded-[14px] px-3 font-texto text-[15px] text-t1 hover:underline" style={tinta(e.equipe)}>
+                  <span className="meta w-16 shrink-0 tabular-nums text-t2">{e.inicio.length === 7 ? fmtDate(e.inicio, lang) : e.inicio}</span>
                   <span className="truncate">{e.titulo}</span>
                 </Link>
               </li>
@@ -221,106 +196,227 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </details>
       )}
 
-      <details className={`${CARTAO} mt-4`}>
-        <summary className="cursor-pointer px-4 py-3 text-sm font-medium">{t.googleTitulo}</summary>
-        <div className="px-4 pb-4 text-sm text-neutral-600 dark:text-neutral-400 grid gap-3">
+      <details className="group mt-4 rounded-cartao bg-s1 p-4">
+        <summary className="anel-foco alvo-toque flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
+          <Icone nome="calendario" tamanho={18} className="text-t2" /><span className="titulo-cartao">{t.googleTitulo}</span>
+          <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-3 grid gap-3">
           <div className="flex flex-wrap gap-2">
-            <a href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(icsUrl.replace(/^https?:/, "webcal:"))}`} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-sm font-medium">{t.adicionarGoogle}</a>
+            <Botao href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(icsUrl.replace(/^https?:/, "webcal:"))}`} target="_blank" rel="noreferrer" icone="abrir-fora" tamanho="M">{t.adicionarGoogle}</Botao>
             <CopiarBotao texto={icsUrl} label={t.copiarLinkCal} copiado={t.copiado} />
           </div>
-          <p className="text-xs">{t.googleTexto}</p>
+          <p className="meta text-t2">{t.googleTexto}</p>
         </div>
       </details>
+
+      {/* "+" flutuante: criar no dia que está na tela */}
+      <div className="print:hidden fixed bottom-[calc(7.25rem+env(safe-area-inset-bottom))] right-4 z-30 md:bottom-8 md:right-8">
+        <MenuAcoes gatilho="criar" rotulo={t.criarLbl} itens={[
+          { icone: "tarefa", rotulo: t.novaTarefa, href: `/tarefas/nova?back=/agenda${diaAlvo >= hoje ? `&prazo=${diaAlvo}` : ""}` },
+          ...(podeEvento ? [{ icone: "calendario" as const, rotulo: t.novoEvento, href: `/eventos/novo${diaAlvo >= hoje ? `?inicio=${diaAlvo}` : ""}` }] : []),
+        ]} />
+      </div>
     </>
   );
 }
 
-type Comum = { hoje: string; comPrazo: Tarefa[]; eventos: Evento[]; gevs: EventoGoogle[]; linhas: (ts: Tarefa[]) => React.ReactNode[]; cor: (id: string) => string; t: T; lang: Lang; podeEvento: boolean };
+const loc = (lang: Lang) => (lang === "en" ? "en-US" : "pt-BR");
+const diaCurto = (d: string, lang: Lang) => new Date(`${d}T12:00:00Z`).toLocaleDateString(loc(lang), { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3);
 
-const rotuloDia = (d: string, hoje: string, t: T, lang: Lang) =>
-  d === hoje ? t.hoje : d === somar(hoje, 1) ? t.amanha
-    : new Date(`${d}T12:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+/** Faixa da semana (10.5): pílulas verticais; dia escolhido em acento; pontos = eventos na cor da equipe. Cada dia aceita tarefa arrastada. */
+function FaixaSemana({ inicio, sel, href, hoje, comPrazo, eventos, gevs, lang, t, link }: Comum & { inicio: string; sel?: string; href: (d: string) => string }) {
+  const dias = Array.from({ length: 7 }, (_, i) => somar(inicio, i));
+  const fmt = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString(loc(lang), { day: "numeric", month: "short", timeZone: "UTC" });
+  return (
+    <div className="mb-5 grid gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={link({ s: somar(inicio, -7), dia: sel ? somar(sel, -7) : undefined })} />
+        <div className="grid justify-items-center">
+          <p className="titulo-cartao">{fmt(dias[0])} – {fmt(dias[6])}</p>
+          {(hoje < dias[0] || hoje > dias[6]) && <Link href={link({ s: undefined, dia: undefined })} className="meta text-t2 underline">{t.voltarHoje}</Link>}
+        </div>
+        <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={link({ s: somar(inicio, 7), dia: sel ? somar(sel, 7) : undefined })} />
+      </div>
+      <nav aria-label={t.semanaLbl} className="grid grid-cols-7 gap-1.5 md:gap-2">
+        {dias.map((d) => {
+          const on = d === sel, n = d < hoje ? 0 : comPrazo.filter((x) => x.prazo === d).length;
+          const cores = [...new Set(eventos.filter((e) => noDia(e, d)).map((e) => corEquipe(e.equipe)))].slice(0, 3);
+          return (
+            <Link key={d} href={href(d)} data-dia={d} aria-current={on ? "date" : undefined} scroll={false}
+              className={`anel-foco flex flex-col items-center gap-1 rounded-pilula py-3 transition-colors duration-150 ${on ? "bg-ac text-ac-ink" : d === hoje ? "bg-s2 text-t1 shadow-[inset_0_0_0_1px_var(--s3)]" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"} ${d < hoje && !on ? "opacity-60" : ""}`}>
+              <span className="meta uppercase">{diaCurto(d, lang)}</span>
+              <span className="font-display text-2xl font-light leading-none tabular-nums md:text-3xl">{Number(d.slice(8))}</span>
+              <span className="flex h-1.5 gap-0.5" aria-hidden="true">
+                {cores.map((cor) => <span key={cor} className="size-1.5 rounded-pilula" style={{ background: on ? "currentColor" : cor }} />)}
+                {gevs.some((e) => e.dia === d) && <span className="size-1.5 rounded-pilula shadow-[inset_0_0_0_1px_currentColor]" />}
+              </span>
+              {n > 0 && <span className={`rounded-pilula px-1.5 text-xs font-semibold tabular-nums ${on ? "bg-ac-ink/15" : n >= SOBRECARGA ? "bg-warn-bg text-warn" : "bg-s3 text-t2"}`}>{n}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
 
-/** One day block: events by time, then tasks in smart order. Past days only show events (late tasks are in "Atrasadas"). */
-function Dia({ d, hoje, comPrazo, eventos, gevs, linhas, cor, t, lang, podeEvento, vazio = true }: Comum & { d: string; vazio?: boolean }) {
+/** Pílula de tarefa ou lembrete (10.6): ícone + ponto da equipe; arrastável para outro dia. */
+function PilulaTarefa({ x, arrastavel }: { x: Tarefa; arrastavel: boolean }) {
+  return (
+    <li draggable={arrastavel || undefined} data-tarefa={arrastavel ? x.id : undefined}>
+      <Link href={`/tarefas/${x.id}`} className="anel-foco inline-flex min-h-9 max-w-full items-center gap-2 rounded-pilula bg-s2 py-1 pl-2.5 pr-3.5 font-texto text-sm font-medium text-t1 hover:bg-s3">
+        <Icone nome="tarefa" tamanho={16} className="shrink-0 text-t2" />
+        <span className="size-2 shrink-0 rounded-pilula" style={{ background: corEquipe(x.equipe) }} aria-hidden="true" />
+        <span className="truncate">{x.title}</span>
+      </Link>
+    </li>
+  );
+}
+
+/** Vista Dia: faixa da semana + dia inteiro (eventos sem hora, tarefas) + grade de horas com a linha do agora. */
+function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: string }) {
+  const { hoje, comPrazo, eventos, gevs, t, lang, link } = c;
+  const evs = eventos.filter((e) => noDia(e, d));
+  const comHora = [
+    ...evs.filter((e) => e.hora).map((e) => ({ id: e.id, titulo: e.titulo, ini: minutos(e.hora), fim: minutos(e.hora) + 60, equipe: e.equipe, href: `/eventos/${encodeURIComponent(e.id)}`, google: false, aConfirmar: e.status !== "confirmado" })),
+    ...gevs.filter((e) => e.dia === d && e.hora).map((e) => ({ id: e.id, titulo: e.titulo, ini: minutos(e.hora), fim: /^\d{2}:\d{2}$/.test(e.fim) ? Math.max(minutos(e.hora) + 30, minutos(e.fim)) : minutos(e.hora) + 60, equipe: "", href: e.link, google: true, aConfirmar: false })),
+  ].sort((a, b) => a.ini - b.ini);
+  const semHora = evs.filter((e) => !e.hora);
+  const gSemHora = gevs.filter((e) => e.dia === d && !e.hora);
+  const ts = d < hoje ? [] : comPrazo.filter((x) => x.prazo === d);
+  // faixas lado a lado quando os eventos se sobrepõem (ponytail: uma largura só para o dia todo)
+  const faixas: number[] = [];
+  const pos = comHora.map((e) => { let i = faixas.findIndex((f) => f <= e.ini); if (i < 0) { faixas.push(0); i = faixas.length - 1; } faixas[i] = e.fim; return i; });
+  const agora = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" });
+  const de = Math.min(7, ...comHora.map((e) => Math.floor(e.ini / 60)), d === hoje ? Math.floor(minutos(agora) / 60) : 24);
+  const ate = Math.max(21, ...comHora.map((e) => Math.ceil(e.fim / 60)));
+  const H = 64; // px por hora
+  const titulo = new Date(`${d}T12:00:00Z`).toLocaleDateString(loc(lang), { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  return (
+    <>
+      <FaixaSemana inicio={inicioSemana} sel={d} href={(x) => link({ vista: "dia", dia: x, s: undefined })} {...c} />
+      <section data-dia={d} className="grid gap-4 rounded-cartao bg-s1 p-4">
+        <h2 className="flex items-baseline gap-3">
+          <span className={`numero-display ${d === hoje ? "text-ac-text" : ""}`}>{Number(d.slice(8))}</span>
+          <span className="titulo-secao first-letter:uppercase">{titulo}</span>
+        </h2>
+        {(semHora.length > 0 || gSemHora.length > 0 || ts.length > 0) && (
+          <div className="grid gap-2">
+            <p className="rotulo-maiusculo text-t3">{t.diaInteiro}</p>
+            <ul className="flex flex-wrap gap-2">
+              {semHora.map((e) => (
+                <li key={e.id}><Link href={`/eventos/${encodeURIComponent(e.id)}`} className="anel-foco relative inline-flex min-h-9 items-center gap-2 overflow-hidden rounded-[12px] py-1 pl-3.5 pr-3.5 font-texto text-sm font-medium text-t1 hover:underline" style={tinta(e.equipe)}>
+                  <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: corEquipe(e.equipe) }} />{e.titulo}
+                </Link></li>
+              ))}
+              {gSemHora.map((e) => <li key={e.id}><a href={e.link || undefined} target="_blank" rel="noreferrer" className="anel-foco inline-flex min-h-9 items-center gap-2 rounded-[12px] px-3.5 font-texto text-sm text-t2 shadow-[inset_0_0_0_1px_var(--s4)] [border-style:dashed] hover:underline"><Icone nome="calendario" tamanho={16} />{e.titulo}</a></li>)}
+              {ts.map((x) => <PilulaTarefa key={x.id} x={x} arrastavel={c.mover(x)} />)}
+            </ul>
+          </div>
+        )}
+        <div className="relative grid" style={{ gridTemplateColumns: "3.25rem 1fr" }}>
+          {Array.from({ length: ate - de }, (_, i) => (
+            <div key={i} className="contents">
+              <span className="meta -translate-y-2 pr-2 text-right tabular-nums text-t3" style={{ height: H }}>{String(de + i).padStart(2, "0")}:00</span>
+              <span className="border-t border-s2" style={{ height: H }} />
+            </div>
+          ))}
+          <div className="absolute inset-y-0 left-[3.25rem] right-0">
+            {comHora.map((e, i) => {
+              const top = ((e.ini - de * 60) / 60) * H, alto = Math.max(28, ((e.fim - e.ini) / 60) * H - 4);
+              const largura = 100 / faixas.length;
+              const corpo = (
+                <>
+                  {!e.google && <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: corEquipe(e.equipe) }} />}
+                  <span className="flex min-w-0 items-baseline gap-2">
+                    <span className="meta shrink-0 tabular-nums text-t2">{String(Math.floor(e.ini / 60)).padStart(2, "0")}:{String(e.ini % 60).padStart(2, "0")}</span>
+                    <span className="truncate font-texto text-sm font-semibold text-t1">{e.titulo}</span>
+                  </span>
+                  {e.equipe && chaveEquipe(e.equipe) && <span className="meta flex items-center gap-1 text-t2"><Selo nome={EQUIPES_DS[chaveEquipe(e.equipe)!].selo} tamanho={14} style={{ color: corEquipe(e.equipe) }} />{EQUIPES_DS[chaveEquipe(e.equipe)!].nome}</span>}
+                </>
+              );
+              const cls = `anel-foco absolute flex flex-col gap-0.5 overflow-hidden rounded-[12px] py-1.5 pl-3 pr-2 hover:brightness-110 ${e.google ? "bg-s1 shadow-[inset_0_0_0_1px_var(--s4)]" : ""} ${e.aConfirmar ? "hachurado" : ""}`;
+              const st: CSSProperties = { top, height: alto, left: `calc(${pos[i] * largura}% + 4px)`, width: `calc(${largura}% - 8px)`, ...(e.google ? {} : tinta(e.equipe)) };
+              return e.google
+                ? <a key={e.id} href={e.href || undefined} target="_blank" rel="noreferrer" className={cls} style={st}>{corpo}</a>
+                : <Link key={e.id} href={e.href} className={cls} style={st}>{corpo}</Link>;
+            })}
+            {d === hoje && minutos(agora) >= de * 60 && minutos(agora) <= ate * 60 && (
+              // linha do agora (âmbar)
+              <span role="img" aria-label={`${t.agoraLbl} ${agora}`} className="pointer-events-none absolute -left-1.5 right-0 z-10 flex items-center" style={{ top: ((minutos(agora) - de * 60) / 60) * H - 5 }}>
+                <span className="size-2.5 shrink-0 rounded-pilula bg-warn" /><span className="h-0.5 flex-1 bg-warn" />
+              </span>
+            )}
+          </div>
+        </div>
+        {!comHora.length && !semHora.length && !ts.length && !gSemHora.length && <p className="meta text-t3">{t.semEventos}</p>}
+      </section>
+    </>
+  );
+}
+
+/** One day block (Semana / Lista / Mês): número display + eventos (blocos tingidos) + tarefas (linhas). */
+function Dia({ d, hoje, comPrazo, eventos, gevs, linhas, t, lang, podeEvento, vazio = true, compacto }: Comum & { d: string; vazio?: boolean; compacto?: boolean }) {
   const evs = eventos.filter((e) => noDia(e, d)).sort(porHora);
-  const gs = gevs.filter((e) => e.dia === d);
+  const gs = gevs.filter((e) => e.dia === d).sort(porHora);
   const ts = d < hoje ? [] : comPrazo.filter((x) => x.prazo === d);
   if ((!vazio || d < hoje) && !evs.length && !ts.length && !gs.length) return null;
+  const ehHoje = d === hoje;
+  const nome = d === hoje ? t.hoje : d === somar(hoje, 1) ? t.amanha : new Date(`${d}T12:00:00Z`).toLocaleDateString(loc(lang), { weekday: "long", timeZone: "UTC" });
   const acoes = d >= hoje && (
-    <span className="ml-auto flex gap-3 text-xs font-normal text-neutral-500">
-      <Link href={`/tarefas/nova?prazo=${d}&back=/agenda`} className="hover:underline">+ {t.tarefaLbl}</Link>
-      {podeEvento && <Link href={`/eventos/novo?inicio=${d}`} className="hover:underline">+ {t.eventoLbl}</Link>}
+    <span className="ml-auto flex gap-1">
+      <BotaoIcone icone="tarefa" aria-label={`${t.novaTarefa} · ${nome}`} tamanho={40} variante="fantasma" href={`/tarefas/nova?prazo=${d}&back=/agenda`} />
+      {podeEvento && <BotaoIcone icone="calendario" aria-label={`${t.novoEvento} · ${nome}`} tamanho={40} variante="fantasma" href={`/eventos/novo?inicio=${d}`} />}
     </span>
   );
-  if (!evs.length && !ts.length && !gs.length) {
-    return (
-      <section id={`d-${d}`} data-dia={d} className="scroll-mt-20 flex items-baseline gap-2 py-2 text-sm border-b border-dashed border-neutral-200 dark:border-neutral-800">
-        <span className="first-letter:uppercase text-neutral-500">{rotuloDia(d, hoje, t, lang)}</span>
-        <span className="text-xs text-neutral-400">· {t.livre}</span>{acoes}
-      </section>
-    );
-  }
+  const vazioDia = !evs.length && !ts.length && !gs.length;
   return (
-    <section id={`d-${d}`} data-dia={d} className={`scroll-mt-20 my-2 rounded-lg ${d === hoje ? "ring-1 ring-neutral-300 dark:ring-neutral-700 px-2" : ""}`}>
-      <h2 className={`flex items-baseline gap-2 py-1.5 text-sm border-b border-neutral-200 dark:border-neutral-800 ${d === hoje ? "font-semibold" : "font-medium"} ${d < hoje ? "text-neutral-400" : ""}`}>
-        <span className="first-letter:uppercase">{rotuloDia(d, hoje, t, lang)}</span>
-        <span className={`text-xs font-normal tabular-nums ${ts.length >= SOBRECARGA ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}`}>{evs.length + ts.length + gs.length}{ts.length >= SOBRECARGA ? ` · ${t.diaCheio}` : ""}</span>
+    <section id={`d-${d}`} data-dia={d} className={`scroll-mt-20 rounded-cartao transition-shadow ${compacto ? "" : "py-2"} ${d < hoje ? "opacity-70" : ""}`}>
+      <h2 className="flex items-center gap-3 px-1 pb-2">
+        {!compacto && <span className={`grid min-w-14 place-items-center rounded-pilula px-2 numero-display ${ehHoje ? "bg-ac text-ac-ink" : "text-t1"}`}>{Number(d.slice(8))}</span>}
+        <span className="grid">
+          <span className="titulo-cartao first-letter:uppercase">{nome}</span>
+          {(ts.length > 0 || evs.length > 0) && <span className={`meta tabular-nums ${ts.length >= SOBRECARGA ? "font-semibold text-warn" : "text-t3"}`}>{evs.length + ts.length + gs.length}{ts.length >= SOBRECARGA ? ` · ${t.diaCheio}` : ""}</span>}
+          {vazioDia && <span className="meta text-t3">{t.semEventos}</span>}
+        </span>
         {acoes}
       </h2>
-      <ul>
-        {[...evs.map((e) => ({ hora: e.hora, el: <EventoRow key={e.id} e={e} lang={lang} t={t} cor={cor(e.equipe)} mostrarData={false} /> })),
-          ...gs.map((e) => ({ hora: e.hora, el: (
-          <li key={e.id} className="flex items-start gap-3 py-2 pl-2.5 border-l-2 border-dashed border-l-neutral-400 border-b border-b-neutral-100 dark:border-b-neutral-800 last:border-b-0">
-            <span className={`mt-0.5 shrink-0 text-xs tabular-nums w-11 ${e.hora ? "text-neutral-600 dark:text-neutral-300" : "text-neutral-400"}`}>{e.hora || "—"}</span>
-            <a href={e.link || undefined} target="_blank" rel="noreferrer" className="min-w-0 flex-1 text-sm text-neutral-600 dark:text-neutral-300 hover:underline">
-              {e.titulo}<span className="ml-1.5 text-[10px] rounded border border-neutral-300 dark:border-neutral-700 px-1 text-neutral-500">{t.cx.doGoogle}{e.fim ? ` · até ${e.fim}` : ""}</span>
-            </a>
-          </li>
-        ) }))].sort((a, b) => (a.hora || "99").localeCompare(b.hora || "99")).map((x) => x.el)}
-        {linhas(ts)}
-      </ul>
+      {(evs.length > 0 || gs.length > 0) && (
+        <ul className="mb-2 grid gap-1.5">
+          {evs.map((e) => (
+            <li key={e.id}>
+              <Link href={`/eventos/${encodeURIComponent(e.id)}`} className={`anel-foco relative flex min-h-12 items-center gap-3 overflow-hidden rounded-[14px] py-2 pl-4 pr-3 hover:brightness-110 ${e.status !== "confirmado" ? "hachurado" : ""}`} style={tinta(e.equipe)}>
+                <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: corEquipe(e.equipe) }} />
+                <span className="meta w-11 shrink-0 tabular-nums text-t2">{e.hora || "—"}</span>
+                <span className="min-w-0 flex-1 truncate font-texto text-[15px] font-semibold text-t1">{e.titulo}</span>
+                {e.fim && e.fim !== e.inicio && <span className="meta shrink-0 text-t2">→ {fmtDate(e.fim, lang)}</span>}
+                {e.status !== "confirmado" && <span className="meta shrink-0 text-t2">{t.aConfirmar}</span>}
+              </Link>
+            </li>
+          ))}
+          {gs.map((e) => (
+            <li key={e.id}>
+              <a href={e.link || undefined} target="_blank" rel="noreferrer" className="anel-foco flex min-h-12 items-center gap-3 rounded-[14px] py-2 pl-4 pr-3 shadow-[inset_0_0_0_1px_var(--s4)] hover:bg-s2">
+                <span className="meta w-11 shrink-0 tabular-nums text-t2">{e.hora || "—"}</span>
+                <span className="min-w-0 flex-1 truncate font-texto text-[15px] text-t2">{e.titulo}</span>
+                <span className="meta inline-flex shrink-0 items-center gap-1 text-t3"><Icone nome="calendario" tamanho={14} />{t.cx.doGoogle}{e.fim ? ` · ${e.fim}` : ""}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {ts.length > 0 && <ul className="overflow-hidden rounded-cartao bg-s1">{linhas(ts)}</ul>}
     </section>
   );
 }
 
-function Semana({ inicio, link, ...c }: Comum & { inicio: string; link: (p: Record<string, string | undefined>) => string }) {
+function Semana({ inicio, ...c }: Comum & { inicio: string }) {
   const dias = Array.from({ length: 7 }, (_, i) => somar(inicio, i));
-  const fim = dias[6];
-  const loc = c.lang === "en" ? "en-US" : "pt-BR";
-  const fmt = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString(loc, { day: "numeric", month: "short", timeZone: "UTC" });
   return (
     <>
-      <div className="flex items-center justify-between mb-2">
-        <Link href={link({ s: somar(inicio, -7) })} aria-label="‹" className="p-2"><ChevronLeft size={20} /></Link>
-        <div className="text-center">
-          <p className="text-sm font-medium">{fmt(inicio)} – {fmt(fim)}</p>
-          {(c.hoje < inicio || c.hoje > fim) && <Link href={link({ s: undefined })} className="text-xs underline text-neutral-500">{c.t.voltarHoje}</Link>}
-        </div>
-        <Link href={link({ s: somar(inicio, 7) })} aria-label="›" className="p-2"><ChevronRight size={20} /></Link>
-      </div>
-      {/* week at a glance: load per day; tap to jump (also a drop target for dragging) */}
-      <div className="grid grid-cols-7 gap-1 mb-4">
-        {dias.map((d) => {
-          const n = d < c.hoje ? 0 : c.comPrazo.filter((x) => x.prazo === d).length;
-          const evs = c.eventos.filter((e) => noDia(e, d));
-          const passado = d < c.hoje;
-          return (
-            <a key={d} href={`#d-${d}`} data-dia={d}
-              className={`rounded-lg border px-1 py-1.5 text-center flex flex-col items-center gap-1 ${d === c.hoje ? "border-neutral-900 dark:border-white" : "border-neutral-200 dark:border-neutral-800"} ${n >= SOBRECARGA ? "bg-amber-50 dark:bg-amber-950/30" : ""} ${passado ? "opacity-50" : ""}`}>
-              <span className="text-[10px] uppercase text-neutral-500">{new Date(`${d}T12:00:00Z`).toLocaleDateString(loc, { weekday: "short", timeZone: "UTC" }).replace(".", "")}</span>
-              <span className={`text-sm tabular-nums ${d === c.hoje ? "font-bold" : ""}`}>{Number(d.slice(8))}</span>
-              <span className="flex gap-0.5 h-1.5">
-                {evs.slice(0, 3).map((e) => <span key={e.id} className="w-1.5 h-1.5 rounded-full" style={{ background: c.cor(e.equipe) }} />)}
-                {c.gevs.filter((e) => e.dia === d).slice(0, 2).map((e) => <span key={e.id} title={e.titulo} className="w-1.5 h-1.5 rounded-full border border-neutral-400" />)}
-              </span>
-              <span className={`min-w-5 rounded-full px-1 text-[10px] leading-4 tabular-nums ${n >= SOBRECARGA ? "bg-amber-500 text-white" : n ? "bg-neutral-200 dark:bg-neutral-800" : "text-neutral-400"}`}>{n || "·"}</span>
-            </a>
-          );
-        })}
-      </div>
-      {dias.map((d) => <Dia key={d} d={d} {...c} />)}
+      <FaixaSemana inicio={inicio} href={(d) => `#d-${d}`} {...c} />
+      <div className="grid gap-2">{dias.map((d) => <Dia key={d} d={d} {...c} />)}</div>
+      <div className="mt-3"><Botao href={c.link({ vista: "lista", s: undefined })} variante="fantasma" tamanho="P" icone="avancar">{c.t.proximos30}</Botao></div>
     </>
   );
 }
@@ -333,66 +429,66 @@ function Lista(c: Comum) {
     ...eventos.filter((e) => e.inicio.length === 10 && (e.fim || e.inicio) >= hoje).map((e) => (e.inicio < hoje ? hoje : e.inicio)),
     ...c.gevs.filter((e) => e.dia >= hoje).map((e) => e.dia),
   ])].sort();
-  if (!dias.length) return <Empty>{t.semTarefas}</Empty>;
+  if (!dias.length) return <EstadoVazio compacto titulo={<>{t.semTarefas}</>} />;
   const limite = somar(hoje, 30);
   const perto = dias.filter((d) => d <= limite);
   const meses = new Map<string, string[]>();
   for (const d of dias.filter((d) => d > limite)) meses.set(d.slice(0, 7), [...(meses.get(d.slice(0, 7)) ?? []), d]);
   return (
-    <>
+    <div className="grid gap-2">
       {perto.map((d) => <Dia key={d} d={d} {...c} vazio={false} />)}
       {[...meses].map(([m, ds]) => (
-        <details key={m} className="mb-2">
-          <summary className="cursor-pointer py-1.5 text-sm font-medium first-letter:uppercase">{fmtDate(m, lang)} <span className="text-xs font-normal text-neutral-400">({ds.length})</span></summary>
-          {ds.map((d) => <Dia key={d} d={d} {...c} vazio={false} />)}
+        <details key={m} className="group rounded-cartao bg-s1 p-3">
+          <summary className="anel-foco alvo-toque flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno">
+            <span className="titulo-cartao first-letter:uppercase">{fmtDate(m, lang)}</span><span className="rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2">{ds.length}</span>
+            <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-2 grid gap-2">{ds.map((d) => <Dia key={d} d={d} {...c} vazio={false} />)}</div>
         </details>
       ))}
-    </>
+    </div>
   );
 }
 
-function Mes({ mes, dia, link, ...c }: Comum & { mes: string; dia?: string; link: (p: Record<string, string | undefined>) => string }) {
-  const { hoje, comPrazo, eventos, cor, t, lang } = c;
+function Mes({ mes, dia, ...c }: Comum & { mes: string; dia?: string }) {
+  const { hoje, comPrazo, eventos, t, lang, link } = c;
   const [y, m] = mes.split("-").map(Number);
   const first = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7; // weeks start on Monday
   const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
   const iso = (d: number) => `${mes}-${String(d).padStart(2, "0")}`;
-  const sel = /^\d{4}-\d{2}-\d{2}$/.test(dia ?? "") && dia!.startsWith(mes) ? dia! : hoje.startsWith(mes) ? hoje : iso(1);
+  const sel = ehDia(dia) && dia!.startsWith(mes) ? dia! : hoje.startsWith(mes) ? hoje : iso(1);
   const cab = [...t.semana.slice(1), t.semana[0]];
   return (
-    <>
-      <div className="flex items-center justify-between mb-3">
-        <Link href={link({ m: addMonths(mes, -1), dia: undefined })} aria-label="‹" className="p-2"><ChevronLeft size={20} /></Link>
-        <div className="text-center">
-          <p className="font-semibold first-letter:uppercase">{fmtDate(mes, lang)}</p>
-          {!hoje.startsWith(mes) && <Link href={link({ m: undefined, dia: undefined })} className="text-xs underline text-neutral-500">{t.voltarHoje}</Link>}
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] lg:items-start">
+      <section className="rounded-cartao bg-s1 p-3 md:p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={link({ m: addMonths(mes, -1), dia: undefined })} />
+          <div className="grid justify-items-center">
+            <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
+            {!hoje.startsWith(mes) && <Link href={link({ m: undefined, dia: undefined })} className="meta text-t2 underline">{t.voltarHoje}</Link>}
+          </div>
+          <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={link({ m: addMonths(mes, 1), dia: undefined })} />
         </div>
-        <Link href={link({ m: addMonths(mes, 1), dia: undefined })} aria-label="›" className="p-2"><ChevronRight size={20} /></Link>
-      </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {cab.map((d, i) => <div key={i} className="text-neutral-500 py-1">{d}</div>)}
-        {Array.from({ length: first }, (_, i) => <div key={`b${i}`} />)}
-        {Array.from({ length: days }, (_, i) => {
-          const d = iso(i + 1);
-          const col = (first + i) % 7;
-          const evs = eventos.filter((e) => noDia(e, d)).slice(0, 2);
-          const n = d < hoje ? 0 : comPrazo.filter((x) => x.prazo === d).length;
-          const cheio = n >= SOBRECARGA;
-          return (
-            <Link key={d} href={link({ m: mes, dia: d })} data-dia={d}
-              className={`aspect-square rounded-lg flex flex-col items-stretch justify-start pt-1 gap-0.5 border ${d === sel ? "border-neutral-900 dark:border-white" : "border-transparent hover:border-neutral-300 dark:hover:border-neutral-700"} ${cheio ? "bg-amber-50 dark:bg-amber-950/30" : ""} ${d === hoje ? "font-bold" : ""} ${d < hoje ? "text-neutral-400" : ""}`}>
-              <span>{i + 1}</span>
-              {evs.map((e) => {
-                // a bar that continues across days: square edges where the event goes on
-                const comeca = e.inicio === d || col === 0, termina = (e.fim || e.inicio) === d || col === 6;
-                return <span key={e.id} title={e.titulo} className={`h-1 ${comeca ? "rounded-l-full ml-1" : "-ml-1"} ${termina ? "rounded-r-full mr-1" : "-mr-1"}`} style={{ background: cor(e.equipe) }} />;
-              })}
-              {n > 0 && <span className={`mx-auto mt-auto mb-1 min-w-4 rounded-full px-1 text-[10px] leading-4 tabular-nums ${cheio ? "bg-amber-500 text-white" : "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"}`}>{n}</span>}
-            </Link>
-          );
-        })}
-      </div>
-      <div className="mt-4"><Dia d={sel} {...c} /></div>
-    </>
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {cab.map((d, i) => <div key={i} className="rotulo-maiusculo py-1 text-t3">{d}</div>)}
+          {Array.from({ length: first }, (_, i) => <div key={`b${i}`} />)}
+          {Array.from({ length: days }, (_, i) => {
+            const d = iso(i + 1);
+            const n = d < hoje ? 0 : comPrazo.filter((x) => x.prazo === d).length;
+            // pontos na cor de cada equipe (eventos e tarefas do dia)
+            const cores = [...new Set([...eventos.filter((e) => noDia(e, d)).map((e) => e.equipe), ...comPrazo.filter((x) => x.prazo === d && d >= hoje).map((x) => x.equipe)].map(corEquipe))].slice(0, 4);
+            return (
+              <Link key={d} href={link({ m: mes, dia: d })} data-dia={d} scroll={false} aria-current={d === sel ? "date" : undefined}
+                className={`anel-foco flex min-h-14 flex-col items-center justify-start gap-1 rounded-[14px] pt-1.5 transition-colors duration-150 md:min-h-20 ${d === sel ? "bg-s2 shadow-[inset_0_0_0_1px_var(--s4)]" : "hover:bg-s2"} ${d < hoje ? "opacity-55" : ""}`}>
+                <span className={`grid size-8 place-items-center rounded-pilula font-texto text-sm tabular-nums ${d === hoje ? "bg-ac font-bold text-ac-ink" : "text-t1"}`}>{i + 1}</span>
+                <span className="flex gap-0.5" aria-hidden="true">{cores.map((cor) => <span key={cor} className="size-1.5 rounded-pilula" style={{ background: cor }} />)}</span>
+                {n >= SOBRECARGA && <span className="meta font-semibold tabular-nums text-warn">{n}</span>}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+      <div className="lg:sticky lg:top-4"><Dia d={sel} {...c} compacto={false} /></div>
+    </div>
   );
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { Printer } from "lucide-react";
 
 /** Opens the browser's print dialog (there: "Save as PDF"). */
 export default function Imprimir({ label }: { label: string }) {
   return (
-    <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm">
-      <Printer size={14} />{label}
+    <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4">
+      <Icone nome="baixar"  tamanho={14} />{label}
     </button>
   );
 }
+import Icone from "@/components/ds/Icone";

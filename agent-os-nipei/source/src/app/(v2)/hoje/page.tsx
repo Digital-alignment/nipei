@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { AlertTriangle, BarChart3, Bot, Brain, Check, ChevronRight, ClipboardList, Clock, Handshake, ListChecks, Plus, Target, UserRound, type LucideIcon, UsersRound } from "lucide-react";
-import { Empty, TaskList, byPrazo } from "@/components/v2/ui";
-import Abas from "@/components/v2/Abas";
+import { AbasComPainel } from "@/components/ds/Abas";
+import { EstadoVazio } from "@/components/ds/Estados";
+import { TaskRow, byPrazo } from "@/components/v2/ui";
+
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import { CampoAssistente } from "@/components/v2/AssistenteGlobal";
+import EscolherEquipes from "@/components/v2/EscolherEquipes";
 import { funcaoLigada } from "@/lib/v2/funcoes";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
@@ -17,20 +19,17 @@ import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 import { organizacao } from "@/lib/v2/organizacao";
-import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import EscolherEquipes from "@/components/v2/EscolherEquipes";
-
-
-const PILULA = "inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap rounded-full border h-8 px-3 text-xs font-medium transition-colors";
-const TOM = {
-  azul: "border-sky-200 dark:border-sky-900 bg-sky-50/70 dark:bg-sky-950/30 text-sky-900 dark:text-sky-200",
-  ambar: "border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200",
-  neutro: "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-600",
-} as const;
+import Chip from "@/components/ds/Chip";
+import Icone, { type NomeIcone } from "@/components/ds/Icone";
+import Cartao from "@/components/ds/Cartao";
+import Botao from "@/components/ds/Botao";
+import MenuAcoes from "@/components/ds/MenuAcoes";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import { GrupoTarefas } from "@/components/ds/padroes/LinhaTarefa";
 
 // Hoje, compact: what matters today (agenda, pending pills), one place to ask,
 // and one task list at a time (tabs).
-export default async function Hoje({ searchParams }: { searchParams: Promise<{ dia?: string }> }) {
+export default async function Hoje({ searchParams }: { searchParams: Promise<{ dia?: string; aba?: string }> }) {
   const q = await searchParams;
   const { t, lang } = await getT();
   const user = (await currentUser())!;
@@ -75,22 +74,22 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const { hoje: eventosHoje, proximos } = agendaDoDia(user);
 
   // pending items as small pills (each opens its page)
-  type Pilula = { href: string; icone: LucideIcon; texto: string; tom: keyof typeof TOM; titulo: string; alerta?: number };
+  type Pilula = { href: string; icone: NomeIcone; texto: string; titulo: string };
   const pilulas: Pilula[] = [];
   const passos = primeirosPassos(user);
   const comPassos = passos.some((x) => !x.feito);
   const missao = missaoDaSemana(user);
   const org = user.gestao ? organizacao() : null;
   const mostrarOrg = !!org && (org.semEquipe.length > 0 || org.semCoordenacao.length > 0 || org.semFuncao.length > 0);
-  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: UserRound, texto: t.meuPerfil, tom: "ambar", titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
+  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "pessoa", texto: t.meuPerfil, titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
   for (const d of me ? diagnosticosAbertos(me) : []) {
     const pr = progresso(d, me!.id);
-    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: ClipboardList, texto: `${t.diagnostico} ${pr.respondidas}/${pr.total}`, tom: "azul", titulo: t.bannerDiag });
-    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: Handshake, texto: t.codigoAcordos, tom: "azul", titulo: t.bannerCodigo });
+    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "tarefa", texto: `${t.diagnostico} ${pr.respondidas}/${pr.total}`, titulo: t.bannerDiag });
+    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "mensagem", texto: t.codigoAcordos, titulo: t.bannerCodigo });
     const c = getColetivo(d.id);
     for (const x of secoesColetivas(d).filter((x) => c.responsaveis[x.id] === me!.id)) {
       const feitas = x.perguntas.filter((q) => c.respostas[q.id]?.status === "respondida").length;
-      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: ListChecks, texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, tom: "azul", titulo: t.parteColetiva });
+      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "tarefa", texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, titulo: t.parteColetiva });
     }
   }
   const fatos = getFatos();
@@ -99,146 +98,150 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     const f = fatos.find((x) => x.id === a.fato);
     return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
   }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
-  if (revisar || alertas) pilulas.push({ href: alertas ? "/conhecimento/alertas" : "/conhecimento", icone: Brain, texto: revisar ? `${revisar} ${t.aRevisar}` : t.conhecimento, tom: "neutro", titulo: t.conhecimento, alerta: alertas });
-  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: Bot, texto: `${prontos.length} ${t.prontoHermes}`, tom: "neutro", titulo: t.prontosIA });
+  if (revisar) pilulas.push({ href: "/conhecimento#revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento });
+  if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento });
+  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA });
   const p = user.gestao ? pulso() : null;
 
-  const linhaTarefas = (ts: Tarefa[], grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
-    ts.length ? <TaskList tarefas={ts} {...props} extra={comPrazo(grupo)} selos={selos && legiveis(selos)} /> : <Empty>{t.nadaPendente}</Empty>;
+  const linha = (x: Tarefa, grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
+    <TaskRow key={x.id} t={x} {...props} extra={comPrazo(grupo)} selos={selos && legiveis(selos)[x.id]} />;
+  // Agrupada por Atrasadas / Hoje / Amanhã / … com contagem (seção 10.3); a ordem inteligente vale dentro de cada grupo
+  const grupos = (ts: Tarefa[], grupo: keyof typeof OPCOES, selos: Record<string, Selo[]> | undefined, defs: { id: string; titulo: string; dentro: (x: Tarefa) => boolean; alerta?: boolean }[]) => {
+    const gs = defs.map((d) => ({ ...d, itens: ts.filter(d.dentro) })).filter((g) => g.itens.length);
+    return gs.length
+      ? <div>{gs.map((g) => <GrupoTarefas key={g.id} titulo={g.titulo} contagem={g.itens.length} alerta={g.alerta}>{g.itens.map((x) => linha(x, grupo, selos))}</GrupoTarefas>)}</div>
+      : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />;
+  };
   const doDia = diaSel ? ordenarAgora(minhas.filter((x) => x.prazo === diaSel), ctx) : null;
+  const eventosDoDia = diaSel ? getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)) : [];
+  const locale = lang === "en" ? "en-US" : "pt-BR";
+  const nome = (me?.name ?? user.username).split(/[\s(]/)[0];
+  const passosFeitos = passos.filter((x) => x.feito).length;
+  const comPulso = !!p && (p.atrasadas > 0 || p.semDono > 0);
 
   return (
     <>
-      <div className="flex items-baseline justify-between gap-3 mb-2">
-        <h1 className="text-xl font-semibold tracking-tight">{t.ola}, {(me?.name ?? user.username).split(/[\s(]/)[0]}</h1>
-        <p className="text-xs text-neutral-500 first-letter:uppercase">{new Date().toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Bahia" })}</p>
-      </div>
-
-      {(eventosHoje.length > 0 || proximos.length > 0) && (
-        <div className="flex gap-1.5 overflow-x-auto mb-2 -mx-1 px-1" aria-label={t.agenda}>
-          {eventosHoje.map((e) => (
-            <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.azul}`}><Clock size={14} aria-hidden className="shrink-0 opacity-80" />{e.hora && <b className="font-semibold">{e.hora}</b>} {e.titulo}</Link>
-          ))}
-          {proximos.map((e) => (
-            <Link key={e.id} href={`/eventos/${e.id}`} className={`${PILULA} ${TOM.neutro} text-neutral-600 dark:text-neutral-300`}>
-              {e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {(pilulas.length > 0 || p) && (
-        <div className="flex gap-1.5 overflow-x-auto mb-4 -mx-1 px-1">
-          {pilulas.map((x) => (
-            <Link key={x.href + x.texto} href={x.href} title={x.titulo} className={`${PILULA} ${TOM[x.tom]}`}>
-              <x.icone size={14} aria-hidden className="shrink-0 opacity-80" />{x.texto}
-              {!!x.alerta && <span className="inline-flex items-center gap-1 ml-0.5 pl-2 border-l border-current/20 text-amber-700 dark:text-amber-400"><AlertTriangle size={13} aria-hidden />{x.alerta} {t.alertasLbl}</span>}
-            </Link>
-          ))}
-          {p && (p.atrasadas > 0 || p.semDono > 0) && (
-            <Link href="/pulso" title={t.pulso} className={`${PILULA} ${TOM.ambar}`}>
-              <BarChart3 size={14} aria-hidden className="shrink-0 opacity-80" />{p.atrasadas} {t.atrasadasLbl}<span className="opacity-40">·</span>{p.semDono} {t.semDonoLbl}
-            </Link>
-          )}
-        </div>
-      )}
-
-      {comPassos && (
-        <section aria-label={t.primeirosPassos} className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
-          <div className="flex items-baseline justify-between gap-3 mb-2">
-            <p className="text-sm font-semibold">{t.primeirosPassos}</p>
-            <p className="text-xs text-neutral-500 tabular-nums">{passos.filter((x) => x.feito).length} / {passos.length}</p>
+      <header className="mb-5 grid gap-3">
+        {/* saudação em dois tons (display fino) */}
+        <h1 className="saudacao">
+          <span className="text-t1">{t.ola}, {nome}.</span>{" "}
+          <span className="text-t3">{new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bahia" })}</span>
+        </h1>
+        {(eventosHoje.length > 0 || proximos.length > 0 || pilulas.length > 0 || comPulso) && (
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
+            {eventosHoje.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
+            {proximos.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>)}
+            {pilulas.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)}
+            {comPulso && <Chip href="/pulso" icone="atencao">{p!.atrasadas} {t.atrasadasLbl} · {p!.semDono} {t.semDonoLbl}</Chip>}
           </div>
-          <div className="h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden mb-2"><div className="h-full bg-green-500" style={{ width: `${(passos.filter((x) => x.feito).length / passos.length) * 100}%` }} /></div>
-          <ul className="grid sm:grid-cols-2 gap-x-4">
-            {passos.map((x) => (
-              <li key={x.id}>
-                <Link href={x.href} className={`flex items-center gap-2.5 py-2 text-sm ${x.feito ? "text-neutral-400" : "hover:underline"}`}>
-                  <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center ${x.feito ? "bg-green-600 text-white" : "border-2 border-neutral-300 dark:border-neutral-600"}`}>{x.feito && <Check size={12} strokeWidth={3} />}</span>
-                  <span className={`flex-1 min-w-0 ${x.feito ? "line-through" : ""}`}>{t.passos[x.id]}</span>
-                  {!x.feito && <ChevronRight size={15} className="text-neutral-400 shrink-0" />}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+        )}
+      </header>
 
-      {mostrarOrg && org && (
-        <section aria-label={t.organizarEquipes} className="mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <UsersRound size={16} className="text-sky-600 dark:text-sky-400 shrink-0" />
-            <p className="text-sm font-semibold flex-1">{t.organizarEquipes}</p>
-            <span className="text-xs font-semibold tabular-nums">{org.pct}%</span>
-          </div>
-          <p className="text-xs text-neutral-500 mb-2">{t.organizarHojeIntro}</p>
-          <div className="h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden mb-3"><div className="h-full bg-sky-500" style={{ width: `${org.pct}%` }} /></div>
-          <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
-            {org.semEquipe.length > 0 && <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1">{org.semEquipe.length} {t.semEquipeCurto}</span>}
-            {org.semCoordenacao.length > 0 && <span className="rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2.5 py-1">{org.semCoordenacao.length} {t.equipesSemCoord}</span>}
-            {org.semFuncao.length > 0 && <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1">{org.semFuncao.length} {t.semFuncaoCurto}</span>}
-          </div>
-          {org.semEquipe.length > 0 && (
-            <ul className="grid gap-1.5 mb-3">
-              {org.semEquipe.slice(0, 3).map((p) => (
-                <li key={p.id} className="grid gap-1.5 py-1">
-                  <Link href={`/pessoas/${p.id}`} className="text-sm truncate hover:underline">{p.name}</Link>
-                  <EscolherEquipes pessoaId={p.id} equipes={equipes} t={t} />
+      {missao && (
+        // o único destaque de conteúdo da tela (regra 5)
+        <Cartao variante="destaque" className="mb-4">
+          <details className="group">
+            <summary className="anel-foco grid cursor-pointer list-none gap-2 rounded-interno">
+              <span className="flex items-center gap-2">
+                <span className="titulo-secao min-w-0 flex-1">{t.missaoSemana}</span>
+                <span className="meta tabular-nums opacity-80">{missao.diasRestantes ? t.diasRestantes.replace("{n}", String(missao.diasRestantes)) : t.ultimoDia}</span>
+                <Icone nome="abrir" tamanho={18} className="transition-transform duration-150 group-open:rotate-180" />
+              </span>
+              <span className="meta line-clamp-1 opacity-80">{lang === "en" ? missao.missao.titulo_en : missao.missao.titulo}</span>
+              <span className="flex items-center gap-3">
+                <span className="numero-display">{missao.total}<span className="opacity-55">%</span></span>
+                <span role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={missao.total} aria-label={t.missaoSemana} className="h-1.5 flex-1 overflow-hidden rounded-pilula bg-current/20">
+                  <span className="block h-full rounded-pilula bg-current" style={{ width: `${missao.total}%` }} />
+                </span>
+              </span>
+            </summary>
+            <ul className="mt-3 grid gap-x-6 gap-y-1 border-t border-current/20 pt-3 sm:grid-cols-2">
+              {missao.metas.map((m) => (
+                <li key={m.id}>
+                  <Link href={{ perfis: `/pessoas?equipe=${missao.missao.equipe}`, fatos: "/conhecimento", fontes: "/conhecimento", tarefas: "/pulso", atrasadas: "/pulso?ver=atrasadas", carga: `/equipes/${missao.missao.equipe}`, objetivos: "/objetivos", diagnostico: me ? `/pessoas/${me.id}/respostas` : "/hoje" }[m.id]}
+                    className="anel-foco group/m block min-h-11 rounded-interno py-1.5">
+                    <span className="flex items-baseline justify-between gap-2 text-sm">
+                      <span className="min-w-0 group-hover/m:underline">{t.metas[m.id]}</span>
+                      <span className="meta inline-flex shrink-0 items-center gap-1 tabular-nums">{m.pct >= 100 ? <Icone nome="confirmar" tamanho={16} aria-label="100%" /> : m.texto}</span>
+                    </span>
+                    <span className="mt-1 block h-1 overflow-hidden rounded-pilula bg-current/20"><span className="block h-full bg-current" style={{ width: `${Math.min(100, m.pct)}%` }} /></span>
+                  </Link>
                 </li>
               ))}
             </ul>
-          )}
-          <Link href="/pessoas/organizar" className="inline-flex items-center gap-1 text-sm font-medium hover:underline">{t.organizarTodos}<ChevronRight size={15} /></Link>
-        </section>
+          </details>
+        </Cartao>
       )}
 
-      {missao && (
-        <details className="group mb-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-          <summary className="list-none cursor-pointer p-4 grid gap-2">
-            <span className="flex items-center gap-2">
-              <Target size={16} className="text-green-600 dark:text-green-400 shrink-0" />
-              <span className="text-sm font-semibold flex-1 min-w-0">{t.missaoSemana}</span>
-              <span className="text-xs text-neutral-500 tabular-nums">{missao.diasRestantes ? t.diasRestantes.replace("{n}", String(missao.diasRestantes)) : t.ultimoDia}</span>
-              <ChevronRight size={16} className="text-neutral-400 transition-transform group-open:rotate-90 shrink-0" />
-            </span>
-            <span className="text-xs text-neutral-500 line-clamp-1">{lang === "en" ? missao.missao.titulo_en : missao.missao.titulo}</span>
-            <span className="flex items-center gap-2">
-              <span className="h-1.5 flex-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><span className="block h-full bg-green-500" style={{ width: `${missao.total}%` }} /></span>
-              <span className="text-xs font-semibold tabular-nums w-9 text-right">{missao.total}%</span>
-            </span>
-          </summary>
-          <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1 px-4 pb-4 border-t border-neutral-100 dark:border-neutral-800 pt-3">
-            {missao.metas.map((m) => (
-              <li key={m.id}>
-                <Link href={{ perfis: `/pessoas?equipe=${missao.missao.equipe}`, fatos: "/conhecimento", fontes: "/conhecimento", tarefas: "/pulso", atrasadas: "/pulso?ver=atrasadas", carga: `/equipes/${missao.missao.equipe}`, objetivos: "/objetivos", diagnostico: me ? `/pessoas/${me.id}/respostas` : "/hoje" }[m.id]}
-                  className="block py-1.5 group/m">
-                  <span className="flex items-baseline justify-between gap-2 text-sm">
-                    <span className="min-w-0 group-hover/m:underline">{t.metas[m.id]}</span>
-                    <span className={`text-xs tabular-nums shrink-0 ${m.pct >= 100 ? "text-green-700 dark:text-green-400 font-semibold" : "text-neutral-500"}`}>{m.pct >= 100 ? "✓" : m.texto}</span>
-                  </span>
-                  <span className="mt-1 block h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><span className={`block h-full ${m.pct >= 100 ? "bg-green-500" : "bg-neutral-400 dark:bg-neutral-500"}`} style={{ width: `${m.pct}%` }} /></span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </details>
+      {comPassos && (
+        <Cartao className="mb-4">
+          <section aria-label={t.primeirosPassos} className="grid gap-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="titulo-secao">{t.primeirosPassos}</h2>
+              <p className="meta tabular-nums text-t2">{passosFeitos} / {passos.length}</p>
+            </div>
+            <BarraProgresso valor={passosFeitos} max={passos.length} planejado rotuloAcessivel={t.primeirosPassos} />
+            <ul className="grid gap-x-4 sm:grid-cols-2">
+              {passos.map((x) => (
+                <li key={x.id}>
+                  <Link href={x.href} className={`anel-foco flex min-h-11 items-center gap-3 rounded-interno text-[15px] ${x.feito ? "text-t3" : "text-t1 hover:underline"}`}>
+                    <span className={`grid size-[26px] shrink-0 place-items-center rounded-pilula ${x.feito ? "bg-ac text-ac-ink" : "hachurado shadow-[inset_0_0_0_2px_var(--s4)]"}`}>{x.feito && <Icone nome="confirmar" tamanho={15} />}</span>
+                    <span className={`min-w-0 flex-1 ${x.feito ? "line-through" : ""}`}>{t.passos[x.id]}</span>
+                    {!x.feito && <Icone nome="avancar" tamanho={16} className="shrink-0 text-t3" />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </Cartao>
+      )}
+
+      {mostrarOrg && org && (
+        <Cartao className="mb-4">
+          <section aria-label={t.organizarEquipes} className="grid gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome="pessoas" tamanho={20} /></span>
+              <h2 className="titulo-secao flex-1">{t.organizarEquipes}</h2>
+              <span className="meta font-semibold tabular-nums">{org.pct}%</span>
+            </div>
+            <p className="corpo text-t2">{t.organizarHojeIntro}</p>
+            <BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />
+            <div className="flex flex-wrap gap-1.5">
+              {org.semEquipe.length > 0 && <Chip tipo="metadado" icone="pessoa">{org.semEquipe.length} {t.semEquipeCurto}</Chip>}
+              {org.semCoordenacao.length > 0 && <Chip tipo="metadado" icone="atencao">{org.semCoordenacao.length} {t.equipesSemCoord}</Chip>}
+              {org.semFuncao.length > 0 && <Chip tipo="metadado" icone="editar">{org.semFuncao.length} {t.semFuncaoCurto}</Chip>}
+            </div>
+            {org.semEquipe.length > 0 && (
+              <ul className="grid gap-3">
+                {org.semEquipe.slice(0, 3).map((pe) => (
+                  <li key={pe.id} className="grid gap-1.5">
+                    <Link href={`/pessoas/${pe.id}`} className="anel-foco alvo-toque min-w-0 rounded-interno text-[15px] font-medium text-t1 hover:underline"><span className="block truncate">{pe.name}</span></Link>
+                    <EscolherEquipes pessoaId={pe.id} equipes={equipes} t={t} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div><Botao href="/pessoas/organizar" variante="fantasma" tamanho="M" icone="pessoas" iconeDireita="avancar">{t.organizarTodos}</Botao></div>
+          </section>
+        </Cartao>
       )}
 
       {me && (
-        <nav aria-label={t.semanaLbl} className="grid grid-cols-7 gap-1 mb-2 text-center">
+        // faixa da semana (seção 10.5): pílulas verticais; dia escolhido em acento; pontos = tarefas, ponto azul = evento
+        <nav aria-label={t.semanaLbl} className="mb-5 mt-6 grid grid-cols-7 gap-1.5 md:gap-2">
           {semana.map((x, i) => {
             const data = new Date(`${x.d}T12:00:00Z`);
             const sel = x.d === diaSel;
-            const pontos = Math.min(x.tarefasDia, 3);
             return (
               <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined}
-                className={`rounded-lg py-1.5 ${sel ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : i === 0 ? "bg-neutral-100 dark:bg-neutral-900" : "hover:bg-neutral-100 dark:hover:bg-neutral-900"}`}>
-                <span className={`block text-[10px] uppercase ${sel ? "" : "text-neutral-500"}`}>{data.toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
-                <span className="block text-sm font-medium tabular-nums">{data.getUTCDate()}</span>
-                <span className="flex justify-center gap-0.5 h-1.5 mt-0.5">
-                  {Array.from({ length: pontos }, (_, k) => <span key={k} className={`w-1 h-1 rounded-full ${sel ? "bg-current" : "bg-neutral-500"}`} />)}
-                  {x.eventosDia > 0 && <span className={`w-1 h-1 rounded-full ${sel ? "bg-current" : "bg-sky-500"}`} />}
+                className={`anel-foco flex flex-col items-center gap-1 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-ac text-ac-ink" : i === 0 ? "bg-s2 text-t1 shadow-[inset_0_0_0_1px_var(--s3)]" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
+                <span className="meta uppercase">{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
+                <span className="font-display text-2xl font-light leading-none tabular-nums md:text-3xl">{data.getUTCDate()}</span>
+                <span className="flex h-1.5 justify-center gap-0.5" aria-hidden="true">
+                  {Array.from({ length: Math.min(x.tarefasDia, 3) }, (_, k) => <span key={k} className={`size-1.5 rounded-pilula ${sel ? "bg-current" : "bg-t3"}`} />)}
+                  {x.eventosDia > 0 && <span className={`size-1.5 rounded-pilula ${sel ? "bg-current" : "bg-info"}`} />}
                 </span>
+                {(x.tarefasDia > 0 || x.eventosDia > 0) && <span className="sr-only">{x.tarefasDia} {t.tarefas}{x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}</span>}
               </Link>
             );
           })}
@@ -246,44 +249,60 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       )}
 
       {me && doDia && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 py-2">
-            <p className="text-sm font-medium first-letter:uppercase">{new Date(`${diaSel}T12:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</p>
-            <Link href="/hoje" scroll={false} className="text-xs text-neutral-500 underline">{t.verTudo}</Link>
+        <section className="mb-6 grid gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="titulo-secao first-letter:uppercase">{new Date(`${diaSel}T12:00:00Z`).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</h2>
+            <Botao href="/hoje" variante="fantasma" tamanho="P" icone="fechar">{t.verTudo}</Botao>
           </div>
-          {getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)).map((e) => (
-            <Link key={e.id} href={`/eventos/${e.id}`} className="flex gap-2 py-2 text-sm border-b border-neutral-100 dark:border-neutral-800"><span className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400"><Clock size={14} aria-hidden />{e.hora || "—"}</span>{e.titulo}</Link>
-          ))}
-          {linhaTarefas(doDia.tarefas, "datadas", doDia.selos)}
-        </div>
+          {eventosDoDia.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {eventosDoDia.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
+            </div>
+          )}
+          {doDia.tarefas.length
+            ? <GrupoTarefas titulo={t.minhasTarefas} contagem={doDia.tarefas.length}>{doDia.tarefas.map((x) => linha(x, "datadas", doDia.selos))}</GrupoTarefas>
+            : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
+        </section>
       )}
 
       {me && !doDia && (
-        <Abas id="hoje" abas={[
-          { id: "agora", label: t.agora, count: agora.length, alerta: atrasadas > 0, conteudo: linhaTarefas(agora, "datadas", oAgora.selos) },
-          { id: "proximas", label: t.proximas, count: proximas.length, conteudo: linhaTarefas(proximas, "datadas", oProx.selos) },
-          { id: "semdata", label: t.semData, count: semData.length, conteudo: linhaTarefas(semData, "semdata", oSem.selos) },
+        <AbasComPainel id="hoje" inicial={q.aba === "novidades" ? "novidades" : undefined} abas={[
+          { id: "agora", rotulo: t.agora, contagem: agora.length, alerta: atrasadas > 0, conteudo: grupos(agora, "datadas", oAgora.selos, [
+            { id: "atrasadas", titulo: t.atrasadas, dentro: (x) => x.prazo < hoje, alerta: true },
+            { id: "hoje", titulo: t.grpHoje, dentro: (x) => x.prazo === hoje },
+          ]) },
+          { id: "proximas", rotulo: t.proximas, contagem: proximas.length, conteudo: grupos(proximas, "datadas", oProx.selos, [
+            { id: "amanha", titulo: t.grpAmanha, dentro: (x) => x.prazo === dia(1) },
+            { id: "semana", titulo: t.grpSemana, dentro: (x) => x.prazo > dia(1) && x.prazo <= dia(7) },
+            { id: "depois", titulo: t.grpDepois, dentro: (x) => x.prazo > dia(7) },
+          ]) },
+          { id: "semdata", rotulo: t.semData, contagem: semData.length, conteudo: grupos(semData, "semdata", oSem.selos, [{ id: "semdata", titulo: t.semData, dentro: () => true }]) },
           {
-            id: "novidades", label: t.novidades, count: novidades.length, conteudo: novidades.length ? (
-              <ul>
+            id: "novidades", rotulo: t.novidades, contagem: novidades.length, conteudo: novidades.length ? (
+              <ul className="overflow-hidden rounded-cartao bg-s1">
                 {novidades.map((n, i) => (
-                  <li key={`${n.tarefaId}${n.quando}${i}`} className="py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-                    <Link href={`/tarefas/${n.tarefaId}`} className="block text-sm leading-snug hover:underline">{n.titulo}</Link>
-                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2"><span className="font-medium text-neutral-700 dark:text-neutral-300">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
+                  <li key={`${n.tarefaId}${n.quando}${i}`} className="border-t border-s2 px-4 py-3 first:border-t-0">
+                    <Link href={`/tarefas/${n.tarefaId}`} className="anel-foco block rounded-interno text-[15px] font-medium leading-snug text-t1 hover:underline">{n.titulo}</Link>
+                    <p className="meta mt-0.5 line-clamp-2 text-t2"><span className="font-semibold text-t1">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
                   </li>
                 ))}
               </ul>
-            ) : <Empty>{t.nadaPendente}</Empty>,
+            ) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />,
           },
         ]} />
       )}
 
-      {funcaoLigada("assistente", user) && !user.vendoComo && <div className="mt-6 pb-20 md:pb-0"><CampoAssistente placeholder={t.perguntePeca} sugestoes={t.sugestoesHoje} /></div>}
+      {funcaoLigada("assistente", user) && !user.vendoComo && <section className="mt-8 pb-16 md:pb-0"><CampoAssistente placeholder={t.perguntePeca} sugestoes={t.sugestoesHoje} /></section>}
 
-      <Link href="/tarefas/nova" aria-label={t.novaTarefa}
-        className={`fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] ${user.gestao ? "md:right-6 md:bottom-24" : "md:bottom-8"} z-30 w-14 h-14 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg flex items-center justify-center`}>
-        <Plus size={26} />
-      </Link>
+      {/* "+" flutuante: ações de criação (acima da barra do celular) */}
+      <div className="print:hidden fixed bottom-[calc(7.25rem+env(safe-area-inset-bottom))] right-4 z-30 md:bottom-8 md:right-8">
+        <MenuAcoes gatilho="criar" rotulo={t.criarLbl} itens={[
+          { icone: "tarefa", rotulo: t.novaTarefa, href: "/tarefas/nova" },
+          { icone: "calendario", rotulo: t.novoEvento, href: "/eventos/novo" },
+          { icone: "enviar", rotulo: t.novaFonteConhecimento, href: "/conhecimento#enviar" },
+          ...(user.gestao || user.coordena.length ? [{ icone: "mais" as const, rotulo: t.adicionarAcervo, href: "/acervo#novo" }] : []),
+        ]} />
+      </div>
     </>
   );
 }

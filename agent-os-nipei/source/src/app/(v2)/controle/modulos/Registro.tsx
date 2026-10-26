@@ -1,18 +1,18 @@
+import LinhaDoTempo from "@/components/ds/padroes/LinhaDoTempo";
+import { EstadoVazio } from "@/components/ds/Estados";
 import { registroAdmin } from "@/lib/v2/admin";
 import type { ModuloProps } from "./index";
+
+const dia = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Bahia" });
+const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Bahia" });
 
 /** The panel's own log: every opening (and how), failed confirmations and actions. */
 export default function Registro(_: ModuloProps) {
   const r = registroAdmin(100);
   return (
-    <ul className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800 text-sm">
-      {r.map((x, i) => (
-        <li key={i} className={`px-3 py-2 flex flex-wrap gap-x-3 ${/FALHOU/.test(x.oque) ? "text-red-600 dark:text-red-400" : ""}`}>
-          <span className="tabular-nums text-neutral-500 w-36">{new Date(x.em).toLocaleString("pt-BR", { timeZone: "America/Bahia", dateStyle: "short", timeStyle: "medium" })}</span>
-          <span>{x.oque}</span>
-        </li>
-      ))}
-      {!r.length && <li className="px-3 py-3 text-neutral-500">Nada registrado ainda.</li>}
-    </ul>
+    <LinhaDoTempo vazio={<EstadoVazio compacto selo="olho" titulo="Nada registrado ainda." />} itens={r.map((x) => ({
+      dia: dia(x.em), hora: hora(x.em), quem: "", tipo: /FALHOU/.test(x.oque) ? "estado" as const : "outro" as const,
+      texto: <span className={/FALHOU/.test(x.oque) ? "text-err" : undefined}>{x.oque}</span>,
+    }))} />
   );
 }

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alata&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+/* v1 fonts load only on v1 screens: components/fontesV1.ts + Shell.tsx */
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -11,13 +11,6 @@
   /* Solid Nipei OS Level 0-3 Palette (Matte Black Base) */
   --bg-deep:    #050608;
   --bg-bento:   #0a0f18;
-  --bg-hero:    #070705;
-
-  /* Scope Personal & Empresa */
-  --personal-primary: #706c61;
-  --personal-glow: #8D897C;
-  --empresa-primary:  #B49B43;
-  --empresa-glow:  #c2ac5b;
 
   --cream:      #f3f4f6;
   --cream-soft: #e5e7eb;
@@ -27,12 +20,9 @@
   --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.75);
 
   --bg: var(--bg-deep);
-  --bg-2: var(--bg-bento);
   --panel: var(--bg-bento);
   --panel-border: rgba(255, 255, 255, 0.12);
   --fg: var(--cream);
-
-  --glow: 0 0 0 0;
 }
 
 .font-alata {
@@ -609,7 +599,9 @@ blockquote cite {
 
 
 /* v2 (Hoje/Equipes/…): plain, light/dark by system — opt out of the v1 theme */
-.v2 { position: relative; z-index: 2; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.v2 { position: relative; z-index: 2; font-family: var(--fonte-texto); }
+/* no monospace in the v2 (design system rule 11): code, ids and stack traces use the text face */
+.v2 code, .v2 pre, .v2 kbd, .v2 samp, .v2 .mono { font-family: inherit; }
 .v2 h1, .v2 h2, .v2 h3 { font-family: inherit; color: inherit; letter-spacing: normal; }
 /* v1 forces `nav, header { position: relative }` unlayered, which beats Tailwind's layered .fixed/.sticky */
 .v2 blockquote { margin: 0.75rem 0; padding: 0 0 0 0.75rem; font-family: inherit; font-size: inherit; border-left: 2px solid #fbbf24; } /* v1's quote style is for the landing pages */
@@ -622,3 +614,176 @@ blockquote cite {
 .v2 .lote-caixa { display: none; }
 html[data-lote] .v2 .lote-caixa { display: block; }
 .v2 header.sticky { position: sticky; z-index: 20; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Nipëi OS — Design System v1 (docs/design-system/DESIGN-SYSTEM.md, seção 13.1)
+   Tokens só dentro de `.v2`: a v1 ainda usa --bg/--fg/--panel no :root com outro sentido.
+   Escuro = padrão · [data-tema="claro"] no <html> = claro · sem atributo ("Sistema") =
+   segue prefers-color-scheme. O atributo é posto antes da hidratação (app/layout.tsx) a
+   partir do cookie nipei_tema (components/ds/Tema.tsx).
+   color-scheme fica de fora até as telas migrarem (senão campos/rolagem já mudariam).
+   Um trecho da página pode forçar um tema com data-tema="escuro"|"claro" num elemento
+   dentro da .v2 (ex.: /design mostra os dois lado a lado).
+   ───────────────────────────────────────────────────────────────────────────── */
+/* forma e fonte: iguais nos dois temas */
+.v2 {
+  --raio-pilula:999px; --raio-moldura:28px; --raio-bloco:20px; --raio-cartao:16px; --raio-interno:12px;
+  --fonte-display:var(--font-outfit),system-ui,sans-serif; --fonte-texto:var(--font-google-sans),system-ui,sans-serif;
+}
+@media (min-width:1024px) { .v2 { --raio-cartao:12px; } }
+/* escuro: padrão, ou forçado num trecho */
+.v2, .v2 [data-tema="escuro"] {
+  --bg:#0A0A0A; --s1:#141414; --s2:#1A1A1A; --s3:#303030; --s4:#424242;
+  --t1:#FFFFFF; --t2:#B3B3B3; --t3:#858585;
+  --ac:#C3D14A; --ac-press:#A8B81A; --ac-ink:#0A0A0A; --ac-text:#C3D14A; --ac-soft:#1B2410; --ac-apoio:#808F12;
+  --destaque-bg:#C3D14A; --destaque-ink:#0A0A0A;
+  --ok:#C3D14A; --ok-bg:#1B2410; --warn:#E0A526; --warn-bg:#2A2010;
+  --err:#FF6B5E; --err-bg:#2C1514; --info:#6FA8F0; --info-bg:#121D2B;
+  --eq-escritorio:#2BB3A6; --eq-producao:#A68CF0; --eq-guardioes:#E37AB0; --eq-manutencao:#8FA6B8; --eq-reserva:#E08A5C; --eq-ink:#0A0A0A;
+  --brilho-ia:0 0 0 1px rgba(195,209,74,.10),0 0 22px rgba(195,209,74,.10);
+  --foco:0 0 0 1.5px var(--ac),0 0 26px rgba(195,209,74,.16);
+}
+/* claro: escolhido, forçado num trecho, ou "Sistema" com o aparelho no claro (mesmos valores nos dois blocos) */
+[data-tema="claro"] .v2, .v2 [data-tema="claro"] {
+  --bg:#FFFFFF; --s1:#F5F5F5; --s2:#EDEDED; --s3:#DEDEDE; --s4:#B3B3B3;
+  --t1:#1A1A1A; --t2:#424242; --t3:#6B6B6B;
+  --ac:#2A5C0B; --ac-press:#042608; --ac-ink:#FFFFFF; --ac-text:#2A5C0B; --ac-soft:#EEF3E8;
+  --destaque-bg:#1A1A1A; --destaque-ink:#FFFFFF;
+  --ok:#2A5C0B; --ok-bg:#EEF3E8; --warn:#8A5A00; --warn-bg:#FBF3E4;
+  --err:#B3261E; --err-bg:#FBEAE9; --info:#1F5FAD; --info-bg:#E9F0F9;
+  --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-reserva:#A3542A; --eq-ink:#FFFFFF;
+  --brilho-ia:0 0 0 1px rgba(42,92,11,.10),0 0 22px rgba(42,92,11,.10);
+  --foco:0 0 0 1.5px var(--ac),0 0 22px rgba(42,92,11,.14);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-tema]) .v2 {
+    --bg:#FFFFFF; --s1:#F5F5F5; --s2:#EDEDED; --s3:#DEDEDE; --s4:#B3B3B3;
+    --t1:#1A1A1A; --t2:#424242; --t3:#6B6B6B;
+    --ac:#2A5C0B; --ac-press:#042608; --ac-ink:#FFFFFF; --ac-text:#2A5C0B; --ac-soft:#EEF3E8;
+    --destaque-bg:#1A1A1A; --destaque-ink:#FFFFFF;
+    --ok:#2A5C0B; --ok-bg:#EEF3E8; --warn:#8A5A00; --warn-bg:#FBF3E4;
+    --err:#B3261E; --err-bg:#FBEAE9; --info:#1F5FAD; --info-bg:#E9F0F9;
+    --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-reserva:#A3542A; --eq-ink:#FFFFFF;
+    --brilho-ia:0 0 0 1px rgba(42,92,11,.10),0 0 22px rgba(42,92,11,.10);
+    --foco:0 0 0 1.5px var(--ac),0 0 22px rgba(42,92,11,.14);
+  }
+}
+
+/* Tokens → classes Tailwind (bg-s1, text-t2, rounded-cartao, font-display, shadow-foco…) */
+@theme inline {
+  --color-bg: var(--bg); --color-s1: var(--s1); --color-s2: var(--s2); --color-s3: var(--s3); --color-s4: var(--s4);
+  --color-t1: var(--t1); --color-t2: var(--t2); --color-t3: var(--t3);
+  --color-ac: var(--ac); --color-ac-press: var(--ac-press); --color-ac-ink: var(--ac-ink); --color-ac-text: var(--ac-text); --color-ac-soft: var(--ac-soft); --color-ac-apoio: var(--ac-apoio);
+  --color-destaque-bg: var(--destaque-bg); --color-destaque-ink: var(--destaque-ink);
+  --color-ok: var(--ok); --color-ok-bg: var(--ok-bg); --color-warn: var(--warn); --color-warn-bg: var(--warn-bg);
+  --color-err: var(--err); --color-err-bg: var(--err-bg); --color-info: var(--info); --color-info-bg: var(--info-bg);
+  --color-eq-escritorio: var(--eq-escritorio); --color-eq-producao: var(--eq-producao); --color-eq-guardioes: var(--eq-guardioes); --color-eq-manutencao: var(--eq-manutencao); --color-eq-reserva: var(--eq-reserva); --color-eq-ink: var(--eq-ink);
+  --radius-pilula: var(--raio-pilula); --radius-moldura: var(--raio-moldura); --radius-bloco: var(--raio-bloco); --radius-cartao: var(--raio-cartao); --radius-interno: var(--raio-interno);
+  --font-display: var(--fonte-display); --font-texto: var(--fonte-texto);
+  --shadow-brilho-ia: var(--brilho-ia); --shadow-foco: var(--foco);
+}
+
+/* Utilitários do design system */
+/* hachurado = planejado / pendente (regra 6): linhas finas a 135° */
+.v2 .hachurado { background-color: var(--s2); background-image: repeating-linear-gradient(135deg, var(--s4) 0 1px, transparent 1px 7px); }
+/* alvo de toque (seção 6, mínimo 44 px): um ::after invisível estende a área clicável sem mudar o desenho.
+   Para controles compactos (chips, linhas, links de lista). Não use em elemento com overflow:hidden (o ::after seria cortado). */
+.v2 .alvo-toque { position: relative; }
+.v2 .alvo-toque::after { content: ""; position: absolute; inset: min(0px, calc((100% - 44px) / 2)); }
+/* brilho = só o que é do Pinu (regra 4) */
+.v2 .brilho-ia { box-shadow: var(--brilho-ia); }
+/* anel de foco: aparece no foco por teclado (e em campos, seção 9.5) */
+.v2 .anel-foco { transition: box-shadow 200ms ease; }
+.v2 .anel-foco:focus-visible { outline: none; box-shadow: var(--foco); }
+/* menos movimento pedido pelo aparelho: sem animação contínua, transições instantâneas (seção 8) */
+@media (prefers-reduced-motion: reduce) {
+  .v2 *, .v2 *::before, .v2 *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* Tipografia (DESIGN-SYSTEM.md seção 4) — celular primeiro, computador a partir de 1024 px.
+   Outfit = títulos, números, rótulos de seção; Google Sans = todo o resto. Mínimo 12 px no celular. */
+.v2 .titulo-pagina   { font-family: var(--fonte-display); font-weight: 700; font-size: 40px; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
+.v2 .saudacao        { font-family: var(--fonte-display); font-weight: 300; font-size: 30px; line-height: 1.15; text-wrap: balance; }
+.v2 .numero-display  { font-family: var(--fonte-display); font-weight: 200; font-size: 48px; line-height: 1; font-variant-numeric: tabular-nums; }
+.v2 .titulo-secao    { font-family: var(--fonte-display); font-weight: 600; font-size: 19px; line-height: 1.25; text-wrap: balance; }
+.v2 .titulo-cartao   { font-family: var(--fonte-display); font-weight: 600; font-size: 17px; line-height: 1.3; text-wrap: balance; }
+.v2 .corpo           { font-family: var(--fonte-texto); font-weight: 400; font-size: 15px; line-height: 1.5; }
+.v2 .botao-texto     { font-family: var(--fonte-texto); font-weight: 600; font-size: 16px; line-height: 1.2; }
+.v2 .rotulo-campo    { font-family: var(--fonte-texto); font-weight: 500; font-size: 12px; line-height: 1.3; }
+.v2 .meta            { font-family: var(--fonte-texto); font-weight: 500; font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.v2 .rotulo-maiusculo { font-family: var(--fonte-display); font-weight: 500; font-size: 12px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; }
+@media (min-width: 1024px) {
+  .v2 .titulo-pagina   { font-size: 60px; }
+  .v2 .saudacao        { font-size: 40px; }
+  .v2 .numero-display  { font-size: 58px; }
+  .v2 .titulo-secao    { font-size: 20px; }
+  .v2 .corpo           { font-size: 14px; }
+  .v2 .botao-texto     { font-size: 15px; }
+  .v2 .meta            { font-size: 12.5px; }
+  .v2 .rotulo-maiusculo { font-size: 11px; }
+}
+
+/* Formas de assinatura (DESIGN-SYSTEM.md seção 6) — cada uma tem UM papel */
+.v2 .forma-folha   { border-radius: 8px 28px 8px 28px; }   /* só a ação principal da tela */
+.v2 .forma-petala  { border-radius: 20px 64px 20px 20px; } /* etapa atual / bloco de destaque */
+.v2 .forma-seta    { clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%); } /* última etapa */
+/* botão dividido: duas peças separadas por um corte diagonal */
+.v2 .corte-esq     { border-radius: 18px; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.v2 .corte-dir     { border-radius: 18px; clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); margin-left: -14px; }
+/* carregando: arco girando (seção 8 e 9.17); com menos movimento fica parado e o texto diz "Carregando…" */
+@keyframes ds-girar { to { transform: rotate(360deg); } }
+.v2 .arco-girando  { width: 1em; height: 1em; border-radius: 999px; border: 2px solid currentColor; border-top-color: transparent; animation: ds-girar .9s linear infinite; }
+
+/* Pinu: mini-anel (avatar do Pinu em mensagens, campos e chips — seção 10.11). Gradiente fixo do orbe,
+   igual nos dois temas; o brilho é permitido porque é IA (regra 4). */
+.v2 .mini-anel {
+  --anel: 22px; /* <MiniAnelPinu tamanho> muda isto */
+  display: inline-block; flex: none; width: var(--anel); height: var(--anel); border-radius: 999px;
+  background: conic-gradient(#042608, #2A5C0B, #808F12, #C3D14A, #042608);
+  -webkit-mask: radial-gradient(circle, transparent calc(var(--anel) * .27), #000 calc(var(--anel) * .32));
+  mask: radial-gradient(circle, transparent calc(var(--anel) * .27), #000 calc(var(--anel) * .32));
+  filter: drop-shadow(0 0 calc(var(--anel) * .27) rgba(195, 209, 74, .45));
+}
+/* Orbe do Pinu (seções 8 e 10.11): forma orgânica que respira (border-radius animado) e gira devagar.
+   --m = duração da respiração e --r = do giro (por estado); --s = escala (voz/pulso, via JS). Gradiente fixo
+   #042608 → #2A5C0B → #808F12 → #C3D14A nos dois temas. Com menos movimento pedido, a regra global para tudo. */
+@keyframes ds-orbe-forma {
+  0%, 100% { border-radius: 46% 54% 52% 48% / 50% 44% 56% 50%; }
+  25% { border-radius: 56% 44% 42% 58% / 46% 58% 42% 54%; }
+  50% { border-radius: 42% 58% 56% 44% / 58% 46% 54% 42%; }
+  75% { border-radius: 52% 48% 46% 54% / 42% 54% 46% 58%; }
+}
+@keyframes ds-orbe-giro { to { rotate: 360deg; } }
+.v2 .orbe-pinu {
+  position: relative; width: 100%; height: 100%; border-radius: 46% 54% 52% 48% / 50% 44% 56% 50%;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 22%),
+    radial-gradient(circle at 70% 70%, #C3D14A 0%, rgba(195,209,74,0) 45%),
+    radial-gradient(circle at 25% 75%, #808F12 0%, rgba(128,143,18,0) 50%),
+    radial-gradient(circle at 60% 30%, #2A5C0B 0%, rgba(42,92,11,0) 55%),
+    radial-gradient(circle at 50% 50%, #042608 30%, #0A140B 75%);
+  box-shadow: inset 0 0 40px rgba(195,209,74,.25), inset -10px -20px 60px rgba(4,38,8,.8);
+  animation: ds-orbe-forma var(--m, 9s) ease-in-out infinite, ds-orbe-giro var(--r, 24s) linear infinite;
+  transform: scale(var(--s, 1)); transition: transform .12s;
+}
+.v2 .orbe-pinu::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; mix-blend-mode: screen;
+  background: conic-gradient(from 0deg, transparent, rgba(195,209,74,.18), transparent 30%, rgba(128,143,18,.2), transparent 60%);
+  animation: ds-orbe-giro calc(var(--r, 24s) / 2) linear infinite reverse;
+}
+.v2 .orbe-pinu-brilho { position: absolute; inset: -18%; border-radius: 999px; filter: blur(10px); background: radial-gradient(circle, rgba(195,209,74,.28), rgba(42,92,11,.12) 45%, transparent 70%); }
+/* Campo de data: o seletor nativo cobre o campo todo (o ícone visível é o nosso `calendario`) */
+.v2 .campo-data::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; opacity: 0; cursor: pointer; }
+/* Recorte (seção 6): canto superior direito recortado; o botão redondo fica FORA do elemento mascarado,
+   sobreposto ao buraco (components/ds/Cartao.tsx). Círculo de 30 px = botão de 44 + folga. */
+.v2 .recorte-cartao {
+  -webkit-mask: radial-gradient(circle 30px at calc(100% - 28px) 28px, transparent 29px, #000 30px);
+  mask: radial-gradient(circle 30px at calc(100% - 28px) 28px, transparent 29px, #000 30px);
+}
+/* Skeleton (seção 9.17): a forma real do conteúdo com um brilho lento passando a cada 1,6 s.
+   Com menos movimento pedido, a regra global da .v2 para a animação e fica o tom parado. */
+@keyframes ds-brilho-passando { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.v2 .skeleton { background: linear-gradient(90deg, var(--s2) 0%, var(--s3) 50%, var(--s2) 100%); background-size: 200% 100%; animation: ds-brilho-passando 1.6s ease-in-out infinite; }

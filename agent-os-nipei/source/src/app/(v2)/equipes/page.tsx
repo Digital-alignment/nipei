@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { Bell, Lock, Users } from "lucide-react";
-import { Avatar, Title } from "@/components/v2/ui";
+import AvatarDS from "@/components/ds/Avatar";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Botao from "@/components/ds/Botao";
+import Selo from "@/components/ds/Selo";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
+import Icone from "@/components/ds/Icone";
+
 import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, today, type Equipe } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
@@ -26,36 +32,35 @@ export default async function Equipes() {
     const pessoasEq = [...new Set([...e.coordenadores, ...e.membros])];
     const emDia = abertas.length ? Math.round(((abertas.length - atrasadas) / abertas.length) * 100) : 100;
     return (
-      <li className="relative rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:border-neutral-400 dark:hover:border-neutral-600">
-        <span className="absolute inset-y-0 left-0 w-1" style={{ background: e.cor }} />
+      <li className="relative rounded-cartao bg-s1 overflow-hidden ">
+        <span aria-hidden="true" className="absolute inset-y-3 left-0 w-1 rounded-r-pilula" style={{ background: chaveEquipe(e.id) ? EQUIPES_DS[chaveEquipe(e.id)!].cor : "var(--s4)" }} />
         <Link href={`/equipes/${e.id}`} className="block p-4 pl-5">
           <div className="flex items-start gap-2">
-            <p className="font-semibold leading-snug flex-1">{e.nome}</p>
-            {me.gestao && !e.acesso && <span title={t.acessoDesligado} className="text-neutral-400"><Lock size={14} /></span>}
-            {me.gestao && e.avisos && <span title={t.avisosEquipeLigado} className="text-neutral-400"><Bell size={14} /></span>}
+            <p className="titulo-cartao flex flex-1 items-center gap-2">{chaveEquipe(e.id) && <Selo nome={EQUIPES_DS[chaveEquipe(e.id)!].selo} tamanho={22} style={{ color: EQUIPES_DS[chaveEquipe(e.id)!].cor }} />}{e.nome}</p>
+            {me.gestao && !e.acesso && <span title={t.acessoDesligado} className="text-t3"><Icone nome="cadeado"  tamanho={14} /></span>}
+            {me.gestao && e.avisos && <span title={t.avisosEquipeLigado} className="text-t3"><Icone nome="notificacao"  tamanho={14} /></span>}
           </div>
           <div className="flex items-center mt-3">
             <span className="flex -space-x-1.5">
-              {pessoasEq.slice(0, 6).map((id) => { const p = pessoa(id); return p && <span key={id} className="rounded-full ring-2 ring-white dark:ring-neutral-900"><Avatar name={p.name} size={26} src={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} /></span>; })}
+              {pessoasEq.slice(0, 6).map((id) => { const p = pessoa(id); return p && <span key={id} className="rounded-pilula ring-2 ring-s1"><AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={24} /></span>; })}
             </span>
-            {pessoasEq.length > 6 && <span className="ml-1.5 text-xs text-neutral-500">+{pessoasEq.length - 6}</span>}
-            <span className="ml-auto text-xs text-neutral-500">{e.coordenadores.map((c) => pessoa(c)?.name.split(" ")[0]).filter(Boolean).join(", ")}</span>
+            {pessoasEq.length > 6 && <span className="ml-1.5 text-xs text-t2">+{pessoasEq.length - 6}</span>}
+            <span className="ml-auto text-xs text-t2">{e.coordenadores.map((c) => pessoa(c)?.name.split(" ")[0]).filter(Boolean).join(", ")}</span>
           </div>
           <div className="grid grid-cols-4 gap-1 mt-3 text-center">
-            {[[abertas.length, t.abertasLbl, ""], [atrasadas, t.atrasadasLbl, atrasadas ? "text-red-600 dark:text-red-400" : ""], [semDono, t.semDonoLbl, semDono ? "text-amber-700 dark:text-amber-400" : ""], [feitas, t.feitas30, ""]].map(([v, l, c]) => (
-              <div key={String(l)} className="rounded-md bg-neutral-50 dark:bg-neutral-800/60 py-1.5">
-                <p className={`text-base font-semibold tabular-nums ${c}`}>{v}</p>
-                <p className="text-[10px] text-neutral-500 leading-tight">{l}</p>
+            {[[abertas.length, t.abertasLbl, ""], [atrasadas, t.atrasadasLbl, atrasadas ? "text-err" : ""], [semDono, t.semDonoLbl, semDono ? "text-warn" : ""], [feitas, t.feitas30, ""]].map(([v, l, c]) => (
+              <div key={String(l)} className="rounded-interno bg-s2 py-1.5">
+                <p className={`font-display text-xl font-light tabular-nums ${c}`}>{v}</p>
+                <p className="text-xs text-t2 leading-tight">{l}</p>
               </div>
             ))}
           </div>
           {abertas.length > 0 && (
-            <div className="mt-3 flex items-center gap-2 text-[11px] text-neutral-500">
-              <div className="h-1.5 flex-1 rounded-full bg-red-200 dark:bg-red-950 overflow-hidden"><div className="h-full bg-green-500" style={{ width: `${emDia}%` }} /></div>
-              {emDia}% {t.emDiaLbl}
+            <div className="mt-3 flex items-center gap-2 text-xs text-t2">
+              <div className="flex-1"><BarraProgresso valor={emDia} rotulo={`${emDia}% ${t.emDiaLbl}`} rotuloAcessivel={t.emDiaLbl} /></div>
             </div>
           )}
-          <p className="mt-2 text-[11px] text-neutral-500">{objetivos.filter((o) => o.equipe === e.id).length} {t.objetivos.toLowerCase()}{e.areas.length ? ` · ${e.areas.length} ${t.areasLbl}` : ""}</p>
+          <p className="mt-2 text-xs text-t2">{objetivos.filter((o) => o.equipe === e.id).length} {t.objetivos.toLowerCase()}{e.areas.length ? ` · ${e.areas.length} ${t.areasLbl}` : ""}</p>
         </Link>
       </li>
     );
@@ -63,23 +68,19 @@ export default async function Equipes() {
 
   const Grade = ({ titulo, lista }: { titulo?: string; lista: Equipe[] }) => lista.length ? (
     <>
-      {titulo && <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">{titulo}</p>}
+      {titulo && <h2 className="titulo-secao mb-3">{titulo}</h2>}
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 mb-6">{lista.map((e) => <Cartao key={e.id} e={e} />)}</ul>
     </>
   ) : null;
 
   return (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <Title>{t.equipes}</Title>
-        <Link href="/pessoas" className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900">
-          <Users size={15} />{t.pessoas} <span className="text-neutral-400 tabular-nums">{pessoas.filter((p) => p.equipes.length).length}</span>
-        </Link>
-      </div>
+      <CabecalhoPagina selo="broto" rotulo={`${equipes.length} ${t.equipes.toLowerCase()}`} titulo={t.equipes}
+        acoes={<Botao href="/pessoas" variante="tonal" icone="pessoas" tamanho="M">{`${t.pessoas} · ${pessoas.filter((p) => p.equipes.length).length}`}</Botao>} />
       {minhas.length && outras.length ? (<><Grade titulo={t.minhasEquipes} lista={minhas} /><Grade titulo={t.outrasEquipes} lista={outras} /></>) : <Grade lista={equipes} />}
       {semEquipe > 0 && (
-        <Link href="/equipes/sem-equipe" className="flex items-center justify-between rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-4 py-3 text-sm">
-          <span>{t.semEquipe}</span><span className="text-amber-700 dark:text-amber-400 tabular-nums">{semEquipe} {t.tarefasAbertas.toLowerCase()}</span>
+        <Link href="/equipes/sem-equipe" className="anel-foco hachurado flex min-h-12 items-center justify-between rounded-cartao px-4 font-texto text-[15px] font-medium text-t1">
+          <span>{t.semEquipe}</span><span className="text-warn tabular-nums">{semEquipe} {t.tarefasAbertas.toLowerCase()}</span>
         </Link>
       )}
     </>
