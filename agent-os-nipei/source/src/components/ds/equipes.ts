@@ -16,6 +16,7 @@ export const EQUIPES_DS: Record<ChaveEquipe, { selo: NomeSelo; cor: string; nome
 // que componentes da v2 ainda passam (Chip cor={e.cor}). É uma tabela de dados, não cor de interface.
 const DO_VAULT: Record<string, ChaveEquipe> = {
   equipe_1: "escritorio", equipe_2: "producao", equipe_3: "guardioes", equipe_4: "manutencao",
+  // ds-permitido: cores antigas gravadas no vault (dado, não cor de interface)
   "#2563eb": "escritorio", "#16a34a": "producao", "#d97706": "guardioes", "#7c3aed": "manutencao",
 };
 

@@ -83,8 +83,8 @@ export default function Notificar({ pessoaId, nome, remetente, temWhats, verific
                   <div className="rounded-interno bg-ok-bg border px-3 py-2 text-sm whitespace-pre-wrap">{texto.trim()}{`\n\n— ${remetente} · Nipëi`}</div>
                 </div>
               )}
-              {!verificado && <p className="text-xs text-warn">⚠ {labels.naoVerificado}</p>}
-              {desligou && <p className="text-xs text-warn">⚠ {labels.desligou}</p>}
+              {!verificado && <p className="inline-flex items-center gap-1 text-xs text-warn"><Icone nome="atencao" tamanho={14} />{labels.naoVerificado}</p>}
+              {desligou && <p className="inline-flex items-center gap-1 text-xs text-warn"><Icone nome="atencao" tamanho={14} />{labels.desligou}</p>}
               {erro && <p className="text-sm text-err">{erro}</p>}
               {ok && <p className="text-sm text-ok">✓ {labels.enviada}</p>}
               {texto.trim() && (confirmando ? (

@@ -74,7 +74,7 @@ export async function alertasAction(form: FormData) {
   const { avisarAdmins, ligarAlertas } = await import("@/lib/v2/alertas");
   const o = String(form.get("o"));
   if (o === "teste") {
-    const ok = await avisarAdmins("Nipëi · painel de controle\n\n🔔 Alerta de teste: os avisos de saúde chegam aqui.");
+    const ok = await avisarAdmins("Nipëi · painel de controle\n\nAlerta de teste: os avisos de saúde chegam aqui.");
     registrarAdmin(me.pessoa!.id, "enviou alerta de teste");
     voltarOp(ok ? "Alerta de teste enviado." : "Não consegui enviar (WhatsApp do Nipëi ou seu número).");
   }

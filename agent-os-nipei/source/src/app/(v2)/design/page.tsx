@@ -99,7 +99,7 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
     ),
   },
   etapas: {
-    sub: "Feita = sólida + ✓ · atual = acento em pétala + ▶ · próxima = hachurada · a última termina em ponta de seta.",
+    sub: "Feita = sólida + ✓ · atual = acento em pétala + seta · próxima = hachurada · a última termina em ponta de seta.",
     conteudo: <DemoEtapas />,
   },
   campo: {
@@ -195,7 +195,7 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
     ),
   },
   aviso: {
-    sub: "Aviso = cartão com lavagem da cor do estado vinda do canto (tinta, não brilho). Toast = a mesma lavagem numa pílula que some sozinha. Diálogo = o mesmo cartão centralizado; substitui o confirm() do navegador — o único botão vermelho do sistema mora aqui.",
+    sub: "Aviso = cartão com lavagem da cor do estado vinda do canto (tinta, não brilho). Toast = a mesma lavagem numa pílula que some sozinha. Diálogo = o mesmo cartão centralizado; substitui a caixa de confirmação do navegador do navegador — o único botão vermelho do sistema mora aqui.",
     conteudo: <DemoAvisos />,
   },
   abas: {
