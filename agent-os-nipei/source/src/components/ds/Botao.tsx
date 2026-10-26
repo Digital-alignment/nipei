@@ -75,13 +75,13 @@ export default function Botao(props: ComoBotao | ComoLink) {
 }
 
 /**
- * Botão só com ícone (seção 9.1): círculo tonal 52 / 44 / 40 px. `aria-label` é obrigatório e vira
+ * Botão só com ícone (seção 9.1): círculo tonal 52 / 44 / 40 px (`acento` = microfone da busca do Pinu). `aria-label` é obrigatório e vira
  * também o tooltip (aparece ao passar o mouse e no foco por teclado).
  */
 export function BotaoIcone({ icone, "aria-label": rotulo, tamanho = 52, variante = "tonal", href, className, ...resto }:
-  { icone: NomeIcone; "aria-label": string; tamanho?: 52 | 44 | 40; variante?: "tonal" | "fantasma"; href?: string; className?: string } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "className">) {
+  { icone: NomeIcone; "aria-label": string; tamanho?: 52 | 44 | 40; variante?: "tonal" | "fantasma" | "acento"; href?: string; className?: string } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "className">) {
   const dim = tamanho === 52 ? "size-[52px]" : tamanho === 44 ? "size-11" : "size-11 lg:size-10";
-  const cls = `anel-foco group relative inline-flex shrink-0 items-center justify-center rounded-pilula transition-colors duration-150 ${dim} ${variante === "tonal" ? "bg-s3 text-t1 hover:bg-s4" : "text-t1 hover:bg-s2 active:bg-s3"} disabled:bg-s2 disabled:text-t3 disabled:cursor-not-allowed ${className ?? ""}`;
+  const cls = `anel-foco group relative inline-flex shrink-0 items-center justify-center rounded-pilula transition-colors duration-150 ${dim} ${variante === "tonal" ? "bg-s3 text-t1 hover:bg-s4" : variante === "acento" ? "bg-ac text-ac-ink hover:brightness-[.94] active:bg-ac-press" : "text-t1 hover:bg-s2 active:bg-s3"} disabled:bg-s2 disabled:text-t3 disabled:cursor-not-allowed ${className ?? ""}`;
   const dentro = (
     <>
       <Icone nome={icone} tamanho={tamanho === 52 ? 22 : 20} />

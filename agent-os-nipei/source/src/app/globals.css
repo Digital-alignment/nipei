@@ -742,3 +742,14 @@ html[data-lote] .v2 .lote-caixa { display: block; }
 /* carregando: arco girando (seção 8 e 9.17); com menos movimento fica parado e o texto diz "Carregando…" */
 @keyframes ds-girar { to { transform: rotate(360deg); } }
 .v2 .arco-girando  { width: 1em; height: 1em; border-radius: 999px; border: 2px solid currentColor; border-top-color: transparent; animation: ds-girar .9s linear infinite; }
+
+/* Pinu: mini-anel (avatar do Pinu em mensagens, campos e chips — seção 10.11). Gradiente fixo do orbe,
+   igual nos dois temas; o brilho é permitido porque é IA (regra 4). */
+.v2 .mini-anel {
+  display: inline-block; flex: none; width: 22px; height: 22px; border-radius: 999px;
+  background: conic-gradient(#042608, #2A5C0B, #808F12, #C3D14A, #042608);
+  -webkit-mask: radial-gradient(circle, transparent 6px, #000 7px); mask: radial-gradient(circle, transparent 6px, #000 7px);
+  filter: drop-shadow(0 0 6px rgba(195, 209, 74, .45));
+}
+/* Campo de data: o seletor nativo cobre o campo todo (o ícone visível é o nosso `calendario`) */
+.v2 .campo-data::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; opacity: 0; cursor: pointer; }

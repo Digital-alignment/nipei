@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
 import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
 import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
-import { DemoCarregando, DemoEtapas, DemoSegmentado } from "./Demos";
+import { DemoCampo, DemoCarregando, DemoEtapas, DemoSegmentado } from "./Demos";
 import Selo, { SELOS, type NomeSelo } from "@/components/ds/Selo";
 import TemaLocal, { ValorToken } from "@/components/ds/TemaLocal";
 import { ICONES, type NomeIcone } from "@/components/ds/icones.generated";
@@ -95,6 +95,10 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
   etapas: {
     sub: "Feita = sólida + ✓ · atual = acento em pétala + ▶ · próxima = hachurada · a última termina em ponta de seta.",
     conteudo: <DemoEtapas />,
+  },
+  campo: {
+    sub: "Sem borda, superfície tonal, rótulo dentro. Passar por cima = brilho fraco; foco = anel de acento; erro = anel vermelho + ícone + o que corrigir. Tipos: texto, título, área, busca, seleção, data.",
+    conteudo: <DemoCampo />,
   },
   segmentado: {
     sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",
