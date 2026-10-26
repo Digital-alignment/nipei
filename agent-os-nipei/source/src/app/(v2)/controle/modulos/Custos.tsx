@@ -1,10 +1,12 @@
-import Link from "next/link";
-import { Download } from "lucide-react";
+import Chip from "@/components/ds/Chip";
+import Botao from "@/components/ds/Botao";
+import Cartao from "@/components/ds/Cartao";
+import Tabela from "@/components/ds/padroes/Tabela";
+import { EstadoVazio } from "@/components/ds/Estados";
 import { getPessoas } from "@/lib/v2/data";
 import { custosDoMes, mesesComCusto, ORIGENS, type CustoIA } from "@/lib/v2/custosIA";
 import type { ModuloProps } from "./index";
 
-const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900";
 const usd = (v: number) => `US$ ${v < 1 ? v.toFixed(4) : v.toFixed(2)}`;
 const tok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)} M` : n >= 1000 ? `${Math.round(n / 1000)} mil` : String(n));
 
@@ -15,7 +17,7 @@ function somar(cs: CustoIA[]): Soma {
 function agrupar(cs: CustoIA[], chave: (c: CustoIA) => string) {
   const g = new Map<string, CustoIA[]>();
   for (const c of cs) g.set(chave(c), [...(g.get(chave(c)) ?? []), c]);
-  return [...g.entries()].map(([k, v]) => ({ k, ...somar(v) })).sort((a, b) => b.usd - a.usd || b.n - a.n);
+  return [...g.entries()].map(([k, v]) => ({ k, ...somar(v) }));
 }
 
 /** AI calls and cost per month, person, use and model. Filter: ?mes=AAAA-MM */
@@ -25,40 +27,34 @@ export default function Custos({ q }: ModuloProps) {
   const mes = meses.includes(q.mes ?? "") ? q.mes! : atual;
   const cs = custosDoMes(mes), t = somar(cs);
   const ps = getPessoas(), nome = (id: string) => (id ? ps.find((p) => p.id === id || p.usuario === id)?.name.split(" (")[0] ?? id : "Tarefas automáticas");
-  const chip = (on: boolean) => `rounded-full border px-2.5 py-0.5 text-xs ${on ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900" : "border-neutral-300 dark:border-neutral-700"}`;
   const tabela = (titulo: string, linhas: ReturnType<typeof agrupar>, rotulo: (k: string) => string) => (
-    <div className={`${CARTAO} overflow-x-auto`}>
-      <table className="w-full text-sm">
-        <thead className="text-xs text-neutral-500 text-left"><tr className="border-b border-neutral-100 dark:border-neutral-800">
-          <th className="px-3 py-2">{titulo}</th><th className="px-3 py-2">Chamadas</th><th className="px-3 py-2">Tokens (entrada / saída)</th><th className="px-3 py-2">Custo da plataforma</th>
-        </tr></thead>
-        <tbody className="tabular-nums">
-          {linhas.map((l) => (
-            <tr key={l.k} className="border-b border-neutral-100 dark:border-neutral-800 last:border-0">
-              <td className="px-3 py-2 font-medium">{rotulo(l.k)}</td><td className="px-3 py-2">{l.n}{l.pessoal ? <span className="text-xs text-neutral-500"> ({l.pessoal} com chave própria)</span> : null}</td>
-              <td className="px-3 py-2 whitespace-nowrap">{tok(l.tin)} / {tok(l.tout)}</td><td className="px-3 py-2 font-semibold whitespace-nowrap">{usd(l.usd)}{l.semPreco ? <span className="text-xs font-normal text-neutral-500"> + {l.semPreco} sem preço</span> : null}</td>
-            </tr>
-          ))}
-          {!linhas.length && <tr><td colSpan={4} className="px-3 py-3 text-neutral-500">Nenhuma chamada de IA registrada neste mês (a medição começou na v2.56).</td></tr>}
-        </tbody>
-      </table>
-    </div>
+    <Tabela rotulo={titulo} ordemInicial={{ id: "usd", desc: true }} vazio={<EstadoVazio compacto selo="olho" titulo="Nenhuma chamada de IA registrada neste mês (a medição começou na v2.56)." />} colunas={[
+      { id: "k", rotulo: titulo, ordenavel: true }, { id: "n", rotulo: "Chamadas", numero: true, ordenavel: true },
+      { id: "tok", rotulo: "Tokens (entrada / saída)", numero: true, ordenavel: true }, { id: "usd", rotulo: "Custo da plataforma", numero: true, ordenavel: true },
+    ]} linhas={linhas.map((l) => ({
+      id: l.k, valores: { k: rotulo(l.k), n: l.n, tok: l.tin + l.tout, usd: l.usd },
+      celulas: {
+        k: rotulo(l.k), n: <>{l.n}{l.pessoal ? <span className="meta text-t3"> ({l.pessoal} chave própria)</span> : null}</>,
+        tok: <span className="whitespace-nowrap">{tok(l.tin)} / {tok(l.tout)}</span>,
+        usd: <span className="whitespace-nowrap font-semibold text-t1">{usd(l.usd)}{l.semPreco ? <span className="meta font-normal text-t3"> + {l.semPreco} sem preço</span> : null}</span>,
+      },
+    }))} />
   );
 
   return (
-    <div className="grid gap-5">
-      <div className="flex flex-wrap items-center gap-1.5">
-        {meses.slice(0, 12).map((m) => <Link key={m} href={`/controle?m=custos&mes=${m}`} className={chip(m === mes)}>{m}</Link>)}
-        <a href={`/controle/exportar?r=custos&mes=${mes}`} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs"><Download size={13} />CSV do mês</a>
+    <div className="grid gap-6">
+      <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
+        {meses.slice(0, 12).map((m) => <Chip key={m} href={`/controle?m=custos&mes=${m}`} ativo={m === mes} icone="calendario">{m}</Chip>)}
+        <span className="ml-auto shrink-0"><Botao href={`/controle/exportar?r=custos&mes=${mes}`} variante="tonal" tamanho="P" icone="baixar">CSV do mês</Botao></span>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {[["Custo da plataforma", usd(t.usd)], ["Chamadas", String(t.n)], ["Tokens de entrada", tok(t.tin)], ["Tokens de saída", tok(t.tout)]].map(([r, v]) => (
-          <div key={r} className={`${CARTAO} p-3`}><p className="text-xs text-neutral-500">{r}</p><p className="text-xl font-semibold tabular-nums">{v}</p></div>
+          <Cartao key={r} variante="kpi"><span className="meta text-t2">{r}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl">{v}</span></Cartao>
         ))}
       </div>
-      <p className="text-xs text-neutral-500">O custo em dólar vem do OpenRouter (a chave da plataforma). A voz e a transcrição usam o Gemini da plataforma, que informa só os tokens (“sem preço”). Quem usa a própria chave paga direto ao provedor — aparece nas chamadas, não no custo.</p>
+      <p className="meta text-t2">O custo em dólar vem do OpenRouter (a chave da plataforma). A voz e a transcrição usam o Gemini da plataforma, que informa só os tokens (“sem preço”). Quem usa a própria chave paga direto ao provedor — aparece nas chamadas, não no custo.</p>
       {tabela("Pessoa", agrupar(cs, (c) => c.pessoa), nome)}
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         {tabela("Uso", agrupar(cs, (c) => c.origem), (k) => ORIGENS[k] ?? k)}
         {tabela("Modelo", agrupar(cs, (c) => `${c.provedor === "plataforma" ? "OpenRouter" : c.provedor} · ${c.modelo}`), (k) => k)}
       </div>

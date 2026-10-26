@@ -8,7 +8,7 @@ import { BotaoIcone } from "./Botao";
 // Superfície s2, sem borda. Hover = brilho fraco (a única exceção de brilho fora da IA); foco = anel de
 // acento + brilho; erro = anel vermelho + ícone + mensagem que diz como corrigir. Rótulo dentro, no topo.
 
-export type TipoCampo = "texto" | "titulo" | "area" | "busca" | "selecao" | "data";
+export type TipoCampo = "texto" | "titulo" | "area" | "busca" | "selecao" | "data" | "senha";
 
 type Comum = {
   /** Rótulo dentro do campo (na busca vira aria-label + placeholder). */
@@ -27,7 +27,7 @@ type Comum = {
   id?: string;
   className?: string;
 };
-type PropsInput = Comum & { tipo?: "texto" | "titulo" | "busca" | "data" } & Omit<InputHTMLAttributes<HTMLInputElement>, keyof Comum | "type">;
+type PropsInput = Comum & { tipo?: "texto" | "titulo" | "busca" | "data" | "senha" } & Omit<InputHTMLAttributes<HTMLInputElement>, keyof Comum | "type">;
 type PropsArea = Comum & { tipo: "area" } & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, keyof Comum>;
 type PropsSelecao = Comum & { tipo: "selecao" } & Omit<SelectHTMLAttributes<HTMLSelectElement>, keyof Comum>;
 export type PropsCampo = PropsInput | PropsArea | PropsSelecao;
@@ -63,7 +63,7 @@ export default function Campo(props: PropsCampo) {
     );
   } else {
     const r = resto as InputHTMLAttributes<HTMLInputElement>;
-    const tipoHtml = tipo === "data" ? "date" : busca ? "search" : "text";
+    const tipoHtml = tipo === "data" ? "date" : tipo === "senha" ? "password" : busca ? "search" : "text";
     controle = (
       <span className="relative flex items-center">
         <input type={tipoHtml} {...a11y} aria-label={busca ? rotulo : undefined} placeholder={busca ? r.placeholder ?? rotulo : r.placeholder}

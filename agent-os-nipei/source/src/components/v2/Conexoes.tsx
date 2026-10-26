@@ -1,5 +1,7 @@
 import Icone from "@/components/ds/Icone";
 import BotaoEnviar from "./BotaoEnviar";
+import InterruptorAcao from "./InterruptorAcao";
+import { ListaConfiguracoes } from "@/components/ds/Controles";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import ConfirmarBotao from "./ConfirmarBotao";
 import { backupAgoraAction, chaveIAAction, desconectarGoogleAction, revogarAppAction, salvarChaveIAAction } from "@/app/(v2)/actions";
@@ -66,7 +68,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
               <form action={backupAgoraAction}><BotaoEnviar enviando="…" className={sec}><Icone nome="baixar"  tamanho={14} />{c.backupAgora}</BotaoEnviar></form>
               {g.backup?.pastaId && <a href={`https://drive.google.com/drive/folders/${g.backup.pastaId}`} target="_blank" rel="noreferrer" className={sec}><Icone nome="abrir-fora"  tamanho={14} />{c.abrirPasta}</a>}
               <form action={desconectarGoogleAction} className="ml-auto">
-                <ConfirmarBotao pergunta={c.desconectarPergunta} className="rounded-interno px-3 py-1.5 text-sm text-err">{c.desconectar}</ConfirmarBotao>
+                <ConfirmarBotao pergunta={c.desconectarPergunta} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4">{c.desconectar}</ConfirmarBotao>
               </form>
             </div>
           </>
@@ -115,8 +117,8 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
               <p className="text-sm">{PROVEDORES[ia.provedor].nome} · <code className="text-xs">…{ia.key.slice(-4)}</code> · {ia.modelo}</p>
               <p className="text-xs text-t2">{c.chaveUsoHoje.replace("{n}", String(ia.uso?.dia === hoje ? ia.uso.n : 0))}{ia.erro && <span className="block text-warn">{c.chaveErro} {quando(ia.erroEm)}: {ia.erro}</span>}</p>
               <div className="flex flex-wrap gap-2">
-                <form action={chaveIAAction}><input type="hidden" name="o" value={ia.pausada ? "usar" : "pausar"} /><BotaoEnviar enviando="…" className={sec}>{ia.pausada ? c.chaveUsar : c.chavePausar}</BotaoEnviar></form>
-                <form action={chaveIAAction} className="ml-auto"><input type="hidden" name="o" value="remover" /><ConfirmarBotao pergunta={c.chaveRemoverPergunta} className="rounded-interno px-3 py-1.5 text-sm text-err">{c.chaveRemover}</ConfirmarBotao></form>
+                <div className="basis-full"><ListaConfiguracoes><InterruptorAcao acao={chaveIAAction} valorLigado="usar" valorDesligado="pausar" ligado={!ia.pausada} rotulo={c.chaveUsar} descricao={ia.pausada ? c.chavePausada : c.chaveEmUso} /></ListaConfiguracoes></div>
+                <form action={chaveIAAction} className="ml-auto"><input type="hidden" name="o" value="remover" /><ConfirmarBotao pergunta={c.chaveRemoverPergunta} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4">{c.chaveRemover}</ConfirmarBotao></form>
               </div>
             </>
           ) : <p className="text-sm text-t2">{c.chaveAgora}</p>}
