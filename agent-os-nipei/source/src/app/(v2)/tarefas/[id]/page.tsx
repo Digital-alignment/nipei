@@ -16,6 +16,7 @@ import { AbasComPainel } from "@/components/ds/Abas";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import { EstadoVazio } from "@/components/ds/Estados";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
+import LinhaDoTempo, { deAtividade } from "@/components/ds/padroes/LinhaDoTempo";
 import { ANEXO_TIPOS, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, today, type Anexo, type Status } from "@/lib/v2/data";
 import { parseAtividade } from "@/lib/tarefaNote";
 import { emAndamento } from "@/lib/v2/trabalhos";
@@ -240,15 +241,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
 
   const historico = (
     <div className="grid gap-2">
-      <ol className="relative grid gap-3 pl-5 before:absolute before:bottom-1 before:left-[5px] before:top-1 before:w-px before:bg-s3 before:content-['']">
-        {visiveis.map(({ raw, p }, i) => (
-          <li key={i} className="relative">
-            <span aria-hidden="true" className="absolute -left-5 top-1.5 size-[11px] rounded-pilula bg-s3 ring-[3px] ring-s2" />
-            {p ? <p className="corpo text-t2"><span className="font-semibold text-t1">{p.quem}</span> · {p.texto} <span className="meta text-t3">· {p.quando}</span></p>
-              : <p className="corpo text-t2">{raw.replace(/^-\s*/, "")}</p>}
-          </li>
-        ))}
-      </ol>
+      <LinhaDoTempo itens={visiveis.map(({ raw, p }) => p ? deAtividade(p, (d) => (d === hoje ? t.hoje : fmtDate(d, lang))) : { dia: "", tipo: "outro" as const, quem: "", texto: raw.replace(/^-\s*/, "") })} />
       {!q.tudo && registros.length > visiveis.length && <div><Botao href={`/tarefas/${id}?tudo=1`} variante="fantasma" tamanho="P" icone="abrir">{t.verMais} ({registros.length})</Botao></div>}
     </div>
   );

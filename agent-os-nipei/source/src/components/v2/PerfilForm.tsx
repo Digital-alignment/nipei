@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Icone from "@/components/ds/Icone";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
 import Upload from "@/components/v2/Upload";
 import type { Dict } from "@/lib/v2/i18n";
 import type { DadosPerfil } from "@/lib/v2/perfil";
@@ -11,9 +11,9 @@ import { enviarCodigoAction, salvarPerfilAction, uploadFotoAction, verificarCodi
 
 type Inicial = DadosPerfil & { id: string; nipeiId: string; whatsappVerificado: boolean; temFoto: boolean };
 
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
-const btn = "rounded-lg border border-neutral-300 dark:border-neutral-700 px-3 py-2 text-sm disabled:opacity-50";
-const primario = "rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-5 py-2.5 text-sm font-medium disabled:opacity-50";
+const field = "w-full rounded-interno bg-s2 bg-s2 px-3 py-2 text-sm";
+const btn = "rounded-interno bg-s2 px-3 py-2 text-sm disabled:opacity-50";
+const primario = "rounded-interno bg-ac text-ac-ink px-5 py-2.5 text-sm font-medium disabled:opacity-50";
 const IDIOMA_NOME: Record<string, string> = { pt: "Português", en: "English", es: "Español" };
 
 /** "+5573999606170" → { cc: "55", local: "73999606170" } (longest matching country code). */
@@ -92,22 +92,22 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
       <div className="grid gap-5">
         <div>
           <h2 className="text-xl font-semibold">{t.confiraDados}</h2>
-          <p className="text-sm text-neutral-500 mt-1">{t.confiraIntro}</p>
+          <p className="text-sm text-t2 mt-1">{t.confiraIntro}</p>
         </div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
           {linhas.map(([k, v, priv]) => (
             <div key={k} className="contents">
-              <dt className="text-neutral-500">{k}</dt>
-              <dd className="break-words">{v || t.vazio}{priv && v ? <span className="block text-[11px] text-neutral-400">{t.privado}</span> : null}</dd>
+              <dt className="text-t2">{k}</dt>
+              <dd className="break-words">{v || t.vazio}{priv && v ? <span className="block text-xs text-t3">{t.privado}</span> : null}</dd>
             </div>
           ))}
         </dl>
-        {numero && !verificado && <p className="text-xs text-amber-700 dark:text-amber-400">{t.semVerificarAviso}</p>}
+        {numero && !verificado && <p className="text-xs text-warn">{t.semVerificarAviso}</p>}
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" checked={lgpd} onChange={(e) => setLgpd(e.target.checked)} className="mt-1" />
           <span>{t.lgpd}</span>
         </label>
-        {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
+        {erro && <p className="text-sm text-err">{erro}</p>}
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setPasso(1)} className={btn}>{t.corrigir}</button>
           <button type="button" disabled={!lgpd || pending} onClick={salvar} className={primario}>{pending ? t.salvando : t.confirmarSalvar}</button>
@@ -121,12 +121,12 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
       <div className="flex items-center gap-4">
         {foto && !cadastro ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={`/pessoas/${inicial.id}/foto?v=${foto}`} alt={d.name} className="size-14 rounded-full object-cover shrink-0" />
-        ) : <span className="size-14 rounded-full bg-neutral-200 dark:bg-neutral-800 shrink-0" />}
+          <img src={`/pessoas/${inicial.id}/foto?v=${foto}`} alt={d.name} className="size-14 rounded-pilula object-cover shrink-0" />
+        ) : <span className="size-14 rounded-pilula bg-s3 shrink-0" />}
         <div className="grid gap-1">
           <Upload id={inicial.id} action={fotoAction} accept="image/*" soFoto extra={cadastro ? { cadastro } : {}}
             labels={{ arquivo: t.trocarFoto, foto: t.foto, enviando: t.salvando, maximo: "Máx. 3 MB" }} />
-          {foto > 0 && cadastro && <span className="text-xs text-green-700 dark:text-green-400">✓ {t.foto}</span>}
+          {foto > 0 && cadastro && <span className="text-xs text-ok">✓ {t.foto}</span>}
         </div>
       </div>
 
@@ -138,7 +138,7 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
         <label className="grid gap-1 text-sm">{t.nacionalidade}<input value={d.nacionalidade} onChange={set("nacionalidade")} maxLength={60} className={field} /></label>
       </div>
 
-      <fieldset className="grid gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
+      <fieldset className="grid gap-2 rounded-interno p-3">
         <legend className="px-1 text-sm">WhatsApp</legend>
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <select aria-label={t.codigoPais} value={fone.cc} onChange={(e) => setFone({ ...fone, cc: e.target.value })} className={field}>
@@ -148,19 +148,19 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
             placeholder={fone.cc === "55" ? "73 99999 9999" : ""} maxLength={20} className={field} />
         </div>
         {verificado ? (
-          <p className="inline-flex items-center gap-1 text-sm text-green-700 dark:text-green-400"><CheckCircle2 size={16} />{t.verificado}</p>
+          <p className="inline-flex items-center gap-1 text-sm text-ok"><Icone nome="sucesso"  tamanho={16} />{t.verificado}</p>
         ) : numero ? (
           <div className="grid gap-2">
-            <p className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400"><AlertTriangle size={14} />{t.naoVerificado}</p>
+            <p className="inline-flex items-center gap-1 text-xs text-warn"><Icone nome="atencao"  tamanho={14} />{t.naoVerificado}</p>
             {pedido?.numero === numero ? (
               <>
-                <p className="text-xs text-neutral-500">{t.codigoEnviado} {numero}</p>
+                <p className="text-xs text-t2">{t.codigoEnviado} {numero}</p>
                 <div className="flex gap-2">
                   <input aria-label={t.codigoRecebido} placeholder={t.codigoRecebido} inputMode="numeric" autoComplete="one-time-code" maxLength={6}
                     value={codigo} onChange={(e) => setCodigo(e.target.value)} className={field} />
                   <button type="button" disabled={pending || codigo.replace(/\D/g, "").length !== 6} onClick={verificar} className={btn}>{t.verificar}</button>
                 </div>
-                <button type="button" disabled={pending} onClick={enviarCodigo} className="justify-self-start text-xs underline text-neutral-500">{t.reenviarCodigo}</button>
+                <button type="button" disabled={pending} onClick={enviarCodigo} className="justify-self-start text-xs underline text-t2">{t.reenviarCodigo}</button>
               </>
             ) : (
               <button type="button" disabled={pending} onClick={enviarCodigo} className={`${btn} justify-self-start`}>{t.enviarCodigo}</button>
@@ -183,13 +183,13 @@ export default function PerfilForm({ inicial, t, cadastro = "", voltar = "" }: {
       <label className="grid gap-1 text-sm">{t.funcao}<textarea value={d.funcao} onChange={set("funcao")} rows={3} maxLength={300} className={field} /></label>
       <label className="grid gap-1 text-sm">{t.disponibilidade}<input value={d.disponibilidade} onChange={set("disponibilidade")} maxLength={200} className={field} /></label>
 
-      <fieldset className="grid gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
-        <legend className="px-1 text-sm">{t.emergencia} <span className="text-[11px] text-neutral-400">({t.privado})</span></legend>
+      <fieldset className="grid gap-2 rounded-interno p-3">
+        <legend className="px-1 text-sm">{t.emergencia} <span className="text-xs text-t3">({t.privado})</span></legend>
         <input aria-label={t.emergenciaNome} placeholder={t.emergenciaNome} value={d.emergencia_nome} onChange={set("emergencia_nome")} maxLength={120} className={field} />
         <input aria-label={t.emergenciaWhats} placeholder={`${t.emergenciaWhats} (+55 73 9…)`} type="tel" inputMode="tel" value={d.emergencia_whatsapp} onChange={set("emergencia_whatsapp")} maxLength={30} className={field} />
       </fieldset>
 
-      {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
+      {erro && <p className="text-sm text-err">{erro}</p>}
       <button className={primario}>{t.continuar}</button>
     </form>
   );

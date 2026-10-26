@@ -1,42 +1,42 @@
-import { Lock, MessageSquare, Pencil } from "lucide-react";
 import BotaoEnviar from "./BotaoEnviar";
+import Icone from "@/components/ds/Icone";
 import { notaInternaAction } from "@/app/(v2)/actions";
 import type { NotaInterna } from "@/lib/v2/notasInternas";
 import type { Dict } from "@/lib/v2/i18n";
 
 const quando = (iso: string) => iso.slice(0, 16).replace("T", " ");
-const campo = "w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 px-2.5 py-1.5 text-sm";
-const sec = "rounded-md border border-neutral-300 dark:border-neutral-700 px-2.5 py-1 text-xs";
+const campo = "w-full rounded-interno bg-s2 bg-s2 px-2.5 py-1.5 text-sm";
+const sec = "anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 /** Profile card (management only): internal notes about the person, editable and commentable by Equipe 1. */
 export default function NotasInternas({ pessoaId, notas, t }: { pessoaId: string; notas: NotaInterna[]; t: Dict }) {
   const oculto = (modo: string, nota: string) => (<><input type="hidden" name="pessoa" value={pessoaId} /><input type="hidden" name="modo" value={modo} /><input type="hidden" name="nota" value={nota} /></>);
   return (
-    <div className="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/10 p-4 grid gap-3">
+    <div className="rounded-cartao border bg-warn-bg p-4 grid gap-3">
       <div className="flex items-center gap-2">
-        <Lock size={13} className="text-amber-700 dark:text-amber-400" />
-        <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 flex-1">{t.notasInternasTitulo}</p>
-        <span className="text-[11px] text-neutral-500">{t.soEquipe1}</span>
+        <Icone nome="cadeado"  tamanho={13} className="text-warn" />
+        <p className="rotulo-maiusculo text-t3 flex-1">{t.notasInternasTitulo}</p>
+        <span className="text-xs text-t2">{t.soEquipe1}</span>
       </div>
       <form action={notaInternaAction} className="grid gap-1.5">
         {oculto("nova", "")}
         <textarea name="texto" required rows={2} maxLength={4000} placeholder={t.notaPlaceholder} className={campo} />
-        <BotaoEnviar enviando="…" className="justify-self-start rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-1.5 text-xs">{t.salvarNota}</BotaoEnviar>
+        <BotaoEnviar enviando="…" className="justify-self-start anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.salvarNota}</BotaoEnviar>
       </form>
-      {notas.length === 0 && <p className="text-sm text-neutral-500">{t.semNotas}</p>}
+      {notas.length === 0 && <p className="text-sm text-t2">{t.semNotas}</p>}
       <ul className="grid gap-3">
         {notas.map((n) => (
-          <li key={n.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3 grid gap-2">
-            <p className="text-xs text-neutral-500">{quando(n.em)} · {n.por}{n.editadoEm && ` · ${t.notaEditada} ${n.editadoPor} ${quando(n.editadoEm)}`}</p>
+          <li key={n.id} className="rounded-[16px] bg-s1 p-3 grid gap-2">
+            <p className="text-xs text-t2">{quando(n.em)} · {n.por}{n.editadoEm && ` · ${t.notaEditada} ${n.editadoPor} ${quando(n.editadoEm)}`}</p>
             <p className="text-sm whitespace-pre-wrap">{n.texto}</p>
             {n.comentarios.length > 0 && (
-              <ul className="grid gap-1 border-l-2 border-neutral-200 dark:border-neutral-700 pl-3">
-                {n.comentarios.map((c, i) => <li key={i} className="text-sm"><span className="text-xs text-neutral-500">{quando(c.em)} · {c.por}: </span>{c.texto}</li>)}
+              <ul className="grid gap-1 border-l-2 border-s3 pl-3">
+                {n.comentarios.map((c, i) => <li key={i} className="text-sm"><span className="text-xs text-t2">{quando(c.em)} · {c.por}: </span>{c.texto}</li>)}
               </ul>
             )}
             <div className="flex flex-wrap gap-3">
               <details>
-                <summary className="list-none cursor-pointer inline-flex items-center gap-1 text-xs text-neutral-500"><MessageSquare size={12} />{t.comentar}</summary>
+                <summary className="list-none cursor-pointer inline-flex items-center gap-1 text-xs text-t2"><Icone nome="mensagem"  tamanho={12} />{t.comentar}</summary>
                 <form action={notaInternaAction} className="flex gap-1.5 mt-1.5">
                   {oculto("comentar", n.id)}
                   <input name="texto" required maxLength={1500} placeholder={t.comentarPlaceholder} className={`${campo} min-w-0 flex-1 sm:w-72`} />
@@ -44,7 +44,7 @@ export default function NotasInternas({ pessoaId, notas, t }: { pessoaId: string
                 </form>
               </details>
               <details>
-                <summary className="list-none cursor-pointer inline-flex items-center gap-1 text-xs text-neutral-500"><Pencil size={12} />{t.editar}</summary>
+                <summary className="list-none cursor-pointer inline-flex items-center gap-1 text-xs text-t2"><Icone nome="editar"  tamanho={12} />{t.editar}</summary>
                 <form action={notaInternaAction} className="grid gap-1.5 mt-1.5">
                   {oculto("editar", n.id)}
                   <textarea name="texto" required rows={3} maxLength={4000} defaultValue={n.texto} className={`${campo} sm:w-96`} />
