@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import Icone from "@/components/ds/Icone";
 import { Empty, Section, Title, byPrazo } from "@/components/v2/ui";
 import { can, currentUser, getEquipes, getPessoas, getTarefas } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { updateTarefaAction } from "../../actions";
 
-const small = "rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs max-w-[11rem]";
+const small = "anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco max-w-[11rem]";
 
 // Triage for tasks that have no team yet: pick a team (and optionally one person) per task.
 export default async function SemEquipe() {
@@ -17,15 +17,15 @@ export default async function SemEquipe() {
 
   return (
     <>
-      <Link href="/equipes" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.equipes}</Link>
+      <Link href="/equipes" className="inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{t.equipes}</Link>
       <Title sub={t.semEquipeIntro}>{t.semEquipe}</Title>
       <Section title={t.tarefasAbertas} count={tarefas.length}>
         {tarefas.length === 0 ? <Empty>{t.semTarefas}</Empty> : (
           <ul>
             {tarefas.map((x) => (
-              <li key={x.id} className="py-3 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+              <li key={x.id} className="py-3 border-b border-s2 last:border-0">
                 <Link href={`/tarefas/${x.id}?back=/equipes/sem-equipe`} className="text-sm hover:underline">{x.title}</Link>
-                <p className="text-xs text-neutral-500 mt-0.5">{[x.prazo && fmtDate(x.prazo, lang), x.responsible].filter(Boolean).join(" · ")}</p>
+                <p className="text-xs text-t2 mt-0.5">{[x.prazo && fmtDate(x.prazo, lang), x.responsible].filter(Boolean).join(" · ")}</p>
                 {equipes.length > 0 && (can.editTarefa(me, x) || can.assumir(me, x)) && (
                   <form action={updateTarefaAction} className="flex flex-wrap items-center gap-2 mt-2">
                     <input type="hidden" name="id" value={x.id} />
@@ -43,7 +43,7 @@ export default async function SemEquipe() {
                       <option value="">{t.ninguem}</option>
                       {pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
-                    <button className="rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 text-xs">{t.atribuir}</button>
+                    <button className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.atribuir}</button>
                   </form>
                 )}
               </li>

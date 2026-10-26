@@ -12,7 +12,7 @@ import { addToEquipeAction, coordenacaoAction, externoAction, funcaoAction } fro
 
 const CARTAO = "rounded-cartao bg-s1 p-4";
 const ROTULO = "rotulo-maiusculo text-t3";
-const campo = "rounded-interno bg-s2 px-2 py-1.5 text-sm";
+const campo = "anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco";
 const btn = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]";
 const sec = "anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4 text-t2";
 

@@ -50,7 +50,7 @@ export default function LoteBarra({ formId, pessoas, equipes, labels }: {
   });
   const marcar = (v: boolean) => { caixas().forEach((c) => { c.checked = v; }); setN(v ? caixas().length : 0); };
   if (!n) return null;
-  const campo = "rounded-interno bg-s2 px-2 py-1.5 text-sm";
+  const campo = "anel-foco h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco";
   return (
     <form id={formId} action={async (f) => { await loteAction(f); marcar(false); }}
       className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4 z-40 my-3 rounded-cartao bg-s2 p-3 shadow-[0_0_0_1px_var(--s3)] flex flex-wrap items-center gap-2">

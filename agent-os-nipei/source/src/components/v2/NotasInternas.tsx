@@ -5,7 +5,7 @@ import type { NotaInterna } from "@/lib/v2/notasInternas";
 import type { Dict } from "@/lib/v2/i18n";
 
 const quando = (iso: string) => iso.slice(0, 16).replace("T", " ");
-const campo = "w-full rounded-interno bg-s2 bg-s2 px-2.5 py-1.5 text-sm";
+const campo = "w-full rounded-interno bg-s2 px-2.5 py-1.5 text-sm";
 const sec = "anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 /** Profile card (management only): internal notes about the person, editable and commentable by Equipe 1. */

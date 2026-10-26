@@ -263,7 +263,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
                 className="inline-flex items-center gap-1.5 text-sm underline"><Icone nome="mensagem"  tamanho={14} />{t.enviarWhats}</a>
             </div>
           ) : <p className="text-xs text-t2 mb-2">{t.semContato}</p>}
-          <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-interno bg-s2 bg-s2 px-2 py-1.5 text-xs" />
+          <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-interno bg-s2 px-2 py-1.5 text-xs" />
         </div>
       ))}
       {gerir && !temAcesso && <p className="text-xs text-t2">{t.equipeSemAcesso}</p>}

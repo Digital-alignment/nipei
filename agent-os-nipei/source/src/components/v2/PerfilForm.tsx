@@ -11,7 +11,7 @@ import { enviarCodigoAction, salvarPerfilAction, uploadFotoAction, verificarCodi
 
 type Inicial = DadosPerfil & { id: string; nipeiId: string; whatsappVerificado: boolean; temFoto: boolean };
 
-const field = "w-full rounded-interno bg-s2 bg-s2 px-3 py-2 text-sm";
+const field = "w-full rounded-interno bg-s2 px-3 py-2 text-sm";
 const btn = "rounded-interno bg-s2 px-3 py-2 text-sm disabled:opacity-50";
 const primario = "rounded-interno bg-ac text-ac-ink px-5 py-2.5 text-sm font-medium disabled:opacity-50";
 const IDIOMA_NOME: Record<string, string> = { pt: "Português", en: "English", es: "Español" };
