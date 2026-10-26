@@ -1,4 +1,5 @@
-import { Title } from "@/components/v2/ui";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import Aviso from "@/components/ds/Aviso";
 import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
@@ -39,13 +40,13 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   return (
     <>
       <AutoRefresh ativo={fontes.some((f) => f.status === "processando")} />
-      <Title sub={t.conhecimentoIntro}>{t.conhecimento}</Title>
+      <CabecalhoPagina selo="espiral" rotulo={`${fatos.length} ${t.fatos.toLowerCase()} · ${fontes.length} ${t.fontesMin}`} titulo={t.conhecimento} subtitulo={t.conhecimentoIntro} />
 
       <AtalhosSecao itens={secoes.filter((s) => s.atalho).map((s) => ({ id: s.id, label: s.atalho!(ctx), valor: s.contagem?.(ctx) ?? 0, alerta: s.alerta && (s.contagem?.(ctx) ?? 0) > 0 }))} />
       {fatos.length > 0 && (
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-neutral-500 mb-1"><span>{t.baseRevisada}</span><span className="tabular-nums">{revisados}/{fatos.length} · {pct}%</span></div>
-          <div className="h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden"><div className="h-full bg-green-600" style={{ width: `${pct}%` }} /></div>
+        <div className="mb-5 grid gap-1.5">
+          <span className="rotulo-maiusculo text-t3">{t.baseRevisada}</span>
+          <BarraProgresso valor={revisados} max={fatos.length} planejado rotulo={`${revisados}/${fatos.length} · ${pct}%`} rotuloAcessivel={t.baseRevisada} />
         </div>
       )}
       {alertas > 0 && <Aviso estado="atencao" className="mb-4" titulo={`${alertas} · ${t.alertasEPropostas}`} acoes={<Botao href="/conhecimento/alertas" icone="atencao" variante="tonal" tamanho="M" iconeDireita="avancar">{t.abrir}</Botao>} />}

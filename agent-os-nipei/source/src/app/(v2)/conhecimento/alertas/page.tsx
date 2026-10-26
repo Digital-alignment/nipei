@@ -1,6 +1,11 @@
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
-import { Empty, Section, Title } from "@/components/v2/ui";
+import { Empty, Section } from "@/components/v2/ui";
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
+import Campo from "@/components/ds/Campo";
+import Icone from "@/components/ds/Icone";
+import { MiniAnelPinu } from "@/components/ds/Pinu";
 import { currentUser } from "@/lib/v2/data";
 import { diaLocal, getFatos, podeRevisar, type StatusFato } from "@/lib/v2/conhecimento";
 import { getAlertas, type Alerta } from "@/lib/v2/auditor";
@@ -9,10 +14,10 @@ import { getEquipes, getProjetos, getTarefas } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { auditarAgoraAction, decidirPropostaAction, resolverAlertaAction } from "../../actions";
 
-const small = "rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs";
-const COR: Record<Alerta["tipo"], string> = {
-  contradicao: "text-red-600 dark:text-red-400", ja_corrigido: "text-amber-700 dark:text-amber-400",
-  duplicado: "text-neutral-500", desatualizado: "text-amber-700 dark:text-amber-400",
+// tipo de alerta = ícone + texto + cor de estado
+const TIPO: Record<Alerta["tipo"], { cor: string; icone: "erro" | "atencao" | "informacao" }> = {
+  contradicao: { cor: "bg-err-bg text-err", icone: "erro" }, ja_corrigido: { cor: "bg-warn-bg text-warn", icone: "atencao" },
+  duplicado: { cor: "bg-s3 text-t2", icone: "informacao" }, desatualizado: { cor: "bg-warn-bg text-warn", icone: "atencao" },
 };
 
 export default async function Alertas() {
@@ -27,8 +32,10 @@ export default async function Alertas() {
   const statusTxt: Record<StatusFato, string> = { proposto: t.status_proposto, confirmado: t.status_confirmado, substituido: t.status_substituido, descartado: t.status_descartado };
   const tarefas = getTarefas(), projetos = getProjetos(), equipes = getEquipes();
   const propostas = getPropostas().filter((p) => p.status === "aberta" && podeDecidir(me, p, tarefas));
-  const field = "w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm";
   const acaoTxt: Record<string, string> = { substituir: t.acaoSubstituir, eliminar: t.acaoEliminar, editar: t.acaoEditar, manter: t.acaoManter };
+  const Selo = ({ tipo }: { tipo: Alerta["tipo"] }) => (
+    <span className={`inline-flex h-7 items-center gap-1.5 rounded-pilula px-2.5 font-texto text-[13px] font-semibold ${TIPO[tipo].cor}`}><Icone nome={TIPO[tipo].icone} tamanho={14} />{t.tiposAlerta[tipo]}</span>
+  );
 
   // which buttons each kind of alert offers (labels follow what the decision means for that kind)
   const botoes = (a: Alerta): [string, string][] =>
@@ -37,35 +44,37 @@ export default async function Alertas() {
         : [["eliminar", t.acaoEliminar], ["substituir", t.acaoConfirmarMesmo]];
 
   return (
-    <>
-      <Link href="/conhecimento" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.conhecimento}</Link>
-      <Title sub={t.alertasIntro}>{t.alertasEPropostas}</Title>
+    <div className="mx-auto max-w-4xl">
+      <div className="-ml-3 mb-2"><Botao href="/conhecimento" variante="fantasma" tamanho="P" icone="voltar">{t.conhecimento}</Botao></div>
+      <CabecalhoPagina selo="espiral" rotulo={t.conhecimento} titulo={t.alertasEPropostas} subtitulo={t.alertasIntro}
+        acoes={me.gestao && <form action={auditarAgoraAction}><BotaoEnviar enviando="…" icone="gerar-outra">{t.auditarAgora}</BotaoEnviar></form>} />
 
-      <Section title={`${t.propostas}${propostas.length ? ` (${propostas.length})` : ""}`}>
-        <p className="text-xs text-neutral-500 mb-3">{t.propostasIntro}</p>
+      <Section title={t.propostas} count={propostas.length}>
+        <p className="meta text-t2">{t.propostasIntro}</p>
         {propostas.length === 0 ? <Empty>{t.semPropostas}</Empty> : (
-          <ul className="grid gap-4">
+          <ul className="grid gap-3">
             {propostas.map((p) => {
               const tarefa = tarefas.find((x) => x.id === p.tarefa);
               const projeto = projetos.find((x) => x.id === p.projeto);
               return (
-                <li key={p.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">{t.tiposProposta[p.tipo]}</p>
-                  {tarefa && <Link href={`/tarefas/${tarefa.id}`} className="block text-sm font-medium underline mt-1">{tarefa.title}{tarefa.prazo && ` · ${fmtDate(tarefa.prazo, lang)}`}</Link>}
-                  {projeto && <Link href={`/projetos/${projeto.id}`} className="block text-sm font-medium underline mt-1">{projeto.nome}</Link>}
-                  {p.tipo === "nova_tarefa" && <p className="text-xs text-neutral-500 mt-1">{[equipes.find((e) => e.id === p.equipe)?.nome, projetos.find((x) => x.id === p.projeto)?.nome].filter(Boolean).join(" · ")}</p>}
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">{t.porque}: {p.motivo}</p>
+                // proposta da IA: cartão do Pinu
+                <li key={p.id} className="grid gap-2.5 rounded-cartao p-4 shadow-brilho-ia" style={{ background: "linear-gradient(160deg, var(--ac-soft), var(--s1) 70%)" }}>
+                  <p className="flex items-center gap-2"><MiniAnelPinu tamanho={18} /><span className="rotulo-maiusculo text-ac-text">{t.tiposProposta[p.tipo]}</span></p>
+                  {tarefa && <Link href={`/tarefas/${tarefa.id}`} className="anel-foco titulo-cartao rounded-interno hover:underline">{tarefa.title}{tarefa.prazo && ` · ${fmtDate(tarefa.prazo, lang)}`}</Link>}
+                  {projeto && <Link href={`/projetos/${projeto.id}`} className="anel-foco titulo-cartao rounded-interno hover:underline">{projeto.nome}</Link>}
+                  {p.tipo === "nova_tarefa" && <p className="meta text-t2">{[equipes.find((e) => e.id === p.equipe)?.nome, projetos.find((x) => x.id === p.projeto)?.nome].filter(Boolean).join(" · ")}</p>}
+                  <p className="corpo text-t2">{t.porque}: {p.motivo}</p>
                   {p.fatos.map((id) => fato(id)).filter(Boolean).map((f) => (
-                    <p key={f!.id} className="text-xs text-neutral-500 mt-1 pl-3 border-l-2 border-neutral-200 dark:border-neutral-700">{f!.texto}</p>
+                    <p key={f!.id} className="meta border-l-2 border-s3 pl-3 text-t2">{f!.texto}</p>
                   ))}
-                  <form action={decidirPropostaAction} className="grid gap-2 mt-3">
+                  <form action={decidirPropostaAction} className="grid gap-2">
                     <input type="hidden" name="id" value={p.id} />
-                    {p.tipo === "nova_tarefa" && <input name="titulo" defaultValue={p.titulo} maxLength={200} className={field} />}
-                    {(p.tipo === "mudar_prazo" || p.tipo === "nova_tarefa") && <input name="prazo" type="date" defaultValue={p.prazo} className={`${field} max-w-48`} />}
-                    {(p.tipo === "comentar_tarefa" || p.tipo === "nota_projeto") && <textarea name="texto" defaultValue={p.texto} rows={2} maxLength={600} className={field} />}
-                    <div className="flex gap-2">
-                      <button name="acao" value="aplicar" className={`${small} border-green-600 text-green-700 dark:text-green-400`}>{t.aplicar}</button>
-                      <button name="acao" value="recusar" className={small}>{t.recusar}</button>
+                    {p.tipo === "nova_tarefa" && <Campo name="titulo" rotulo={t.titulo} defaultValue={p.titulo} maxLength={200} className="bg-s1!" />}
+                    {(p.tipo === "mudar_prazo" || p.tipo === "nova_tarefa") && <div className="max-w-56"><Campo tipo="data" name="prazo" rotulo={t.prazo} defaultValue={p.prazo} className="bg-s1!" /></div>}
+                    {(p.tipo === "comentar_tarefa" || p.tipo === "nota_projeto") && <Campo tipo="area" name="texto" rotulo={t.descricao} defaultValue={p.texto} rows={2} maxLength={600} className="bg-s1!" />}
+                    <div className="flex flex-wrap gap-2">
+                      <BotaoEnviar name="acao" value="aplicar" enviando="…" icone="confirmar" variante="primario">{t.aplicar}</BotaoEnviar>
+                      <BotaoEnviar name="acao" value="recusar" enviando="…" icone="fechar" variante="fantasma">{t.recusar}</BotaoEnviar>
                     </div>
                   </form>
                 </li>
@@ -75,65 +84,66 @@ export default async function Alertas() {
         )}
       </Section>
 
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-3">{t.alertas}</h2>
-      {me.gestao && (
-        <form action={auditarAgoraAction} className="mb-5"><button className={small}>{t.auditarAgora}</button></form>
-      )}
-
-      {abertas.length === 0 ? <Empty>{t.semAlertas}</Empty> : (
-        <ul className="grid gap-4 mb-8">
-          {abertas.map((a) => {
-            const f = fato(a.fato);
-            return (
-              <li key={a.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4">
-                <p className={`text-xs font-semibold uppercase tracking-wide ${COR[a.tipo]}`}>{t.tiposAlerta[a.tipo]}</p>
-                <p className="text-sm mt-1 mb-3">{a.explicacao}</p>
-                {f && (
-                  <div className="text-sm mb-2">
-                    <p className="text-[11px] uppercase tracking-wide text-neutral-400">{t.fatoNovo} · {statusTxt[f.status]}</p>
-                    <p>{f.texto} <Link href={`/conhecimento/${f.fonte}`} className="text-neutral-400 inline-flex"><ExternalLink size={12} /></Link></p>
-                  </div>
-                )}
-                {a.outros.map((id) => fato(id)).filter(Boolean).map((o) => (
-                  <div key={o!.id} className="text-sm mb-2 pl-3 border-l-2 border-neutral-200 dark:border-neutral-700">
-                    <p className="text-[11px] uppercase tracking-wide text-neutral-400">{t.comparadoCom} · {statusTxt[o!.status]}{o!.revisadoPor && ` · ${o!.revisadoPor}`}</p>
-                    <p>{o!.texto} <Link href={`/conhecimento/${o!.fonte}`} className="text-neutral-400 inline-flex"><ExternalLink size={12} /></Link></p>
-                  </div>
-                ))}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {botoes(a).map(([acao, label]) => (
-                    <form key={acao} action={resolverAlertaAction}>
-                      <input type="hidden" name="id" value={a.id} />
-                      <button name="acao" value={acao} className={small}>{label}</button>
-                    </form>
+      <Section title={t.alertas} count={abertas.length}>
+        {abertas.length === 0 ? <Empty>{t.semAlertas}</Empty> : (
+          <ul className="grid gap-3">
+            {abertas.map((a) => {
+              const f = fato(a.fato);
+              return (
+                <li key={a.id} className="grid gap-3 rounded-cartao bg-s1 p-4">
+                  <div className="grid gap-1.5"><Selo tipo={a.tipo} /><p className="corpo text-t1">{a.explicacao}</p></div>
+                  {f && (
+                    <div className="flex items-start gap-1">
+                      <div className="min-w-0 flex-1">
+                        <p className="rotulo-maiusculo text-t3">{t.fatoNovo} · {statusTxt[f.status]}</p>
+                        <p className="corpo text-t1">{f.texto}</p>
+                      </div>
+                      <BotaoIcone icone="avancar" aria-label={t.verOriginal} tamanho={40} variante="fantasma" href={`/conhecimento/${f.fonte}`} />
+                    </div>
+                  )}
+                  {a.outros.map((id) => fato(id)).filter(Boolean).map((o) => (
+                    <div key={o!.id} className="flex items-start gap-1 border-l-2 border-s3 pl-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="rotulo-maiusculo text-t3">{t.comparadoCom} · {statusTxt[o!.status]}{o!.revisadoPor && ` · ${o!.revisadoPor}`}</p>
+                        <p className="corpo text-t1">{o!.texto}</p>
+                      </div>
+                      <BotaoIcone icone="avancar" aria-label={t.verOriginal} tamanho={40} variante="fantasma" href={`/conhecimento/${o!.fonte}`} />
+                    </div>
                   ))}
-                </div>
-                {f && (
-                  <form action={resolverAlertaAction} className="grid gap-2 mt-3">
-                    <input type="hidden" name="id" value={a.id} />
-                    {a.sugestao && <p className="text-xs text-neutral-500">{t.sugestaoIA}:</p>}
-                    <textarea name="texto" defaultValue={a.sugestao || f.texto} rows={2} maxLength={600}
-                      className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm" />
-                    <button name="acao" value="editar" className={`${small} justify-self-start`}>{t.acaoEditar}</button>
-                  </form>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  <div className="flex flex-wrap gap-2">
+                    {botoes(a).map(([acao, label], i) => (
+                      <form key={acao} action={resolverAlertaAction}>
+                        <input type="hidden" name="id" value={a.id} />
+                        <BotaoEnviar name="acao" value={acao} enviando="…" icone={acao === "eliminar" ? "lixeira" : acao === "manter" ? "confirmar" : "gerar-outra"} variante={i === 0 ? "primario" : "tonal"}>{label}</BotaoEnviar>
+                      </form>
+                    ))}
+                  </div>
+                  {f && (
+                    <form action={resolverAlertaAction} className="grid gap-2">
+                      <input type="hidden" name="id" value={a.id} />
+                      <Campo tipo="area" name="texto" rotulo={a.sugestao ? t.sugestaoIA : t.acaoEditar} defaultValue={a.sugestao || f.texto} rows={2} maxLength={600} />
+                      <div><BotaoEnviar name="acao" value="editar" enviando="…" icone="editar">{t.acaoEditar}</BotaoEnviar></div>
+                    </form>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Section>
 
       {resolvidas.length > 0 && (
-        <Section title={t.resolvidas}>
-          <ul className="grid gap-2 text-sm">
+        <Section title={t.resolvidas} count={resolvidas.length}>
+          <ul className="overflow-hidden rounded-cartao bg-s1">
             {resolvidas.map((a) => (
-              <li key={a.id} className="text-neutral-500">
-                <span className={COR[a.tipo]}>{t.tiposAlerta[a.tipo]}</span> · {fato(a.fato)?.texto.slice(0, 90)} → {acaoTxt[a.resolucao] ?? a.resolucao} · {a.resolvidoPor} · {fmtDate(diaLocal(a.resolvidoEm), lang)}
+              <li key={a.id} className="grid gap-1.5 border-t border-s2 px-4 py-3 first:border-t-0">
+                <span className="flex flex-wrap items-center gap-2"><Selo tipo={a.tipo} /><span className="meta text-t3">{a.resolvidoPor} · {fmtDate(diaLocal(a.resolvidoEm), lang)}</span></span>
+                <span className="corpo text-t2">{fato(a.fato)?.texto.slice(0, 90)} → {acaoTxt[a.resolucao] ?? a.resolucao}</span>
               </li>
             ))}
           </ul>
         </Section>
       )}
-    </>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import Icone from "@/components/ds/Icone";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import { diaLocal, type Fonte } from "@/lib/v2/conhecimento";
 import { fmtDate } from "@/lib/v2/i18n";
 import type { Ctx } from "./index";
@@ -9,23 +10,21 @@ export default function LinhaFonte({ f, ctx }: { f: Fonte; ctx: Ctx }) {
   const { t, lang, nome } = ctx;
   const { pendentes, revisados, total } = ctx.porFonte(f.id);
   return (
-    <li>
-      <Link href={`/conhecimento/${f.id}`} className="flex items-center gap-3 py-2.5 border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+    <li className="border-t border-s2 first:border-t-0">
+      <Link href={`/conhecimento/${f.id}`} className="anel-foco flex items-center gap-3 rounded-interno px-3 py-3 transition-colors hover:bg-s2">
+        <span className={`grid size-10 shrink-0 place-items-center rounded-pilula ${f.status === "erro" ? "bg-err-bg text-err" : "bg-s2 text-t2"}`}>
+          <Icone nome={f.status === "erro" ? "erro" : f.url ? "abrir-fora" : "tarefa"} tamanho={18} />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate">{f.titulo || f.url || "…"}</p>
-          <p className="text-xs text-neutral-500">
+          <p className="truncate font-texto text-[15px] font-medium text-t1">{f.titulo || f.url || "…"}</p>
+          <p className="meta text-t3">
             {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)}{f.acervo && ` · ${t.doAcervo}`} · {" "}
-            {f.status === "processando" ? t.processando : f.status === "erro" ? <span className="text-red-600">{t.erroFonte}</span>
-              : pendentes.length ? <span className="text-amber-700 dark:text-amber-400">{pendentes.length} {t.fatosPropostos}</span> : t.pronta}
+            {f.status === "processando" ? t.processando : f.status === "erro" ? <span className="text-err">{t.erroFonte}</span>
+              : pendentes.length ? <span className="font-semibold text-warn">{pendentes.length} {t.fatosPropostos}</span> : t.pronta}
           </p>
-          {total > 0 && (
-            <span className="mt-1.5 flex items-center gap-2" title={`${revisados}/${total} ${t.revisados}`}>
-              <span className="h-1 flex-1 max-w-40 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden"><span className="block h-full bg-green-600" style={{ width: `${(revisados / total) * 100}%` }} /></span>
-              <span className="text-[11px] text-neutral-400 tabular-nums">{revisados}/{total}</span>
-            </span>
-          )}
+          {total > 0 && <div className="mt-1.5 max-w-60"><BarraProgresso valor={revisados} max={total} planejado rotulo={`${revisados}/${total}`} rotuloAcessivel={t.revisados} /></div>}
         </div>
-        <ChevronRight size={16} className="text-neutral-400 shrink-0" />
+        <Icone nome="avancar" tamanho={16} className="shrink-0 text-t3" />
       </Link>
     </li>
   );

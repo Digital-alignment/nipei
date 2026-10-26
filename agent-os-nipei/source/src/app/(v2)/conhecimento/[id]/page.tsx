@@ -1,19 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, FolderOpen } from "lucide-react";
 import { Section } from "@/components/v2/ui";
 import AutoRefresh from "@/components/v2/AutoRefresh";
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
+import Botao from "@/components/ds/Botao";
+import Chip from "@/components/ds/Chip";
+import Aviso from "@/components/ds/Aviso";
+import Campo from "@/components/ds/Campo";
+import Icone from "@/components/ds/Icone";
+import { EstadoVazio } from "@/components/ds/Estados";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
 import { diaLocal, getFatos, getFontes, podeRevisar, type StatusFato } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { reprocessarFonteAction, revisarFatoAction } from "../../actions";
 
-const small = "rounded-md border border-neutral-300 dark:border-neutral-700 px-3 py-1 text-xs";
-const STATUS_COR: Record<StatusFato, string> = {
-  proposto: "text-amber-700 dark:text-amber-400", confirmado: "text-green-700 dark:text-green-400",
-  substituido: "text-neutral-400", descartado: "text-neutral-400",
+// estado do fato = ícone + texto (regra 10); proposto = hachurado (regra 6)
+const ESTADO: Record<StatusFato, string> = {
+  proposto: "hachurado text-t1 shadow-[inset_0_0_0_1px_var(--s3)]", confirmado: "bg-ok-bg text-ok", substituido: "bg-s3 text-t2", descartado: "bg-s3 text-t3",
 };
+const ICONE_ESTADO = { proposto: "prazo", confirmado: "sucesso", substituido: "gerar-outra", descartado: "fechar" } as const;
 
 export default async function FonteDetalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,63 +42,62 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
   ].filter(Boolean).join(" · ");
 
   return (
-    <>
+    <div className="mx-auto max-w-4xl">
       <AutoRefresh ativo={f.status === "processando"} />
-      <Link href="/conhecimento" className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{t.conhecimento}</Link>
-      <h1 className="text-2xl font-semibold tracking-tight break-words">{f.titulo || f.url}</h1>
-      <p className="text-sm text-neutral-500 mt-1 mb-4">
-        {t.enviadoPor} {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)}
-        {f.arquivo && <> · <a href={`/conhecimento/${f.id}/arquivo`} target="_blank" className="underline inline-flex items-center gap-0.5">{t.verOriginal}<ExternalLink size={12} /></a></>}
-        {f.url && <> · <a href={f.url} target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-0.5">{t.verOriginal}<ExternalLink size={12} /></a></>}
-        {f.acervo && <> · <Link href={`/acervo#${f.acervo}`} className="underline inline-flex items-center gap-0.5"><FolderOpen size={12} />{t.noAcervo}</Link></>}
-      </p>
+      <div className="-ml-3 mb-2"><Botao href="/conhecimento" variante="fantasma" tamanho="P" icone="voltar">{t.conhecimento}</Botao></div>
+      <CabecalhoPagina selo="espiral" rotulo={`${t.enviadoPor} ${nome(f.enviadoPor)} · ${fmtDate(diaLocal(f.enviadoEm), lang)}`} titulo={<span className="break-words">{f.titulo || f.url}</span>}
+        filtros={<>
+          {f.arquivo && <Chip href={`/conhecimento/${f.id}/arquivo`} icone="abrir-fora">{t.verOriginal}</Chip>}
+          {f.url && <Chip href={f.url} icone="abrir-fora">{t.verOriginal}</Chip>}
+          {f.acervo && <Chip href={`/acervo#${f.acervo}`} icone="abrir-fora">{t.noAcervo}</Chip>}
+        </>} />
 
-      {f.status === "processando" && <p className="text-sm text-neutral-500 mb-6">{t.processando}</p>}
-      {f.status === "erro" && <p className="text-sm text-red-600 dark:text-red-400 mb-3">{t.erroFonte}: {f.erro}</p>}
+      {f.status === "processando" && <p role="status" className="meta mb-6 flex items-center gap-2 text-t2"><span aria-hidden="true" className="arco-girando size-4 motion-reduce:hidden" />{t.processando}</p>}
+      {f.status === "erro" && <Aviso estado="erro" className="mb-4" titulo={t.erroFonte} mensagem={f.erro} />}
       {podeReprocessar && (f.status === "erro" || meus.length > 0 || fatos.length === 0) && (
-        <form action={reprocessarFonteAction} className="mb-6"><input type="hidden" name="id" value={f.id} /><button className={small}>{t.reprocessar}</button></form>
+        <form action={reprocessarFonteAction} className="mb-6"><input type="hidden" name="id" value={f.id} /><BotaoEnviar enviando="…" icone="gerar-outra">{t.reprocessar}</BotaoEnviar></form>
       )}
 
       {f.resumo && f.status === "pronta" && (
-        <Section title={t.resumoFonte}><div className="text-sm whitespace-pre-wrap">{f.resumo}</div></Section>
+        <Section title={t.resumoFonte}><div className="corpo whitespace-pre-wrap rounded-cartao bg-s1 p-4 text-t1">{f.resumo}</div></Section>
       )}
 
       {f.status === "pronta" && (
-        <Section title={`${t.fatos} (${fatos.length})`}>
+        <Section title={t.fatos} count={fatos.length}>
           {semAlerta.length > 1 && (
-            <form action={revisarFatoAction} className="mb-4">
+            <form action={revisarFatoAction}>
               {semAlerta.map((x) => <input key={x.id} type="hidden" name="id" value={x.id} />)}
-              <button name="acao" value="confirmar" className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm">{t.confirmarTodos} ({semAlerta.length})</button>
+              <BotaoEnviar name="acao" value="confirmar" enviando="…" icone="confirmar" variante="primario">{`${t.confirmarTodos} (${semAlerta.length})`}</BotaoEnviar>
             </form>
           )}
-          {fatos.length === 0 && <p className="text-sm text-neutral-500">{t.semFatos}</p>}
+          {fatos.length === 0 && <EstadoVazio compacto selo="espiral" titulo={t.semFatos} />}
           <ul className="grid gap-3">
             {fatos.map((x) => (
-              <li key={x.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-neutral-400 mb-1">
-                  {t.tiposFato[x.tipo as keyof typeof t.tiposFato] ?? x.tipo} · <span className={STATUS_COR[x.status]}>{statusTxt[x.status]}</span>
-                  {x.revisadoPor && ` · ${x.revisadoPor}`}
+              <li key={x.id} className="grid gap-2 rounded-cartao bg-s1 p-4">
+                <p className="flex flex-wrap items-center gap-2">
+                  <span className="rotulo-maiusculo text-t3">{t.tiposFato[x.tipo as keyof typeof t.tiposFato] ?? x.tipo}</span>
+                  <span className={`inline-flex h-7 items-center gap-1.5 rounded-pilula px-2.5 font-texto text-[13px] font-medium ${ESTADO[x.status]}`}><Icone nome={ICONE_ESTADO[x.status]} tamanho={14} />{statusTxt[x.status]}</span>
+                  {x.revisadoPor && <span className="meta text-t3">{x.revisadoPor}</span>}
                 </p>
                 {comAlerta.has(x.id) && (
-                  <Link href="/conhecimento/alertas" className="block text-xs text-red-600 dark:text-red-400 mb-1">
-                    ⚠️ {t.tiposAlerta[comAlerta.get(x.id)!.tipo]}: {comAlerta.get(x.id)!.explicacao} — <span className="underline">{t.alertaAberto}</span>
+                  <Link href="/conhecimento/alertas" className="anel-foco meta inline-flex items-start gap-1.5 rounded-interno text-err hover:underline">
+                    <Icone nome="atencao" tamanho={16} className="mt-px shrink-0" />{t.tiposAlerta[comAlerta.get(x.id)!.tipo]}: {comAlerta.get(x.id)!.explicacao} — {t.alertaAberto}
                   </Link>
                 )}
                 {x.status === "proposto" && podeRevisar(me, x) ? (
                   <form action={revisarFatoAction} className="grid gap-2">
                     <input type="hidden" name="id" value={x.id} />
-                    <textarea name="texto" defaultValue={x.texto} rows={2} maxLength={600}
-                      className="w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm" />
-                    <div className="flex gap-2">
-                      <button name="acao" value="confirmar" className={`${small} border-green-600 text-green-700 dark:text-green-400`}>{t.confirmar}</button>
-                      <button name="acao" value="descartar" className={small}>{t.descartar}</button>
+                    <Campo tipo="area" name="texto" rotulo={t.fatos} defaultValue={x.texto} rows={2} maxLength={600} />
+                    <div className="flex flex-wrap gap-2">
+                      <BotaoEnviar name="acao" value="confirmar" enviando="…" icone="confirmar" variante="primario">{t.confirmar}</BotaoEnviar>
+                      <BotaoEnviar name="acao" value="descartar" enviando="…" icone="fechar" variante="fantasma">{t.descartar}</BotaoEnviar>
                     </div>
                   </form>
                 ) : (
-                  <p className={`text-sm ${x.status === "descartado" ? "line-through text-neutral-400" : ""}`}>{x.texto}</p>
+                  <p className={`corpo ${x.status === "descartado" ? "text-t3 line-through" : "text-t1"}`}>{x.texto}</p>
                 )}
-                {ligados(x) && <p className="text-xs text-neutral-500 mt-1">{ligados(x)}</p>}
-                {x.status === "proposto" && !podeRevisar(me, x) && <p className="text-xs text-neutral-400 mt-1">{t.aguardandoRevisao}</p>}
+                {ligados(x) && <p className="meta text-t2">{ligados(x)}</p>}
+                {x.status === "proposto" && !podeRevisar(me, x) && <p className="meta text-t3">{t.aguardandoRevisao}</p>}
               </li>
             ))}
           </ul>
@@ -99,10 +105,11 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
       )}
 
       {f.texto && f.status === "pronta" && (
-        <details className="mb-8"><summary className="text-sm text-neutral-500 cursor-pointer">{t.textoFonte}</summary>
-          <div className="text-xs whitespace-pre-wrap mt-2 text-neutral-600 dark:text-neutral-400">{f.texto}</div>
+        <details className="group mb-8 rounded-cartao bg-s1 p-4">
+          <summary className="anel-foco flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno"><span className="titulo-cartao">{t.textoFonte}</span><Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" /></summary>
+          <div className="meta mt-3 whitespace-pre-wrap text-t2">{f.texto}</div>
         </details>
       )}
-    </>
+    </div>
   );
 }
