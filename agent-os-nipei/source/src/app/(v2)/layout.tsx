@@ -51,7 +51,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   const foto = me?.foto ? `/pessoas/${me.id}/foto?v=${encodeURIComponent(me.fotoEm || me.dadosConfirmadosEm)}` : undefined;
   const conta = (
     <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction}
-      rotulos={{ configuracoes: t.configuracoesLbl, perfil: t.meuPerfil, idioma: t.idioma, sair: t.sair }} />
+      rotulos={{ configuracoes: t.configuracoesLbl, tema: t.temaLbl, perfil: t.meuPerfil, idioma: t.idioma, sair: t.sair }} />
   );
 
   return (

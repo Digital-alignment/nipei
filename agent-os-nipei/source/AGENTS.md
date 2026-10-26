@@ -13,4 +13,4 @@ Fonte da verdade: `docs/design-system/DESIGN-SYSTEM.md` (histórico em `DECISOES
 - Ícones só via `<Icone>` / `<Selo>`. Componentes visuais só de `src/components/ds/`.
 - Antes de criar um componente visual novo, ele precisa existir no `DESIGN-SYSTEM.md` (decide-se primeiro no documento, depois no código).
 - Telas antigas ainda usam o estilo anterior até serem migradas; ao mexer numa delas, não acrescente mais estilo antigo.
-- **Tema durante a migração (decisão 2026-10-26):** o padrão é "Sistema" (`TEMA_PADRAO` em `src/components/ds/temaScript.ts`) para os componentes novos acompanharem as telas antigas (`dark:`). Quando a última tela for migrada, voltar para "escuro" (o padrão do design system).
+- **Tema (decisão 2026-10-26, cumprida):** durante a migração o padrão foi "Sistema"; com todas as telas da v2 migradas, `TEMA_PADRAO` (`src/components/ds/temaScript.ts`) voltou a "escuro", o padrão do design system, e o seletor de tema está em Configurações (menu lateral / avatar no celular).

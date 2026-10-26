@@ -7,6 +7,7 @@ import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Selo, { type NomeSelo } from "@/components/ds/Selo";
 import Campo from "@/components/ds/Campo";
 import { OrbePinu } from "@/components/ds/Pinu";
+import Tema from "@/components/ds/Tema";
 import { ABRIR_ASSISTENTE } from "./AssistenteGlobal";
 
 // Navegação da v2 (DESIGN-SYSTEM.md seção 10.10).
@@ -39,7 +40,7 @@ const BARRA: Chave[] = ["hoje", "agenda", "equipes", "projetos"]; // celular: 2 
 const MENU_COOKIE = "nipei_menu";
 
 export type RotulosNav = Record<Chave | "principal" | "equipe" | "gestao" | "recolher" | "expandir" | "configuracoes" | "falarPinu" | "novidade", string>;
-export type RotulosConta = { configuracoes: string; perfil: string; idioma: string; sair: string };
+export type RotulosConta = { configuracoes: string; tema: string; perfil: string; idioma: string; sair: string };
 
 const abrirPinu = (detail?: { texto?: string; voz?: boolean }) => window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail }));
 
@@ -168,15 +169,16 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
   );
 }
 
-/** Painel de configurações (perfil, idioma, sair). Vai dentro de um elemento `popover`. */
+/** Painel de configurações (tema, perfil, idioma, sair). Vai dentro de um elemento `popover`. */
 export function PainelConta({ rotulos, perfilHref, idiomaAction, sairAction }: {
   rotulos: RotulosConta; perfilHref: string; idiomaAction: () => Promise<void>; sairAction: () => Promise<void>;
 }) {
   const linha = "anel-foco flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 text-left text-sm font-medium text-t1 hover:bg-s3";
   return (
-    <div className="grid w-64 gap-1 rounded-[16px] bg-s2 p-3 font-texto text-t1 shadow-[0_0_0_1px_var(--s3)]">
+    <div className="grid w-[340px] gap-1 rounded-[16px] bg-s2 p-3 font-texto text-t1 shadow-[0_0_0_1px_var(--s3)]">
       <p className="rotulo-maiusculo px-1 text-t3">{rotulos.configuracoes}</p>
-      {/* seletor de tema (<Tema>) entra aqui quando todas as telas estiverem migradas: hoje as antigas seguem o aparelho */}
+      <Tema rotulo={rotulos.tema} />
+      <hr className="my-1 h-px border-0 bg-s3" />
       <Link href={perfilHref} className={linha}><Icone nome="pessoa" tamanho={18} className="text-t2" />{rotulos.perfil}</Link>
       <form action={idiomaAction}><button className={linha}><Icone nome="mensagem" tamanho={18} className="text-t2" />{rotulos.idioma}</button></form>
       <form action={sairAction}><button className={linha}><Icone nome="voltar" tamanho={18} className="text-t2" />{rotulos.sair}</button></form>
