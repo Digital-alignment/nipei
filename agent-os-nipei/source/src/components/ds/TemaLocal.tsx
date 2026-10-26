@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import Icone from "./Icone";
+import Segmentado from "./Segmentado";
 
 /**
  * Escuro / Claro só dentro de um trecho da página (data-tema no próprio elemento; ver globals.css).
@@ -9,18 +9,12 @@ import Icone from "./Icone";
  */
 export default function TemaLocal({ children, rotulo = "Tema desta página" }: { children: ReactNode; rotulo?: string }) {
   const [tema, setTema] = useState<"escuro" | "claro">("escuro");
-  const opcoes = [{ v: "escuro", nome: "Escuro", icone: "tema-escuro" }, { v: "claro", nome: "Claro", icone: "tema-claro" }] as const;
+
   return (
     <div data-tema={tema} className="bg-bg text-t1 font-texto">
       <div className="sticky top-14 z-10 flex justify-end bg-bg py-3">
-        <div role="radiogroup" aria-label={rotulo} className="inline-flex gap-1 rounded-pilula bg-s2 p-1">
-          {opcoes.map((o) => (
-            <button key={o.v} type="button" role="radio" aria-checked={tema === o.v} onClick={() => setTema(o.v)}
-              className={`anel-foco inline-flex min-h-11 items-center gap-2 rounded-pilula px-4 text-sm font-medium transition-colors duration-150 ${tema === o.v ? "bg-s3 text-t1 ring-1 ring-inset ring-s4" : "text-t2 hover:text-t1"}`}>
-              <Icone nome={o.icone} tamanho={18} className={tema === o.v ? "text-ac-text" : undefined} />{o.nome}
-            </button>
-          ))}
-        </div>
+        <Segmentado rotulo={rotulo} valor={tema} onChange={setTema}
+          opcoes={[{ valor: "escuro", rotulo: "Escuro", icone: "tema-escuro" }, { valor: "claro", rotulo: "Claro", icone: "tema-claro" }]} />
       </div>
       {children}
     </div>

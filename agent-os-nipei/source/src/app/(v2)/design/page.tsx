@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
+import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
+import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
+import { DemoCarregando, DemoEtapas, DemoSegmentado } from "./Demos";
 import Selo, { SELOS, type NomeSelo } from "@/components/ds/Selo";
 import TemaLocal, { ValorToken } from "@/components/ds/TemaLocal";
 import { ICONES, type NomeIcone } from "@/components/ds/icones.generated";
@@ -34,8 +37,70 @@ const TIPOS: [string, string, string][] = [
 ];
 const RAIOS = [["rounded-pilula", "pílula · 999"], ["rounded-moldura", "moldura · 28"], ["rounded-bloco", "bloco · 20"], ["rounded-cartao", "cartão · 16 / 12"], ["rounded-interno", "interno · 12"]] as const;
 const ESPACO = [["w-1", 4], ["w-2", 8], ["w-3", 12], ["w-4", 16], ["w-5", 20], ["w-6", 24], ["w-8", 32], ["w-10", 40], ["w-14", 56]] as const;
-const COMPONENTES = [["botao", "Botão"], ["campo", "Campo"], ["chip", "Chip"], ["badge", "Badge"], ["avatar", "Avatar"], ["cartao", "Cartão"], ["aviso", "Aviso"], ["abas", "Abas"], ["progresso", "Progresso"], ["vazio", "Vazio"], ["skeleton", "Skeleton"], ["menu", "Menu"], ["pinu", "Pinu"], ["padroes", "Padrões"]] as const;
+const COMPONENTES = [["botao", "Botão"], ["blocos", "Blocos"], ["etapas", "Etapas"], ["segmentado", "Segmentado"], ["campo", "Campo"], ["chip", "Chip"], ["badge", "Badge"], ["avatar", "Avatar"], ["cartao", "Cartão"], ["aviso", "Aviso"], ["abas", "Abas"], ["progresso", "Progresso"], ["vazio", "Vazio"], ["skeleton", "Skeleton"], ["menu", "Menu"], ["pinu", "Pinu"], ["padroes", "Padrões"]] as const;
 const SECOES = [["cores", "Cores"], ["tipografia", "Tipografia"], ["forma", "Raios e espaço"], ["icones", "Ícones"], ...COMPONENTES] as const;
+
+const Rotulo = ({ children }: { children: ReactNode }) => <p className="rotulo-maiusculo text-t2 w-full">{children}</p>;
+const Linha = ({ children }: { children: ReactNode }) => <div className="flex flex-wrap items-center gap-3">{children}</div>;
+
+/** Componentes já implementados: o conteúdo da seção na /design. */
+const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
+  botao: {
+    sub: "Sempre com ícone. G 56 (padrão) · M 48 · P 40 (só computador). Remover fora do diálogo é tonal; o vermelho só existe dentro do diálogo.",
+    conteudo: (
+      <div className="grid gap-5">
+        <Linha><Rotulo>Variantes</Rotulo>
+          <Botao icone="mais">Primário</Botao>
+          <Botao icone="editar" variante="tonal">Tonal</Botao>
+          <Botao icone="fechar" variante="fantasma">Fantasma</Botao>
+          <Botao icone="lixeira" variante="destrutivo">Remover (só no diálogo)</Botao>
+          <Botao icone="mais" desativado>Desativado</Botao>
+        </Linha>
+        <Linha><Rotulo>Tamanhos</Rotulo>
+          <Botao icone="mais" tamanho="G">Grande 56</Botao>
+          <Botao icone="mais" tamanho="M">Médio 48</Botao>
+          <Botao icone="mais" tamanho="P">Pequeno 40</Botao>
+        </Linha>
+        <Linha><Rotulo>Folha (a ação principal da tela) · ícone à direita · carregando</Rotulo>
+          <Botao icone="mais" folha>Nova tarefa</Botao>
+          <Botao icone="tarefa" variante="fantasma" iconeDireita="avancar">Ver tudo</Botao>
+          <Botao icone="confirmar" carregando>Salvar</Botao>
+          <DemoCarregando />
+        </Linha>
+        <Linha><Rotulo>Só ícone (tooltip ao passar o mouse ou com Tab) · 52 / 44 / 40</Rotulo>
+          <BotaoIcone icone="buscar" aria-label="Buscar" />
+          <BotaoIcone icone="filtrar" aria-label="Filtrar" tamanho={44} />
+          <BotaoIcone icone="mais-opcoes" aria-label="Mais opções" tamanho={40} variante="fantasma" />
+          <BotaoIcone icone="lixeira" aria-label="Remover" tamanho={44} disabled />
+        </Linha>
+        <Linha><Rotulo>Dividido (avançar em fluxos)</Rotulo>
+          <BotaoDividido rotulo="Continuar" />
+          <BotaoDividido rotulo="Criar tarefa" invertido />
+        </Linha>
+      </div>
+    ),
+  },
+  blocos: {
+    sub: "Atalhos numa moldura (raio 28, vão 8). Ícone ou selo no topo, rótulo embaixo, ponto ou número à direita.",
+    conteudo: (
+      <MolduraBlocos>
+        <Bloco selo="sol" rotulo="Hoje" numero={3} href="#blocos" />
+        <Bloco selo="lua" rotulo="Agenda" indicador href="#blocos" />
+        <Bloco selo="broto" rotulo="Tarefas" numero={24} href="#blocos" />
+        <Bloco selo="espiral" rotulo="Conhecimento" href="#blocos" />
+        <Bloco icone="mensagem" rotulo="Mensagens" indicador href="#blocos" />
+      </MolduraBlocos>
+    ),
+  },
+  etapas: {
+    sub: "Feita = sólida + ✓ · atual = acento em pétala + ▶ · próxima = hachurada · a última termina em ponta de seta.",
+    conteudo: <DemoEtapas />,
+  },
+  segmentado: {
+    sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",
+    conteudo: <DemoSegmentado />,
+  },
+};
 
 function Secao({ id, titulo, sub, children }: { id: string; titulo: string; sub?: string; children: ReactNode }) {
   return (
@@ -188,7 +253,7 @@ export default async function Design() {
           </div>
         </Secao>
 
-        {COMPONENTES.map(([id, nome]) => (
+        {COMPONENTES.map(([id, nome]) => PRONTOS[id] ? <Secao key={id} id={id} titulo={nome} sub={PRONTOS[id].sub}>{PRONTOS[id].conteudo}</Secao> : (
           <Secao key={id} id={id} titulo={nome}>
             <div className="hachurado rounded-cartao px-4 py-8 text-center">
               <p className="corpo text-t2">Ainda não implementado. Chega com o componente <span className="text-t1">{nome}</span> (DESIGN-SYSTEM.md).</p>

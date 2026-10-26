@@ -731,3 +731,14 @@ html[data-lote] .v2 .lote-caixa { display: block; }
   .v2 .meta            { font-size: 12.5px; }
   .v2 .rotulo-maiusculo { font-size: 11px; }
 }
+
+/* Formas de assinatura (DESIGN-SYSTEM.md seção 6) — cada uma tem UM papel */
+.v2 .forma-folha   { border-radius: 8px 28px 8px 28px; }   /* só a ação principal da tela */
+.v2 .forma-petala  { border-radius: 20px 64px 20px 20px; } /* etapa atual / bloco de destaque */
+.v2 .forma-seta    { clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%); } /* última etapa */
+/* botão dividido: duas peças separadas por um corte diagonal */
+.v2 .corte-esq     { border-radius: 18px; clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.v2 .corte-dir     { border-radius: 18px; clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); margin-left: -14px; }
+/* carregando: arco girando (seção 8 e 9.17); com menos movimento fica parado e o texto diz "Carregando…" */
+@keyframes ds-girar { to { transform: rotate(360deg); } }
+.v2 .arco-girando  { width: 1em; height: 1em; border-radius: 999px; border: 2px solid currentColor; border-top-color: transparent; animation: ds-girar .9s linear infinite; }
