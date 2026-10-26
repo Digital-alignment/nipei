@@ -7,16 +7,13 @@ import ChipDS from "@/components/ds/Chip";
 import AvatarDS, { TAMANHOS_AVATAR, iniciais } from "@/components/ds/Avatar";
 import { chaveEquipe } from "@/components/ds/equipes";
 import Cartao from "@/components/ds/Cartao";
+import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import { EstadoVazio } from "@/components/ds/Estados";
 
+/** Compatibilidade: o título antigo agora é o <CabecalhoPagina> do design system. */
 export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
-  return (
-    <div className="mb-5">
-      <h1 className="text-2xl font-semibold tracking-tight">{children}</h1>
-      {sub && <p className="text-sm text-neutral-500 mt-1">{sub}</p>}
-    </div>
-  );
+  return <CabecalhoPagina titulo={children} subtitulo={sub} />;
 }
 
 export function Section({ title, count, children }: { title: string; count?: number; children: ReactNode }) {

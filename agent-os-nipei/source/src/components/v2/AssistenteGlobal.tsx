@@ -141,8 +141,9 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
   useEffect(() => {
     const abrir = (e: Event) => {
       setAberto(true);
-      const t = (e as CustomEvent<{ texto?: string }>).detail?.texto;
-      if (t) enviar(t);
+      const d = (e as CustomEvent<{ texto?: string; voz?: boolean }>).detail;
+      if (d?.texto) enviar(d.texto);
+      else if (d?.voz) ouvirDeNovo.current(); // microfone do campo do cabeçalho
     };
     window.addEventListener(ABRIR_ASSISTENTE, abrir);
     return () => window.removeEventListener(ABRIR_ASSISTENTE, abrir);
@@ -213,12 +214,6 @@ export default function AssistenteGlobal({ lang, labels }: { lang: "pt" | "en"; 
 
   return (
     <>
-      {!aberto && (
-        <button type="button" onClick={() => setAberto(true)} aria-label={labels.abrir} title={labels.abrir}
-          className="print:hidden hidden md:flex fixed right-6 bottom-6 z-40 w-14 h-14 items-center justify-center rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-lg hover:scale-105 transition-transform">
-          <BotMessageSquare size={24} />
-        </button>
-      )}
       {aberto && (
         <>
           <div className="print:hidden md:hidden fixed inset-0 z-[90] bg-black/50" onClick={() => setAberto(false)} aria-hidden />

@@ -30,7 +30,7 @@ const TOM = {
 
 // Hoje, compact: what matters today (agenda, pending pills), one place to ask,
 // and one task list at a time (tabs).
-export default async function Hoje({ searchParams }: { searchParams: Promise<{ dia?: string }> }) {
+export default async function Hoje({ searchParams }: { searchParams: Promise<{ dia?: string; aba?: string }> }) {
   const q = await searchParams;
   const { t, lang } = await getT();
   const user = (await currentUser())!;
@@ -259,7 +259,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       )}
 
       {me && !doDia && (
-        <Abas id="hoje" abas={[
+        <Abas id="hoje" inicial={q.aba === "novidades" ? "novidades" : undefined} abas={[
           { id: "agora", label: t.agora, count: agora.length, alerta: atrasadas > 0, conteudo: linhaTarefas(agora, "datadas", oAgora.selos) },
           { id: "proximas", label: t.proximas, count: proximas.length, conteudo: linhaTarefas(proximas, "datadas", oProx.selos) },
           { id: "semdata", label: t.semData, count: semData.length, conteudo: linhaTarefas(semData, "semdata", oSem.selos) },

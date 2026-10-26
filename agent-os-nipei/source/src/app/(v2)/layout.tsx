@@ -4,14 +4,16 @@ import ErroAviso from "@/components/v2/ErroAviso";
 import Offline from "@/components/v2/Offline";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Brain, Library, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { ehAdmin } from "@/lib/v2/admin";
-import Nav from "@/components/v2/Nav";
+import Nav, { BuscaPinu, PainelConta } from "@/components/v2/Nav";
 import AssistenteGlobal from "@/components/v2/AssistenteGlobal";
 import PulsoUso from "@/components/v2/PulsoUso";
-import { Avatar } from "@/components/v2/ui";
+import Avatar from "@/components/ds/Avatar";
+import { BotaoIcone } from "@/components/ds/Botao";
+import { Contagem } from "@/components/ds/Chip";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
-import { MEMBER_PURPOSE, currentUser, registrarAcesso } from "@/lib/v2/data";
+import { MEMBER_PURPOSE, currentUser, getTarefas, novidadesPara, registrarAcesso, today } from "@/lib/v2/data";
+import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { backupsPendentes } from "@/lib/v2/backup";
 import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
@@ -23,8 +25,6 @@ import Botao from "@/components/ds/Botao";
 import Selo from "@/components/ds/Selo";
 
 export const dynamic = "force-dynamic";
-
-const ICONE = "flex items-center justify-center w-9 h-9 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:text-white dark:hover:bg-neutral-800 transition-colors";
 
 export default async function V2Layout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
@@ -39,10 +39,23 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   vigiarSaude(); // health alerts on the admins' WhatsApp (background, at most every 10 min)
   const { t, lang } = await getT();
   const name = user.pessoa?.name ?? user.username;
-  const menuFechado = (await cookies()).get("nipei_menu")?.value === "fechado"; // set by components/v2/Nav.tsx
+  const menuFechado = (await cookies()).get("nipei_menu")?.value !== "aberto"; // recolhido por padrão; set by components/v2/Nav.tsx
+  const me = user.pessoa, hoje = today();
+  // ponytail: lê tarefas/fatos a cada página (como Hoje); cache se o vault crescer muito
+  const contagens = {
+    hoje: me ? getTarefas().filter((x) => x.status !== "done" && x.prazo && x.prazo <= hoje && x.responsaveis.includes(me.id)).length : 0,
+    conhecimento: getFatos().filter((f) => f.status === "proposto" && podeRevisar(user, f)).length,
+  };
+  const novas = novidadesPara(user, 1).length; // sem estado "lido" ainda: só as das últimas 24 h
+  const perfilHref = me ? `/pessoas/${me.id}` : "/pessoas";
+  const foto = me?.foto ? `/pessoas/${me.id}/foto?v=${encodeURIComponent(me.fotoEm || me.dadosConfirmadosEm)}` : undefined;
+  const conta = (
+    <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction}
+      rotulos={{ configuracoes: t.configuracoesLbl, perfil: t.meuPerfil, idioma: t.idioma, sair: t.sair }} />
+  );
 
   return (
-    <div className="v2 min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+    <div className="v2 min-h-screen bg-bg text-t1">
      <ProvedorAvisos>
       {user.vendoComo && (
         <>
@@ -52,36 +65,32 @@ export default async function V2Layout({ children }: { children: React.ReactNode
               mensagem="Somente leitura: nada que você fizer aqui é salvo."
               acoes={<Botao href="/ver-como/sair" icone="voltar" variante="tonal" tamanho="M">Sair do “ver como”</Botao>} />
           </div>
-          <a href="/ver-como/sair" className="anel-foco print:hidden fixed z-50 left-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:left-1/2 md:-translate-x-1/2 md:bottom-4 inline-flex min-h-11 items-center gap-1.5 rounded-pilula bg-warn text-eq-ink px-4 text-sm font-semibold"><Selo nome="olho" tamanho={18} />{name.split(" (")[0]} · sair</a>
+          <a href="/ver-como/sair" className="anel-foco print:hidden fixed z-50 left-3 bottom-[calc(7.5rem+env(safe-area-inset-bottom))] md:left-1/2 md:-translate-x-1/2 md:bottom-4 inline-flex min-h-11 items-center gap-1.5 rounded-pilula bg-warn text-eq-ink px-4 text-sm font-semibold"><Selo nome="olho" tamanho={18} />{name.split(" (")[0]} · sair</a>
         </>
       )}
-      <header className="print:hidden sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
-        <Link href="/hoje" aria-label="Nipëi" className="shrink-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2">
-          {/* app icon (public/icons, generated from public/brand) — light, crisp up to 3× screens */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/icon-192.png" alt="Nipëi" width={36} height={36} className="w-9 h-9 rounded-xl ring-1 ring-black/5 dark:ring-white/10" />
-        </Link>
-        <div className="flex items-center gap-0.5 sm:gap-1">
-          <Link href="/conhecimento" aria-label={t.conhecimento} title={t.conhecimento} className={ICONE}><Brain size={19} /></Link>
-          <Link href="/acervo" aria-label={t.acervo} title={t.acervo} className={ICONE}><Library size={19} /></Link>
-          {user.gestao && <Link href="/financas" aria-label={t.financas} title={t.financas} className={ICONE}><Wallet size={19} /></Link>}
-          {/* only rendered for NIPEI_ADMINS: nobody else gets the link in their HTML */}
-          {ehAdmin(user) && <Link href="/controle" aria-label="Painel de controle" title="Painel de controle" className={ICONE}><ShieldCheck size={19} /></Link>}
-          {!user.pessoa && (
-            // no profile to hold the language switch → keep it here
-            <form action={toggleLangAction}><button className="text-xs rounded-md px-2 py-1 border border-neutral-300 dark:border-neutral-700">{t.idioma}</button></form>
-          )}
-          <Link href={user.pessoa ? `/pessoas/${user.pessoa.id}` : "/pessoas"} aria-label={t.meuPerfil} title={t.meuPerfil} className="mx-1 sm:mx-1.5 rounded-full ring-2 ring-transparent hover:ring-neutral-300 dark:hover:ring-neutral-700 transition"><Avatar name={name} size={32} src={user.pessoa?.foto ? `/pessoas/${user.pessoa.id}/foto?v=${encodeURIComponent(user.pessoa.fotoEm || user.pessoa.dadosConfirmadosEm)}` : undefined} /></Link>
-          <form action={logoutAction}>
-            <button aria-label={t.sair} title={t.sair} className={ICONE}><LogOut size={19} /></button>
-          </form>
-        </div>
-      </header>
       <div className="flex">
-        <Nav fechadoInicial={menuFechado} assistente={comAssistente ? t.assistente : undefined} labels={{ hoje: t.hoje, agenda: t.agenda, equipes: t.equipes, projetos: t.projetos, objetivos: t.objetivos, pessoas: t.pessoas, recolher: t.recolherMenu, expandir: t.expandirMenu }} />
-        <main className="flex-1 min-w-0 px-4 md:px-8 py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-10">
-          <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}{user.pessoa && !user.vendoComo && <PulsoUso />}</div>
-        </main>
+        <Nav fechadoInicial={menuFechado} pinu={comAssistente && !user.vendoComo} conta={conta} contagens={contagens} extras={{ financas: user.gestao, painel: ehAdmin(user) }}
+          rotulos={{ hoje: t.hoje, agenda: t.agenda, projetos: t.projetos, objetivos: t.objetivos, equipes: t.equipes, pessoas: t.pessoas, conhecimento: t.conhecimento, acervo: t.acervo,
+            financas: t.financas, painel: t.painelLbl, principal: t.grupoPrincipal, equipe: t.grupoEquipe, gestao: t.grupoGestao, recolher: t.recolherMenu, expandir: t.expandirMenu,
+            configuracoes: t.configuracoesLbl, falarPinu: t.falarPinu, novidade: t.novidadeLbl }} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="print:hidden flex items-center gap-2 px-4 pt-3 md:px-8 md:pt-4">
+            {comAssistente && !user.vendoComo && <BuscaPinu rotulo={t.perguntePinu} className="min-w-0 flex-1 md:max-w-[460px]" />}
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              <span className="relative">
+                <BotaoIcone href="/hoje?aba=novidades" icone="notificacao" aria-label={t.notificacoes} tamanho={44} variante="fantasma" />
+                {novas > 0 && <Contagem valor={novas} rotulo={t.novidades} />}
+              </span>
+              {/* computador: avatar = meu perfil (as configurações estão no menu); celular: abre as configurações */}
+              <Link href={perfilHref} aria-label={t.meuPerfil} title={t.meuPerfil} className="anel-foco hidden rounded-pilula md:block"><Avatar nome={name} foto={foto} tamanho={40} /></Link>
+              <button type="button" popoverTarget="nipei-conta-cel" aria-label={t.configuracoesLbl} className="anel-foco rounded-pilula md:hidden"><Avatar nome={name} foto={foto} tamanho={40} /></button>
+              <div id="nipei-conta-cel" popover="auto" className="fixed inset-auto right-4 top-[68px] m-0 overflow-visible border-0 bg-transparent p-0 md:hidden">{conta}</div>
+            </div>
+          </header>
+          <main className="flex-1 min-w-0 px-4 md:px-8 pt-5 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-10">
+            <div className="mx-auto w-full max-w-6xl"><Suspense><ErroAviso /></Suspense><Offline gerado={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })} labels={{ semConexao: t.semConexao, dadosDe: t.dadosDe, aEnviar: t.aEnviar }} />{children}{user.pessoa && !user.vendoComo && <PulsoUso />}</div>
+          </main>
+        </div>
       </div>
       {comAssistente && !user.vendoComo && (
         <Suspense>
