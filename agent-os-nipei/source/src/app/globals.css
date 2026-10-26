@@ -753,3 +753,9 @@ html[data-lote] .v2 .lote-caixa { display: block; }
 }
 /* Campo de data: o seletor nativo cobre o campo todo (o ícone visível é o nosso `calendario`) */
 .v2 .campo-data::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; opacity: 0; cursor: pointer; }
+/* Recorte (seção 6): canto superior direito recortado; o botão redondo fica FORA do elemento mascarado,
+   sobreposto ao buraco (components/ds/Cartao.tsx). Círculo de 30 px = botão de 44 + folga. */
+.v2 .recorte-cartao {
+  -webkit-mask: radial-gradient(circle 30px at calc(100% - 28px) 28px, transparent 29px, #000 30px);
+  mask: radial-gradient(circle 30px at calc(100% - 28px) 28px, transparent 29px, #000 30px);
+}

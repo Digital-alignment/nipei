@@ -6,6 +6,7 @@ import { fmtDate, type Lang } from "@/lib/v2/i18n";
 import ChipDS from "@/components/ds/Chip";
 import AvatarDS, { TAMANHOS_AVATAR, iniciais } from "@/components/ds/Avatar";
 import { chaveEquipe } from "@/components/ds/equipes";
+import Cartao from "@/components/ds/Cartao";
 
 export function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
@@ -27,11 +28,9 @@ export function Section({ title, count, children }: { title: string; count?: num
   );
 }
 
+/** Compatibilidade: o Card antigo (href / cor) agora é o <Cartao> do design system; `cor` de equipe vira a barra lateral. */
 export function Card({ children, href, cor }: { children: ReactNode; href?: string; cor?: string }) {
-  const cls = "block rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 bg-white dark:bg-neutral-900";
-  const style = cor ? { borderLeft: `4px solid ${cor}` } : undefined;
-  return href ? <Link href={href} className={`${cls} hover:border-neutral-400 dark:hover:border-neutral-600`} style={style}>{children}</Link>
-    : <div className={cls} style={style}>{children}</div>;
+  return <Cartao variante={href ? "clicavel" : "padrao"} href={href} equipe={cor} className="block">{children}</Cartao>;
 }
 
 /** Compatibilidade: o Chip antigo (cor / on) agora é o <Chip> do design system (components/ds/Chip). */

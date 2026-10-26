@@ -6,6 +6,8 @@ import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
 import { DemoCampo, DemoCarregando, DemoChips, DemoEtapas, DemoSegmentado } from "./Demos";
 import Chip, { BadgeEstado, Contagem } from "@/components/ds/Chip";
 import Avatar, { GrupoAvatares, LinhaPessoa } from "@/components/ds/Avatar";
+import Cartao, { CabecalhoCartao, GradeBento, NumeroKpi } from "@/components/ds/Cartao";
+import { BadgeEstado as Estado } from "@/components/ds/Chip";
 import Selo, { SELOS, type NomeSelo } from "@/components/ds/Selo";
 import TemaLocal, { ValorToken } from "@/components/ds/TemaLocal";
 import { ICONES, type NomeIcone } from "@/components/ds/icones.generated";
@@ -153,6 +155,41 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
           <LinhaPessoa nome="Jordão Pekuti" equipe="guardioes" funcao="Coordenação geral" tamanho={56} />
         </Linha>
       </div>
+    ),
+  },
+  cartao: {
+    sub: "Sem borda e sem sombra; superfície 1. Destaque = o “um por tela”. Recorte = ação rápida no canto. Grade bento: 3 colunas no computador, 1 no celular.",
+    conteudo: (
+      <GradeBento>
+        <Cartao variante="kpi">
+          <CabecalhoCartao icone="tarefa" titulo="Tarefas abertas" acao="abrir-fora" hrefAcao="#cartao" />
+          <NumeroKpi numero="24" unidade="/31" rotulo="desta semana" variacao={{ texto: "3 a menos que ontem", positiva: true }} />
+        </Cartao>
+        <Cartao variante="destaque">
+          <CabecalhoCartao icone="prazo" titulo="Atrasadas" />
+          <NumeroKpi numero="27" unidade=",4h" variacao={{ texto: "subiu 2 h", positiva: false }} sobreDestaque />
+          <p className="corpo">O destaque da tela: só um por vista.</p>
+        </Cartao>
+        <Cartao variante="clicavel" href="#cartao">
+          <CabecalhoCartao icone="mensagem" titulo="Cartão clicável" />
+          <p className="corpo text-t2">O tom muda ao passar o mouse; o cartão todo é o link.</p>
+        </Cartao>
+        <Cartao variante="evento" equipe="guardioes">
+          <span className="meta text-t3">14:00 – 15:30 · Sala do Santuário</span>
+          <span className="titulo-cartao">Reunião mensal dos Guardiões</span>
+          <span className="flex flex-wrap items-center gap-2"><Chip tipo="equipe" equipe="guardioes">Guardiões</Chip><GrupoAvatares pessoas={[{ nome: "Jordão Pekuti", equipe: "guardioes" }, { nome: "Txaty", equipe: "guardioes" }, { nome: "Yawa", equipe: "guardioes" }, { nome: "Ana Lima", equipe: "producao" }]} /></span>
+        </Cartao>
+        <Cartao recorte acaoRecorte={<BotaoIcone icone="abrir-fora" aria-label="Abrir tarefa" tamanho={44} />}>
+          <span className="meta text-t3">Projeto Santuário</span>
+          <span className="titulo-cartao">Revisar a lista de compras do retiro</span>
+          <span className="flex flex-wrap items-center gap-2"><Chip tipo="metadado" icone="prazo">30 out</Chip><Chip tipo="metadado" icone="tarefa">2/6</Chip><Estado estado="andamento" /></span>
+        </Cartao>
+        <Cartao variante="pinu">
+          <CabecalhoCartao icone="mensagem" titulo="Pinu sugere" acao="mais-opcoes" />
+          <p className="corpo text-t2">3 tarefas dos Guardiões estão sem responsável. Quer que eu proponha quem pode assumir?</p>
+          <span className="flex flex-wrap gap-2"><Botao icone="confirmar" tamanho="M">Propor</Botao><Botao icone="fechar" variante="fantasma" tamanho="M">Agora não</Botao></span>
+        </Cartao>
+      </GradeBento>
     ),
   },
   segmentado: {
