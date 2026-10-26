@@ -1,8 +1,9 @@
-import { Bell, BellOff, CheckCircle2, HardDriveUpload, RefreshCw, ShieldOff, TriangleAlert } from "lucide-react";
+import { Bell, BellOff, HardDriveUpload, RefreshCw, ShieldOff, TriangleAlert } from "lucide-react";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { getEquipes, getPessoas } from "@/lib/v2/data";
 import { alertasEnviados, alertasLigados } from "@/lib/v2/alertas";
 import { alertasAction, operacaoAction } from "../acoes";
+import { ToastAoAbrir } from "@/components/ds/Toast";
 import type { ModuloProps } from "./index";
 
 const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 grid gap-3";
@@ -28,7 +29,7 @@ export default function Operacao({ q }: ModuloProps) {
   const audit = q.auditar ? auditarEquipes() : null;
   return (
     <div className="grid gap-4 md:grid-cols-2 items-start">
-      {q.ok && <p className="md:col-span-2 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm"><CheckCircle2 size={16} className="text-green-600" />{q.ok}</p>}
+      <ToastAoAbrir texto={q.ok} />
 
       <div className={CARTAO}>
         <p className="font-medium flex items-center gap-2">{ligados ? <Bell size={16} /> : <BellOff size={16} />}Alertas no seu WhatsApp</p>

@@ -1,5 +1,6 @@
-import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import BotaoEnviar from "./BotaoEnviar";
+import { ToastAoAbrir } from "@/components/ds/Toast";
 import ConfirmarBotao from "./ConfirmarBotao";
 import { alterarSenhaAction, sairTodosAction } from "@/app/(v2)/actions";
 import { acessosRecentes, senhaAlteradaEm, temSenha } from "@/lib/v2/seguranca";
@@ -16,7 +17,7 @@ export default function Seguranca({ p, t, ok }: { p: Pessoa; t: Dict; ok?: strin
   const acessos = acessosRecentes(p.id);
   return (
     <div className="grid gap-4">
-      {ok && <p className="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm"><ShieldCheck size={16} className="text-green-600" />{ok === "senha" ? s.okSenha : s.okSair}</p>}
+      <ToastAoAbrir texto={ok ? (ok === "senha" ? s.okSenha : s.okSair) : undefined} />
 
       <div className={CARTAO}>
         <p className="font-medium flex items-center gap-2"><KeyRound size={16} />{tem ? s.trocarSenha : s.criarSenha}</p>

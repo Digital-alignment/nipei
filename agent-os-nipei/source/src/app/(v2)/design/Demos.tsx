@@ -7,6 +7,9 @@ import { Etapas } from "@/components/ds/Bloco";
 import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
+import Aviso from "@/components/ds/Aviso";
+import { useToast } from "@/components/ds/Toast";
+import { useConfirmar } from "@/components/ds/Dialogo";
 
 // Exemplos interativos da página /design (precisam de estado no navegador).
 
@@ -92,6 +95,40 @@ export function DemoChips() {
             {{ escritorio: "Escritório", producao: "Produção Yawanawa", guardioes: "Guardiões", manutencao: "Manutenção" }[e]}
           </Chip>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export function DemoAvisos() {
+  const toast = useToast();
+  const confirmar = useConfirmar();
+  const [fechado, setFechado] = useState(false);
+  const [resposta, setResposta] = useState("");
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-3 md:grid-cols-2">
+        <Aviso estado="info" titulo="Enviando as fotos…" mensagem="12 de 18 enviadas. Pode continuar usando o app." progresso={68} />
+        <Aviso estado="sucesso" titulo="Tarefa concluída" mensagem="A equipe foi avisada pelo WhatsApp." acoes={<Botao icone="tarefa" variante="tonal" tamanho="M">Ver tarefa</Botao>} />
+        <Aviso estado="atencao" titulo="Prazo amanhã" mensagem="3 tarefas dos Guardiões vencem amanhã." />
+        {!fechado
+          ? <Aviso estado="erro" titulo="Não foi possível salvar" mensagem="Sem conexão. Tente de novo quando o sinal voltar." onFechar={() => setFechado(true)}
+              acoes={<Botao icone="gerar-outra" variante="tonal" tamanho="M">Tentar de novo</Botao>} />
+          : <Botao icone="gerar-outra" variante="fantasma" tamanho="M" onClick={() => setFechado(false)}>Mostrar o aviso de erro de novo</Botao>}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Botao icone="sucesso" variante="tonal" tamanho="M" onClick={() => toast.sucesso("Salvo")}>Toast: sucesso</Botao>
+        <Botao icone="informacao" variante="tonal" tamanho="M" onClick={() => toast.info("Sem conexão. Vamos enviar quando voltar.")}>Toast: info</Botao>
+        <Botao icone="tarefa" variante="tonal" tamanho="M" onClick={() => toast.sucesso("Tarefa criada", { acao: { rotulo: "Abrir", href: "#aviso" } })}>Toast com ação</Botao>
+        <Botao icone="lixeira" variante="tonal" tamanho="M"
+          onClick={async () => setResposta((await confirmar({ titulo: "Remover Kenewma dos Guardiões?", mensagem: "Ela continua nas outras equipes. Dá para adicionar de novo depois.", confirmarRotulo: "Remover", perigoso: true })) ? "removeu" : "cancelou")}>
+          Diálogo: remover
+        </Botao>
+        <Botao icone="confirmar" variante="tonal" tamanho="M"
+          onClick={async () => setResposta((await confirmar({ titulo: "Sair dos outros aparelhos?", mensagem: "Quem estiver conectado em outro celular ou computador vai precisar entrar de novo.", confirmarRotulo: "Sair dos outros" })) ? "confirmou" : "cancelou")}>
+          Diálogo: confirmar
+        </Botao>
+        {resposta && <span className="meta self-center text-t2">resposta: {resposta}</span>}
       </div>
     </div>
   );

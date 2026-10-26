@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
 import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
 import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
-import { DemoCampo, DemoCarregando, DemoChips, DemoEtapas, DemoSegmentado } from "./Demos";
+import { DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoEtapas, DemoSegmentado } from "./Demos";
 import Chip, { BadgeEstado, Contagem } from "@/components/ds/Chip";
 import Avatar, { GrupoAvatares, LinhaPessoa } from "@/components/ds/Avatar";
 import Cartao, { CabecalhoCartao, GradeBento, NumeroKpi } from "@/components/ds/Cartao";
@@ -191,6 +191,10 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
         </Cartao>
       </GradeBento>
     ),
+  },
+  aviso: {
+    sub: "Aviso = cartão com lavagem da cor do estado vinda do canto (tinta, não brilho). Toast = a mesma lavagem numa pílula que some sozinha. Diálogo = o mesmo cartão centralizado; substitui o confirm() do navegador — o único botão vermelho do sistema mora aqui.",
+    conteudo: <DemoAvisos />,
   },
   segmentado: {
     sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",

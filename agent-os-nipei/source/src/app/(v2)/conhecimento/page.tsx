@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { Title } from "@/components/v2/ui";
+import Aviso from "@/components/ds/Aviso";
+import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
 import Recolhivel, { AtalhosSecao } from "@/components/v2/Recolhivel";
 import { currentUser, getEquipes, getPessoas } from "@/lib/v2/data";
@@ -47,11 +48,7 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
           <div className="h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden"><div className="h-full bg-green-600" style={{ width: `${pct}%` }} /></div>
         </div>
       )}
-      {alertas > 0 && (
-        <Link href="/conhecimento/alertas" className="block rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 text-sm mb-4">
-          ⚠️ {alertas} · <span className="underline font-medium">{t.alertasEPropostas}</span>
-        </Link>
-      )}
+      {alertas > 0 && <Aviso estado="atencao" className="mb-4" titulo={`${alertas} · ${t.alertasEPropostas}`} acoes={<Botao href="/conhecimento/alertas" icone="atencao" variante="tonal" tamanho="M" iconeDireita="avancar">{t.abrir}</Botao>} />}
 
       {secoes.map((s) => (
         <Recolhivel key={s.id} id={s.id} titulo={s.titulo(ctx)} contagem={s.contagem?.(ctx)} alerta={s.alerta} aberto={s.aberto(ctx)} forcar={s.forcar?.(ctx)}>

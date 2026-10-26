@@ -1,8 +1,8 @@
-import { CheckCircle2 } from "lucide-react";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { getPessoas, meDaPessoa } from "@/lib/v2/data";
 import { FUNCOES, funcaoLigada, lerFuncoes, type FuncaoId } from "@/lib/v2/funcoes";
 import { funcoesAction } from "../acoes";
+import { ToastAoAbrir } from "@/components/ds/Toast";
 import type { ModuloProps } from "./index";
 
 const CARTAO = "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 grid gap-3";
@@ -18,7 +18,7 @@ export default function Funcoes({ q }: ModuloProps) {
 
   return (
     <div className="grid gap-4">
-      {q.ok && <p className="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm"><CheckCircle2 size={16} className="text-green-600" />{q.ok}</p>}
+      <ToastAoAbrir texto={q.ok} />
       <p className="text-sm text-neutral-500">Cada função segue a regra normal (por exemplo, “só a Equipe 1”). Aqui dá para desligar uma função para todos, ou ligar/desligar só para uma pessoa — por exemplo, liberar o assistente para alguém testar antes de abrir para todos. Muda na próxima página que a pessoa abrir.</p>
       <div className="grid gap-4 md:grid-cols-2 items-start">
         {(Object.keys(FUNCOES) as FuncaoId[]).map((id) => {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Brain, CheckCircle2, ExternalLink, FileText, Folder, GraduationCap, Image as ImageIcon, Music, Palette, Pencil, Plus, Video, type LucideIcon } from "lucide-react";
+import { Brain, ExternalLink, FileText, Folder, GraduationCap, Image as ImageIcon, Music, Palette, Pencil, Plus, Video, type LucideIcon } from "lucide-react";
 import { Empty, Title } from "@/components/v2/ui";
 import AcervoForm, { FiltroAuto, type AcervoFormLabels } from "@/components/v2/AcervoForm";
 import CopiarBotao from "@/components/v2/CopiarBotao";
@@ -11,6 +11,7 @@ import { getFatos, getFontes } from "@/lib/v2/conhecimento";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { arquivarAcervoAction, createAcervoAction, ensinarAcervoAction, updateAcervoAction } from "../actions";
+import { ToastAoAbrir } from "@/components/ds/Toast";
 
 const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
 const sel = "rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1.5 text-sm min-w-0";
@@ -101,7 +102,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
         <Title sub={t.acervoIntro}>{t.acervo}</Title>
         {podeAdicionar && <BotaoSecao id="novo" className="shrink-0 mt-1 inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-3 py-2 text-sm font-medium"><Plus size={16} />{t.adicionar}</BotaoSecao>}
       </div>
-      {q.ok && !q.erro && <p className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm"><CheckCircle2 size={16} className="text-green-600 shrink-0" />{q.ok}</p>}
+      <ToastAoAbrir texto={q.erro ? undefined : q.ok} />
 
       {podeAdicionar && (
         <Recolhivel id="novo" titulo={t.novoItem} aberto={todos.length === 0}>

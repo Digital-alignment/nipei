@@ -1,5 +1,6 @@
-import { CalendarDays, CheckCircle2, FolderOpen, HardDriveUpload, Link2, Lock, Mail, Sparkles } from "lucide-react";
+import { CalendarDays, FolderOpen, HardDriveUpload, Link2, Lock, Mail, Sparkles } from "lucide-react";
 import BotaoEnviar from "./BotaoEnviar";
+import { ToastAoAbrir } from "@/components/ds/Toast";
 import ConfirmarBotao from "./ConfirmarBotao";
 import { backupAgoraAction, chaveIAAction, desconectarGoogleAction, revogarAppAction, salvarChaveIAAction } from "@/app/(v2)/actions";
 import { PROVEDORES } from "@/lib/v2/motorIA";
@@ -24,7 +25,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
   return (
     <div className="grid gap-4">
       <p className="text-sm text-neutral-500">{c.intro}</p>
-      {ok && <p className="flex items-center gap-2 rounded-lg border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm"><CheckCircle2 size={16} className="text-green-600" />{c.conectadoOk}</p>}
+      <ToastAoAbrir texto={ok ? c.conectadoOk : undefined} parametro="google" />
 
       <div className={`${CARTAO} grid gap-3`}>
         <div className="flex items-center gap-3">

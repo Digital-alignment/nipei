@@ -17,6 +17,10 @@ import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
 import { funcaoLigada } from "@/lib/v2/funcoes";
+import ProvedorAvisos from "@/components/ds/ProvedorAvisos";
+import Aviso from "@/components/ds/Aviso";
+import Botao from "@/components/ds/Botao";
+import Selo from "@/components/ds/Selo";
 
 export const dynamic = "force-dynamic";
 
@@ -39,14 +43,16 @@ export default async function V2Layout({ children }: { children: React.ReactNode
 
   return (
     <div className="v2 min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+     <ProvedorAvisos>
       {user.vendoComo && (
         <>
           {/* "ver como" (admin, read-only): impossible to miss, and always one tap from leaving */}
-          <div className="print:hidden bg-amber-400 text-black text-sm px-4 py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-            <span>👁 Vendo a plataforma como <strong>{name}</strong>{user.gestao ? " (gestão)" : user.coordena.length ? " (coordenação)" : " (membro)"} — <strong>somente leitura</strong>: nada que você fizer aqui é salvo.</span>
-            <a href="/ver-como/sair" className="rounded-full bg-black text-white px-3 py-0.5 text-xs font-medium">Sair do “ver como”</a>
+          <div className="print:hidden px-4 pt-3 md:px-6">
+            <Aviso estado="atencao" titulo={<>Vendo a plataforma como {name}{user.gestao ? " (gestão)" : user.coordena.length ? " (coordenação)" : " (membro)"}</>}
+              mensagem="Somente leitura: nada que você fizer aqui é salvo."
+              acoes={<Botao href="/ver-como/sair" icone="voltar" variante="tonal" tamanho="M">Sair do “ver como”</Botao>} />
           </div>
-          <a href="/ver-como/sair" className="print:hidden fixed z-50 left-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:left-1/2 md:-translate-x-1/2 md:bottom-4 rounded-full bg-amber-400 text-black shadow-lg px-3 py-1.5 text-xs font-medium">👁 {name.split(" (")[0]} · sair</a>
+          <a href="/ver-como/sair" className="anel-foco print:hidden fixed z-50 left-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] md:left-1/2 md:-translate-x-1/2 md:bottom-4 inline-flex min-h-11 items-center gap-1.5 rounded-pilula bg-warn text-eq-ink px-4 text-sm font-semibold"><Selo nome="olho" tamanho={18} />{name.split(" (")[0]} · sair</a>
         </>
       )}
       <header className="print:hidden sticky top-0 z-20 flex items-center justify-between gap-3 px-4 md:px-6 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur">
@@ -85,6 +91,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
             vozLigar: t.vozLigar, vozDesligar: t.vozDesligar, ouvir: t.ouvirLbl, parar: t.pararLbl, propostasFala: t.propostasFala }} />
         </Suspense>
       )}
+     </ProvedorAvisos>
     </div>
   );
 }
