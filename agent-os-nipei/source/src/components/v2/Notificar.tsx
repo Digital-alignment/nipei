@@ -67,7 +67,7 @@ export default function Notificar({ pessoaId, nome, remetente, temWhats, verific
               {comIA ? (
                 <div className="grid gap-2">
                   <textarea value={pedido} onChange={(e) => setPedido(e.target.value)} rows={2} maxLength={600} placeholder={labels.pedidoIA}
-                    className="w-full rounded-interno bg-s2 px-3 py-2 text-sm" />
+                    className="w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
                   <button type="button" onClick={rascunho} disabled={pending || !pedido.trim()} className={`${btn} justify-self-start inline-flex items-center gap-1.5`}><Icone nome="gerar-outra"  tamanho={14} />{labels.gerar}</button>
                 </div>
               ) : (
@@ -75,7 +75,7 @@ export default function Notificar({ pessoaId, nome, remetente, temWhats, verific
               )}
               <label className="grid gap-1 text-xs text-t2">{labels.mensagem}
                 <textarea value={texto} onChange={(e) => { setTexto(e.target.value); setConfirmando(false); }} rows={6} maxLength={1500}
-                  className="w-full rounded-interno bg-s2 px-3 py-2 text-sm text-t1" />
+                  className="w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco text-t1" />
               </label>
               {texto.trim() && (
                 <div>

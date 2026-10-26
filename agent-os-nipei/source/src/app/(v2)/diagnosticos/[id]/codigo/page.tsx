@@ -1,6 +1,6 @@
 import Link from "next/link";
+import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Sparkles } from "lucide-react";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Md from "@/components/v2/Md";
 import { currentUser } from "@/lib/v2/data";
@@ -9,7 +9,7 @@ import { getColetivo, getDiagnostico, participa, participantes } from "@/lib/v2/
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { aceitarCodigoAction, codigoAction } from "../../../actions";
 
-const btn = "rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm";
+const btn = "anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 // D4: code of agreements — gestão drafts (AI) and publishes versions; each participant accepts the published one.
 export default async function Codigo({ params }: { params: Promise<{ id: string }> }) {
@@ -25,42 +25,42 @@ export default async function Codigo({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-neutral-500 mb-3"><ArrowLeft size={16} />{d.titulo}</Link>
+      <Link href={`/diagnosticos/${d.id}`} className="inline-flex items-center gap-1 text-sm text-t2 mb-3"><Icone nome="voltar"  tamanho={16} />{d.titulo}</Link>
       <h1 className="text-2xl font-semibold tracking-tight">{t.codigoAcordos}</h1>
-      <p className="text-sm text-neutral-500 mt-1 mb-4">
+      <p className="text-sm text-t2 mt-1 mb-4">
         {c.versao ? `${t.versao} ${c.versao} · ${c.status === "publicado" ? `${t.publicado} ${fmtDate(diaLocal(c.publicadoEm), lang)}` : t.emRevisao}` : t.naoGerado}
       </p>
 
       {pendente && (
-        <form action={aceitarCodigoAction} className="mb-6 rounded-lg border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 p-3">
+        <form action={aceitarCodigoAction} className="mb-6 rounded-interno border bg-info-bg p-3">
           {hidden}
-          <BotaoEnviar enviando={t.salvando} className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium">{t.aceitarCodigo} ({t.versao} {c.versao})</BotaoEnviar>
+          <BotaoEnviar enviando={t.salvando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.aceitarCodigo} ({t.versao} {c.versao})</BotaoEnviar>
         </form>
       )}
-      {meu && !pendente && <p className="inline-flex items-center gap-1 text-sm text-green-700 dark:text-green-400 mb-6"><CheckCircle2 size={16} />{t.aceitoEm} {fmtDate(diaLocal(meu.em), lang)} ({t.versao} {meu.versao})</p>}
+      {meu && !pendente && <p className="inline-flex items-center gap-1 text-sm text-ok mb-6"><Icone nome="sucesso"  tamanho={16} />{t.aceitoEm} {fmtDate(diaLocal(meu.em), lang)} ({t.versao} {meu.versao})</p>}
 
       {me.gestao && (
         <div className="grid gap-3 mb-8">
           <form action={codigoAction}>{hidden}
-            <BotaoEnviar name="acao" value="ia" enviando={t.processando} className={`${btn} inline-flex items-center gap-1.5`}><Sparkles size={14} />{c.texto ? t.atualizarIA : t.gerarIA}</BotaoEnviar>
-            <p className="text-xs text-neutral-500 mt-2">{t.codigoAviso}</p>
+            <BotaoEnviar name="acao" value="ia" enviando={t.processando} className={`${btn} inline-flex items-center gap-1.5`}><Icone nome="gerar-outra"  tamanho={14} />{c.texto ? t.atualizarIA : t.gerarIA}</BotaoEnviar>
+            <p className="text-xs text-t2 mt-2">{t.codigoAviso}</p>
           </form>
           {c.texto && (
             <form action={codigoAction} className="grid gap-2">{hidden}
-              <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm" />
+              <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
               <div className="flex flex-wrap gap-2">
                 <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} className={btn}>{t.salvarRascunho}</BotaoEnviar>
-                <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium">{t.publicarVersao}</BotaoEnviar>
+                <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.publicarVersao}</BotaoEnviar>
               </div>
             </form>
           )}
           {c.versao > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">{t.aceites}</p>
+              <p className="rotulo-maiusculo text-t3 mb-1">{t.aceites}</p>
               <ul className="text-sm grid gap-0.5">
                 {participantes(d).map((p) => {
                   const a = c.aceites[p.id];
-                  return <li key={p.id}>{p.name}: {a?.versao === c.versao ? `✅ ${fmtDate(diaLocal(a.em), lang)}` : `⚠️ ${t.pendenteAceite}`}</li>;
+                  return <li key={p.id}>{p.name}: {a?.versao === c.versao ? `${t.aceitoEm} ${fmtDate(diaLocal(a.em), lang)}` : t.pendenteAceite}</li>;
                 })}
               </ul>
             </div>

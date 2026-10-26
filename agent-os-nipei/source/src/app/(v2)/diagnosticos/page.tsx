@@ -7,7 +7,7 @@ import { getDiagnosticos, getModelos, participantes, progresso, secoesIndividuai
 import { getT } from "@/lib/v2/i18n";
 import { criarDiagnosticoAction } from "../actions";
 
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
+const field = "w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco";
 
 // D5: every assessment, and "apply a template" to a project (Inirau, new projects…). Gestão only.
 export default async function Diagnosticos({ searchParams }: { searchParams: Promise<{ projeto?: string }> }) {
@@ -23,7 +23,7 @@ export default async function Diagnosticos({ searchParams }: { searchParams: Pro
       <Title sub={t.diagnosticosIntro}>{t.diagnosticos}</Title>
 
       <Section title={t.diagnosticos}>
-        {lista.length === 0 ? <p className="text-sm text-neutral-500">{t.semDiagnosticos}</p> : (
+        {lista.length === 0 ? <p className="text-sm text-t2">{t.semDiagnosticos}</p> : (
           <ul className="grid gap-3">
             {lista.map((d) => {
               const ps = participantes(d);
@@ -32,7 +32,7 @@ export default async function Diagnosticos({ searchParams }: { searchParams: Pro
               return (
                 <li key={d.id}>
                   <Link href={`/diagnosticos/${d.id}`} className="text-sm font-medium underline">{d.titulo}</Link>
-                  <p className="text-xs text-neutral-500 mb-1">
+                  <p className="text-xs text-t2 mb-1">
                     {projetos.find((p) => p.id === d.projeto)?.nome ?? d.projeto} · {lang === "en" ? d.modelo.titulo_en : d.modelo.titulo} · {d.status === "aberto" ? t.aberto : t.encerrado}
                   </p>
                   {total > 0 && <Progress done={feitas} total={total} />}
@@ -57,8 +57,8 @@ export default async function Diagnosticos({ searchParams }: { searchParams: Pro
             <legend className="mb-1">{t.quemResponde}</legend>
             {equipes.map((e) => <label key={e.id} className="flex items-center gap-2"><input type="checkbox" name="equipes" value={e.id} defaultChecked={e.gestao} />{e.nome}</label>)}
           </fieldset>
-          <BotaoEnviar enviando={t.salvando} className="justify-self-start rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium">{t.criar_}</BotaoEnviar>
-          <p className="text-xs text-neutral-500">{t.modeloAviso}</p>
+          <BotaoEnviar enviando={t.salvando} className="justify-self-start anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.criar_}</BotaoEnviar>
+          <p className="text-xs text-t2">{t.modeloAviso}</p>
         </form>
       </Section>
     </div>

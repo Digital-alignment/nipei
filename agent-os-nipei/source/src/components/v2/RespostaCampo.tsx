@@ -11,7 +11,7 @@ export default function RespostaCampo({ name, inicial, minimo, labels }: {
   return (
     <div className="grid gap-1">
       <textarea name={name} value={texto} onChange={(e) => setTexto(e.target.value)} rows={Math.min(14, Math.max(4, Math.ceil(texto.length / 70)))}
-        maxLength={8000} className="w-full rounded-interno bg-s2 bg-s2 px-3 py-2 text-sm" />
+        maxLength={8000} className="w-full rounded-interno bg-s2 px-3 py-2 text-sm" />
       <p className={`text-xs ${n > 0 && n < minimo ? "text-warn" : "text-t3"}`}>
         {n} {labels.palavras}{n > 0 && n < minimo ? ` · ${labels.curta}` : ""}
       </p>
