@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Icone from "@/components/ds/Icone";
 import Botao, { BotaoDividido, BotaoIcone } from "@/components/ds/Botao";
 import { Bloco, MolduraBlocos } from "@/components/ds/Bloco";
-import { DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoEtapas, DemoSegmentado } from "./Demos";
+import { DemoAbas, DemoAvisos, DemoCampo, DemoCarregando, DemoChips, DemoControles, DemoEtapas, DemoRecolhivel, DemoSegmentado } from "./Demos";
 import Chip, { BadgeEstado, Contagem } from "@/components/ds/Chip";
 import Avatar, { GrupoAvatares, LinhaPessoa } from "@/components/ds/Avatar";
 import Cartao, { CabecalhoCartao, GradeBento, NumeroKpi } from "@/components/ds/Cartao";
@@ -41,7 +41,7 @@ const TIPOS: [string, string, string][] = [
 ];
 const RAIOS = [["rounded-pilula", "pílula · 999"], ["rounded-moldura", "moldura · 28"], ["rounded-bloco", "bloco · 20"], ["rounded-cartao", "cartão · 16 / 12"], ["rounded-interno", "interno · 12"]] as const;
 const ESPACO = [["w-1", 4], ["w-2", 8], ["w-3", 12], ["w-4", 16], ["w-5", 20], ["w-6", 24], ["w-8", 32], ["w-10", 40], ["w-14", 56]] as const;
-const COMPONENTES = [["botao", "Botão"], ["blocos", "Blocos"], ["etapas", "Etapas"], ["segmentado", "Segmentado"], ["campo", "Campo"], ["chip", "Chip"], ["badge", "Badge"], ["avatar", "Avatar"], ["cartao", "Cartão"], ["aviso", "Aviso"], ["abas", "Abas"], ["progresso", "Progresso"], ["vazio", "Vazio"], ["skeleton", "Skeleton"], ["menu", "Menu"], ["pinu", "Pinu"], ["padroes", "Padrões"]] as const;
+const COMPONENTES = [["botao", "Botão"], ["blocos", "Blocos"], ["etapas", "Etapas"], ["segmentado", "Segmentado"], ["campo", "Campo"], ["chip", "Chip"], ["badge", "Badge"], ["avatar", "Avatar"], ["cartao", "Cartão"], ["aviso", "Aviso"], ["abas", "Abas"], ["recolhivel", "Recolhível"], ["controles", "Interruptor e configurações"], ["progresso", "Progresso"], ["vazio", "Vazio"], ["skeleton", "Skeleton"], ["menu", "Menu"], ["pinu", "Pinu"], ["padroes", "Padrões"]] as const;
 const SECOES = [["cores", "Cores"], ["tipografia", "Tipografia"], ["forma", "Raios e espaço"], ["icones", "Ícones"], ...COMPONENTES] as const;
 
 const Rotulo = ({ children }: { children: ReactNode }) => <p className="rotulo-maiusculo text-t2 w-full">{children}</p>;
@@ -195,6 +195,18 @@ const PRONTOS: Record<string, { sub: string; conteudo: ReactNode }> = {
   aviso: {
     sub: "Aviso = cartão com lavagem da cor do estado vinda do canto (tinta, não brilho). Toast = a mesma lavagem numa pílula que some sozinha. Diálogo = o mesmo cartão centralizado; substitui o confirm() do navegador — o único botão vermelho do sistema mora aqui.",
     conteudo: <DemoAvisos />,
+  },
+  abas: {
+    sub: "Barra em pílula com ícone + texto; ativa = tom s3, ícone em acento e ponto embaixo; contagem em pílula. Variante pasta: a ativa se funde ao painel. Teclado: ← → Home End.",
+    conteudo: <DemoAbas />,
+  },
+  recolhivel: {
+    sub: "Título de seção + contagem + ▼ (gira ao abrir). Lembra o estado no aparelho; abre sozinha com #id na URL.",
+    conteudo: <DemoRecolhivel />,
+  },
+  controles: {
+    sub: "Controle deslizante (trilho de 64 px, rótulo à esquerda e valor à direita; também escolhe entre opções), interruptor (52 × 32) e linhas de configuração agrupadas.",
+    conteudo: <DemoControles />,
   },
   segmentado: {
     sub: "Pílula com ícones; ativo = tom mais claro + contorno de 1 px. Tema, vista (lista/grade), período.",

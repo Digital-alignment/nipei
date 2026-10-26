@@ -7,6 +7,9 @@ import { Etapas } from "@/components/ds/Bloco";
 import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
+import Abas, { AbasComPainel } from "@/components/ds/Abas";
+import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
+import { ControleDeslizante, Interruptor, LinhaConfiguracao, ListaConfiguracoes } from "@/components/ds/Controles";
 import Aviso from "@/components/ds/Aviso";
 import { useToast } from "@/components/ds/Toast";
 import { useConfirmar } from "@/components/ds/Dialogo";
@@ -130,6 +133,55 @@ export function DemoAvisos() {
         </Botao>
         {resposta && <span className="meta self-center text-t2">resposta: {resposta}</span>}
       </div>
+    </div>
+  );
+}
+
+export function DemoAbas() {
+  const [a, setA] = useState("hoje");
+  return (
+    <div className="grid gap-5">
+      <Abas rotulo="Vista" ativa={a} onChange={setA} itens={[{ id: "hoje", rotulo: "Hoje", icone: "inicio", contagem: 4 }, { id: "semana", rotulo: "Semana", icone: "calendario" }, { id: "atrasadas", rotulo: "Atrasadas", icone: "atencao", contagem: 3, alerta: true }]} />
+      <AbasComPainel id="design-pasta" pasta rotulo="Ficha da tarefa" abas={[
+        { id: "detalhes", rotulo: "Detalhes", icone: "tarefa", conteudo: <p className="corpo text-t2">A aba ativa se funde ao painel (cantos invertidos). Use ← → para trocar.</p> },
+        { id: "comentarios", rotulo: "Comentários", icone: "mensagem", contagem: 2, conteudo: <p className="corpo text-t2">2 comentários.</p> },
+        { id: "atividade", rotulo: "Atividade", icone: "prazo", conteudo: <p className="corpo text-t2">Linha do tempo da tarefa.</p> },
+      ]} />
+    </div>
+  );
+}
+
+export function DemoRecolhivel() {
+  return (
+    <div>
+      <SecaoRecolhivel id="design-sec-1" titulo="Atrasadas" contagem={3} alerta><p className="corpo text-t2">Lembra se ficou aberta ou fechada neste aparelho.</p></SecaoRecolhivel>
+      <SecaoRecolhivel id="design-sec-2" titulo="Próximos 7 dias" contagem={12} aberto={false}><p className="corpo text-t2">Fechada na primeira vez.</p></SecaoRecolhivel>
+    </div>
+  );
+}
+
+export function DemoControles() {
+  const [whats, setWhats] = useState(true);
+  const [resumo, setResumo] = useState(false);
+  const [volume, setVolume] = useState(54);
+  const [lembrete, setLembrete] = useState(2);
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid content-start gap-3">
+        <ControleDeslizante rotulo="Volume do Pinu" valor={volume} onChange={setVolume} formatar={(v) => `${v}%`} />
+        <ControleDeslizante rotulo="Lembrete" opcoes={["Na hora", "15 min antes", "1 h antes", "1 dia antes", "1 semana antes"]} valor={lembrete} onChange={setLembrete} />
+        <div className="flex flex-wrap items-center gap-4">
+          <Interruptor rotulo="Exemplo ligado" padrao />
+          <Interruptor rotulo="Exemplo desligado" />
+          <Interruptor rotulo="Exemplo desativado" desativado />
+        </div>
+      </div>
+      <ListaConfiguracoes titulo="Avisos">
+        <LinhaConfiguracao rotulo="Avisos por WhatsApp" descricao="Tarefas novas e o resumo das 7h" interruptor={{ ligado: whats, onChange: setWhats }} />
+        <LinhaConfiguracao rotulo="Resumo diário do Pinu" interruptor={{ ligado: resumo, onChange: setResumo }} />
+        <LinhaConfiguracao rotulo="Idioma" valor="Português" onClick={() => {}} />
+        <LinhaConfiguracao rotulo="Versão" valor="2.59" />
+      </ListaConfiguracoes>
     </div>
   );
 }
