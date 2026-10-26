@@ -1,5 +1,5 @@
-import { Lock } from "lucide-react";
 import Link from "next/link";
+import Icone from "@/components/ds/Icone";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Empty, Title } from "@/components/v2/ui";
@@ -7,7 +7,7 @@ import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, ge
 import { getT } from "@/lib/v2/i18n";
 import { updateTarefaAction } from "../../../actions";
 
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
+const field = "w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco";
 
 export default async function EditarTarefa({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }) {
   const { id } = await params;
@@ -68,23 +68,23 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
               <option value="quinzenal">{t.quinzenal}</option><option value="mensal">{t.mensal}</option>
             </select>
           </label>
-          <p className="text-[11px] text-neutral-500 pb-1">{t.repeteAviso}</p>
+          <p className="text-xs text-t2 pb-1">{t.repeteAviso}</p>
         </div>
         <fieldset className="grid gap-1 text-sm">
           <legend className="mb-1">{t.responsaveis}</legend>
           <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
             {pessoas.map((p) => (
-              <label key={p.id} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-1 has-[:checked]:bg-neutral-900 has-[:checked]:text-white dark:has-[:checked]:bg-white dark:has-[:checked]:text-neutral-900">
+              <label key={p.id} className="inline-flex items-center gap-1.5 rounded-pilula bg-s2 px-3 py-1 has-[:checked]:bg-s3 has-[:checked]:text-t1 has-[:checked]:shadow-[inset_0_0_0_1px_var(--s4)]">
                 <input type="checkbox" name="responsaveis" value={p.id} defaultChecked={tarefa.responsaveis.includes(p.id)} className="sr-only" />
-                {p.name}{p.suspenso && <Lock size={11} aria-label={t.suspensoLbl} className="opacity-60" />}
+                {p.name}{p.suspenso && <Icone nome="cadeado"  tamanho={11} aria-label={t.suspensoLbl} className="opacity-60" />}
               </label>
             ))}
           </div>
         </fieldset>
-        {tarefa.responsible && tarefa.responsaveis.length === 0 && <p className="text-xs text-neutral-500">v1: {tarefa.responsible}</p>}
+        {tarefa.responsible && tarefa.responsaveis.length === 0 && <p className="text-xs text-t2">v1: {tarefa.responsible}</p>}
         <div className="flex gap-3 pt-2">
-          <button className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-5 py-2 text-sm font-medium">{t.salvar}</button>
-          <Link href={back} className="rounded-lg px-5 py-2 text-sm border border-neutral-300 dark:border-neutral-700">{t.cancelar}</Link>
+          <button className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.salvar}</button>
+          <Link href={back} className="rounded-interno px-5 py-2 text-sm bg-s2">{t.cancelar}</Link>
         </div>
       </form>
     </>

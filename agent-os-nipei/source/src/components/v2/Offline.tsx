@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CloudOff } from "lucide-react";
+import Icone from "@/components/ds/Icone";
 import { prazoRapidoAction, setStatusAction } from "@/app/(v2)/actions";
 import { aoMudarFila, enviarFila, pendentes } from "@/lib/v2/filaOffline";
 
@@ -35,8 +35,8 @@ export default function Offline({ gerado, labels }: { gerado: string; labels: { 
 
   if (online && !fila) return null;
   return (
-    <div className="print:hidden mb-3 flex items-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-300">
-      <CloudOff size={14} />
+    <div className="print:hidden mb-3 flex items-center gap-2 rounded-interno bg-s2 px-3 py-1.5 text-xs text-t2">
+      {/* TODO(ícones): sem conexão (pedido em ICONES.md); provisório: atenção */}<Icone nome="atencao" tamanho={16} />
       {!online && <span>{labels.semConexao} · {labels.dadosDe} {gerado}</span>}
       {fila > 0 && <span className="ml-auto">{labels.aEnviar}: {fila}</span>}
     </div>

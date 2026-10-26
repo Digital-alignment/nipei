@@ -13,7 +13,7 @@ export default async function Legacy() {
     <>
       <Title sub={t.legacyIntro}>{t.versaoAnterior}</Title>
       <div className="grid gap-2 sm:grid-cols-2">
-        {V1.map(([href, label]) => <Card key={href} href={href}><span className="text-sm font-medium">{label}</span> <span className="text-xs text-neutral-500">{href}</span></Card>)}
+        {V1.map(([href, label]) => <Card key={href} href={href}><span className="text-sm font-medium">{label}</span> <span className="text-xs text-t2">{href}</span></Card>)}
       </div>
     </>
   );

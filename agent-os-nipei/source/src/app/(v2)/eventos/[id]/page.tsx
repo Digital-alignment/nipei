@@ -5,7 +5,7 @@ import { can, currentUser, getEquipes, getEventos } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { createEventoAction, updateEventoAction } from "../../actions";
 
-const field = "w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm";
+const field = "w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco";
 const isDay = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 // /eventos/novo creates; /eventos/<id> edits (gestão, or the coordinator of the event's team).
@@ -27,7 +27,7 @@ export default async function EventoForm({ params, searchParams }: { params: Pro
         {e && <input type="hidden" name="id" value={e.id} />}
         <input type="hidden" name="back" value="/agenda" />
         <label className="grid gap-1 text-sm">{t.titulo}<input name="titulo" defaultValue={e?.titulo} required maxLength={150} className={field} /></label>
-        {e && !isDay(e.inicio) && <p className="text-xs text-amber-700 dark:text-amber-400">{t.soMes} {e.inicio}</p>}
+        {e && !isDay(e.inicio) && <p className="text-xs text-warn">{t.soMes} {e.inicio}</p>}
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1 text-sm">{t.inicio}<input type="date" name="inicio" defaultValue={e && isDay(e.inicio) ? e.inicio : novo && /^\d{4}-\d{2}-\d{2}$/.test(inicioQ ?? "") ? inicioQ : ""} required={novo} className={field} /></label>
           <label className="grid gap-1 text-sm">{t.fim}<input type="date" name="fim" defaultValue={e?.fim} className={field} /></label>
@@ -44,8 +44,8 @@ export default async function EventoForm({ params, searchParams }: { params: Pro
           </label>
         </div>
         <div className="flex gap-3 pt-2">
-          <button className="rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-5 py-2 text-sm font-medium">{t.salvar}</button>
-          <Link href="/agenda" className="rounded-lg px-5 py-2 text-sm border border-neutral-300 dark:border-neutral-700">{t.cancelar}</Link>
+          <button className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.salvar}</button>
+          <Link href="/agenda" className="rounded-interno px-5 py-2 text-sm bg-s2">{t.cancelar}</Link>
         </div>
       </form>
     </>
