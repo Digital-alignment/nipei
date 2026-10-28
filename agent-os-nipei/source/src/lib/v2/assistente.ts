@@ -462,7 +462,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
   if (v.tipo === "nota_projeto") { anotarProjeto(v.projeto, v.texto, quem); return `/projetos/${v.projeto}`; }
   if (v.tipo === "revisar_fato") {
     revisarFato(v.id, v.decisao, quem);
-    if (v.decisao === "confirmar") { const { proporMudancas } = await import("./propostas"); void proporMudancas([v.id]).catch(() => {}); }
+    if (v.decisao === "confirmar") { const { enfileirarPropostas } = await import("./propostas"); enfileirarPropostas([v.id]); }
     return "/conhecimento";
   }
   if (v.tipo === "lembrar") {

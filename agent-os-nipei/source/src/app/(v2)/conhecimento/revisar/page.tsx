@@ -13,6 +13,7 @@ import EquipeFato from "@/components/v2/EquipeFato";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos } from "@/lib/v2/data";
 import { getFatos, getFontes, podeRevisar, trechoOriginal } from "@/lib/v2/conhecimento";
 import { getAlertas } from "@/lib/v2/auditor";
+import { esvaziarFilaPropostas } from "@/lib/v2/propostas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { revisarFatoAction } from "../../actions";
 
@@ -50,6 +51,7 @@ export default async function RevisarUmPorUm({ searchParams }: { searchParams: P
   );
 
   if (!f) {
+    void esvaziarFilaPropostas(true); // end of the review session: proposals for everything confirmed, in one call
     return (
       <div className="mx-auto max-w-2xl">
         {cabecalho}

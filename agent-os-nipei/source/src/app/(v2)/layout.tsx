@@ -15,6 +15,7 @@ import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { MEMBER_PURPOSE, currentUser, getTarefas, novidadesPara, registrarAcesso, today } from "@/lib/v2/data";
 import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import { backupsPendentes } from "@/lib/v2/backup";
+import { esvaziarFilaPropostas } from "@/lib/v2/propostas";
 import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
@@ -36,6 +37,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   if (user.pessoa && !user.vendoComo) registrarAcesso(user.pessoa.id);
   const comAssistente = funcaoLigada("assistente", user);
   backupsPendentes(); // daily Drive copy for whoever connected Google (background, at most hourly)
+  void esvaziarFilaPropostas(); // confirmed facts waiting for proposals: sent once 30 min old (lib/v2/propostas.ts)
   vigiarSaude(); // health alerts on the admins' WhatsApp (background, at most every 10 min)
   const { t, lang } = await getT();
   const name = user.pessoa?.name ?? user.username;

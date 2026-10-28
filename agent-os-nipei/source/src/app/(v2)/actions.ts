@@ -8,7 +8,7 @@ import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
-import { decidirProposta, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
+import { decidirProposta, enfileirarPropostas, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
 import {
   criarTarefasLacunas, definirResponsavel, enviarAoConhecimento, getColetivo, getDiagnostico, participa, participantes, podeEditarSecao,
   rascunhoColetivoIA, rascunhoIA, salvarColetivo, salvarRespostas, type Resposta,
@@ -592,8 +592,8 @@ export async function revisarFatoAction(form: FormData) {
     // discarding the fact settles its alerts
     if (acao === "descartar") for (const a of alertas.filter((x) => x.fato === f.id)) resolverAlerta(a.id, "eliminar", actorName(me));
   }
-  // K4: newly confirmed facts may change tasks/projects → proposals (in the background, ≈ 20 s; after saving, so they read as confirmed)
-  if (acao === "confirmar" && fatos.length) void proporMudancas(fatos.map((f) => f.id)).catch((e) => console.warn("[propostas]", (e as Error).message));
+  // K4: newly confirmed facts may change tasks/projects → proposals, grouped (one AI call per 10 facts / end of review / 30 min)
+  if (acao === "confirmar" && fatos.length) enfileirarPropostas(fatos.map((f) => f.id));
   revalidatePath("/conhecimento", "layout");
 }
 

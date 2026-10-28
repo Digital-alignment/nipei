@@ -58,7 +58,7 @@ Proponha só mudanças que os fatos tornam necessárias, com certeza:
 - "comentar_tarefa": o fato traz informação útil para uma tarefa existente (valor, regra, contato, decisão) → {"tarefa": id, "texto"};
 - "nota_projeto": o fato é uma novidade importante para um projeto → {"projeto": id, "texto"}.
 Não repita o que a tarefa já diz. Não crie tarefa que já existe com outro nome. Use só ids das listas. No máximo 8 propostas; nenhuma se nada precisar mudar.
-Cada proposta: {"tipo", "fatos": [ids dos fatos], "motivo": uma frase, ...campos do tipo}.
+Cada proposta: {"tipo", "fatos": [ids dos fatos], "motivo": uma frase, ...campos do tipo}. "texto" com no máximo 2 frases. Sem explicações fora do JSON.
 Responda APENAS com JSON: {"propostas": [...]}`;
 
 const linhaTarefa = (t: Tarefa) => `- ${t.id}: ${t.title} [${t.statusRaw || "A fazer"}; prazo ${t.prazo || "sem"}; equipe ${t.equipe || "-"}; projeto ${t.projeto || "-"}; responsáveis ${t.responsaveis.join(", ") || "-"}]`;
@@ -96,7 +96,7 @@ export async function proporMudancas(fatoIds: string[]): Promise<number> {
     "## Objetivos", objetivos.map((o) => `${o.id} (${o.ano}: ${o.titulo})`).join("; "),
     "## Pessoas", pessoas.map((p) => `${p.id} (${p.name})`).join("; "),
   ].join("\n");
-  const { o } = await chamarIA(SISTEMA, [{ type: "text", text: texto }], 3000, 120_000);
+  const { o } = await chamarIA(SISTEMA, [{ type: "text", text: texto }], 6000, 120_000) // lotes de até 40 fatos (fila agrupada);
 
   const ids = { tarefa: new Set(ligadas.map((t) => t.id)), fato: new Set(fatos.map((f) => f.id)), equipe: new Set(equipes.map((e) => e.id)),
     projeto: new Set(projetos.map((p) => p.id)), objetivo: new Set(objetivos.map((x) => x.id)), pessoa: new Set(pessoas.map((p) => p.id)) };
@@ -143,6 +143,34 @@ export async function proporMudancas(fatoIds: string[]): Promise<number> {
   }
   if (n) requestSync(vault());
   return n;
+}
+
+// ---------------------------------------------------------------- grouped (review sessions)
+
+// Reviewing one fact at a time used to start one AI call (~20 s, its own token bill) per confirmed fact.
+// Confirmed ids now wait in <vault>/.jobs/propostas-fila.json and go in one call: at 10, when the person's
+// review queue is empty (/conhecimento/revisar), or 30 min after the first one (checked by the v2 layout).
+const FILA = path.join(".jobs", "propostas-fila.json");
+const LOTE = 10, ESPERA_MS = 30 * 60_000;
+type Fila = { ids: string[]; desde: string };
+const lerFila = (): Fila => { try { return JSON.parse(fs.readFileSync(path.join(vault(), FILA), "utf-8")); } catch { return { ids: [], desde: "" }; } };
+const gravarFila = (f: Fila) => { fs.mkdirSync(path.join(vault(), ".jobs"), { recursive: true }); fs.writeFileSync(path.join(vault(), FILA), JSON.stringify(f)); };
+
+export function enfileirarPropostas(ids: string[]) {
+  if (!ids.length) return;
+  const f = lerFila();
+  gravarFila({ ids: [...new Set([...f.ids, ...ids])], desde: f.desde || new Date().toISOString() });
+  void esvaziarFilaPropostas();
+}
+
+/** Sends the waiting facts to proporMudancas if the batch is full, old enough, or `agora`. Never throws. */
+export async function esvaziarFilaPropostas(agora = false) {
+  const f = lerFila();
+  if (!f.ids.length) return;
+  if (!agora && f.ids.length < LOTE && Date.now() - Date.parse(f.desde) < ESPERA_MS) return;
+  const lote = f.ids.slice(0, 40), resto = f.ids.slice(40); // proporMudancas reads at most 40 facts per call
+  gravarFila({ ids: resto, desde: resto.length ? new Date().toISOString() : "" }); // before the call: a second trigger finds it empty
+  await proporMudancas(lote).catch((e) => console.warn("[propostas]", (e as Error).message));
 }
 
 // ---------------------------------------------------------------- deciding
