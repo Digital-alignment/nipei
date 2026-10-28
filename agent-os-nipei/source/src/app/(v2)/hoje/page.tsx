@@ -98,7 +98,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     const f = fatos.find((x) => x.id === a.fato);
     return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
   }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
-  if (revisar) pilulas.push({ href: "/conhecimento#revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento });
+  if (revisar) pilulas.push({ href: "/conhecimento/revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento });
   if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento });
   if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA });
   const p = user.gestao ? pulso() : null;

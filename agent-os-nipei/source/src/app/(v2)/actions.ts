@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
-import { criarFonte, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
+import { criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
 import { decidirProposta, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
 import {
@@ -594,6 +594,14 @@ export async function revisarFatoAction(form: FormData) {
   }
   // K4: newly confirmed facts may change tasks/projects → proposals (in the background, ≈ 20 s; after saving, so they read as confirmed)
   if (acao === "confirmar" && fatos.length) void proporMudancas(fatos.map((f) => f.id)).catch((e) => console.warn("[propostas]", (e as Error).message));
+  revalidatePath("/conhecimento", "layout");
+}
+
+/** Gestão: which team a fact belongs to (manual). Its coordination can then review it. Never touches the fact's status. */
+export async function equipeFatoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  definirEquipeFato(String(form.get("id") ?? ""), String(form.get("equipe") ?? ""), actorName(me));
   revalidatePath("/conhecimento", "layout");
 }
 

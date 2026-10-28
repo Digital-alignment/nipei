@@ -48,7 +48,8 @@ export function getFontes(): Fonte[] {
   return readDir(FONTES).filter(({ fm }) => fm.type === "fonte").map(({ file, fm, body }) => ({
     id: s(fm.id), file, titulo: s(fm.titulo), tipo: (s(fm.tipo) || "texto") as Fonte["tipo"], arquivo: s(fm.arquivo), url: s(fm.url),
     enviadoPor: s(fm.enviado_por), enviadoEm: s(fm.enviado_em), status: (s(fm.status) || "processando") as Fonte["status"], erro: s(fm.erro),
-    resumo: secao(body, "Resumo"), texto: secao(body, "Texto"), acervo: s(fm.acervo),
+    // "## Texto" is always the last section (escreverFonte) and the extracted text may have its own "## " headings: read to the end
+    resumo: secao(body, "Resumo"), texto: body.split(/\r?\n## Texto\r?\n/)[1]?.trim() ?? "", acervo: s(fm.acervo),
   })).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm));
 }
 
@@ -264,6 +265,30 @@ export async function processarFonte(id: string) {
 }
 
 // ---------------------------------------------------------------- review
+
+/**
+ * The passage of the source a fact most likely came from (most shared words), to review it next to the
+ * original. Lines and sentences (markdown bullets/headings marks dropped); capped at 400 characters.
+ */
+export function trechoOriginal(fonteTexto: string, fatoTexto: string): string {
+  const alvo = palavras(fatoTexto);
+  const partes = fonteTexto.split(/\r?\n|(?<=[.!?])\s+(?=[A-ZÀ-Ú])/).map((x) => x.replace(/^[#>*\-\s]+/, "").trim()).filter((x) => x.length > 20);
+  let melhor = "", nota = 0;
+  for (const x of partes) {
+    let n = 0;
+    for (const w of palavras(x)) if (alvo.has(w)) n++;
+    if (n > nota) { nota = n; melhor = x; }
+  }
+  return melhor.length > 400 ? melhor.slice(0, 400).replace(/\s\S*$/, "") + "…" : melhor;
+}
+
+/** Team of a fact (decides who may review it: gestão or that team's coordination). "" = no team. */
+export function definirEquipeFato(id: string, equipe: string, quem: string) {
+  const f = getFatos().find((x) => x.id === id);
+  if (!f) throw new Error("Fato não encontrado");
+  if (equipe && !getEquipes().some((e) => e.id === equipe)) throw new Error("Equipe não encontrada");
+  updateNote(f.file, { equipe, equipe_definida_por: quem, equipe_definida_em: new Date().toISOString() });
+}
 
 export function revisarFato(id: string, acao: "confirmar" | "descartar", quem: string, texto?: string) {
   const f = getFatos().find((x) => x.id === id);
