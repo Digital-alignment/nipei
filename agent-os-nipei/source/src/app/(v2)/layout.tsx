@@ -5,7 +5,7 @@ import Offline from "@/components/v2/Offline";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ehAdmin } from "@/lib/v2/admin";
-import Nav, { BuscaPinu, PainelConta } from "@/components/v2/Nav";
+import Nav, { BuscaPinu, MenuCelular, PainelConta } from "@/components/v2/Nav";
 import AssistenteGlobal from "@/components/v2/AssistenteGlobal";
 import PulsoUso from "@/components/v2/PulsoUso";
 import Avatar from "@/components/ds/Avatar";
@@ -49,10 +49,15 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   const novas = novidadesPara(user, 1).length; // sem estado "lido" ainda: só as das últimas 24 h
   const perfilHref = me ? `/pessoas/${me.id}` : "/pessoas";
   const foto = me?.foto ? `/pessoas/${me.id}/foto?v=${encodeURIComponent(me.fotoEm || me.dadosConfirmadosEm)}` : undefined;
-  const conta = (
-    <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction}
-      rotulos={{ configuracoes: t.configuracoesLbl, tema: t.temaLbl, perfil: t.meuPerfil, idioma: t.idioma, sair: t.sair }} />
-  );
+  const rotulosConta = { configuracoes: t.configuracoesLbl, tema: t.temaLbl, perfil: t.meuPerfil, idioma: t.idioma, sair: t.sair };
+  const rotulosNav = { hoje: t.hoje, tarefas: t.tarefasTitulo, agenda: t.agenda, projetos: t.projetos, objetivos: t.objetivos, equipes: t.equipes, pessoas: t.pessoas, conhecimento: t.conhecimento, acervo: t.acervo,
+    financas: t.financas, painel: t.painelLbl, principal: t.grupoPrincipal, equipe: t.grupoEquipe, gestao: t.grupoGestao, recolher: t.recolherMenu, expandir: t.expandirMenu,
+    configuracoes: t.configuracoesLbl, falarPinu: t.falarPinu, novidade: t.novidadeLbl };
+  const extras = { financas: user.gestao, painel: ehAdmin(user) };
+  const conta = <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction} rotulos={rotulosConta} />;
+  // celular: o avatar abre o menu completo (o que não cabe na barra de baixo) + as configurações
+  const contaCel = <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction} rotulos={rotulosConta}
+    menu={<MenuCelular rotulos={rotulosNav} extras={extras} contagens={contagens} popover="nipei-conta-cel" />} />;
 
   return (
     <div className="v2 min-h-screen bg-bg text-t1">
@@ -69,10 +74,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         </>
       )}
       <div className="flex">
-        <Nav fechadoInicial={menuFechado} pinu={comAssistente && !user.vendoComo} conta={conta} contagens={contagens} extras={{ financas: user.gestao, painel: ehAdmin(user) }}
-          rotulos={{ hoje: t.hoje, tarefas: t.tarefasTitulo, agenda: t.agenda, projetos: t.projetos, objetivos: t.objetivos, equipes: t.equipes, pessoas: t.pessoas, conhecimento: t.conhecimento, acervo: t.acervo,
-            financas: t.financas, painel: t.painelLbl, principal: t.grupoPrincipal, equipe: t.grupoEquipe, gestao: t.grupoGestao, recolher: t.recolherMenu, expandir: t.expandirMenu,
-            configuracoes: t.configuracoesLbl, falarPinu: t.falarPinu, novidade: t.novidadeLbl }} />
+        <Nav fechadoInicial={menuFechado} pinu={comAssistente && !user.vendoComo} conta={conta} contagens={contagens} extras={extras} rotulos={rotulosNav} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="print:hidden flex items-center gap-2 px-4 pt-3 md:px-8 md:pt-4">
             {comAssistente && !user.vendoComo && <BuscaPinu rotulo={t.perguntePinu} className="min-w-0 flex-1 md:max-w-[460px]" />}
@@ -84,7 +86,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
               {/* computador: avatar = meu perfil (as configurações estão no menu); celular: abre as configurações */}
               <Link href={perfilHref} aria-label={t.meuPerfil} title={t.meuPerfil} className="anel-foco hidden rounded-pilula md:block"><Avatar nome={name} foto={foto} tamanho={40} /></Link>
               <button type="button" popoverTarget="nipei-conta-cel" aria-label={t.configuracoesLbl} className="anel-foco alvo-toque rounded-pilula md:hidden"><Avatar nome={name} foto={foto} tamanho={40} /></button>
-              <div id="nipei-conta-cel" popover="auto" className="fixed inset-auto right-4 top-[68px] m-0 overflow-visible border-0 bg-transparent p-0 md:hidden">{conta}</div>
+              <div id="nipei-conta-cel" popover="auto" className="fixed inset-auto right-4 top-[68px] m-0 overflow-visible border-0 bg-transparent p-0 md:hidden">{contaCel}</div>
             </div>
           </header>
           <main className="flex-1 min-w-0 px-4 md:px-8 pt-5 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-10">

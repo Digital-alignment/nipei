@@ -169,13 +169,51 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
   );
 }
 
-/** Painel de configurações (tema, perfil, idioma, sair). Vai dentro de um elemento `popover`. */
-export function PainelConta({ rotulos, perfilHref, idiomaAction, sairAction }: {
-  rotulos: RotulosConta; perfilHref: string; idiomaAction: () => Promise<void>; sairAction: () => Promise<void>;
+/**
+ * Celular: as seções que não cabem na barra de baixo (a barra tem 4 + o orbe), em grade de 2 colunas,
+ * dentro do painel do avatar. Fecha o popover ao tocar num item.
+ */
+export function MenuCelular({ rotulos, extras, contagens = {}, popover }: {
+  rotulos: RotulosNav; extras: { financas?: boolean; painel?: boolean }; contagens?: Partial<Record<Chave, number>>; popover: string;
+}) {
+  const path = usePathname() ?? "";
+  const grupos = GRUPOS.map((g) => ({ ...g, itens: g.itens.filter((i) => !BARRA.includes(i.chave) && (i.chave === "financas" ? extras.financas : i.chave === "painel" ? extras.painel : true)) })).filter((g) => g.itens.length);
+  return (
+    <div className="grid gap-1">
+      {grupos.map((g) => (
+        <div key={g.chave} className="grid gap-1">
+          <p className="rotulo-maiusculo px-1 pt-1 text-t3">{rotulos[g.chave]}</p>
+          <ul className="grid grid-cols-2 gap-1">
+            {g.itens.map((item) => {
+              const on = path === item.href || path.startsWith(item.href + "/");
+              const n = contagens[item.chave];
+              return (
+                <li key={item.href}>
+                  <Link href={item.href} aria-current={on ? "page" : undefined} onClick={() => document.getElementById(popover)?.hidePopover()}
+                    className={`anel-foco flex min-h-11 items-center gap-2 rounded-[10px] px-2.5 text-sm font-medium ${on ? "bg-ac text-ac-ink" : "text-t1 hover:bg-s3"}`}>
+                    {/* contagem = ponto sobre o ícone (como no menu lateral recolhido); o número vai para o leitor de tela */}
+                    <span className="relative shrink-0"><Simbolo item={item} tamanho={18} />{!!n && <span className="absolute -right-1 -top-1 size-2 rounded-pilula bg-err" />}</span>
+                    <span className="min-w-0 flex-1 truncate">{rotulos[item.chave]}{!!n && <span className="sr-only"> ({n})</span>}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+      <hr className="my-1 h-px border-0 bg-s3" />
+    </div>
+  );
+}
+
+/** Painel de configurações (tema, perfil, idioma, sair). Vai dentro de um elemento `popover`; `menu` (celular) vem antes. */
+export function PainelConta({ rotulos, perfilHref, idiomaAction, sairAction, menu }: {
+  rotulos: RotulosConta; perfilHref: string; idiomaAction: () => Promise<void>; sairAction: () => Promise<void>; menu?: ReactNode;
 }) {
   const linha = "anel-foco flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 text-left text-sm font-medium text-t1 hover:bg-s3";
   return (
-    <div className="grid w-[340px] gap-1 rounded-[16px] bg-s2 p-3 font-texto text-t1 shadow-[0_0_0_1px_var(--s3)]">
+    <div className="grid max-h-[calc(100dvh-90px)] w-[358px] max-w-[calc(100vw-32px)] gap-1 overflow-y-auto rounded-[16px] bg-s2 p-3 font-texto text-t1 shadow-[0_0_0_1px_var(--s3)]">
+      {menu}
       <p className="rotulo-maiusculo px-1 text-t3">{rotulos.configuracoes}</p>
       <Tema rotulo={rotulos.tema} />
       <hr className="my-1 h-px border-0 bg-s3" />

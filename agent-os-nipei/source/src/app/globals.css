@@ -78,6 +78,9 @@
 * { box-sizing: border-box; }
 
 html, body {
+  /* nada passa da largura da tela: um elemento invisível além da borda (ex.: tooltip) deixava a página mais larga,
+     o celular "afastava" (zoom) e a barra de baixo saía da tela. clip (não hidden) não quebra position: sticky. */
+  overflow-x: clip;
   background: #050608;
   color: var(--cream);
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
