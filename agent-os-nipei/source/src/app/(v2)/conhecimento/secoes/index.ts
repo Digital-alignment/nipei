@@ -7,6 +7,8 @@ import Revisar from "./Revisar";
 import Fontes from "./Fontes";
 import Base from "./Base";
 import Mapa from "./Mapa";
+import Perguntas from "./Perguntas";
+import { getPerguntas } from "@/lib/v2/perguntas";
 
 // The Conhecimento page is a list of collapsible sections (components/v2/Recolhivel.tsx). Each one is a
 // component in this folder that gets the page's data in `ctx`. To add a view (a knowledge map, an editor,
@@ -40,6 +42,10 @@ export const SECOES: Secao[] = [
   {
     id: "revisar", titulo: (c) => c.t.paraRevisar, alerta: true, contagem: (c) => c.paraMim.reduce((s, f) => s + c.porFonte(f.id).pendentes.length, 0),
     aberto: () => true, mostrar: (c) => c.paraMim.length > 0, atalho: (c) => c.t.fatosParaRevisar, Componente: Revisar,
+  },
+  {
+    id: "perguntas", titulo: (c) => c.t.perguntasAbertas, contagem: () => getPerguntas().filter((p) => p.status === "aberta").length,
+    aberto: () => getPerguntas().some((p) => p.status === "aberta"), atalho: (c) => c.t.perguntasAbertasMin, Componente: Perguntas,
   },
   { id: "mapa", titulo: (c) => c.t.mapaConhecimento, aberto: () => false, Componente: Mapa },
   { id: "fontes", titulo: (c) => c.t.fontes, contagem: (c) => c.fontes.length, aberto: () => false, atalho: (c) => c.t.fontesMin, Componente: Fontes },

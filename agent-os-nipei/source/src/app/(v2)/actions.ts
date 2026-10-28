@@ -635,6 +635,35 @@ export async function equipeFatoAction(form: FormData) {
   revalidatePath("/conhecimento", "layout");
 }
 
+/** C8: leave a question the base couldn't answer for the community. */
+export async function criarPerguntaAction(form: FormData) {
+  const me = await requireUser();
+  const { criarPergunta } = await import("@/lib/v2/perguntas");
+  try { criarPergunta(String(form.get("texto") ?? ""), me.pessoa?.id ?? me.username, me.pessoa?.equipes[0] ?? ""); }
+  catch (e) { redirect(`/conhecimento?erro=${encodeURIComponent((e as Error).message)}`); }
+  revalidatePath("/conhecimento", "layout");
+  redirect("/conhecimento#perguntas");
+}
+
+/** C8: answer an open question — the answer becomes a source and goes through review. */
+export async function responderPerguntaAction(form: FormData) {
+  const me = await requireUser();
+  const { responderPergunta } = await import("@/lib/v2/perguntas");
+  try { responderPergunta(String(form.get("id") ?? ""), String(form.get("resposta") ?? ""), { id: me.pessoa?.id ?? me.username, nome: actorName(me) }); }
+  catch (e) { redirect(`/conhecimento?erro=${encodeURIComponent((e as Error).message)}#perguntas`); }
+  revalidatePath("/conhecimento", "layout");
+}
+
+/** C8: the asker or gestão closes a question nobody needs anymore. */
+export async function arquivarPerguntaAction(form: FormData) {
+  const me = await requireUser();
+  const { arquivarPergunta, getPerguntas } = await import("@/lib/v2/perguntas");
+  const p = getPerguntas().find((x) => x.id === String(form.get("id") ?? ""));
+  if (!p || !(me.gestao || p.por === (me.pessoa?.id ?? me.username))) return;
+  arquivarPergunta(p.id, actorName(me));
+  revalidatePath("/conhecimento", "layout");
+}
+
 /** "Resumir com o Pinu" on Conhecimento: the AI answers ONLY from the confirmed facts listed for this question. */
 export async function resumirConhecimentoAction(pergunta: string, ids: string[]): Promise<{ texto?: string; erro?: string }> {
   await requireUser();

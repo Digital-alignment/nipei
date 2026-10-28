@@ -10,6 +10,8 @@ import Campo from "@/components/ds/Campo";
 import { EstadoVazio } from "@/components/ds/Estados";
 import { BotaoIcone } from "@/components/ds/Botao";
 import ResumirPinu from "@/components/v2/ResumirPinu";
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import { criarPerguntaAction } from "../actions";
 import { auditoriaSemanal, getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { getT } from "@/lib/v2/i18n";
@@ -43,6 +45,13 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   // perguntar à base: a lista sai na hora, sem IA (mesma busca que as IAs usam); o Pinu só resume se pedirem
   const pergunta = (q.pergunta ?? "").trim().slice(0, 300);
   const achados = pergunta ? buscarConhecimento(pergunta, { limite: 8 }) : [];
+  // C8: what the base can't answer stays as an open question for the community
+  const perguntar = (rotulo: string, variante: "tonal" | "fantasma") => (
+    <form action={criarPerguntaAction} className="justify-self-start">
+      <input type="hidden" name="texto" value={pergunta} />
+      <BotaoEnviar enviando="…" icone="mensagem" variante={variante} tamanho="M">{rotulo}</BotaoEnviar>
+    </form>
+  );
 
   return (
     <>
@@ -70,8 +79,14 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
               ))}
             </ol>
             <ResumirPinu key={pergunta} pergunta={pergunta} ids={achados.map((a) => a.fato.id)} rotulos={{ resumir: t.resumirPinu, resumindo: t.resumindo, resposta: t.respostaPinu }} />
+            {perguntar(t.naoRespondeu, "fantasma")}
           </>
-        ) : <EstadoVazio compacto selo="espiral" titulo={<>{t.nadaConfirmadoSobre}</>} texto={t.nadaConfirmadoMsg} />)}
+        ) : (
+          <>
+            <EstadoVazio compacto selo="espiral" titulo={<>{t.nadaConfirmadoSobre}</>} texto={t.nadaConfirmadoMsg} />
+            {perguntar(t.deixarPergunta, "tonal")}
+          </>
+        ))}
       </section>
 
       <AtalhosSecao itens={secoes.filter((s) => s.atalho).map((s) => ({ id: s.id, label: s.atalho!(ctx), valor: s.contagem?.(ctx) ?? 0, alerta: s.alerta && (s.contagem?.(ctx) ?? 0) > 0 }))} />

@@ -36,7 +36,7 @@ export type Fonte = {
   // C7: where it came from ("" = the Conhecimento page) and what it is about, when the channel knows it
   canal: Canal | ""; tarefa: string; chave: string; equipe: string; projeto: string;
 };
-export type Canal = "tarefa" | "pinu" | "whatsapp" | "gmail";
+export type Canal = "tarefa" | "pinu" | "whatsapp" | "gmail" | "pergunta";
 /** Sources sent from other places (task, Pinu, WhatsApp, Gmail) per person per day; the page itself has no limit. */
 export const LIMITE_FONTES_CANAL_DIA = 20;
 export type Fato = {
