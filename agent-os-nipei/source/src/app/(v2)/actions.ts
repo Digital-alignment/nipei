@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE } from "@/lib/v2/i18n";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
-import { criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "@/lib/v2/conhecimento";
+import { chaveTrecho, corrigirFato, criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, responderComFatos, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
 import { decidirProposta, enfileirarPropostas, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
 import {
@@ -17,10 +17,10 @@ import {
   criarDiagnostico, encerrarDiagnostico,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
-import { RECORRENCIAS } from "@/lib/tarefaNote";
+import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
 import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, createPessoa, createTarefa,
-  currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, setEquipeAcesso, setTarefaStatus,
+  currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus,
   updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today,
   addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos,
 } from "@/lib/v2/data";
@@ -551,6 +551,36 @@ export async function enviarFonteAction(form: FormData) {
   redirect(`/conhecimento/${id}`);
 }
 
+/**
+ * C7 (task): the task's description or one of its comments → a Conhecimento source, linked to the task, its team and
+ * project (the facts inherit them). The text is read here from the note, never from the browser; same text = no resend.
+ */
+export async function tarefaConhecimentoAction(form: FormData) {
+  const me = await requireUser();
+  const det = getTarefaDetalhe(String(form.get("id") ?? ""));
+  if (!det) return;
+  const { tarefa, doc } = det;
+  const parte = String(form.get("parte") ?? "");
+  const comentario = parte.startsWith("c:") ? doc.atividade.map(parseAtividade).filter((p) => p?.comentario != null)[Number(parte.slice(2))] : null;
+  const texto = (parte === "descricao" ? doc.descricao : comentario?.comentario ?? "").trim();
+  if (!texto) return;
+  const chave = chaveTrecho(parte === "descricao" ? "d" : "c", texto);
+  const ja = getFontes().find((f) => f.tarefa === tarefa.id && f.chave === chave && f.status !== "erro");
+  if (ja) redirect(`/conhecimento/${ja.id}`);
+  const de = comentario ? `comentário de ${comentario.quem} (${comentario.quando})` : "descrição";
+  let id = "";
+  try {
+    id = criarFonte({
+      tipo: "texto", titulo: `Tarefa: ${tarefa.title} — ${de}`, texto: `${texto}\n\n(Da tarefa "${tarefa.title}", ${de}.)`,
+      por: me.pessoa?.id ?? me.username, canal: "tarefa", tarefa: tarefa.id, chave, equipe: tarefa.equipe, projeto: tarefa.projeto,
+    });
+  } catch (e) {
+    redirect(`/tarefas/${tarefa.id}?erro=${encodeURIComponent((e as Error).message)}`);
+  }
+  fonteFeita(id);
+  voltarTarefa(tarefa.id);
+}
+
 /** Acervo → Conhecimento: the AI reads the linked file and proposes facts (one source per item; again = open it). */
 export async function ensinarAcervoAction(form: FormData) {
   const me = await requireUser();
@@ -603,6 +633,26 @@ export async function equipeFatoAction(form: FormData) {
   if (!me.gestao) return;
   definirEquipeFato(String(form.get("id") ?? ""), String(form.get("equipe") ?? ""), actorName(me));
   revalidatePath("/conhecimento", "layout");
+}
+
+/** "Resumir com o Pinu" on Conhecimento: the AI answers ONLY from the confirmed facts listed for this question. */
+export async function resumirConhecimentoAction(pergunta: string, ids: string[]): Promise<{ texto?: string; erro?: string }> {
+  await requireUser();
+  const fatos = ids.slice(0, 8).map((id) => getFatos().find((f) => f.id === id && f.status === "confirmado")).filter((f) => !!f);
+  if (!pergunta.trim() || !fatos.length) return { erro: "Nada para resumir." };
+  try { return { texto: await responderComFatos(pergunta, fatos) }; }
+  catch (e) { return { erro: (e as Error).message }; }
+}
+
+/** D10: correct a confirmed fact (whoever may review it). The old one stays as "substituido"; opens the new one. */
+export async function corrigirFatoAction(form: FormData) {
+  const me = await requireUser();
+  const f = getFatos().find((x) => x.id === String(form.get("id") ?? "") && x.status === "confirmado");
+  if (!f || !podeRevisar(me, f)) return;
+  const novo = corrigirFato(f.id, String(form.get("texto") ?? ""), actorName(me));
+  enfileirarPropostas([novo]); // a correction may change tasks/projects too (grouped, like any confirmation)
+  revalidatePath("/conhecimento", "layout");
+  redirect(`/conhecimento/fato/${novo}`);
 }
 
 export async function resolverAlertaAction(form: FormData) {

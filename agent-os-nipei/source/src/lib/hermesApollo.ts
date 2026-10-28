@@ -41,7 +41,7 @@ async function vaultGrounding(prompt: string): Promise<{ relevant: boolean; cont
   const isKanban = /\b(kanban|tarefa|tarefas|task|tasks|squad|squads|prioridade|prioridades|urgente|urgentes|andamento|progresso|concluid|a fazer|backlog|revisao|revisão|bloqueio|veto|mutum|instituto|samakey|nisurau)\b/i.test(s);
   // K3: confirmed community knowledge answers any question it matches, vault-ish wording or not.
   let fatos = "";
-  try { fatos = formatarConhecimento(buscarConhecimento(prompt, { limite: 6, minimo: 0.34 })); } catch { /* vault not configured */ }
+  try { fatos = formatarConhecimento(buscarConhecimento(prompt, { origem: "venu", limite: 6, minimo: 0.34 })); } catch { /* vault not configured */ }
   const relevant = !!fatos || isKanban || /\b(vault|obsidian|memor(y|ies)|notes?|remember|recall|yesterday|today|last (week|night)|this (week|morning)|what (did|have) i|what went|what happened|my (ideas?|projects?|plans?|goals?|tasks?|notes?)|recap|catch me up)\b/.test(s);
   if (!relevant) return { relevant: false, context: "" };
 

@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
+import { createHash } from "crypto";
 import { lookup } from "dns/promises";
 import { isIP } from "net";
 import { requestSync } from "@/lib/tarefaNote";
-import { chamarIA, type Parte } from "./ia";
+import { chamarIA, chamarIATexto, type Parte } from "./ia";
 import { auditarFatos } from "./auditor";
 import { getEquipes, getObjetivos, getPessoas, getProjetos, noteText, readDir, slugify, updateNote, vault, type FmValue, type Me } from "./data";
 
@@ -32,11 +33,18 @@ export type Fonte = {
   id: string; file: string; titulo: string; tipo: "arquivo" | "link" | "texto"; arquivo: string; url: string;
   enviadoPor: string; enviadoEm: string; status: "processando" | "pronta" | "erro"; erro: string; resumo: string; texto: string;
   acervo: string; // id of the Acervo item this source was taught from ("Ensinar à IA"), if any
+  // C7: where it came from ("" = the Conhecimento page) and what it is about, when the channel knows it
+  canal: Canal | ""; tarefa: string; chave: string; equipe: string; projeto: string;
 };
+export type Canal = "tarefa" | "pinu" | "whatsapp" | "gmail";
+/** Sources sent from other places (task, Pinu, WhatsApp, Gmail) per person per day; the page itself has no limit. */
+export const LIMITE_FONTES_CANAL_DIA = 20;
 export type Fato = {
   id: string; file: string; texto: string; tipo: string; fonte: string; equipe: string; projetos: string[]; objetivos: string[];
   pessoas: string[]; dataReferencia: string; status: StatusFato; criadoEm: string; revisadoPor: string; revisadoEm: string; substituidoPor: string;
   motivo: string; // "duplicado" when discarded only for repeating a confirmed fact (not a correction)
+  corrige: string; // id of the confirmed fact this one corrected (D10: the old one stays, "substituido")
+  equipeDefinidaPor: string; equipeDefinidaEm: string;
 };
 
 const s = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -50,16 +58,115 @@ export function getFontes(): Fonte[] {
     enviadoPor: s(fm.enviado_por), enviadoEm: s(fm.enviado_em), status: (s(fm.status) || "processando") as Fonte["status"], erro: s(fm.erro),
     // "## Texto" is always the last section (escreverFonte) and the extracted text may have its own "## " headings: read to the end
     resumo: secao(body, "Resumo"), texto: body.split(/\r?\n## Texto\r?\n/)[1]?.trim() ?? "", acervo: s(fm.acervo),
+    canal: s(fm.canal) as Canal | "", tarefa: s(fm.tarefa), chave: s(fm.chave), equipe: s(fm.equipe), projeto: s(fm.projeto),
   })).sort((a, b) => b.enviadoEm.localeCompare(a.enviadoEm));
 }
+
+/** Identity of one piece of content sent from a channel ("d:…" description, "c:…" comment): same text = same key. */
+export const chaveTrecho = (tipo: string, texto: string) => `${tipo}:${createHash("sha1").update(texto.trim()).digest("hex").slice(0, 12)}`;
+
+/** The source's own fields that every rewrite must keep (escreverFonte replaces the whole frontmatter). */
+const origemFonte = (f: Pick<Fonte, "acervo" | "canal" | "tarefa" | "chave" | "equipe" | "projeto">): Record<string, FmValue> => Object.fromEntries(
+  Object.entries({ acervo: f.acervo, canal: f.canal, tarefa: f.tarefa, chave: f.chave, equipe: f.equipe, projeto: f.projeto }).filter(([, v]) => v),
+);
 
 export function getFatos(): Fato[] {
   return readDir(FATOS).filter(({ fm }) => fm.type === "fato").map(({ file, fm }) => ({
     id: s(fm.id), file, texto: s(fm.texto), tipo: s(fm.tipo) || "fato", fonte: s(fm.fonte), equipe: s(fm.equipe),
     projetos: arr(fm.projetos), objetivos: arr(fm.objetivos), pessoas: arr(fm.pessoas), dataReferencia: s(fm.data_referencia),
     status: (s(fm.status) || "proposto") as StatusFato, criadoEm: s(fm.criado_em), revisadoPor: s(fm.revisado_por), revisadoEm: s(fm.revisado_em),
-    substituidoPor: s(fm.substituido_por), motivo: s(fm.descartado_motivo),
+    substituidoPor: s(fm.substituido_por), motivo: s(fm.descartado_motivo), corrige: s(fm.corrige),
+    equipeDefinidaPor: s(fm.equipe_definida_por), equipeDefinidaEm: s(fm.equipe_definida_em),
   }));
+}
+
+// ---------------------------------------------------------------- D11: which facts the AIs used
+
+// Every AI that reads the base goes through buscarConhecimento({ origem }) (or responderComFatos): the facts it
+// got are counted here, per fact and per channel. <vault>/.jobs/ is outside git; counts only, never the question.
+const USO = path.join(".jobs", "fatos-uso.json");
+export type UsoFato = { n: number; ultimo: string; origens: Record<string, number> };
+export function usoFatos(): Record<string, UsoFato> {
+  try { return JSON.parse(fs.readFileSync(path.join(vault(), USO), "utf-8")); } catch { return {}; }
+}
+export function registrarUsoFatos(ids: string[], origem: string) {
+  if (!ids.length) return;
+  try {
+    const u = usoFatos(), agora = new Date().toISOString();
+    for (const id of new Set(ids)) {
+      const x = u[id] ?? { n: 0, ultimo: "", origens: {} };
+      u[id] = { n: x.n + 1, ultimo: agora, origens: { ...x.origens, [origem]: (x.origens[origem] ?? 0) + 1 } };
+    }
+    fs.mkdirSync(path.join(vault(), ".jobs"), { recursive: true });
+    fs.writeFileSync(path.join(vault(), USO), JSON.stringify(u));
+  } catch (e) { console.warn("[conhecimento] uso:", (e as Error).message); }
+}
+
+// ---------------------------------------------------------------- E12: knowledge map (nodes + links)
+
+// Shaped as a graph so an interactive connections view can use it as is; today Conhecimento draws the
+// team × project heat table from the "e:"–"p:" links. Ids: "e:<equipe>", "p:<projeto>", "h:<pessoa>";
+// "e:-" / "p:-" = facts without a team / project (the gaps). Counts only confirmed and pending facts.
+export type NoMapa = { id: string; tipo: "equipe" | "projeto" | "pessoa"; nome: string; confirmados: number; pendentes: number; usos: number };
+export type LigacaoMapa = { de: string; para: string; confirmados: number; pendentes: number };
+export function mapaConhecimento(): { nos: NoMapa[]; ligacoes: LigacaoMapa[] } {
+  const equipes = getEquipes(), projetos = getProjetos(), pessoas = getPessoas(), uso = usoFatos();
+  const nos = new Map<string, NoMapa>(), ligacoes = new Map<string, LigacaoMapa>();
+  const no = (id: string, tipo: NoMapa["tipo"], nome: string) => nos.get(id) ?? nos.set(id, { id, tipo, nome, confirmados: 0, pendentes: 0, usos: 0 }).get(id)!;
+  for (const e of equipes) no(`e:${e.id}`, "equipe", e.nome);
+  for (const p of projetos) no(`p:${p.id}`, "projeto", p.nome);
+  for (const f of getFatos()) {
+    if (f.status !== "confirmado" && f.status !== "proposto") continue;
+    const campo = f.status === "confirmado" ? "confirmados" : "pendentes";
+    const ids = [
+      f.equipe ? `e:${f.equipe}` : "e:-", ...(f.projetos.length ? f.projetos.map((p) => `p:${p}`) : ["p:-"]), ...f.pessoas.map((h) => `h:${h}`),
+    ];
+    for (const id of ids) {
+      const [t, x] = [id.slice(0, 1), id.slice(2)];
+      const n = no(id, t === "e" ? "equipe" : t === "p" ? "projeto" : "pessoa",
+        x === "-" ? "" : t === "e" ? equipes.find((e) => e.id === x)?.nome ?? x : t === "p" ? projetos.find((p) => p.id === x)?.nome ?? x : pessoas.find((p) => p.id === x)?.name.split(" (")[0] ?? x);
+      n[campo]++;
+      n.usos += uso[f.id]?.n ?? 0;
+    }
+    for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+      const [de, para] = [ids[i], ids[j]].sort();
+      const k = `${de}|${para}`;
+      const l = ligacoes.get(k) ?? ligacoes.set(k, { de, para, confirmados: 0, pendentes: 0 }).get(k)!;
+      l[campo]++;
+    }
+  }
+  return { nos: [...nos.values()], ligacoes: [...ligacoes.values()] };
+}
+
+// ---------------------------------------------------------------- D10: correct a confirmed fact
+
+/**
+ * Correcting a confirmed fact never edits it in place: a new confirmed fact (same source and links, `corrige`)
+ * takes its place and the old one becomes "substituido" → the auditor keeps seeing what was corrected.
+ */
+export function corrigirFato(id: string, texto: string, quem: string): string {
+  const f = getFatos().find((x) => x.id === id && x.status === "confirmado");
+  if (!f) throw new Error("Só um fato confirmado pode ser corrigido");
+  const novo = texto.trim().slice(0, 600);
+  if (!novo || novo === f.texto) throw new Error("Escreva o texto corrigido");
+  const fid = novoId("fat"), agora = new Date().toISOString();
+  fs.writeFileSync(path.join(vault(), FATOS, `${slugify(novo) || "fato"}_${fid.slice(4)}.md`), noteText({
+    id: fid, type: "fato", texto: novo, tipo: f.tipo, fonte: f.fonte, equipe: f.equipe, projetos: f.projetos, objetivos: f.objetivos, pessoas: f.pessoas,
+    data_referencia: f.dataReferencia, status: "confirmado", criado_em: agora, revisado_por: quem, revisado_em: agora, corrige: f.id,
+  }, `${novo}\n\nCorrige: [[${f.id}]] · Fonte: [[${f.fonte}]]`), "utf-8");
+  // keeps who confirmed it and when (its history shows it); the correction's author/date live on the new fact
+  updateNote(f.file, { status: "substituido", substituido_por: fid, substituido_em: agora });
+  return fid;
+}
+
+/** All versions of a fact, oldest first: follows `corrige` back and `substituidoPor` forward. */
+export function versoesFato(id: string, fatos: Fato[] = getFatos()): Fato[] {
+  const por = new Map(fatos.map((f) => [f.id, f]));
+  let primeiro = por.get(id);
+  for (let i = 0; primeiro?.corrige && por.has(primeiro.corrige) && i < 50; i++) primeiro = por.get(primeiro.corrige);
+  const lista: Fato[] = [];
+  for (let f = primeiro, i = 0; f && i < 50; f = f.substituidoPor ? por.get(f.substituidoPor) : undefined, i++) lista.push(f);
+  return lista;
 }
 
 const PARADAS = new Set("para pela pelo como mais muito sobre entre depois antes cada todo toda todos todas deve devem será serão está estão foram ser são tem têm isso esse essa este esta quando onde qual quais também ainda what with that this from have".split(" "));
@@ -75,11 +182,12 @@ export type Achado = { fato: Fato; fonte: string; score: number };
  * ONLY confirmed facts. Scored by how many of the question's words the fact has, plus a boost
  * for each shared team/project/objective/person; newest review first on ties.
  */
-export function buscarConhecimento(pergunta: string, opts: { equipe?: string; projetos?: string[]; objetivos?: string[]; pessoas?: string[]; limite?: number; minimo?: number } = {}): Achado[] {
+export function buscarConhecimento(pergunta: string, opts: { equipe?: string; projetos?: string[]; objetivos?: string[]; pessoas?: string[]; limite?: number; minimo?: number;
+  /** which AI gets these facts (D11, "a IA usou isto"); leave out when a person only browses */ origem?: string } = {}): Achado[] {
   const q = palavras(pergunta);
   const tags = new Set([opts.equipe && `e:${opts.equipe}`, ...(opts.projetos ?? []).map((x) => `p:${x}`), ...(opts.objetivos ?? []).map((x) => `o:${x}`), ...(opts.pessoas ?? []).map((x) => `h:${x}`)].filter(Boolean) as string[]);
   const fontes = new Map(getFontes().map((f) => [f.id, f.titulo]));
-  return getFatos().filter((f) => f.status === "confirmado").map((f) => {
+  const achados = getFatos().filter((f) => f.status === "confirmado").map((f) => {
     const w = palavras(f.texto);
     const comuns = [...q].filter((x) => w.has(x)).length;
     const ft = [f.equipe && `e:${f.equipe}`, ...f.projetos.map((x) => `p:${x}`), ...f.objetivos.map((x) => `o:${x}`), ...f.pessoas.map((x) => `h:${x}`)];
@@ -88,11 +196,42 @@ export function buscarConhecimento(pergunta: string, opts: { equipe?: string; pr
   }).filter((a) => a.score >= (opts.minimo ?? 0.2))
     .sort((a, b) => b.score - a.score || b.fato.revisadoEm.localeCompare(a.fato.revisadoEm))
     .slice(0, opts.limite ?? 12);
+  if (opts.origem) registrarUsoFatos(achados.map((a) => a.fato.id), opts.origem);
+  return achados;
 }
 
 /** Facts as prompt lines: "- [prazo] texto (fonte: …, confirmado por X em AAAA-MM-DD)". */
 export const formatarConhecimento = (achados: Achado[]) =>
   achados.map(({ fato: f, fonte }) => `- [${f.tipo}] ${f.texto} (fonte: ${fonte || f.fonte}; confirmado por ${f.revisadoPor || "?"} em ${diaLocal(f.revisadoEm)})`).join("\n");
+
+/** lower case, no accents: "Manutenção" → "manutencao" */
+const semAcento = (t: string) => t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+
+/**
+ * The confirmed base as people browse it (Conhecimento → Base confirmada): every word of `q` must appear
+ * in the fact or its source title, in any order, accents ignored; plus exact filters ("-" = without team / project,
+ * the map's gap cells). Newest review first.
+ */
+export function filtrarConfirmados(opts: { q?: string; equipe?: string; tipo?: string; projeto?: string; pessoa?: string }): Fato[] {
+  const termos = semAcento(opts.q ?? "").split(/[^a-z0-9]+/).filter((x) => x.length >= 2);
+  const fontes = new Map(getFontes().map((f) => [f.id, f.titulo]));
+  return getFatos().filter((f) => f.status === "confirmado"
+    && (!opts.equipe || (opts.equipe === "-" ? !f.equipe : f.equipe === opts.equipe)) && (!opts.tipo || f.tipo === opts.tipo)
+    && (!opts.projeto || (opts.projeto === "-" ? !f.projetos.length : f.projetos.includes(opts.projeto))) && (!opts.pessoa || f.pessoas.includes(opts.pessoa))
+    && (!termos.length || ((t) => termos.every((x) => t.includes(x)))(semAcento(`${f.texto} ${fontes.get(f.fonte) ?? ""}`))))
+    .sort((a, b) => b.revisadoEm.localeCompare(a.revisadoEm));
+}
+
+const SISTEMA_RESPOSTA = `Você é o Pinu, o assistente do Nipëi OS. Responda em português do Brasil, em até 6 frases.
+Use SÓ os fatos numerados que recebe (a base confirmada da comunidade). Cite cada fato que usar com o número entre colchetes, ex.: [2].
+Se os fatos não respondem a pergunta, diga isso claramente em uma frase e não invente. Sem títulos nem listas longas.`;
+
+/** "Resumir com o Pinu": answer a question from the given confirmed facts, citing them as [n] (n = position + 1). */
+export async function responderComFatos(pergunta: string, fatos: Fato[]): Promise<string> {
+  registrarUsoFatos(fatos.map((f) => f.id), "resumo");
+  const lista = fatos.map((f, i) => `[${i + 1}] (${f.tipo}) ${f.texto}`).join("\n");
+  return chamarIATexto(SISTEMA_RESPOSTA, [{ type: "text", text: `Pergunta: ${pergunta.slice(0, 500)}\n\nFatos confirmados:\n${lista}` }], 800, 60_000);
+}
 
 /** ISO timestamp → its day in Bahia ("2026-10-19"), for display. */
 export const diaLocal = (iso: string) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Bahia" }) : "");
@@ -111,11 +250,23 @@ function escreverFonte(id: string, fm: Record<string, FmValue>, resumo: string, 
   requestSync(vault());
 }
 
-export function criarFonte(input: { titulo: string; por: string; acervo?: string } & (
+export function criarFonte(input: {
+  titulo: string; por: string; acervo?: string;
+  /** C7: sent from another place; `chave` = what exactly (e.g. one comment), so the same thing isn't sent twice */
+  canal?: Canal; tarefa?: string; chave?: string; equipe?: string; projeto?: string;
+} & (
   { tipo: "arquivo"; nome: string; bytes: Buffer } | { tipo: "link"; url: string } | { tipo: "texto"; texto: string }
 )): string {
+  if (input.canal) {
+    const hoje = diaLocal(new Date().toISOString());
+    const n = getFontes().filter((f) => f.canal && f.enviadoPor === input.por && diaLocal(f.enviadoEm) === hoje).length;
+    if (n >= LIMITE_FONTES_CANAL_DIA) throw new Error(`Limite de ${LIMITE_FONTES_CANAL_DIA} envios por dia ao Conhecimento (fora desta página) atingido`);
+  }
   const id = novoId("fnt");
-  const fm: Record<string, FmValue> = { titulo: input.titulo.slice(0, 150), tipo: input.tipo, arquivo: "", url: "", enviado_por: input.por, enviado_em: new Date().toISOString(), status: "processando", erro: "", ...(input.acervo ? { acervo: input.acervo } : {}) };
+  const fm: Record<string, FmValue> = {
+    titulo: input.titulo.slice(0, 150), tipo: input.tipo, arquivo: "", url: "", enviado_por: input.por, enviado_em: new Date().toISOString(), status: "processando", erro: "",
+    ...origemFonte({ acervo: input.acervo ?? "", canal: input.canal ?? "", tarefa: input.tarefa ?? "", chave: input.chave ?? "", equipe: input.equipe ?? "", projeto: input.projeto ?? "" }),
+  };
   let texto = "";
   if (input.tipo === "arquivo") {
     const ext = input.nome.split(".").pop()?.toLowerCase() ?? "";
@@ -229,10 +380,12 @@ function catalogo() {
 export async function processarFonte(id: string) {
   const f = getFontes().find((x) => x.id === id);
   if (!f) return;
-  const fm = (st: string, erro = ""): Record<string, FmValue> => ({ titulo: f.titulo, tipo: f.tipo, arquivo: f.arquivo, url: f.url, enviado_por: f.enviadoPor, enviado_em: f.enviadoEm, status: st, erro, ...(f.acervo ? { acervo: f.acervo } : {}) });
+  const fm = (st: string, erro = ""): Record<string, FmValue> => ({ titulo: f.titulo, tipo: f.tipo, arquivo: f.arquivo, url: f.url, enviado_por: f.enviadoPor, enviado_em: f.enviadoEm, status: st, erro, ...origemFonte(f) });
   try {
     const conteudo: Parte[] = f.tipo === "arquivo" ? lerArquivo(f.arquivo) : f.tipo === "link" ? await lerLink(f.url) : [{ type: "text", text: f.texto }];
-    const { o } = await chamarIA(SISTEMA, [{ type: "text", text: `${catalogo()}\n\n## Fonte: ${f.titulo}` }, ...conteudo], 8000, 180_000);
+    // C7: the channel already knows the team/project (e.g. the task it came from): say so, and use it when the AI leaves them empty
+    const contexto = [f.equipe && `equipe ${f.equipe}`, f.projeto && `projeto ${f.projeto}`].filter(Boolean).join(", ");
+    const { o } = await chamarIA(SISTEMA, [{ type: "text", text: `${catalogo()}\n\n## Fonte: ${f.titulo}${contexto ? `\n(Enviada a partir de: ${contexto}. Use esses ids nos fatos, salvo se o fato for claramente de outra equipe/projeto.)` : ""}` }, ...conteudo], 8000, 180_000);
     const ids = {
       equipe: new Set(getEquipes().map((e) => e.id)), projeto: new Set(getProjetos().map((p) => p.id)),
       objetivo: new Set(getObjetivos().map((x) => x.id)), pessoa: new Set(getPessoas().map((p) => p.id)),
@@ -246,11 +399,13 @@ export async function processarFonte(id: string) {
       const texto = s(x.texto).slice(0, 600);
       if (!texto) continue;
       const fid = novoId("fat");
-      const equipe = ids.equipe.has(s(x.equipe)) ? s(x.equipe) : "";
+      const equipe = ids.equipe.has(s(x.equipe)) ? s(x.equipe) : ids.equipe.has(f.equipe) ? f.equipe : "";
+      const projetos = so(x.projetos, ids.projeto);
+      if (!projetos.length && ids.projeto.has(f.projeto)) projetos.push(f.projeto);
       const data = /^\d{4}-\d{2}-\d{2}$/.test(s(x.data_referencia)) ? s(x.data_referencia) : "";
       const fmf: Record<string, FmValue> = {
         id: fid, type: "fato", texto, tipo: (TIPOS_FATO as readonly string[]).includes(s(x.tipo)) ? s(x.tipo) : "fato", fonte: id, equipe,
-        projetos: so(x.projetos, ids.projeto), objetivos: so(x.objetivos, ids.objetivo), pessoas: so(x.pessoas, ids.pessoa),
+        projetos, objetivos: so(x.objetivos, ids.objetivo), pessoas: so(x.pessoas, ids.pessoa),
         data_referencia: data, status: "proposto", criado_em: new Date().toISOString(), revisado_por: "", revisado_em: "",
       };
       fs.writeFileSync(path.join(vault(), FATOS, `${slugify(texto) || "fato"}_${fid.slice(4)}.md`), noteText(fmf, `${texto}\n\nFonte: [[${id}]]`), "utf-8");

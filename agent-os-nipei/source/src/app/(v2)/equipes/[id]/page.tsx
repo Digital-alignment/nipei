@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AbasComPainel } from "@/components/ds/Abas";
+import OQueSabemos from "@/components/v2/OQueSabemos";
+import { filtrarConfirmados } from "@/lib/v2/conhecimento";
 import ChipDS from "@/components/ds/Chip";
 import { EstadoVazio } from "@/components/ds/Estados";
 import AvatarDS from "@/components/ds/Avatar";
@@ -32,6 +34,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const equipes = getEquipes(), pessoas = getPessoas(), todas = getTarefas();
   const e = equipes.find((x) => x.id === id);
   if (!e) notFound();
+  const sabemos = filtrarConfirmados({ equipe: e.id });
   const hoje = today();
   const gerir = can.gerirEquipe(me, id);
   const daEquipe = todas.filter((x) => x.equipe === id);
@@ -255,6 +258,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
         { id: "pessoas", rotulo: t.membros, contagem: gente.length, conteudo: pessoasAba },
         { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
+        { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?equipe=${e.id}#base`} /> },
         ...(gerir ? [{ id: "config", rotulo: t.configuracao, contagem: 0, conteudo: config }] : []),
       ]} />
     </>

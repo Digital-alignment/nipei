@@ -50,6 +50,7 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
           {f.arquivo && <Chip href={`/conhecimento/${f.id}/arquivo`} icone="abrir-fora">{t.verOriginal}</Chip>}
           {f.url && <Chip href={f.url} icone="abrir-fora">{t.verOriginal}</Chip>}
           {f.acervo && <Chip href={`/acervo#${f.acervo}`} icone="abrir-fora">{t.noAcervo}</Chip>}
+          {f.tarefa && <Chip href={`/tarefas/${f.tarefa}`} icone="tarefa">{t.daTarefa}</Chip>}
         </>} />
 
       {f.status === "processando" && <p role="status" className="meta mb-6 flex items-center gap-2 text-t2"><span aria-hidden="true" className="arco-girando size-4 motion-reduce:hidden" />{t.processando}</p>}
@@ -78,6 +79,7 @@ export default async function FonteDetalhe({ params }: { params: Promise<{ id: s
                   <span className="rotulo-maiusculo text-t3">{t.tiposFato[x.tipo as keyof typeof t.tiposFato] ?? x.tipo}</span>
                   <span className={`inline-flex h-7 items-center gap-1.5 rounded-pilula px-2.5 font-texto text-[13px] font-medium ${ESTADO[x.status]}`}><Icone nome={ICONE_ESTADO[x.status]} tamanho={14} />{statusTxt[x.status]}</span>
                   {x.revisadoPor && <span className="meta text-t3">{x.revisadoPor}</span>}
+                  {x.status !== "proposto" && <Link href={`/conhecimento/fato/${x.id}`} className="anel-foco alvo-toque meta ml-auto inline-flex items-center gap-1 rounded-interno text-t2 hover:text-t1 hover:underline">{t.verFato}<Icone nome="avancar" tamanho={14} /></Link>}
                 </p>
                 {comAlerta.has(x.id) && (
                   <Link href="/conhecimento/alertas" className="anel-foco meta inline-flex items-start gap-1.5 rounded-interno text-err hover:underline">

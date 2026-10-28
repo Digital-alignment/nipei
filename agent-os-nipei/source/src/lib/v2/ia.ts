@@ -69,7 +69,7 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
     .slice(0, 15);
   const rag = queryVaultGrounding(`${tarefa.title} ${doc.descricao}`.slice(0, 500), "squad_1_ceo");
   const base = buscarConhecimento(`${tarefa.title} ${doc.descricao} ${doc.checklist.map((c) => c.texto).join(" ")}`, {
-    equipe: tarefa.equipe, projetos: tarefa.projeto ? [tarefa.projeto] : [], objetivos: tarefa.objetivo ? [tarefa.objetivo] : [], pessoas: tarefa.responsaveis, limite: 15,
+    origem: "tarefas", equipe: tarefa.equipe, projetos: tarefa.projeto ? [tarefa.projeto] : [], objetivos: tarefa.objetivo ? [tarefa.objetivo] : [], pessoas: tarefa.responsaveis, limite: 15,
   });
 
   const linhas = [

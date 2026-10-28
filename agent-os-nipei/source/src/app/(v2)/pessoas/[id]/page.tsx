@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AbasComPainel } from "@/components/ds/Abas";
+import OQueSabemos from "@/components/v2/OQueSabemos";
 import { EstadoVazio } from "@/components/ds/Estados";
 import AvatarDS from "@/components/ds/Avatar";
 import { chaveEquipe } from "@/components/ds/equipes";
@@ -24,7 +25,7 @@ import { getColetivo, getDiagnosticos, getRespostas, participa, progresso } from
 import { ordenarAgora, type Selo } from "@/lib/v2/ordem";
 import { NIVEL_COR } from "@/lib/v2/participacao";
 import { getEstudo, resumoPessoas } from "@/lib/v2/pessoasInfo";
-import { diaLocal } from "@/lib/v2/conhecimento";
+import { diaLocal, filtrarConfirmados } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { atribuirAction, coordenacaoAction, enviarLinkAction, estudoAction, externoAction, removerDaEquipeAction, setAvisosPessoaAction, suspensoAction, toggleLangAction } from "../../actions";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
@@ -47,6 +48,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
   const me = (await currentUser())!;
   const p = getPessoas().find((x) => x.id === id);
   if (!p) notFound();
+  const sabemos = filtrarConfirmados({ pessoa: p.id });
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas();
   const gerir = can.gerirPessoa(me, p) || (p.equipes.length === 0 && me.gestao);
@@ -408,6 +410,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         { id: "resumo", rotulo: t.resumoLbl, contagem: 0, conteudo: resumo },
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
         { id: "perfil", rotulo: t.perfilLbl, contagem: 0, conteudo: perfil },
+        { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?pessoa=${p.id}#base`} /> },
         ...(gerir || proprio || enviados.length ? [{ id: "gestao", rotulo: t.gestaoLbl, contagem: 0, conteudo: gestao }] : []),
         // only on one's own profile: nobody sees or touches someone else's connections
         ...(me.pessoa?.id === p.id && !me.vendoComo ? [{ id: "conexoes", rotulo: t.cx.aba, contagem: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },

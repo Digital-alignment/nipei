@@ -171,7 +171,7 @@ export function queryVaultGrounding(
   // K3: confirmed facts (Conhecimento) come first and count as fully grounded; old notes fill in after.
   let fatos: VaultCitation[] = [];
   try {
-    fatos = buscarConhecimento(userQuery, { limite: 5 }).map(({ fato, fonte }) => ({
+    fatos = buscarConhecimento(userQuery, { origem: "hermes", limite: 5 }).map(({ fato, fonte }) => ({
       path: fato.file.split(path.sep).join("/"), filename: path.basename(fato.file), title: `Fato confirmado${fonte ? ` · ${fonte}` : ""}`,
       sha256: crypto.createHash("sha256").update(fato.texto).digest("hex"), relevanceScore: 1, snippet: fato.texto,
     }));

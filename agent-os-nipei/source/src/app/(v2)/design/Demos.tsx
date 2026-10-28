@@ -69,7 +69,7 @@ export function DemoCampo() {
           erro={nome.trim().length < 3 ? "Escreva pelo menos 3 letras." : undefined} ajuda="Como a pessoa é chamada na equipe." />
       </div>
       <div className="grid content-start gap-3">
-        <Campo tipo="busca" pinu rotulo="Pergunte ao Pinu ou busque…" />
+        <Campo tipo="busca" pinu rotulo="Pergunte ao Pinu ou busque…" onMicrofone={() => {}} />
         <Campo tipo="busca" rotulo="Buscar tarefas" acaoDireita={<BotaoIcone icone="filtrar" aria-label="Filtrar" tamanho={44} variante="fantasma" />} />
         <Campo tipo="selecao" rotulo="Equipe" defaultValue="guardioes">
           <option value="escritorio">Escritório / Gestão Geral</option><option value="producao">Produção Yawanawa</option>

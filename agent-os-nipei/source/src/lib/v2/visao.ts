@@ -60,7 +60,7 @@ export async function gerarSintese(projetoId: string): Promise<string> {
   const v = coletarVisao(projetoId);
   if (!v) throw new Error("Projeto não encontrado");
   const c = v.coletivo, d = v.diag;
-  const base = buscarConhecimento(`${v.projeto.nome} ${v.projeto.descricao}`, { projetos: [projetoId], limite: 30, minimo: 0.1 });
+  const base = buscarConhecimento(`${v.projeto.nome} ${v.projeto.descricao}`, { origem: "visao", projetos: [projetoId], limite: 30, minimo: 0.1 });
   const visaoIndividual = d ? participantes(d).flatMap((p) => {
     const r = getRespostas(d.id, p.id);
     return Object.entries(r).filter(([k, x]) => k.startsWith("visao.") && x.texto).map(([k, x]) => `- [${k}] ${x.texto.slice(0, 500)}`);

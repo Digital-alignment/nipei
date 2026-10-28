@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AbasComPainel } from "@/components/ds/Abas";
+import OQueSabemos from "@/components/v2/OQueSabemos";
+import { filtrarConfirmados } from "@/lib/v2/conhecimento";
 import ChipDS from "@/components/ds/Chip";
 import { chaveEquipe } from "@/components/ds/equipes";
 import { EstadoVazio } from "@/components/ds/Estados";
@@ -30,6 +32,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   const me = (await currentUser())!;
   const p = getProjetos().find((x) => x.id === id);
   if (!p) notFound();
+  const sabemos = filtrarConfirmados({ projeto: p.id });
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas(), todas = getTarefas();
   const gerir = me.gestao || p.equipes.some((e) => me.coordena.includes(e));
@@ -186,6 +189,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
         { id: "pessoas", rotulo: t.pessoas, contagem: envolvidos.length, conteudo: pessoasAba },
         { id: "atualizacoes", rotulo: t.atualizacoes, contagem: 0, conteudo: atualizacoesAba },
+        { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?projeto=${p.id}#base`} /> },
       ]} />
     </>
   );

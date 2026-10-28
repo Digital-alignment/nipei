@@ -18,7 +18,7 @@ export default function LinhaFonte({ f, ctx }: { f: Fonte; ctx: Ctx }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-texto text-[15px] font-medium text-t1">{f.titulo || f.url || "…"}</p>
           <p className="meta text-t3">
-            {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)}{f.acervo && ` · ${t.doAcervo}`} · {" "}
+            {nome(f.enviadoPor)} · {fmtDate(diaLocal(f.enviadoEm), lang)}{f.acervo && ` · ${t.doAcervo}`}{f.canal && ` · ${t.viaCanal[f.canal] ?? f.canal}`} · {" "}
             {f.status === "processando" ? t.processando : f.status === "erro" ? <span className="text-err">{t.erroFonte}</span>
               : pendentes.length ? <span className="font-semibold text-warn">{pendentes.length} {t.fatosPropostos}</span> : t.pronta}
           </p>

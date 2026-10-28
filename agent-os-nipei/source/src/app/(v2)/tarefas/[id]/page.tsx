@@ -19,10 +19,11 @@ import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import LinhaDoTempo, { deAtividade } from "@/components/ds/padroes/LinhaDoTempo";
 import { ANEXO_TIPOS, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, today, type Anexo, type Status } from "@/lib/v2/data";
 import { parseAtividade } from "@/lib/tarefaNote";
+import { chaveTrecho, getFontes } from "@/lib/v2/conhecimento";
 import { emAndamento } from "@/lib/v2/trabalhos";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import {
-  aplicarIAAction, checklistAction, comentarAction, descricaoAction, fazerPorMimAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
+  aplicarIAAction, checklistAction, comentarAction, tarefaConhecimentoAction, descricaoAction, fazerPorMimAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
 } from "../../actions";
 
 const isImg = (a: Anexo) => /\.(jpe?g|png|webp|gif)$/i.test(a.path);
@@ -78,6 +79,16 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
 
   const atividade = doc.atividade.map((l) => ({ raw: l, p: parseAtividade(l) }));
   const comentarios = atividade.filter((x) => x.p?.comentario != null);
+  // C7: description / a comment → Conhecimento (one source per text; already sent = link to it)
+  const fontesDaTarefa = getFontes().filter((f) => f.tarefa === id && f.status !== "erro");
+  const paraConhecimento = (parte: string, texto: string) => {
+    if (texto.trim().length < 20) return null;
+    const ja = fontesDaTarefa.find((f) => f.chave === chaveTrecho(parte === "descricao" ? "d" : "c", texto));
+    return ja
+      ? <Link href={`/conhecimento/${ja.id}`} className="anel-foco alvo-toque meta inline-flex items-center gap-1 justify-self-start rounded-interno text-t2 hover:text-t1 hover:underline"><Icone nome="sucesso" tamanho={14} />{t.jaNoConhecimento}</Link>
+      : <form action={tarefaConhecimentoAction} className="justify-self-start"><input type="hidden" name="id" value={id} /><input type="hidden" name="parte" value={parte} />
+          <BotaoEnviar enviando="…" icone="enviar" variante="fantasma" tamanho="P">{t.enviarAoConhecimento}</BotaoEnviar></form>;
+  };
   const registros = atividade.filter((x) => x.p?.comentario == null);
   const visiveis = q.tudo ? registros : registros.slice(0, 30);
   const feitos = doc.checklist.filter((c) => c.feito).length;
@@ -120,6 +131,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
 
       <Bloco titulo={t.descricaoTitulo}>
         {doc.descricao ? <Md>{doc.descricao}</Md> : <p className="corpo text-t3">{t.semDescricao}</p>}
+        {doc.descricao && paraConhecimento("descricao", doc.descricao)}
         {pode && (
           <details className="group" open={!doc.descricao}>
             <summary className="anel-foco meta inline-flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-pilula text-t2 hover:text-t1"><Icone nome="editar" tamanho={16} />{t.editarDescricao}</summary>
@@ -230,6 +242,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
                 <div className="grid min-w-0 gap-0.5">
                   <p className="meta text-t3"><span className="font-semibold text-t1">{p!.quem}</span> · {p!.quando}</p>
                   <p className="corpo whitespace-pre-line text-t1">{p!.comentario}</p>
+                  {paraConhecimento(`c:${i}`, p!.comentario ?? "")}
                 </div>
               </li>
             );

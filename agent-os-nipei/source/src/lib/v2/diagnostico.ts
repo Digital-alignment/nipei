@@ -142,7 +142,7 @@ export async function rascunhoIA(d: Diagnostico, pessoaId: string, secaoId: stri
   if (!p) throw new Error("Pessoa não encontrada");
   const equipes = getEquipes(), projetos = getProjetos();
   const minhas = getTarefas().filter((t) => t.responsaveis.includes(pessoaId));
-  const base = buscarConhecimento(`${p.name} ${p.funcao} ${p.area} ${sec.titulo} ${sec.perguntas.map((q) => q.texto).join(" ")}`, { pessoas: [pessoaId], limite: 25, minimo: 0.15 });
+  const base = buscarConhecimento(`${p.name} ${p.funcao} ${p.area} ${sec.titulo} ${sec.perguntas.map((q) => q.texto).join(" ")}`, { origem: "diagnostico", pessoas: [pessoaId], limite: 25, minimo: 0.15 });
   const contexto = [
     `# ${p.name} (${p.id})`, `Função: ${p.funcao || "-"} · Área: ${p.area || "-"} · Disponibilidade: ${p.disponibilidade || "-"}`,
     `Equipes: ${p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e).join(", ")}${p.coordena.length ? ` · coordena: ${p.coordena.join(", ")}` : ""}`,
@@ -276,7 +276,7 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
   if (!sec) throw new Error("Seção inválida");
   const projeto = getProjetos().find((p) => p.id === d.projeto);
   const consulta = `${projeto?.nome ?? ""} ${sec.titulo} ${sec.perguntas.map((q) => `${q.texto} ${q.guia.join(" ")}`).join(" ")}`;
-  const base = buscarConhecimento(consulta, { projetos: d.projeto ? [d.projeto] : [], limite: 30, minimo: 0.12 });
+  const base = buscarConhecimento(consulta, { origem: "diagnostico", projetos: d.projeto ? [d.projeto] : [], limite: 30, minimo: 0.12 });
   const rag = queryVaultGrounding(`${projeto?.nome ?? ""} retiro dieta ${sec.titulo}`.slice(0, 400));
   const tarefas = getTarefas().filter((t) => !d.projeto || t.projeto === d.projeto);
   const lanc = secaoId === "financas" ? lancamentosDoPeriodo(d, getColetivo(d.id).periodo) : [];

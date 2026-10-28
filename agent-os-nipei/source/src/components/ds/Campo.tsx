@@ -21,7 +21,7 @@ type Comum = {
   acaoDireita?: ReactNode;
   /** Linha de sugestão abaixo do texto (use <SugestaoPinu>). */
   sugestao?: ReactNode;
-  /** Busca do Pinu: mini-anel à esquerda + microfone em acento (só com tipo="busca"). */
+  /** Busca do Pinu: mini-anel à esquerda + microfone em acento (só com tipo="busca" e quando há `onMicrofone`). */
   pinu?: boolean;
   onMicrofone?: () => void;
   id?: string;
@@ -84,7 +84,7 @@ export default function Campo(props: PropsCampo) {
             {pinu ? <span className="mini-anel" aria-hidden="true" /> : <Icone nome={iconeEsquerda ?? "buscar"} tamanho={20} className="text-t3" />}
             <span className="min-w-0 flex-1">{controle}</span>
             {acaoDireita}
-            {pinu && <BotaoIcone icone="microfone" aria-label="Falar com o Pinu" tamanho={44} variante="acento" onClick={onMicrofone} />}
+            {pinu && onMicrofone && <BotaoIcone icone="microfone" aria-label="Falar com o Pinu" tamanho={44} variante="acento" onClick={onMicrofone} />}
           </>
         ) : (
           <>
