@@ -1,0 +1,15 @@
+node_modules
+.next
+.netlify
+.git
+.env*
+!.env*.example
+*.tsbuildinfo
+next-env.d.ts
+docs
+design-assets
+member-pack
+*.md
+!SEO-SETUP.md
+Dockerfile
+.dockerignore

@@ -297,7 +297,11 @@ git add .
 git commit -m "feat(scope): mensagem descritiva"
 git push origin main
 
-# 2. Deploy remoto no VPS via SSH (chave dedicada nipei_vps)
+# 2. Deploy: o push para main já dispara .github/workflows/deploy.yml (build no GitHub → ghcr.io/digital-alignment/nipei-os
+#    → VPS roda scripts/deploy-vps.sh: pull da imagem + up). ./scripts/deploy.ps1 faz o push e espera o resultado.
+#    Detalhes e medições: docs/deploy-rapido.md. Sem o secreto VPS_SSH_KEY, deploy manual (só baixa a imagem, ~15 s):
+ssh -i C:\Users\ondig\.ssh\nipei_vps -o BatchMode=yes root@85.31.61.100 /opt/nipei-control/scripts/deploy-vps.sh
+#    Plano B (GitHub fora do ar): compilar no VPS (~2,5 min, pesa nos outros serviços)
 ssh -i C:\Users\ondig\.ssh\nipei_vps -o BatchMode=yes root@85.31.61.100 "cd /opt/nipei-control && git pull origin main && docker compose build app && docker compose up -d app"
 
 # 3. Verificação de status do container

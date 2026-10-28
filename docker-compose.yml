@@ -1,5 +1,7 @@
 services:
   app:
+    # Built by .github/workflows/deploy.yml; `build:` stays as plan B (docker compose build app).
+    image: ghcr.io/digital-alignment/nipei-os:latest
     build:
       context: ./agent-os-nipei/source
       dockerfile: Dockerfile

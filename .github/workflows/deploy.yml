@@ -1,0 +1,38 @@
+# Compila la imagen en GitHub (4 vCPU, gratis en repo público), la publica en GHCR y,
+# si existe el secreto VPS_SSH_KEY, le dice al VPS que la baje y reinicie el contenedor.
+name: deploy
+on:
+  push:
+    branches: [main]
+    paths: ["agent-os-nipei/source/**", "docker-compose.yml", ".github/workflows/deploy.yml"]
+  workflow_dispatch:
+
+concurrency: { group: deploy, cancel-in-progress: true }
+
+permissions: { contents: read, packages: write }
+
+env:
+  IMAGE: ghcr.io/digital-alignment/nipei-os
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - uses: docker/build-push-action@v6
+        with:
+          context: agent-os-nipei/source
+          push: true
+          tags: ${{ env.IMAGE }}:latest,${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Deploy en el VPS
+        env: { KEY: "${{ secrets.VPS_SSH_KEY }}" }
+        if: env.KEY != ''
+        run: |
+          install -m 600 /dev/null ~/.ssh_key && printf '%s\n' "$KEY" > ~/.ssh_key
+          # La clave está limitada en el VPS con command="/opt/nipei-control/scripts/deploy-vps.sh" (ver informe).
+          ssh -i ~/.ssh_key -o StrictHostKeyChecking=accept-new root@85.31.61.100 "${{ github.sha }}"
