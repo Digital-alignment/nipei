@@ -14,7 +14,7 @@
 3. **Ainda não testado com conta real** (só local): enviar e-mail pelo assistente; exportar Docs/Slides/Sheets.
 4. Opcional: verificação do app OAuth no Google (`nipei-512411`) para tirar o aviso "não verificado"; Gmail é escopo restrito (avaliação de segurança paga).
 
-**Cuidados que já morderam:** o assistente tende a "corrigir" respostas antigas (regras e marcadores em `paraModelo`); dizia "propus" sem chamar a ferramenta (trava em `conversar`); backups simultâneos duplicavam arquivos no Drive (trava por pessoa em `backup.ts`); APIs do Google precisam estar ativas no projeto (a do Gmail faltou). Testes locais: vault copiado para o scratchpad + `.env.development.local` (VAULT_PATH, mocks do Evolution e do Google); apagar o `.env.development.local` antes do deploy.
+**Cuidados que já morderam:** o assistente tende a "corrigir" respostas antigas (regras e marcadores em `paraModelo`); dizia "propus" sem chamar a ferramenta (trava em `conversar`); backups simultâneos duplicavam arquivos no Drive (trava por pessoa em `backup.ts`); APIs do Google precisam estar ativas no projeto (a do Gmail faltou). Entrar no localhost: `npm run entrar:local -- [pessoa_id] [porta]` (em `agent-os-nipei/source`) gera um link de 15 min — senhas e Google ficam em `<vault>/.jobs/`, que não vem do git, e o segredo local é diferente do de produção (o link não vale em os.nipeihu.app). Testes locais: vault copiado para o scratchpad + `.env.development.local` (VAULT_PATH, mocks do Evolution e do Google); apagar o `.env.development.local` antes do deploy.
 
 ---
 

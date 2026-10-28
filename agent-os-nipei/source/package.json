@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "icones": "node scripts/gerar-icones.mjs",
+    "entrar:local": "node scripts/entrar-local.mjs",
     "verificar:ds": "node scripts/verificar-ds.mjs && node scripts/ds-contraste.mjs",
     "prebuild": "npm run verificar:ds"
   },
