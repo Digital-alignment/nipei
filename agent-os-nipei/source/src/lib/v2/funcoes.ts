@@ -11,6 +11,7 @@ export const FUNCOES = {
   assistente: { nome: "Assistente", descricao: "O assistente no painel (o botão flutuante).", padrao: (me: Me) => me.gestao, regra: "Equipe 1" },
   voz: { nome: "Voz do assistente", descricao: "Respostas faladas do assistente.", padrao: (me: Me) => me.gestao, regra: "Equipe 1" },
   whatsapp: { nome: "Assistente pelo WhatsApp", descricao: "Encaminhar mensagens ao número do Nipëi e confirmar propostas por lá.", padrao: (me: Me) => me.gestao, regra: "Equipe 1" },
+  whatsapp_conhecimento: { nome: "Enviar ao Conhecimento pelo WhatsApp", descricao: "Mandar ou encaminhar textos, áudios, fotos e PDFs ao número do Nipëi para virar fonte do Conhecimento (passa pela revisão).", padrao: (me: Me) => !!me.pessoa?.whatsappVerificado, regra: "membros com WhatsApp verificado" },
   gmail: { nome: "Gmail no assistente", descricao: "Ler, buscar e enviar e-mails pelo assistente (precisa ativar o Gmail em Conexões).", padrao: (me: Me) => me.gestao, regra: "Equipe 1", soGestao: true },
   mcp: { nome: "Apps de IA (Claude, Gemini…)", descricao: "Usar o Nipëi de dentro de outros apps de IA.", padrao: () => true, regra: "todos" },
 } satisfies Record<string, { nome: string; descricao: string; padrao: (me: Me) => boolean; regra: string; soGestao?: boolean }>;

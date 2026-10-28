@@ -145,6 +145,42 @@ export async function proporMudancas(fatoIds: string[]): Promise<number> {
   return n;
 }
 
+// ---------------------------------------------------------------- C7 fase 4: actions a new source suggests
+
+const SISTEMA_SUGESTOES = `Você ajuda a manter o Nipëi OS em dia. Responda em português do Brasil.
+Você recebe FATOS recém-enviados por alguém (ainda não revisados) e as TAREFAS abertas que parecem ligadas a eles.
+Sugira NO MÁXIMO 2 ações concretas que esses fatos claramente pedem; nenhuma se nada precisar:
+- "criar_tarefa": um trabalho que nenhuma tarefa cobre → {"titulo", "equipe": id, "prazo": "AAAA-MM-DD"|""};
+- "mudar_prazo": o fato muda a data de uma tarefa existente → {"id": id da tarefa, "prazo": "AAAA-MM-DD"};
+- "comentar": o fato traz informação útil para uma tarefa existente → {"id": id da tarefa, "texto": até 2 frases}.
+Use só ids das listas. Cada ação: {"tipo", "motivo": uma frase curta para a pessoa, sem ids, ...campos}. Responda APENAS com JSON: {"acoes": [...]}`;
+
+export type AcaoSugerida = { nome: "criar_tarefa" | "mudar_prazo" | "comentar"; args: Record<string, unknown>; motivo: string };
+
+/**
+ * Up to 2 actions the NEW (still unreviewed) facts of a source seem to ask for, phrased as the assistant's own
+ * tools so they can become the sender's cards. Nothing is written here; the caller decides what to show.
+ */
+export async function sugerirAcoes(fatos: Fato[]): Promise<AcaoSugerida[]> {
+  if (!fatos.length) return [];
+  const todas = getTarefas(), ligadas = tarefasLigadas(fatos, todas).slice(0, 15), equipes = getEquipes();
+  const texto = [
+    `Hoje: ${today()}`, "## Fatos recém-enviados", ...fatos.slice(0, 30).map((f) => `- [${f.tipo}${f.dataReferencia ? `, ${f.dataReferencia}` : ""}] ${f.texto} (equipe ${f.equipe || "-"})`),
+    "", "## Tarefas abertas ligadas", ...(ligadas.length ? ligadas.map(linhaTarefa) : ["(nenhuma)"]),
+    "", "## Equipes", equipes.map((e) => `${e.id} (${e.nome})`).join("; "),
+  ].join("\n");
+  const { o } = await chamarIA(SISTEMA_SUGESTOES, [{ type: "text", text: texto }], 1500, 60_000);
+  const ids = new Set(ligadas.map((t) => t.id)), eqs = new Set(equipes.map((e) => e.id));
+  const out: AcaoSugerida[] = [];
+  for (const x of ((Array.isArray(o.acoes) ? o.acoes : []) as Record<string, unknown>[]).slice(0, 2)) {
+    const tipo = s(x.tipo), motivo = s(x.motivo).slice(0, 200);
+    if (tipo === "criar_tarefa" && s(x.titulo)) out.push({ nome: tipo, motivo, args: { titulo: s(x.titulo).slice(0, 200), ...(eqs.has(s(x.equipe)) ? { equipe: s(x.equipe) } : {}), ...(ISO.test(s(x.prazo)) ? { prazo: s(x.prazo) } : {}) } });
+    else if (tipo === "mudar_prazo" && ids.has(s(x.id)) && ISO.test(s(x.prazo))) out.push({ nome: tipo, motivo, args: { id: s(x.id), prazo: s(x.prazo) } });
+    else if (tipo === "comentar" && ids.has(s(x.id)) && s(x.texto)) out.push({ nome: tipo, motivo, args: { id: s(x.id), texto: s(x.texto).slice(0, 600) } });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- grouped (review sessions)
 
 // Reviewing one fact at a time used to start one AI call (~20 s, its own token bill) per confirmed fact.

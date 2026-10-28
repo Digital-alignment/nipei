@@ -233,6 +233,37 @@ export async function gmailLer(pessoaId: string, id: string) {
   return { id: d.id, de: cab(d.payload, "From"), para: cab(d.payload, "To"), assunto: cab(d.payload, "Subject"), data: cab(d.payload, "Date"), texto: corpoTexto(d.payload ?? {}).trim().slice(0, 6000) };
 }
 
+// ---- C7 fase 5: an e-mail as a Conhecimento source (body + subject; attachments as separate sources)
+
+type ParteAnexo = Parte & { filename?: string; body?: { data?: string; attachmentId?: string; size?: number } };
+const MIMES_ANEXO = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+
+/**
+ * The parts of an e-mail worth keeping: subject, date, sender's NAME (no address), the body without the quoted
+ * history ("Em … escreveu:", "On … wrote:", "> …") and without the signature ("-- "), plus PDF/photo attachments
+ * up to 10 MB (other files are only named). External content: stored for review, never followed.
+ */
+export async function gmailParaConhecimento(pessoaId: string, id: string) {
+  const d = await gapi<{ id: string; payload?: ParteAnexo }>(pessoaId, "gmail.googleapis.com", `/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`);
+  const p = d.payload ?? {};
+  const linhas = corpoTexto(p).replace(/\r/g, "").split("\n");
+  const corte = linhas.findIndex((l) => /^(--|__)\s*$/.test(l) || /^(Em|On|El)\s.+(escreveu|wrote|escribió):\s*$/i.test(l.trim()) || /^-{2,}\s*(Mensagem original|Original Message|Forwarded message)/i.test(l.trim()));
+  const texto = (corte >= 0 ? linhas.slice(0, corte) : linhas).filter((l) => !/^\s*>/.test(l)).join("\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, 20_000);
+  const anexos: { nome: string; mime: string; bytes: Buffer }[] = [], ignorados: string[] = [];
+  const andar = async (x: ParteAnexo) => {
+    if (x.filename && x.body?.attachmentId) {
+      const mime = (x.mimeType ?? "").split(";")[0];
+      if (!MIMES_ANEXO.has(mime) || (x.body.size ?? 0) > 10 * 1024 * 1024) { ignorados.push(x.filename); return; }
+      const a = await gapi<{ data?: string }>(pessoaId, "gmail.googleapis.com", `/gmail/v1/users/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(x.body.attachmentId)}`);
+      if (a.data) anexos.push({ nome: x.filename, mime, bytes: Buffer.from(a.data.replace(/-/g, "+").replace(/_/g, "/"), "base64") });
+    }
+    for (const y of (x.parts ?? []) as ParteAnexo[]) await andar(y);
+  };
+  await andar(p);
+  const de = cab(p, "From").replace(/\s*<[^>]*>\s*/, "").replace(/^"|"$/g, "").trim() || "(remetente)";
+  return { id: d.id, assunto: cab(p, "Subject") || "(sem assunto)", de, data: cab(p, "Date"), texto, anexos, ignorados };
+}
+
 const mimeAssunto = (s: string) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${Buffer.from(s).toString("base64")}?=`);
 
 /** Sends (or saves as a draft) a new e-mail or a reply in the same thread. Returns a link to Gmail. */

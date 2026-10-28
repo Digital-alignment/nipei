@@ -19,19 +19,21 @@ import { revisarFatoAction } from "../../actions";
 
 // Review one fact at a time (cards): the fact, editable, next to the passage of the original it came from;
 // confirm / discard / skip. After confirming or discarding the page re-renders and the next one shows.
-// ?pular= skipped ids (this visit only) · ?filtro=sem-equipe (gestão) = only facts without a team, to set it.
-export default async function RevisarUmPorUm({ searchParams }: { searchParams: Promise<{ pular?: string; filtro?: string }> }) {
+// ?pular= skipped ids (this visit only) · ?filtro=sem-equipe (gestão) = only facts without a team, to set it ·
+// ?fonte= only the facts of one source (the link sent back by WhatsApp after a source is read).
+export default async function RevisarUmPorUm({ searchParams }: { searchParams: Promise<{ pular?: string; filtro?: string; fonte?: string }> }) {
   const q = await searchParams;
   const { t, lang } = await getT();
   const me = (await currentUser())!;
   const semEquipe = me.gestao && q.filtro === "sem-equipe";
   const pulados = new Set((q.pular ?? "").split(",").filter(Boolean));
-  const todos = getFatos().filter((f) => f.status === "proposto" && podeRevisar(me, f) && (!semEquipe || !f.equipe))
+  const todos = getFatos().filter((f) => f.status === "proposto" && podeRevisar(me, f) && (!semEquipe || !f.equipe) && (!q.fonte || f.fonte === q.fonte))
     .sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
   const fila = todos.filter((f) => !pulados.has(f.id));
   const f = fila[0];
   const url = (p: { pular?: string[]; filtro?: string }) => {
     const s = new URLSearchParams();
+    if (q.fonte) s.set("fonte", q.fonte);
     if (p.filtro) s.set("filtro", p.filtro);
     if (p.pular?.length) s.set("pular", p.pular.join(","));
     return `/conhecimento/revisar${s.size ? `?${s}` : ""}`;
