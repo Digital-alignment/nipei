@@ -1,5 +1,9 @@
 /* v1 fonts load only on v1 screens: components/fontesV1.ts + Shell.tsx */
 @import "tailwindcss";
+/* telas sem rolagem (Login): compactar pela ALTURA da tela, não pela largura */
+@custom-variant baixa (@media (max-height: 720px));
+@custom-variant mini (@media (max-height: 600px));
+@custom-variant deitada (@media (max-height: 520px) and (orientation: landscape));
 
 /* ─────────────────────────────────────────────────────────────────────
    Nipei OS — Official Design System (Alata, Google Sans, Space Mono)

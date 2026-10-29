@@ -88,7 +88,7 @@ export default function Campo(props: PropsCampo) {
           </>
         ) : (
           <>
-            <label htmlFor={id} className="rotulo-campo text-t3 cursor-text">{rotulo}</label>
+            <label htmlFor={id} className="rotulo-campo text-t2 cursor-text">{rotulo}</label>
             <span className="flex items-center gap-2">
               {iconeEsquerda && <Icone nome={iconeEsquerda} tamanho={20} className="shrink-0 text-t3" />}
               <span className="min-w-0 flex-1">{controle}</span>

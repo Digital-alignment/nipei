@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-10-28 — Login sem rolagem, rótulo do campo e auditoria
+
+- **Login**: logo = ícone do app (o mesmo do favicon); a página nunca rola (`h-dvh` + `overflow-hidden`) e se compacta pela altura com as variantes novas `baixa:`, `mini:` e `deitada:` (`globals.css`, seção 5.2); campos com ícone (pessoa, cadeado, mensagem). Conferido de 320×568 a 1440×900 e deitado (667×375, 844×390).
+- **Campo**: rótulo passa de `t3` para `t2` (seção 9.5) — vale para todos os campos.
+- Auditoria: BotaoEnviar exige ícone (29 botões viram Botao), /oauth/authorize no DS, 13 campos viram Campo/CAMPO_COMPACTO, raios iguais a token, cartões do Pinu com `Cartao variante="pinu"`, selo nas equipes de Pulso e Organizar.
+
 ## 2026-10-26 — v1: migração concluída (branch `design-system-v1`)
 
 ### Telas

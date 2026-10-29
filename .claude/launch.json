@@ -3,7 +3,8 @@
   "configurations": [
     {
       "name": "nipei-os",
-      "url": "http://localhost:3456",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "agent-os-nipei/source"],
       "port": 3456
     }
   ]

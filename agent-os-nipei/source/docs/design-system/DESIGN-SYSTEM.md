@@ -162,6 +162,7 @@ Base de 4 px: `4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 56`.
 - Margem lateral: 16 px no celular · 24–32 px no computador.
 - Entre cartões: 8–12 px · dentro do cartão: 16 px · entre seções: 32–44 px.
 - Densidade: no celular, respiro; no computador, **mais colunas e tabelas compactas** (linhas de 56 px), com a mesma linguagem visual.
+- **Telas sem rolagem** (hoje só o Login): a página ocupa `h-dvh` com `overflow-hidden` e se compacta pela **altura**, com as variantes de `globals.css`: `baixa:` (≤ 720 px de altura: menos espaço, botões de 48 px, sem subtítulo), `mini:` (≤ 600 px: logo em linha com o nome, sem divisor) e `deitada:` (celular deitado, ≤ 520 px: duas colunas, botões de 44 px). Área de toque continua ≥ 44 px.
 
 ### 5.3 Superfícies
 
@@ -295,7 +296,7 @@ Pílula `superfície 2` com ícones; ativo = `superfície 3` + contorno de 1 px.
 
 ### 9.5 Campo
 - Superfície tonal (`superfície 2`), **sem borda**, raio pílula (uma linha) ou 16/12 (várias linhas).
-- **Rótulo dentro**, pequeno, no topo; texto embaixo; ajuda abaixo do texto em `meta`.
+- **Rótulo dentro**, pequeno, no topo, em **texto secundário** (`t2`); texto em `t1`; placeholder em `t3` (assim rótulo e placeholder não se confundem); ajuda abaixo do texto em `meta`.
 - Hover = brilho fraco · foco = anel de acento 1,5 px + brilho · erro = anel `erro` + ícone `erro` + mensagem que diz como corrigir.
 - Tipos: texto, título grande (Outfit 300, 26 px), área de texto, busca (ícone à esquerda; ação à direita), seleção (valor + ▼), data (valor + `calendario`).
 - **Busca do Pinu**: mini-anel à esquerda + microfone em acento à direita.
