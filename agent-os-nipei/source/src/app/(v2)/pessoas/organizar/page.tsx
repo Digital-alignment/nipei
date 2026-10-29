@@ -1,4 +1,6 @@
 import Icone from "@/components/ds/Icone";
+import Selo from "@/components/ds/Selo";
+import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import AvatarDS from "@/components/ds/Avatar";
 import Campo from "@/components/ds/Campo";
@@ -76,7 +78,7 @@ export default async function OrganizarEquipes() {
             return (
               <Cartao key={e.id} className="grid gap-3 content-start">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-pilula" style={{ background: e.cor }} />
+                  {chaveEquipe(e.id) && <Selo nome={EQUIPES_DS[chaveEquipe(e.id)!].selo} tamanho={18} className="shrink-0" style={{ color: EQUIPES_DS[chaveEquipe(e.id)!].cor }} />}
                   <Link href={`/equipes/${e.id}`} className="font-medium text-sm flex-1 min-w-0 hover:underline">{e.nome}</Link>
                   <span className="text-xs text-t2 tabular-nums">{membros.length}</span>
                   {!e.acesso && <span title={t.equipeSemAcessoAjuda} className="text-t3"><Icone nome="cadeado"  tamanho={13} /></span>}

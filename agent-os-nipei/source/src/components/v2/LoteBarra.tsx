@@ -69,7 +69,7 @@ export default function LoteBarra({ formId, pessoas, equipes, labels }: {
       {acao === "prazo" && <input type="date" name="prazo" required className={CAMPO_COMPACTO} aria-label={labels.prazo} />}
       {acao === "prioridade" && <select name="prioridade" className={CAMPO_COMPACTO} aria-label={labels.prioridade}>{Object.entries(labels.prioridades).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>}
       {acao === "equipe" && <select name="equipe" className={CAMPO_COMPACTO} aria-label={labels.mover}>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</select>}
-      <BotaoEnviar enviando="…" className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{labels.aplicar}</BotaoEnviar>
+      <BotaoEnviar enviando="…" icone="confirmar" variante="primario" tamanho="P">{labels.aplicar}</BotaoEnviar>
     </form>
   );
 }

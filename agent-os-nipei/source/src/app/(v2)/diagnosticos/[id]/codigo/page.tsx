@@ -33,7 +33,7 @@ export default async function Codigo({ params }: { params: Promise<{ id: string 
       {pendente && (
         <form action={aceitarCodigoAction} className="mb-6 rounded-interno border bg-info-bg p-3">
           {hidden}
-          <BotaoEnviar enviando={t.salvando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.aceitarCodigo} ({t.versao} {c.versao})</BotaoEnviar>
+          <BotaoEnviar enviando={t.salvando} icone="confirmar" variante="primario" tamanho="P">{t.aceitarCodigo} ({t.versao} {c.versao})</BotaoEnviar>
         </form>
       )}
       {meu && !pendente && <p className="inline-flex items-center gap-1 text-sm text-ok mb-6"><Icone nome="sucesso"  tamanho={16} />{t.aceitoEm} {fmtDate(diaLocal(meu.em), lang)} ({t.versao} {meu.versao})</p>}
@@ -49,7 +49,7 @@ export default async function Codigo({ params }: { params: Promise<{ id: string 
               <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
               <div className="flex flex-wrap gap-2">
                 <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarRascunho}</BotaoEnviar>
-                <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.publicarVersao}</BotaoEnviar>
+                <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} icone="enviar" variante="primario" tamanho="P">{t.publicarVersao}</BotaoEnviar>
               </div>
             </form>
           )}

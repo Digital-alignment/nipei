@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Icone from "@/components/ds/Icone";
 import { cadastroLoteAction } from "@/app/(v2)/actions";
 import BotaoEnviar from "./BotaoEnviar";
 
@@ -37,7 +36,7 @@ export default function CadastroLote({ formId, labels }: { formId: string; label
           <button type="button" onClick={() => marcar(true)} className="text-xs underline text-t2">{labels.todas}</button>
           <button type="button" onClick={() => marcar(false)} className="text-xs underline text-t2">{labels.limpar}</button>
           <span className="basis-full sm:basis-auto sm:ml-auto" />
-          <BotaoEnviar enviando="…" className="inline-flex items-center gap-1.5 rounded-interno bg-ac text-ac-ink px-3 py-1.5 text-sm font-medium"><Icone nome="enviar"  tamanho={14} />{labels.enviar}</BotaoEnviar>
+          <BotaoEnviar enviando="…" icone="enviar" variante="primario" tamanho="P">{labels.enviar}</BotaoEnviar>
         </div>
       )}
       {n > 0 && <p className="text-xs text-t2">{labels.aviso}</p>}

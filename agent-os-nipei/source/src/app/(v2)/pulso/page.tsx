@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Selo from "@/components/ds/Selo";
+import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import ChipDS from "@/components/ds/Chip";
@@ -36,7 +38,7 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
         <tbody>
           {p.linhas.map((l) => (
             <tr key={l.id || "sem"} className="border-t border-s2">
-              <td className="py-1.5"><Link href={url({ equipe: l.id })} className="inline-flex items-center gap-1.5 hover:underline"><span className="w-2 h-2 rounded-pilula" style={{ background: l.cor }} />{l.nome || t.semEquipeLbl}</Link></td>
+              <td className="py-1.5"><Link href={url({ equipe: l.id })} className="inline-flex items-center gap-1.5 hover:underline">{chaveEquipe(l.id) && <Selo nome={EQUIPES_DS[chaveEquipe(l.id)!].selo} tamanho={16} className="shrink-0" style={{ color: EQUIPES_DS[chaveEquipe(l.id)!].cor }} />}{l.nome || t.semEquipeLbl}</Link></td>
               <td className="text-right tabular-nums">{l.abertas}</td>
               <td className={`text-right tabular-nums ${l.atrasadas ? "text-err" : ""}`}><Link href={url({ equipe: l.id, ver: "atrasadas" })}>{l.atrasadas}</Link></td>
               <td className={`text-right tabular-nums ${l.semDono ? "text-warn" : ""}`}><Link href={url({ equipe: l.id, ver: "semdono" })}>{l.semDono}</Link></td>
@@ -69,7 +71,7 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
                   </optgroup>
                 ))}
               </select>
-              <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{t.atribuirPessoa}</BotaoEnviar>
+              <BotaoEnviar enviando="…" icone="pessoa" variante="tonal" tamanho="P">{t.atribuirPessoa}</BotaoEnviar>
             </form>
             <PrazoRapido id={x.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} />
           </li>

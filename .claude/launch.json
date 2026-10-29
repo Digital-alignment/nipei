@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nipei-os",
+      "url": "http://localhost:3456",
+      "port": 3456
+    }
+  ]
+}

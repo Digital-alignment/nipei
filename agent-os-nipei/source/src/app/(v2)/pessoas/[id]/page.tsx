@@ -137,7 +137,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
           <div className="flex items-center justify-between gap-2">
             <p className="rotulo-maiusculo inline-flex items-center gap-1 text-t3"><Icone nome="gerar-outra"  tamanho={12} className="text-info" />{t.estudoIA}</p>
             <form action={estudoAction}><input type="hidden" name="pessoa" value={p.id} />
-              <BotaoEnviar enviando={t.processando} className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{estudo ? t.atualizarEstudo : t.estudarPessoa}</BotaoEnviar>
+              <BotaoEnviar enviando={t.processando} icone="gerar-outra" variante="tonal" tamanho="P">{estudo ? t.atualizarEstudo : t.estudarPessoa}</BotaoEnviar>
             </form>
           </div>
           {estudo ? (
@@ -154,7 +154,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
                         <li key={s.tarefa} className="flex flex-wrap items-center gap-2 text-sm">
                           <div className="min-w-0 flex-1"><Link href={`/tarefas/${x.id}`} className="hover:underline">{x.title}</Link><p className="text-xs text-t2">{s.motivo}</p></div>
                           <form action={atribuirAction}><input type="hidden" name="id" value={x.id} /><input type="hidden" name="pessoa" value={p.id} />
-                            <BotaoEnviar enviando="…" className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.atribuirA} {primeiro}</BotaoEnviar>
+                            <BotaoEnviar enviando="…" icone="pessoa" variante="primario" tamanho="P">{t.atribuirA} {primeiro}</BotaoEnviar>
                           </form>
                         </li>
                       ) : <li key={s.tarefa} className="meta flex items-center gap-1.5 text-t3"><Icone nome="confirmar" tamanho={14} />{s.motivo}</li>;
@@ -311,12 +311,12 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
             {!p.externo && p.id !== me.pessoa?.id && (
               <form action={suspensoAction}>
                 <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="suspenso" value={String(!p.suspenso)} />
-                <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{p.suspenso ? t.reativarAcesso : t.suspenderAcesso}</BotaoEnviar>
+                <BotaoEnviar enviando="…" icone="cadeado" variante="tonal" tamanho="P">{p.suspenso ? t.reativarAcesso : t.suspenderAcesso}</BotaoEnviar>
               </form>
             )}
             <form action={externoAction} className="ml-auto">
               <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="externo" value={String(!p.externo)} />
-              <BotaoEnviar enviando="…" className="text-xs underline text-t2">{p.externo ? t.voltarPessoa : t.marcarExterno}</BotaoEnviar>
+              <BotaoEnviar enviando="…" icone="pessoa" variante="fantasma" tamanho="P">{p.externo ? t.voltarPessoa : t.marcarExterno}</BotaoEnviar>
             </form>
           </div>
           <p className="text-xs text-t2 mt-2">{t.suspensoAjuda}</p>
@@ -341,7 +341,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
                     <>
                       <form action={coordenacaoAction}>
                         <input type="hidden" name="pessoa" value={p.id} /><input type="hidden" name="equipe" value={id} /><input type="hidden" name="coordena" value={String(!coord)} />
-                        <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{coord ? t.tirarCoordenacao : t.tornarCoordenador}</BotaoEnviar>
+                        <BotaoEnviar enviando="…" icone="pessoas" variante="tonal" tamanho="P">{coord ? t.tirarCoordenacao : t.tornarCoordenador}</BotaoEnviar>
                       </form>
                       {membro && !(e.gestao && p.id === me.pessoa?.id) && (
                         <form action={removerDaEquipeAction}>

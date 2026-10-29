@@ -149,7 +149,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
               {reprogramaveis.map((x) => <input key={x.id} type="hidden" name="ids" value={x.id} />)}
               <span className="meta text-t2">{t.moverTodasPara.replace("{n}", String(reprogramaveis.length))}</span>
               {[[t.paraHoje, hoje], [t.amanha, somar(hoje, 1)], [t.proximaSemana, segunda(somar(hoje, 7))]].map(([rot, d]) => (
-                <BotaoEnviar key={d} name="prazo" value={d} enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s2 px-3.5 font-texto text-sm font-medium text-t2 hover:bg-s3 hover:text-t1"><Icone nome="prazo" tamanho={16} />{rot}</BotaoEnviar>
+                <BotaoEnviar key={d} name="prazo" value={d} enviando="…" icone="prazo" variante="tonal" tamanho="P">{rot}</BotaoEnviar>
               ))}
             </form>
           )}

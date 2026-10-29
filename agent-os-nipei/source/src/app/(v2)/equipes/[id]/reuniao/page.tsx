@@ -59,7 +59,7 @@ export default async function ReuniaoEquipe({ params, searchParams }: { params: 
             <input type="hidden" name="equipe" value={id} />
             <input type="date" name="data" required min={hoje} aria-label={t.data} className={CAMPO_COMPACTO} />
             <input type="time" name="hora" aria-label={t.hora} className={CAMPO_COMPACTO} />
-            <BotaoEnviar enviando="…" className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4">{t.agendarReuniao}</BotaoEnviar>
+            <BotaoEnviar enviando="…" icone="calendario" variante="tonal" tamanho="P">{t.agendarReuniao}</BotaoEnviar>
           </form>
         )}
       </div>
@@ -90,7 +90,7 @@ export default async function ReuniaoEquipe({ params, searchParams }: { params: 
           <Campo tipo="area" rotulo={t.decisoes} name="decisoes" rows={3} maxLength={5000} />
           <Campo tipo="area" rotulo={t.encaminhamentos} name="encaminhamentos" rows={4} maxLength={5000} placeholder={`Ligar para o fornecedor @${membros[0]?.name.split(" ")[0] ?? "Nome"} até 25/10`} />
           <p className="text-xs text-t2 mb-3">{t.encaminhamentosAjuda}</p>
-          <BotaoEnviar enviando="…" className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.salvarAta}</BotaoEnviar>
+          <BotaoEnviar enviando="…" icone="confirmar" variante="primario" tamanho="P">{t.salvarAta}</BotaoEnviar>
         </form>
       )}
 

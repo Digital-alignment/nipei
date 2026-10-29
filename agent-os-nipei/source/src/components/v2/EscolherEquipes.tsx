@@ -33,7 +33,7 @@ export default function EscolherEquipes({ pessoaId, equipes, t, notas = 0, comNo
               <Icone nome="confirmar" tamanho={14} className="hidden text-ac-text group-has-[:checked]/eq:inline" />
             </label>
           ))}
-          <BotaoEnviar enviando="…" className="anel-foco alvo-toque inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4"><Icone nome="mais" tamanho={16} />{t.adicionar}</BotaoEnviar>
+          <BotaoEnviar enviando="…" icone="mais" variante="tonal" tamanho="P">{t.adicionar}</BotaoEnviar>
         </form>
       )}
       {comNota && (
@@ -46,7 +46,7 @@ export default function EscolherEquipes({ pessoaId, equipes, t, notas = 0, comNo
             <textarea name="texto" required rows={2} maxLength={4000} placeholder={t.notaPlaceholder}
               className="w-full sm:w-80 rounded-interno bg-s2 px-3 py-2 font-texto text-sm text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
             <div className="flex items-center gap-2">
-              <BotaoEnviar enviando="…" className="anel-foco alvo-toque inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4"><Icone nome="confirmar" tamanho={16} />{t.salvarNota}</BotaoEnviar>
+              <BotaoEnviar enviando="…" icone="confirmar" variante="tonal" tamanho="P">{t.salvarNota}</BotaoEnviar>
               <span className="meta text-t3"><Icone nome="cadeado" tamanho={14} className="mr-1 inline align-[-2px]" />{t.soEquipe1}</span>
             </div>
           </form>

@@ -25,9 +25,7 @@ export default async function Consolidado({ params }: { params: Promise<{ id: st
       <p className="text-sm text-t2 mt-1 mb-4">{c?.geradoEm ? `${t.geradoEm} ${fmtDate(diaLocal(c.geradoEm), lang)}` : t.naoGerado}</p>
       <form action={consolidadoAction} className="mb-6">
         <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="tipo" value={tipo} />
-        <BotaoEnviar enviando={t.processando} className="rounded-interno bg-s2 px-4 py-2 text-sm inline-flex items-center gap-1.5">
-          <Icone nome="gerar-outra"  tamanho={14} />{c ? t.atualizarIA : t.gerarIA}
-        </BotaoEnviar>
+        <BotaoEnviar enviando={t.processando} icone="gerar-outra" variante="tonal" tamanho="P">{c ? t.atualizarIA : t.gerarIA}</BotaoEnviar>
         <p className="text-xs text-t2 mt-2">{t.consolidadoAviso}</p>
       </form>
       {c?.texto && <Md>{c.texto}</Md>}

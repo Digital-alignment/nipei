@@ -55,7 +55,7 @@ export default async function Diagnosticos({ searchParams }: { searchParams: Pro
             <legend className="mb-1">{t.quemResponde}</legend>
             {equipes.map((e) => <label key={e.id} className="flex items-center gap-2"><input type="checkbox" name="equipes" value={e.id} defaultChecked={e.gestao} />{e.nome}</label>)}
           </fieldset>
-          <BotaoEnviar enviando={t.salvando} className="justify-self-start anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.criar_}</BotaoEnviar>
+          <BotaoEnviar enviando={t.salvando} icone="mais" variante="primario" tamanho="P" className="justify-self-start">{t.criar_}</BotaoEnviar>
           <p className="text-xs text-t2">{t.modeloAviso}</p>
         </form>
       </Section>

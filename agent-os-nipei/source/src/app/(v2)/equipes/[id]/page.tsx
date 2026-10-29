@@ -72,7 +72,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
                 {g.pessoas.map((p) => <option key={p.id} value={p.id}>{p.name}{p.suspenso ? ` (${t.suspensoLbl})` : ""}</option>)}
               </optgroup>
             ))}</Campo>
-          <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{t.atribuirPessoa}</BotaoEnviar>
+          <BotaoEnviar enviando="…" icone="pessoa" variante="tonal" tamanho="P">{t.atribuirPessoa}</BotaoEnviar>
         </form>
       )}
       {can.editTarefa(me, y) && <PrazoRapido id={y.id} opcoes={opcoes} outraData={t.outraData} rotulo={t.reprogramar} />}
@@ -141,7 +141,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
               </div>
               <form action={reatribuirAction}>
                 <input type="hidden" name="id" value={s.tarefa} /><input type="hidden" name="de" value={s.de} /><input type="hidden" name="para" value={s.para} />
-                <BotaoEnviar enviando="…" className="anel-foco inline-flex h-9 items-center gap-1.5 rounded-pilula bg-s3 px-3.5 font-texto text-sm font-semibold text-t1 hover:bg-s4">{s.de ? t.moverPara : t.atribuirA} {primeiro(s.para)}</BotaoEnviar>
+                <BotaoEnviar enviando="…" icone="pessoa" variante="tonal" tamanho="P">{s.de ? t.moverPara : t.atribuirA} {primeiro(s.para)}</BotaoEnviar>
               </form>
             </li>
           ))}

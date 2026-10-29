@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
-import { CheckCircle2, ShieldCheck } from "lucide-react";
+import Aviso from "@/components/ds/Aviso";
+import Cartao from "@/components/ds/Cartao";
+import Icone from "@/components/ds/Icone";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { currentUser } from "@/lib/v2/data";
 import { getCliente } from "@/lib/v2/oauthMcp";
@@ -21,25 +23,25 @@ export default async function Autorizar({ searchParams }: { searchParams: Promis
   const nome = me?.pessoa?.name.split(" (")[0] ?? me?.username;
 
   return (
-    <div className="v2 min-h-screen flex items-center justify-center px-4 py-10 bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-      <div className="w-full max-w-md rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 grid gap-4">
-        <div className="flex items-center gap-2"><ShieldCheck size={20} className="text-green-600" /><h1 className="text-lg font-semibold">Conectar ao Nipëi</h1></div>
-        {erro ? <p className="text-sm text-red-600 dark:text-red-400">{erro}</p> : (
+    <div className="v2 flex min-h-screen items-center justify-center bg-bg px-4 py-10 text-t1">
+      <Cartao className="grid w-full max-w-md gap-4 p-6">
+        <h1 className="titulo-secao flex items-center gap-2"><Icone nome="cadeado" tamanho={20} className="text-ac-text" />Conectar ao Nipëi</h1>
+        {erro ? <Aviso estado="erro" titulo={erro} /> : (
           <>
-            <p className="text-sm"><strong>{cliente!.nome}</strong> quer usar o Nipëi como <strong>{nome}</strong>.</p>
-            <ul className="grid gap-1.5 text-sm text-neutral-600 dark:text-neutral-300">
+            <p className="corpo"><strong>{cliente!.nome}</strong> quer usar o Nipëi como <strong>{nome}</strong>.</p>
+            <ul className="corpo grid gap-1.5 text-t2">
               {["Ver o que você já vê no Nipëi: tarefas, agenda, equipes, projetos, conhecimento", "Criar e mudar tarefas, eventos e comentários em seu nome (o app pede sua confirmação antes)", "Ler e atualizar a memória do assistente sobre você", "Nada além das suas permissões; você desconecta quando quiser em Perfil → Conexões"].map((x) => (
-                <li key={x} className="flex gap-2"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-neutral-400" />{x}</li>
+                <li key={x} className="flex gap-2"><Icone nome="sucesso" tamanho={16} className="mt-0.5 shrink-0 text-ac-text" />{x}</li>
               ))}
             </ul>
-            <form action={decidirAction} className="flex gap-2 pt-1">
+            <form action={decidirAction} className="flex flex-wrap gap-2 pt-1">
               {Object.entries({ client_id: q.client_id, redirect_uri: q.redirect_uri, code_challenge: q.code_challenge, state: q.state ?? "" }).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-              <BotaoEnviar name="decisao" value="permitir" enviando="…" className="flex-1 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-4 py-2 text-sm font-medium">Permitir</BotaoEnviar>
-              <BotaoEnviar name="decisao" value="negar" enviando="…" className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2 text-sm">Cancelar</BotaoEnviar>
+              <BotaoEnviar name="decisao" value="permitir" enviando="…" icone="confirmar" variante="primario" className="flex-1">Permitir</BotaoEnviar>
+              <BotaoEnviar name="decisao" value="negar" enviando="…" icone="fechar" variante="fantasma">Cancelar</BotaoEnviar>
             </form>
           </>
         )}
-      </div>
+      </Cartao>
     </div>
   );
 }

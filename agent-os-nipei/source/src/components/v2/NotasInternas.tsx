@@ -20,7 +20,7 @@ export default function NotasInternas({ pessoaId, notas, t }: { pessoaId: string
       <form action={notaInternaAction} className="grid gap-1.5">
         {oculto("nova", "")}
         <Campo tipo="area" rotulo={t.notaPlaceholder} name="texto" required rows={2} maxLength={4000} placeholder={t.notaPlaceholder} />
-        <BotaoEnviar enviando="…" className="justify-self-start anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.salvarNota}</BotaoEnviar>
+        <BotaoEnviar enviando="…" icone="confirmar" variante="primario" tamanho="P" className="justify-self-start">{t.salvarNota}</BotaoEnviar>
       </form>
       {notas.length === 0 && <p className="text-sm text-t2">{t.semNotas}</p>}
       <ul className="grid gap-3">

@@ -25,9 +25,7 @@ export default async function Reuniao({ params }: { params: Promise<{ id: string
       {me.gestao && (
         <form action={reuniaoAction} className="mb-6">
           <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="n" value={n} />
-          <BotaoEnviar name="acao" value="pauta" enviando={t.processando} className="rounded-interno bg-s2 px-4 py-2 text-sm inline-flex items-center gap-1.5">
-            <Icone nome="gerar-outra"  tamanho={14} />{t.gerarPauta}
-          </BotaoEnviar>
+          <BotaoEnviar name="acao" value="pauta" enviando={t.processando} icone="gerar-outra" variante="tonal" tamanho="P">{t.gerarPauta}</BotaoEnviar>
           <p className="text-xs text-t2 mt-2">{t.pautaAviso}</p>
         </form>
       )}

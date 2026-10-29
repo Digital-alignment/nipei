@@ -57,9 +57,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
         {me.gestao && (
           <form action={visaoAction} className="print:hidden flex flex-wrap items-center gap-2 mb-3">
             <input type="hidden" name="projeto" value={id} />
-            <BotaoEnviar enviando={t.processando} className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4 inline-flex items-center gap-1.5">
-              <Icone nome="gerar-outra"  tamanho={14} />{sintese ? t.atualizarSintese : t.gerarSintese}
-            </BotaoEnviar>
+            <BotaoEnviar enviando={t.processando} icone="gerar-outra" variante="tonal" tamanho="P">{sintese ? t.atualizarSintese : t.gerarSintese}</BotaoEnviar>
             {sintese && <Imprimir label={t.imprimir} />}
             <p className="text-xs text-t2 basis-full">{t.sinteseAviso}</p>
           </form>

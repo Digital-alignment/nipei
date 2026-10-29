@@ -27,7 +27,7 @@ export default function Seguranca({ p, t, ok }: { p: Pessoa; t: Dict; ok?: strin
           {tem && <Campo tipo="senha" rotulo={s.atual} name="atual" required autoComplete="current-password" placeholder={s.atual} />}
           <Campo tipo="senha" rotulo={s.nova} name="nova" required minLength={10} autoComplete="new-password" placeholder={s.nova} />
           <Campo tipo="senha" rotulo={s.confirmar} name="confirmar" required minLength={10} autoComplete="new-password" placeholder={s.confirmar} />
-          <BotaoEnviar enviando="…" className="justify-self-start anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{tem ? s.salvarSenha : s.criarSenha}</BotaoEnviar>
+          <BotaoEnviar enviando="…" icone="confirmar" variante="primario" tamanho="P" className="justify-self-start">{tem ? s.salvarSenha : s.criarSenha}</BotaoEnviar>
           <p className="text-xs text-t2">{s.regra}</p>
         </form>
       </Cartao>

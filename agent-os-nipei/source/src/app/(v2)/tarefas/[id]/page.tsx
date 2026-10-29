@@ -33,7 +33,6 @@ const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB
 const arquivoUrl = (id: string, a: Anexo) => `/tarefas/${id}/arquivo/${encodeURIComponent(a.path.split("/").pop() ?? "")}`;
 // dentro do painel (superfície 2) os itens e campos ficam um tom abaixo, como poços
 const POCO = "rounded-[16px] bg-s1";
-const btnTonal = "anel-foco inline-flex h-11 items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4";
 
 function Md({ children }: { children: string }) {
   return (
@@ -123,7 +122,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
             <form action={fazerPorMimAction} className="mt-3 grid gap-2">
               <input type="hidden" name="id" value={id} />
               <Campo tipo="area" name="instrucao" rotulo={t.fazerPorMim} rows={3} maxLength={1000} placeholder={t.fazerInstrucao} ajuda={t.fazerAviso} />
-              <div><BotaoEnviar enviando="…" className={btnTonal}><Icone nome="enviar" tamanho={18} />{t.fazerPorMim}</BotaoEnviar></div>
+              <div><BotaoEnviar enviando="…" icone="enviar" variante="tonal" tamanho="P">{t.fazerPorMim}</BotaoEnviar></div>
             </form>
           </details>
         );
@@ -138,7 +137,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
             <form action={descricaoAction} className="mt-2 grid gap-2">
               <input type="hidden" name="id" value={id} />
               <Campo tipo="area" name="descricao" rotulo={t.descricaoTitulo} defaultValue={doc.descricao} rows={6} className="bg-s1!" />
-              <div><BotaoEnviar enviando="…" className={btnTonal}><Icone nome="confirmar" tamanho={18} />{t.salvar}</BotaoEnviar></div>
+              <div><BotaoEnviar enviando="…" icone="confirmar" variante="tonal" tamanho="P">{t.salvar}</BotaoEnviar></div>
             </form>
           </details>
         )}
@@ -214,7 +213,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
               <input type="hidden" name="id" value={id} />
               <Campo name="url" inputMode="url" required rotulo="Link" placeholder="https://…" className="bg-s1!" />
               <Campo name="titulo" maxLength={150} rotulo={t.tituloLink} className="bg-s1!" />
-              <BotaoEnviar enviando="…" className={`${btnTonal} sm:mt-1.5`}><Icone nome="mais" tamanho={18} />{t.adicionarLink}</BotaoEnviar>
+              <BotaoEnviar enviando="…" icone="mais" variante="tonal" tamanho="P" className="sm:mt-1.5">{t.adicionarLink}</BotaoEnviar>
             </form>
             <p className="meta text-t3">{t.maximo}</p>
           </div>
@@ -230,7 +229,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
       <form action={comentarAction} className="grid gap-2">
         <input type="hidden" name="id" value={id} />
         <Campo tipo="area" name="texto" rotulo={t.comentar} required rows={2} maxLength={1000} placeholder={t.escreverComentario} className="bg-s1!" />
-        <div><BotaoEnviar enviando="…" className={btnTonal}><Icone nome="mensagem" tamanho={18} />{t.comentar}</BotaoEnviar></div>
+        <div><BotaoEnviar enviando="…" icone="mensagem" variante="tonal" tamanho="P">{t.comentar}</BotaoEnviar></div>
       </form>
       {comentarios.length === 0 ? <EstadoVazio compacto selo="olho" titulo={t.semComentarios} /> : (
         <ul className="grid gap-2">

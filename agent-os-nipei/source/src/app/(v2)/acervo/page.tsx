@@ -80,7 +80,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
               {t.naIA}: {ia.f.status === "processando" ? t.lendoIA : ia.f.status === "erro" ? t.erroIA : [ia.conf && `${ia.conf} ${t.fatosConfirmadosMin}`, ia.prop && `${ia.prop} ${t.fatosParaRevisar}`].filter(Boolean).join(" · ") || t.semFatos}
             </Link>
           ) : !pasta && (
-            <form action={ensinarAcervoAction}><input type="hidden" name="id" value={i.id} /><BotaoEnviar enviando="…" className={ACAO}><MiniAnelPinu tamanho={16} />{t.ensinarIA}</BotaoEnviar></form>
+            <form action={ensinarAcervoAction}><input type="hidden" name="id" value={i.id} /><BotaoEnviar enviando="…" icone="enviar" variante="fantasma" tamanho="P">{t.ensinarIA}</BotaoEnviar></form>
           )}
           {i.adicionadoPor && <span className="meta px-2 text-t3">{t.adicionadoPorLbl} {nome(i.adicionadoPor)}{i.adicionadoEm && ` · ${fmtDate(i.adicionadoEm.slice(0, 10), lang)}`}</span>}
           <span className="ml-auto"><CopiarBotao texto={i.url} label={t.copiarLinkCurto} copiado={t.copiado} className={ACAO} /></span>

@@ -97,7 +97,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
                 <span className="font-medium">{a.nomeCliente}</span>
                 <span className="text-xs text-t2 flex-1">{c.desde} {quando(a.criadoEm)} · {c.usadoEm} {quando(a.usadoEm)}</span>
                 <form action={revogarAppAction}><input type="hidden" name="id" value={a.id} />
-                  <ConfirmarBotao pergunta={c.revogarPergunta.replace("{app}", a.nomeCliente)} className="rounded-interno px-2.5 py-1 text-xs text-err">{c.revogar}</ConfirmarBotao>
+                  <ConfirmarBotao pergunta={c.revogarPergunta.replace("{app}", a.nomeCliente)} className="anel-foco alvo-toque rounded-pilula bg-s3 px-3 py-1 font-texto text-xs font-semibold text-t1 hover:bg-s4">{c.revogar}</ConfirmarBotao>
                 </form>
               </li>
             ))}
@@ -131,7 +131,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
               <input name="key" type="password" required autoComplete="off" placeholder={c.chaveCampo} className="rounded-interno bg-s2 px-3 py-2 text-sm" />
               <input name="modelo" placeholder={c.chaveModelo} className="rounded-interno bg-s2 px-3 py-2 text-sm" />
               <p className="text-xs text-t2">{c.chaveOnde} {Object.values(PROVEDORES).map((p, i) => <span key={p.nome}>{i ? " · " : ""}<a href={p.chave} target="_blank" rel="noreferrer" className="underline">{p.nome}</a></span>)}</p>
-              <BotaoEnviar enviando={c.chaveTestando} className="justify-self-start anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{c.chaveSalvar}</BotaoEnviar>
+              <BotaoEnviar enviando={c.chaveTestando} icone="confirmar" variante="primario" tamanho="P" className="justify-self-start">{c.chaveSalvar}</BotaoEnviar>
               <p className="text-xs text-t2">{c.chaveAviso}</p>
             </form>
           </details>
