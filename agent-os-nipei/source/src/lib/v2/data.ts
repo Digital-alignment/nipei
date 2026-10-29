@@ -760,6 +760,38 @@ export function novidadesPara(me: Me, dias = 7, max = 12): Novidade[] {
   return out.sort((a, b) => b.quando.localeCompare(a.quando)).slice(0, max);
 }
 
+/**
+ * "Esperando você": open tasks where someone else commented — mentioning me (@nome) or on a task of mine — and I
+ * haven't written anything in that task since. One entry per task (the newest such comment), last `dias` days.
+ * Knowledge notes ("🧠 …") aren't questions and don't count.
+ */
+export function esperandoPor(me: Me, dias = 14): Novidade[] {
+  const p = me.pessoa;
+  if (!p) return [];
+  const primeiro = (n: string) => n.split(/[\s(]/)[0].toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  const eu = primeiro(p.name);
+  const mencao = new RegExp(`@(${eu}|${p.id})\\b`, "i");
+  const desde = new Date(Date.now() - dias * 86_400_000).toISOString().slice(0, 10);
+  const abertas = new Set(getTarefas().filter((t) => t.status !== "done").map((t) => t.id));
+  const out: Novidade[] = [];
+  for (const { fm, body } of readDir(path.join("Productivity", "Tarefas"))) {
+    if (!abertas.has(s(fm.id))) continue;
+    const minha = arr(fm.responsaveis).includes(p.id);
+    const log = body.match(/## Atividade\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "";
+    for (const l of log.split(/\r?\n/)) { // newest first
+      const m = l.match(/^- (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) · ([^·]+) · (.+)$/);
+      if (!m) continue;
+      if (m[1] < desde || primeiro(m[3].trim()) === eu) break; // too old, or I already acted after it
+      const texto = m[4].normalize("NFD").replace(/\p{M}/gu, "");
+      if (!/^comentou/.test(m[4]) || /^comentou “🧠/.test(m[4])) continue;
+      if (!minha && !mencao.test(texto)) continue;
+      out.push({ tarefaId: s(fm.id), titulo: s(fm.title), quando: `${m[1]} ${m[2]}`, quem: m[3].trim(), oque: m[4].replace(/\s+/g, " ").slice(0, 240) });
+      break;
+    }
+  }
+  return out.sort((a, b) => b.quando.localeCompare(a.quando));
+}
+
 // ---------------------------------------------------------------- last use (Participação)
 // .jobs/acessos.json: person → last day they opened the app. Written at most once a day per person.
 

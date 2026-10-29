@@ -14,13 +14,14 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, pulso } from "@/lib/v2/hoje";
-import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, esperandoPor, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 import { organizacao } from "@/lib/v2/organizacao";
 import { MAX_FOCO, getFoco } from "@/lib/v2/foco";
 import Campo from "@/components/ds/Campo";
+import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { createTarefaAction, focoAction } from "../actions";
@@ -50,9 +51,30 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const dow = new Date(`${hoje}T12:00:00Z`).getUTCDay(); // 0 = Sunday
   const ateSexta = (5 - dow + 7) % 7;
   const fimMes = new Date(Date.UTC(+hoje.slice(0, 4), +hoje.slice(5, 7), 0)).toISOString().slice(0, 10);
+  const locale = lang === "en" ? "en-US" : "pt-BR";
+  const nomeDia = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString(locale, { weekday: "long", timeZone: "UTC" });
+
+  // mini week: today + 6 days, a ring per day (my tasks due that day: done / total), a dot per event; a tap filters the list to that day
+  const doMeu = me ? getTarefas().filter((x) => x.responsaveis.includes(me.id)) : [];
+  const semana = Array.from({ length: 7 }, (_, i) => {
+    const d = dia(i);
+    const doDiaTodas = doMeu.filter((x) => x.prazo === d);
+    const tarefasDia = doDiaTodas.length, feitasDia = doDiaTodas.filter((x) => x.status === "done").length;
+    const eventosDia = getEventos().filter((e) => e.inicio.length === 10 && (e.inicio === d || (!!e.fim && e.inicio <= d && d <= e.fim)) && (user.gestao || !e.equipe || user.equipes.includes(e.equipe))).length;
+    return { d, tarefasDia, feitasDia, abertasDia: tarefasDia - feitasDia, eventosDia };
+  });
+  // dia carregado: muito acima da média da semana (e pelo menos 4 abertas); o mais leve (de amanhã em diante) é para onde mover
+  const media = semana.reduce((n, x) => n + x.abertasDia, 0) / 7;
+  const carregado = (x: (typeof semana)[number]) => x.abertasDia >= Math.max(4, 2 * media);
+  const diaLeve = semana.slice(1).reduce((a, b) => (b.abertasDia < a.abertasDia ? b : a));
+  const diaSel = q.dia && semana.some((x) => x.d === q.dia) ? q.dia : "";
+  const selCarregado = semana.find((x) => x.d === diaSel && carregado(x));
+
   const OPCOES = {
     datadas: [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }],
     semdata: [{ label: t.estaSemana, data: dia(ateSexta) }, { label: t.proximaSemana, data: dia(ateSexta + 7) }, { label: t.esteMes, data: fimMes }],
+    // no dia carregado escolhido, a primeira opção é o dia mais leve da semana
+    carregado: [{ label: t.paraDia.replace("{dia}", nomeDia(diaLeve.d)), data: diaLeve.d }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }],
   };
   // foco de hoje (até 3): escolhido pela pessoa; vazio = sugestão (as 3 primeiras da ordem inteligente)
   const focoIds = me ? getFoco(me.id, hoje) : [];
@@ -87,16 +109,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const equipeRapida = user.equipes.find((id) => equipes.some((e) => e.id === id)) ?? "";
   const podeRapida = !!me && can.criarEm(user, equipeRapida);
 
-  // mini week: today + 6 days, a ring per day (my tasks due that day: done / total), a dot per event; a tap filters the list to that day
-  const doMeu = me ? getTarefas().filter((x) => x.responsaveis.includes(me.id)) : [];
-  const semana = Array.from({ length: 7 }, (_, i) => {
-    const d = dia(i);
-    const doDiaTodas = doMeu.filter((x) => x.prazo === d);
-    const tarefasDia = doDiaTodas.length, feitasDia = doDiaTodas.filter((x) => x.status === "done").length;
-    const eventosDia = getEventos().filter((e) => e.inicio.length === 10 && (e.inicio === d || (!!e.fim && e.inicio <= d && d <= e.fim)) && (user.gestao || !e.equipe || user.equipes.includes(e.equipe))).length;
-    return { d, tarefasDia, feitasDia, eventosDia };
-  });
-  const diaSel = q.dia && semana.some((x) => x.d === q.dia) ? q.dia : "";
+  const esperando = esperandoPor(user);
   const prontos = me ? prontosPara(me.id) : [];
   const { hoje: eventosHoje, proximos } = agendaDoDia(user);
 
@@ -127,6 +140,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
   if (revisar) pilulas.push({ href: "/conhecimento/revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento });
   if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento });
+  if (esperando.length) pilulas.push({ href: "/hoje?aba=esperando", icone: "mensagem", texto: `${esperando.length} ${t.esperandoVoce}`, titulo: t.esperandoTitulo });
   if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA });
   const p = user.gestao ? pulso() : null;
 
@@ -141,7 +155,17 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   };
   const doDia = diaSel ? ordenarAgora(minhas.filter((x) => x.prazo === diaSel), ctx) : null;
   const eventosDoDia = diaSel ? getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)) : [];
-  const locale = lang === "en" ? "en-US" : "pt-BR";
+  // linhas de atividade (Novidades, Esperando você): tarefa + quem fez o quê, quando
+  const atividades = (itens: typeof novidades) => (
+    <ul className="overflow-hidden rounded-cartao bg-s1">
+      {itens.map((n, i) => (
+        <li key={`${n.tarefaId}${n.quando}${i}`} className="border-t border-s2 px-4 py-3 first:border-t-0">
+          <Link href={`/tarefas/${n.tarefaId}`} className="anel-foco block rounded-interno text-[15px] font-medium leading-snug text-t1 hover:underline">{n.titulo}</Link>
+          <p className="meta mt-0.5 line-clamp-2 text-t2"><span className="font-semibold text-t1">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
+        </li>
+      ))}
+    </ul>
+  );
   const nome = (me?.name ?? user.username).split(/[\s(]/)[0];
   const passosFeitos = passos.filter((x) => x.feito).length;
   const comPulso = !!p && (p.atrasadas > 0 || p.semDono > 0);
@@ -250,13 +274,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         <nav aria-label={t.semanaLbl} className="-mx-4 mb-5 mt-6 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-7 md:gap-2 md:px-0">
           {semana.map((x, i) => {
             const data = new Date(`${x.d}T12:00:00Z`);
-            const sel = x.d === diaSel;
+            const sel = x.d === diaSel, cheio = carregado(x);
             return (
               <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined}
-                className={`anel-foco flex min-w-16 flex-1 flex-col items-center gap-1.5 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
-                <span className={`meta uppercase ${sel || i === 0 ? "text-t1" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
+                className={`anel-foco flex min-w-16 flex-1 flex-col items-center gap-1.5 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : cheio ? "bg-warn-bg text-t1" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
+                <span className={`meta uppercase ${cheio ? "font-semibold text-warn" : sel || i === 0 ? "text-t1" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
                 <span className={x.tarefasDia ? "" : "opacity-40"}><AnelProgresso tamanho={48} valor={x.feitasDia} max={x.tarefasDia} centro={<span className="text-xl">{data.getUTCDate()}</span>}
-                  rotulo={`${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}`} /></span>
+                  rotulo={`${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}${cheio ? ` · ${t.diaCarregado}` : ""}`} /></span>
                 <span className={`size-1.5 rounded-pilula ${x.eventosDia > 0 ? "bg-info" : ""}`} aria-hidden="true" />
               </Link>
             );
@@ -275,8 +299,12 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
               {eventosDoDia.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
             </div>
           )}
+          {selCarregado && (
+            <Aviso estado="atencao" titulo={t.diaCarregado}
+              mensagem={t.diaCarregadoMsg.replace("{n}", String(selCarregado.abertasDia)).replace("{dia}", nomeDia(diaLeve.d)).replace("{m}", String(diaLeve.abertasDia))} />
+          )}
           {doDia.tarefas.length
-            ? <GrupoTarefas titulo={t.minhasTarefas} contagem={doDia.tarefas.length}>{doDia.tarefas.map((x) => linha(x, "datadas", doDia.selos))}</GrupoTarefas>
+            ? <GrupoTarefas titulo={t.minhasTarefas} contagem={doDia.tarefas.length}>{doDia.tarefas.map((x) => linha(x, selCarregado ? "carregado" : "datadas", doDia.selos))}</GrupoTarefas>
             : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
         </section>
       )}
@@ -297,7 +325,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       )}
 
       {me && !doDia && (
-        <AbasComPainel id="hoje" inicial={q.aba === "novidades" ? "novidades" : undefined} abas={[
+        <AbasComPainel id="hoje" inicial={q.aba === "novidades" || (q.aba === "esperando" && esperando.length) ? q.aba : undefined} abas={[
           { id: "agora", rotulo: t.agora, contagem: agora.length, alerta: atrasadas > 0, conteudo: <>
             {podeRapida && (
               <form action={createTarefaAction} className="mb-4">
@@ -320,18 +348,9 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             { id: "depois", titulo: t.grpDepois, dentro: (x) => x.prazo > dia(7) },
           ]) },
           { id: "semdata", rotulo: t.semData, contagem: semData.length, conteudo: grupos(semData, "semdata", oSem.selos, [{ id: "semdata", titulo: t.semData, dentro: () => true }]) },
-          {
-            id: "novidades", rotulo: t.novidades, contagem: novidades.length, conteudo: novidades.length ? (
-              <ul className="overflow-hidden rounded-cartao bg-s1">
-                {novidades.map((n, i) => (
-                  <li key={`${n.tarefaId}${n.quando}${i}`} className="border-t border-s2 px-4 py-3 first:border-t-0">
-                    <Link href={`/tarefas/${n.tarefaId}`} className="anel-foco block rounded-interno text-[15px] font-medium leading-snug text-t1 hover:underline">{n.titulo}</Link>
-                    <p className="meta mt-0.5 line-clamp-2 text-t2"><span className="font-semibold text-t1">{n.quem}</span> {n.oque} · {fmtDate(n.quando.slice(0, 10), lang)} {n.quando.slice(11)}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />,
-          },
+          // esperando você: só aparece quando há algo (comentários que pedem resposta minha)
+          ...(esperando.length ? [{ id: "esperando", rotulo: t.esperandoTitulo, contagem: esperando.length, alerta: true, conteudo: atividades(esperando) }] : []),
+          { id: "novidades", rotulo: t.novidades, contagem: novidades.length, conteudo: novidades.length ? atividades(novidades) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> },
         ]} />
       )}
 
