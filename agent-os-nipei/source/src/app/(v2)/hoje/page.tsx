@@ -20,6 +20,8 @@ import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 import { organizacao } from "@/lib/v2/organizacao";
 import { MAX_FOCO, getFoco } from "@/lib/v2/foco";
+import { getConexoes } from "@/lib/v2/conexoes";
+import { eventosGoogle, type EventoGoogle } from "@/lib/v2/google";
 import Campo from "@/components/ds/Campo";
 import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
@@ -54,6 +56,11 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const locale = lang === "en" ? "en-US" : "pt-BR";
   const nomeDia = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString(locale, { weekday: "long", timeZone: "UTC" });
 
+  // Google Agenda pessoal (se conectada): até 2,5 s, senão a página segue sem ela; cache de 5 min em lib/v2/google.ts
+  const googleEvs: EventoGoogle[] = me && getConexoes(me.id).google
+    ? await Promise.race([eventosGoogle(me.id, hoje, dia(6)).catch(() => []), new Promise<EventoGoogle[]>((r) => setTimeout(() => r([]), 2500))])
+    : [];
+
   // mini week: today + 6 days, a ring per day (my tasks due that day: done / total), a dot per event; a tap filters the list to that day
   const doMeu = me ? getTarefas().filter((x) => x.responsaveis.includes(me.id)) : [];
   const semana = Array.from({ length: 7 }, (_, i) => {
@@ -61,7 +68,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     const doDiaTodas = doMeu.filter((x) => x.prazo === d);
     const tarefasDia = doDiaTodas.length, feitasDia = doDiaTodas.filter((x) => x.status === "done").length;
     const eventosDia = getEventos().filter((e) => e.inicio.length === 10 && (e.inicio === d || (!!e.fim && e.inicio <= d && d <= e.fim)) && (user.gestao || !e.equipe || user.equipes.includes(e.equipe))).length;
-    return { d, tarefasDia, feitasDia, abertasDia: tarefasDia - feitasDia, eventosDia };
+    return { d, tarefasDia, feitasDia, abertasDia: tarefasDia - feitasDia, eventosDia, googleDia: googleEvs.filter((e) => e.dia === d).length };
   });
   // dia carregado: muito acima da média da semana (e pelo menos 4 abertas); o mais leve (de amanhã em diante) é para onde mover
   const media = semana.reduce((n, x) => n + x.abertasDia, 0) / 7;
@@ -155,6 +162,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   };
   const doDia = diaSel ? ordenarAgora(minhas.filter((x) => x.prazo === diaSel), ctx) : null;
   const eventosDoDia = diaSel ? getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)) : [];
+  // eventos da Agenda Google: abrem no Google (ícone "abrir fora"), para não confundir com os da comunidade
+  const chipGoogle = (e: EventoGoogle) => <Chip key={`g${e.id}`} href={e.link} icone="abrir-fora">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>;
+  const googleDoDia = diaSel ? googleEvs.filter((e) => e.dia === diaSel) : [];
+  // fechamento do dia: nada pendente em Agora e algo concluído hoje → resumo + o que vem amanhã
+  const feitasHoje = doMeu.filter((x) => x.status === "done" && x.concluidoEm.slice(0, 10) === hoje);
+  const fechouDia = !!me && agora.length === 0 && feitasHoje.length > 0;
+  const amanha = semana[1].abertasDia;
   // linhas de atividade (Novidades, Esperando você): tarefa + quem fez o quê, quando
   const atividades = (itens: typeof novidades) => (
     <ul className="overflow-hidden rounded-cartao bg-s1">
@@ -178,9 +192,10 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           <span className="text-t1">{t.ola}, {nome}.</span>{" "}
           <span className="text-t3">{new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bahia" })}</span>
         </h1>
-        {(eventosHoje.length > 0 || proximos.length > 0 || pilulas.length > 0 || comPulso) && (
+        {(eventosHoje.length > 0 || googleEvs.some((e) => e.dia === hoje) || proximos.length > 0 || pilulas.length > 0 || comPulso) && (
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
             {eventosHoje.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
+            {googleEvs.filter((e) => e.dia === hoje).map(chipGoogle)}
             {proximos.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>)}
             {pilulas.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)}
             {comPulso && <Chip href="/pulso" icone="atencao">{p!.atrasadas} {t.atrasadasLbl} · {p!.semDono} {t.semDonoLbl}</Chip>}
@@ -280,8 +295,11 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                 className={`anel-foco flex min-w-16 flex-1 flex-col items-center gap-1.5 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : cheio ? "bg-warn-bg text-t1" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
                 <span className={`meta uppercase ${cheio ? "font-semibold text-warn" : sel || i === 0 ? "text-t1" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
                 <span className={x.tarefasDia ? "" : "opacity-40"}><AnelProgresso tamanho={48} valor={x.feitasDia} max={x.tarefasDia} centro={<span className="text-xl">{data.getUTCDate()}</span>}
-                  rotulo={`${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}${cheio ? ` · ${t.diaCarregado}` : ""}`} /></span>
-                <span className={`size-1.5 rounded-pilula ${x.eventosDia > 0 ? "bg-info" : ""}`} aria-hidden="true" />
+                  rotulo={`${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}${x.googleDia > 0 ? `, ${x.googleDia} ${t.googleAgenda}` : ""}${cheio ? ` · ${t.diaCarregado}` : ""}`} /></span>
+                <span className="flex h-1.5 gap-1" aria-hidden="true">
+                  {x.eventosDia > 0 && <span className="size-1.5 rounded-pilula bg-info" />}
+                  {x.googleDia > 0 && <span className="size-1.5 rounded-pilula bg-t2" />}
+                </span>
               </Link>
             );
           })}
@@ -294,9 +312,10 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             <h2 className="titulo-secao first-letter:uppercase">{new Date(`${diaSel}T12:00:00Z`).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}</h2>
             <Botao href="/hoje" variante="fantasma" tamanho="P" icone="fechar">{t.verTudo}</Botao>
           </div>
-          {eventosDoDia.length > 0 && (
+          {(eventosDoDia.length > 0 || googleDoDia.length > 0) && (
             <div className="flex flex-wrap gap-2">
               {eventosDoDia.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
+              {googleDoDia.map(chipGoogle)}
             </div>
           )}
           {selCarregado && (
@@ -307,6 +326,16 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             ? <GrupoTarefas titulo={t.minhasTarefas} contagem={doDia.tarefas.length}>{doDia.tarefas.map((x) => linha(x, selCarregado ? "carregado" : "datadas", doDia.selos))}</GrupoTarefas>
             : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />}
         </section>
+      )}
+
+      {fechouDia && !doDia && (
+        // fechamento do dia (seção 10.5.1): o anel de hoje fechou; mostra o que foi feito e o que vem amanhã
+        <Aviso estado="sucesso" className="mb-6" titulo={t.diaFechado}
+          mensagem={<>
+            {t.diaFechadoMsg.replace("{n}", String(feitasHoje.length))}{" "}
+            {amanha ? <Link href={`/hoje?dia=${dia(1)}`} scroll={false} className="anel-foco rounded-interno font-semibold text-t1 hover:underline">{t.amanhaN.replace("{n}", String(amanha))}</Link> : t.amanhaLivre}
+            <span className="mt-1.5 block text-t2">{feitasHoje.slice(0, 5).map((x) => x.title).join(" · ")}{feitasHoje.length > 5 ? " …" : ""}</span>
+          </>} />
       )}
 
       {me && !doDia && (foco.length > 0 || sugestao.length > 0) && (

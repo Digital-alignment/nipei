@@ -403,6 +403,8 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 - **Foco de hoje**: grupo de tarefas (10.3) com no máximo 3 linhas, acima das abas. Sem escolha = sugestão (as 3 primeiras da ordem inteligente) com `meta` "sugestão" e botão fantasma "Usar estas". Nas linhas, o botão de ícone com o selo `sol` (o mesmo de Hoje no menu; `BotaoIcone selo="sol"`) põe/tira do foco; no foco, o botão vira a variante `acento` (círculo verde, `aria-pressed`).
 - **Esperando você**: pílula no cabeçalho (`mensagem`, "N esperando você") que abre a aba **Esperando você** (contagem em alerta), só quando há comentários que pedem resposta minha (me mencionam ou estão numa tarefa minha e eu não escrevi depois). Mesmas linhas de Novidades.
 - **Dia carregado** (faixa da semana): pílula em `warn-bg` com o dia curto em `warn` quando as abertas do dia ≥ máx(4, 2× a média da semana). Ao escolher o dia: aviso `atencao` com o dia mais leve, e a primeira opção do calendário de cada tarefa vira "Para <dia mais leve>".
+- **Agenda Google na faixa**: com a conta Google conectada, ponto neutro (`texto secundário`) ao lado do azul = evento pessoal do Google; os de hoje (cabeçalho) e os do dia escolhido viram chips com o ícone `abrir-fora` (abrem no Google).
+- **Dia fechado**: quando Agora fica vazia e houve tarefas concluídas hoje, aviso `sucesso` acima do foco: "Nada pendente para hoje e N concluídas." + link "Amanhã: N tarefas." (abre o dia seguinte) + os títulos feitos em `texto secundário`.
 - **Tarefa rápida**: no topo da aba Agora, campo em pílula (9.5, forma de busca) com `mais` à esquerda e botão de ícone em acento `enviar` à direita; Enter cria a tarefa para hoje, comigo, na minha equipe.
 
 ### 10.6 Agenda
