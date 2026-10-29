@@ -51,7 +51,7 @@ export function AnelProgresso({ valor, max = 100, tamanho = 72, rotulo, centro }
       role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={valor} aria-label={rotulo}>
       <svg width={tamanho} height={tamanho} className="absolute inset-0 -rotate-90" aria-hidden="true">
         <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" strokeWidth={w} style={{ stroke: "var(--s3)" }} />
-        <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" strokeWidth={w} strokeLinecap="round" style={{ stroke: "var(--ac)" }} strokeDasharray={`${c * p} ${c}`} />
+        {p > 0 && <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" strokeWidth={w} strokeLinecap="round" style={{ stroke: "var(--ac)" }} strokeDasharray={`${c * p} ${c}`} />}
       </svg>
       {tamanho > 24 && <span className={`relative font-display font-extralight tabular-nums text-t1 ${FONTE[tamanho]}`}>{centro ?? <>{Math.round(p * 100)}<span className="text-t3">%</span></>}</span>}
     </span>

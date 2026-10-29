@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import Icone, { type NomeIcone } from "./Icone";
+import Selo, { type NomeSelo } from "./Selo";
 
 // Botões do design system (DESIGN-SYSTEM.md seções 6 e 9.1). Plano, sem borda, sempre com ícone,
 // foco visível em anel de acento, área de toque ≥ 44 px.
@@ -76,15 +77,15 @@ export default function Botao(props: ComoBotao | ComoLink) {
 
 /**
  * Botão só com ícone (seção 9.1): círculo tonal 52 / 44 / 40 px (`acento` = microfone da busca do Pinu). `aria-label` é obrigatório e vira
- * também o tooltip (aparece ao passar o mouse e no foco por teclado).
+ * também o tooltip (aparece ao passar o mouse e no foco por teclado). `selo` troca o ícone por um selo do menu (ex.: sol = foco de hoje).
  */
-export function BotaoIcone({ icone, "aria-label": rotulo, tamanho = 52, variante = "tonal", href, className, ...resto }:
-  { icone: NomeIcone; "aria-label": string; tamanho?: 52 | 44 | 40; variante?: "tonal" | "fantasma" | "acento"; href?: string; className?: string } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "className">) {
+export function BotaoIcone({ icone, selo, "aria-label": rotulo, tamanho = 52, variante = "tonal", href, className, ...resto }:
+  { icone?: NomeIcone; selo?: NomeSelo; "aria-label": string; tamanho?: 52 | 44 | 40; variante?: "tonal" | "fantasma" | "acento"; href?: string; className?: string } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "className">) {
   const dim = tamanho === 52 ? "size-[52px]" : tamanho === 44 ? "size-11" : "size-11 lg:size-10";
   const cls = `anel-foco group relative inline-flex shrink-0 items-center justify-center rounded-pilula transition-colors duration-150 ${dim} ${variante === "tonal" ? "bg-s3 text-t1 hover:bg-s4" : variante === "acento" ? "bg-ac text-ac-ink hover:brightness-[.94] active:bg-ac-press" : "text-t1 hover:bg-s2 active:bg-s3"} disabled:bg-s2 disabled:text-t3 disabled:cursor-not-allowed ${className ?? ""}`;
   const dentro = (
     <>
-      <Icone nome={icone} tamanho={tamanho === 52 ? 22 : 20} />
+      {selo ? <Selo nome={selo} tamanho={tamanho === 52 ? 22 : 20} /> : <Icone nome={icone!} tamanho={tamanho === 52 ? 22 : 20} />}
       <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-interno bg-s3 px-2.5 py-1 meta text-t1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">{rotulo}</span>
     </>
   );

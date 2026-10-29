@@ -19,12 +19,18 @@ import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 import { organizacao } from "@/lib/v2/organizacao";
+import { MAX_FOCO, getFoco } from "@/lib/v2/foco";
+import Campo from "@/components/ds/Campo";
+import { BotaoIcone } from "@/components/ds/Botao";
+import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import { createTarefaAction, focoAction } from "../actions";
 import Chip from "@/components/ds/Chip";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Cartao from "@/components/ds/Cartao";
+import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import Botao from "@/components/ds/Botao";
 import MenuAcoes from "@/components/ds/MenuAcoes";
-import { BarraProgresso } from "@/components/ds/Progresso";
+import { AnelProgresso, BarraProgresso } from "@/components/ds/Progresso";
 import { GrupoTarefas } from "@/components/ds/padroes/LinhaTarefa";
 
 // Hoje, compact: what matters today (agenda, pending pills), one place to ask,
@@ -48,8 +54,22 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     datadas: [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }],
     semdata: [{ label: t.estaSemana, data: dia(ateSexta) }, { label: t.proximaSemana, data: dia(ateSexta + 7) }, { label: t.esteMes, data: fimMes }],
   };
-  const comPrazo = (grupo: keyof typeof OPCOES) => (x: Tarefa) =>
-    can.editTarefa(user, x) ? <PrazoRapido id={x.id} opcoes={OPCOES[grupo]} outraData={t.outraData} rotulo={t.reprogramar} /> : null;
+  // foco de hoje (até 3): escolhido pela pessoa; vazio = sugestão (as 3 primeiras da ordem inteligente)
+  const focoIds = me ? getFoco(me.id, hoje) : [];
+  const botaoFoco = (x: Tarefa) => {
+    const no = focoIds.includes(x.id);
+    if (!me || (!no && (x.status === "done" || focoIds.length >= MAX_FOCO))) return null;
+    return (
+      <form action={focoAction} className="contents">
+        <input type="hidden" name="id" value={x.id} />
+        <BotaoIcone type="submit" selo="sol" aria-label={no ? t.focoTirar : t.focoPor} aria-pressed={no} tamanho={40} variante={no ? "acento" : "fantasma"} />
+      </form>
+    );
+  };
+  const comPrazo = (grupo: keyof typeof OPCOES) => (x: Tarefa) => <>
+    {botaoFoco(x)}
+    {can.editTarefa(user, x) && <PrazoRapido id={x.id} opcoes={OPCOES[grupo]} outraData={t.outraData} rotulo={t.reprogramar} />}
+  </>;
 
   const novidades = novidadesPara(user);
   // smart order (lib/v2/ordem.ts) + the reasons shown as small badges
@@ -61,13 +81,20 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const oSem = ordenarSemData(minhas.filter((x) => !x.prazo), ctx);
   const agora = oAgora.tarefas, proximas = oProx.tarefas, semData = oSem.tarefas;
   const atrasadas = agora.filter((x) => x.prazo < hoje).length;
+  const foco = focoIds.map((id) => getTarefas().find((x) => x.id === id)).filter((x): x is Tarefa => !!x);
+  const sugestao = foco.length ? [] : [...agora, ...proximas].slice(0, MAX_FOCO);
+  // tarefa rápida em "Agora": nasce para hoje, comigo, na minha primeira equipe (a gestão pode criar sem equipe)
+  const equipeRapida = user.equipes.find((id) => equipes.some((e) => e.id === id)) ?? "";
+  const podeRapida = !!me && can.criarEm(user, equipeRapida);
 
-  // mini week: today + 6 days, a dot per task due / event; a tap filters the list to that day
+  // mini week: today + 6 days, a ring per day (my tasks due that day: done / total), a dot per event; a tap filters the list to that day
+  const doMeu = me ? getTarefas().filter((x) => x.responsaveis.includes(me.id)) : [];
   const semana = Array.from({ length: 7 }, (_, i) => {
     const d = dia(i);
-    const tarefasDia = minhas.filter((x) => x.prazo === d).length;
+    const doDiaTodas = doMeu.filter((x) => x.prazo === d);
+    const tarefasDia = doDiaTodas.length, feitasDia = doDiaTodas.filter((x) => x.status === "done").length;
     const eventosDia = getEventos().filter((e) => e.inicio.length === 10 && (e.inicio === d || (!!e.fim && e.inicio <= d && d <= e.fim)) && (user.gestao || !e.equipe || user.equipes.includes(e.equipe))).length;
-    return { d, tarefasDia, eventosDia };
+    return { d, tarefasDia, feitasDia, eventosDia };
   });
   const diaSel = q.dia && semana.some((x) => x.d === q.dia) ? q.dia : "";
   const prontos = me ? prontosPara(me.id) : [];
@@ -175,12 +202,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
 
       {comPassos && (
         <Cartao className="mb-4">
-          <section aria-label={t.primeirosPassos} className="grid gap-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="titulo-secao">{t.primeirosPassos}</h2>
-              <p className="meta tabular-nums text-t2">{passosFeitos} / {passos.length}</p>
-            </div>
-            <BarraProgresso valor={passosFeitos} max={passos.length} planejado rotuloAcessivel={t.primeirosPassos} />
+          <SecaoRecolhivel id="hoje-passos" emCartao titulo={t.primeirosPassos} contagem={`${passosFeitos} / ${passos.length}`}
+            resumo={<BarraProgresso valor={passosFeitos} max={passos.length} planejado rotuloAcessivel={t.primeirosPassos} />}>
             <ul className="grid gap-x-4 sm:grid-cols-2">
               {passos.map((x) => (
                 <li key={x.id}>
@@ -192,20 +215,16 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                 </li>
               ))}
             </ul>
-          </section>
+          </SecaoRecolhivel>
         </Cartao>
       )}
 
       {mostrarOrg && org && (
         <Cartao className="mb-4">
-          <section aria-label={t.organizarEquipes} className="grid gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome="pessoas" tamanho={20} /></span>
-              <h2 className="titulo-secao flex-1">{t.organizarEquipes}</h2>
-              <span className="meta font-semibold tabular-nums">{org.pct}%</span>
-            </div>
+          <SecaoRecolhivel id="hoje-organizar" emCartao contagem={`${org.pct}%`}
+            titulo={<span className="flex items-center gap-2.5"><span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome="pessoas" tamanho={20} /></span>{t.organizarEquipes}</span>}
+            resumo={<BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />}>
             <p className="corpo text-t2">{t.organizarHojeIntro}</p>
-            <BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />
             <div className="flex flex-wrap gap-1.5">
               {org.semEquipe.length > 0 && <Chip tipo="metadado" icone="pessoa">{org.semEquipe.length} {t.semEquipeCurto}</Chip>}
               {org.semCoordenacao.length > 0 && <Chip tipo="metadado" icone="atencao">{org.semCoordenacao.length} {t.equipesSemCoord}</Chip>}
@@ -222,26 +241,23 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
               </ul>
             )}
             <div><Botao href="/pessoas/organizar" variante="fantasma" tamanho="M" icone="pessoas" iconeDireita="avancar">{t.organizarTodos}</Botao></div>
-          </section>
+          </SecaoRecolhivel>
         </Cartao>
       )}
 
       {me && (
-        // faixa da semana (seção 10.5): pílulas verticais; dia escolhido em acento; pontos = tarefas, ponto azul = evento
-        <nav aria-label={t.semanaLbl} className="mb-5 mt-6 grid grid-cols-7 gap-1.5 md:gap-2">
+        // faixa da semana em anéis (seção 10.5): anel = minhas tarefas do dia feitas/total, número no centro; ponto azul = evento
+        <nav aria-label={t.semanaLbl} className="-mx-4 mb-5 mt-6 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-7 md:gap-2 md:px-0">
           {semana.map((x, i) => {
             const data = new Date(`${x.d}T12:00:00Z`);
             const sel = x.d === diaSel;
             return (
               <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined}
-                className={`anel-foco flex flex-col items-center gap-1 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-ac text-ac-ink" : i === 0 ? "bg-s2 text-t1 shadow-[inset_0_0_0_1px_var(--s3)]" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
-                <span className="meta uppercase">{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
-                <span className="font-display text-2xl font-light leading-none tabular-nums md:text-3xl">{data.getUTCDate()}</span>
-                <span className="flex h-1.5 justify-center gap-0.5" aria-hidden="true">
-                  {Array.from({ length: Math.min(x.tarefasDia, 3) }, (_, k) => <span key={k} className={`size-1.5 rounded-pilula ${sel ? "bg-current" : "bg-t3"}`} />)}
-                  {x.eventosDia > 0 && <span className={`size-1.5 rounded-pilula ${sel ? "bg-current" : "bg-info"}`} />}
-                </span>
-                {(x.tarefasDia > 0 || x.eventosDia > 0) && <span className="sr-only">{x.tarefasDia} {t.tarefas}{x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}</span>}
+                className={`anel-foco flex min-w-16 flex-1 flex-col items-center gap-1.5 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
+                <span className={`meta uppercase ${sel || i === 0 ? "text-t1" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
+                <span className={x.tarefasDia ? "" : "opacity-40"}><AnelProgresso tamanho={48} valor={x.feitasDia} max={x.tarefasDia} centro={<span className="text-xl">{data.getUTCDate()}</span>}
+                  rotulo={`${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}`} /></span>
+                <span className={`size-1.5 rounded-pilula ${x.eventosDia > 0 ? "bg-info" : ""}`} aria-hidden="true" />
               </Link>
             );
           })}
@@ -265,12 +281,39 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </section>
       )}
 
+      {me && !doDia && (foco.length > 0 || sugestao.length > 0) && (
+        // foco de hoje (seção 10.5.1): até 3 tarefas; vazio = sugestão da ordem inteligente com "Usar estas"
+        <section aria-label={t.focoHoje} className="mb-6">
+          <GrupoTarefas titulo={<>{t.focoHoje}{!foco.length && <span className="meta ml-2 font-normal text-t3">{t.focoSugestao}</span>}</>} contagem={foco.length ? foco.length : undefined}>
+            {(foco.length ? foco : sugestao).map((x) => linha(x, "datadas"))}
+          </GrupoTarefas>
+          {!foco.length && (
+            <form action={focoAction} className="mt-2">
+              {sugestao.map((x) => <input key={x.id} type="hidden" name="ids" value={x.id} />)}
+              <BotaoEnviar enviando="…" icone="inicio" variante="fantasma" tamanho="P">{t.focoUsar}</BotaoEnviar>
+            </form>
+          )}
+        </section>
+      )}
+
       {me && !doDia && (
         <AbasComPainel id="hoje" inicial={q.aba === "novidades" ? "novidades" : undefined} abas={[
-          { id: "agora", rotulo: t.agora, contagem: agora.length, alerta: atrasadas > 0, conteudo: grupos(agora, "datadas", oAgora.selos, [
-            { id: "atrasadas", titulo: t.atrasadas, dentro: (x) => x.prazo < hoje, alerta: true },
-            { id: "hoje", titulo: t.grpHoje, dentro: (x) => x.prazo === hoje },
-          ]) },
+          { id: "agora", rotulo: t.agora, contagem: agora.length, alerta: atrasadas > 0, conteudo: <>
+            {podeRapida && (
+              <form action={createTarefaAction} className="mb-4">
+                <input type="hidden" name="equipe" value={equipeRapida} />
+                <input type="hidden" name="prazo" value={hoje} />
+                <input type="hidden" name="responsaveis" value={me!.id} />
+                <input type="hidden" name="back" value="/hoje" />
+                <Campo tipo="busca" iconeEsquerda="mais" name="title" rotulo={t.tarefaRapidaPh} required maxLength={200} autoComplete="off"
+                  acaoDireita={<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" />} />
+              </form>
+            )}
+            {grupos(agora, "datadas", oAgora.selos, [
+              { id: "atrasadas", titulo: t.atrasadas, dentro: (x) => x.prazo < hoje, alerta: true },
+              { id: "hoje", titulo: t.grpHoje, dentro: (x) => x.prazo === hoje },
+            ])}
+          </> },
           { id: "proximas", rotulo: t.proximas, contagem: proximas.length, conteudo: grupos(proximas, "datadas", oProx.selos, [
             { id: "amanha", titulo: t.grpAmanha, dentro: (x) => x.prazo === dia(1) },
             { id: "semana", titulo: t.grpSemana, dentro: (x) => x.prazo > dia(1) && x.prazo <= dia(7) },

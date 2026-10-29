@@ -17,6 +17,7 @@ import {
   criarDiagnostico, encerrarDiagnostico,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
+import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
 import {
   ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, createPessoa, createTarefa,
@@ -943,6 +944,23 @@ export async function prazoRapidoAction(form: FormData) {
   const prazo = String(form.get("prazo") ?? "");
   if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(prazo) || !can.editTarefa(me, t)) return;
   updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo, responsaveis: t.responsaveis, status: t.status, recorrencia: t.recorrencia }, actorName(me));
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Hoje: foco de hoje
+
+/** `id` toggles one task in/out of today's focus; several `ids` replace it (the "use the suggestion" button). Only my own tasks. */
+export async function focoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.pessoa) return;
+  const pessoa = me.pessoa.id, hoje = today();
+  const minhas = new Set(getTarefas().filter((x) => x.responsaveis.includes(pessoa)).map((x) => x.id));
+  const id = String(form.get("id") ?? "");
+  const atual = getFoco(pessoa, hoje);
+  const ids = id
+    ? atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]
+    : form.getAll("ids").map(String);
+  salvarFoco(pessoa, hoje, ids.filter((x) => minhas.has(x)).slice(0, MAX_FOCO));
   revalidatePath("/", "layout");
 }
 

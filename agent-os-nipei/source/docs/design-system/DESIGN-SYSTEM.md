@@ -347,6 +347,7 @@ Variante **pasta**: quando a aba controla o painel logo abaixo, a ativa **se fun
 
 ### 9.12 Seção recolhível
 Título de seção + contagem + ▼ (`abrir`, gira 180° quando aberta). Lembra o estado. Mesmo ritmo de `titulo-secao`.
+Variante **em cartão** (`emCartao`): sem divisor, dentro de um cartão; um **resumo** (ex.: barra de progresso) continua visível com a seção fechada. Uso: cartões de onboarding do Hoje (Primeiros passos, Organizar equipes).
 
 ### 9.13 Controle deslizante
 Trilho em pílula `superfície 2` (64 px de altura) com pontos de marcação; parte preenchida `superfície 3` com cursor fino; **rótulo à esquerda, valor à direita**. Serve também para escolher entre opções ("Lembrete · 1 dia antes").
@@ -396,7 +397,11 @@ Campo de busca em pílula + fila de chips de filtro (rola na horizontal no celul
 Cartão com **recorte** e botão ↗; avatar; título `titulo-cartao` 22 px; data; estado em **pílula com menu** (avatar + "Aguardando ▼"); ação rápida. Um em destaque por tela.
 
 ### 10.5 Faixa da semana
-Pílulas verticais por dia (dia curto + número display + pontos = quantidade de eventos). Dia escolhido = acento. Variante em **anéis** (progresso por dia).
+Pílulas verticais por dia (dia curto + número display + pontos = quantidade de eventos). Dia escolhido = acento. Variante em **anéis** (progresso por dia): anel de 48 com o número do dia no centro (tarefas do dia feitas/total), ponto azul = evento; hoje em `superfície 2`, dia escolhido com contorno de acento (o anel já é acento). No celular rola na horizontal. Uso: Hoje.
+
+### 10.5.1 Foco de hoje e tarefa rápida (Hoje)
+- **Foco de hoje**: grupo de tarefas (10.3) com no máximo 3 linhas, acima das abas. Sem escolha = sugestão (as 3 primeiras da ordem inteligente) com `meta` "sugestão" e botão fantasma "Usar estas". Nas linhas, o botão de ícone com o selo `sol` (o mesmo de Hoje no menu; `BotaoIcone selo="sol"`) põe/tira do foco; no foco, o botão vira a variante `acento` (círculo verde, `aria-pressed`).
+- **Tarefa rápida**: no topo da aba Agora, campo em pílula (9.5, forma de busca) com `mais` à esquerda e botão de ícone em acento `enviar` à direita; Enter cria a tarefa para hoje, comigo, na minha equipe.
 
 ### 10.6 Agenda
 - **Dia**:

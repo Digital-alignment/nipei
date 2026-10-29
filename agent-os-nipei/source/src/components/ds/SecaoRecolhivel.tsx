@@ -6,11 +6,13 @@ import Icone from "./Icone";
 // Seção recolhível (DESIGN-SYSTEM.md seção 9.12): título de seção + contagem + ▼ (`abrir`, gira 180° aberta).
 // Lembra aberta/fechada no aparelho (`localStorage nipei:secao:<id>`), abre sozinha com #id na URL ou por
 // um atalho (<AtalhosSecao>, <BotaoSecao>). `forcar` abre agora, ignorando a memória (ex.: uma busca).
+// `emCartao`: dentro de um <Cartao>, sem divisor; `resumo` fica visível mesmo fechada (ex.: a barra de progresso).
 
 const EVENTO = "nipei:secao";
 
-export default function SecaoRecolhivel({ id, titulo, contagem, alerta, aberto = true, forcar, children }: {
-  id: string; titulo: ReactNode; contagem?: number; alerta?: boolean; aberto?: boolean; forcar?: boolean; children: ReactNode;
+export default function SecaoRecolhivel({ id, titulo, contagem, alerta, aberto = true, forcar, emCartao, resumo, children }: {
+  id: string; titulo: ReactNode; contagem?: number | string; alerta?: boolean; aberto?: boolean; forcar?: boolean;
+  emCartao?: boolean; resumo?: ReactNode; children: ReactNode;
 }) {
   const chave = `nipei:secao:${id}`;
   const [open, setOpen] = useState(forcar || aberto);
@@ -25,14 +27,17 @@ export default function SecaoRecolhivel({ id, titulo, contagem, alerta, aberto =
   }, [chave, id, forcar]);
 
   return (
-    <details id={id} open={open} className="group scroll-mt-20 mb-2 border-b border-s3 last:border-b-0"
+    <details id={id} open={open} className={`group scroll-mt-20 ${emCartao ? "" : "mb-2 border-b border-s3 last:border-b-0"}`}
       onToggle={(e) => { const o = e.currentTarget.open; setOpen(o); try { localStorage.setItem(chave, o ? "1" : "0"); } catch { /* modo privado */ } }}>
-      <summary className="anel-foco flex min-h-14 cursor-pointer select-none list-none items-center gap-2.5 rounded-interno [&::-webkit-details-marker]:hidden">
-        <span className="titulo-secao">{titulo}</span>
-        {contagem != null && <span className={`rounded-pilula px-2 text-xs font-medium tabular-nums ${alerta && contagem > 0 ? "bg-warn-bg text-warn" : "bg-s2 text-t2"}`}>{contagem}</span>}
-        <Icone nome="abrir" tamanho={18} className="ml-auto text-t2 transition-transform duration-200 group-open:rotate-180" />
+      <summary className="anel-foco grid cursor-pointer select-none list-none gap-3 rounded-interno [&::-webkit-details-marker]:hidden">
+        <span className={`flex items-center gap-2.5 ${emCartao ? "min-h-11" : "min-h-14"}`}>
+          <span className="titulo-secao">{titulo}</span>
+          {contagem != null && <span className={`rounded-pilula px-2 text-xs font-medium tabular-nums ${alerta && contagem !== 0 ? "bg-warn-bg text-warn" : "bg-s2 text-t2"}`}>{contagem}</span>}
+          <Icone nome="abrir" tamanho={18} className="ml-auto text-t2 transition-transform duration-200 group-open:rotate-180" />
+        </span>
+        {resumo}
       </summary>
-      <div className="pb-6 pt-1">{children}</div>
+      <div className={emCartao ? "grid gap-3 pt-3" : "pb-6 pt-1"}>{children}</div>
     </details>
   );
 }
