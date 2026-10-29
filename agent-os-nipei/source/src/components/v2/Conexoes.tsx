@@ -1,4 +1,5 @@
 import Icone from "@/components/ds/Icone";
+import Campo from "@/components/ds/Campo";
 import Cartao from "@/components/ds/Cartao";
 import Botao from "@/components/ds/Botao";
 import BotaoEnviar from "./BotaoEnviar";
@@ -125,11 +126,11 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
           <details>
             <summary className="cursor-pointer text-sm font-medium">{ia ? c.chaveTrocar : c.chaveAdicionar}</summary>
             <form action={salvarChaveIAAction} className="grid gap-2 mt-3">
-              <select name="provedor" defaultValue={ia?.provedor ?? "gemini"} className="rounded-interno bg-s2 px-3 py-2 text-sm">
+              <Campo tipo="selecao" rotulo={c.chaveProvedor} name="provedor" defaultValue={ia?.provedor ?? "gemini"}>
                 {Object.entries(PROVEDORES).map(([id, p]) => <option key={id} value={id}>{p.nome}{id === "gemini" ? ` — ${c.chaveGratis}` : ""}</option>)}
-              </select>
-              <input name="key" type="password" required autoComplete="off" placeholder={c.chaveCampo} className="rounded-interno bg-s2 px-3 py-2 text-sm" />
-              <input name="modelo" placeholder={c.chaveModelo} className="rounded-interno bg-s2 px-3 py-2 text-sm" />
+              </Campo>
+              <Campo tipo="senha" rotulo={c.chaveCampo} name="key" required autoComplete="off" />
+              <Campo rotulo={c.chaveModelo} name="modelo" />
               <p className="text-xs text-t2">{c.chaveOnde} {Object.values(PROVEDORES).map((p, i) => <span key={p.nome}>{i ? " · " : ""}<a href={p.chave} target="_blank" rel="noreferrer" className="underline">{p.nome}</a></span>)}</p>
               <BotaoEnviar enviando={c.chaveTestando} icone="confirmar" variante="primario" tamanho="P" className="justify-self-start">{c.chaveSalvar}</BotaoEnviar>
               <p className="text-xs text-t2">{c.chaveAviso}</p>

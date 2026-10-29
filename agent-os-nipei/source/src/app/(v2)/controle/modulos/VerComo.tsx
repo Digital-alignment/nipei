@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import Icone from "@/components/ds/Icone";
 import Campo from "@/components/ds/Campo";
 import { BadgeEstado } from "@/components/ds/Chip";
@@ -54,7 +55,7 @@ export default function VerComo({ q }: ModuloProps) {
             {d.me ? (
               <form action={iniciarVerComoAction} className="flex items-center gap-2">
                 <input type="hidden" name="pessoa" value={p.id} />
-                <select name="pagina" defaultValue="/hoje" aria-label="Página inicial" className="anel-foco h-10 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco">
+                <select name="pagina" defaultValue="/hoje" aria-label="Página inicial" className={CAMPO_COMPACTO}>
                   {Object.entries(PAGINAS_VER_COMO).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
                 <BotaoEnviar enviando="…" icone="informacao" tamanho="P">Ver como</BotaoEnviar>

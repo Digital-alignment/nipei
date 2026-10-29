@@ -1,4 +1,5 @@
 import Icone from "@/components/ds/Icone";
+import Campo from "@/components/ds/Campo";
 import Selo from "@/components/ds/Selo";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import BotaoEnviar from "./BotaoEnviar";
@@ -43,8 +44,7 @@ export default function EscolherEquipes({ pessoaId, equipes, t, notas = 0, comNo
           </summary>
           <form action={notaInternaAction} className="grid gap-1.5 mt-2">
             <input type="hidden" name="pessoa" value={pessoaId} /><input type="hidden" name="modo" value="nova" />
-            <textarea name="texto" required rows={2} maxLength={4000} placeholder={t.notaPlaceholder}
-              className="w-full sm:w-80 rounded-interno bg-s2 px-3 py-2 font-texto text-sm text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
+            <Campo tipo="area" rotulo={t.notaInterna} name="texto" required rows={2} maxLength={4000} placeholder={t.notaPlaceholder} className="w-full sm:w-80" />
             <div className="flex items-center gap-2">
               <BotaoEnviar enviando="…" icone="confirmar" variante="tonal" tamanho="P">{t.salvarNota}</BotaoEnviar>
               <span className="meta text-t3"><Icone nome="cadeado" tamanho={14} className="mr-1 inline align-[-2px]" />{t.soEquipe1}</span>

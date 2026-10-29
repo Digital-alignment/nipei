@@ -73,7 +73,7 @@ export default async function Respostas({ params, searchParams }: { params: Prom
                 <ul className="list-disc pl-5 mt-1 grid gap-0.5">{qq.guia.map((g, j) => <li key={j}>{g}</li>)}</ul>
               </details>
               {proprio
-                ? <RespostaCampo key={`${qq.id}:${resp?.em ?? ""}`} name={`r:${qq.id}`} inicial={resp?.texto ?? ""} minimo={PALAVRAS_MINIMAS} labels={{ palavras: t.palavras, curta: t.respostaCurta }} />
+                ? <RespostaCampo key={`${qq.id}:${resp?.em ?? ""}`} name={`r:${qq.id}`} inicial={resp?.texto ?? ""} minimo={PALAVRAS_MINIMAS} labels={{ rotulo: t.suaResposta, palavras: t.palavras, curta: t.respostaCurta }} />
                 : <p className="text-sm whitespace-pre-wrap rounded-interno bg-s2 px-3 py-2">{resp?.texto || t.vazio}</p>}
             </div>
           );

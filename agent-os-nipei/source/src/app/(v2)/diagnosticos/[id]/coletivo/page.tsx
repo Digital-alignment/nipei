@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Campo from "@/components/ds/Campo";
 import ChipDS from "@/components/ds/Chip";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import Icone from "@/components/ds/Icone";
@@ -84,15 +85,13 @@ export default async function Coletivo({ params, searchParams }: { params: Promi
                 <ul className="list-disc pl-5 mt-1 grid gap-0.5">{qq.guia.map((g, j) => <li key={j}>{g}</li>)}</ul>
               </details>
               {pode
-                ? <RespostaCampo key={`${qq.id}:${r?.em ?? ""}`} name={`r:${qq.id}`} inicial={r?.texto ?? ""} minimo={PALAVRAS_MINIMAS} labels={{ palavras: t.palavras, curta: t.respostaCurta }} />
+                ? <RespostaCampo key={`${qq.id}:${r?.em ?? ""}`} name={`r:${qq.id}`} inicial={r?.texto ?? ""} minimo={PALAVRAS_MINIMAS} labels={{ rotulo: t.suaResposta, palavras: t.palavras, curta: t.respostaCurta }} />
                 : <p className="text-sm whitespace-pre-wrap rounded-interno bg-s2 px-3 py-2">{r?.texto || t.vazio}</p>}
               {r?.fontes.length ? <p className="text-xs text-t3">{t.fontesUsadas}: {r.fontes.join(" · ")}</p> : null}
               {(r?.falta || pode) && r?.status !== "respondida" && (
-                <label className="grid gap-1 text-xs text-warn">{t.oQueFalta}
-                  {pode
-                    ? <textarea key={`f:${qq.id}:${r?.em ?? ""}`} name={`f:${qq.id}`} defaultValue={r?.falta ?? ""} rows={2} maxLength={600} className="w-full rounded-interno border bg-warn-bg px-2 py-1.5 text-sm text-t1" />
-                    : <span className="text-sm">{r?.falta}</span>}
-                </label>
+                pode
+                  ? <Campo tipo="area" rotulo={t.oQueFalta} key={`f:${qq.id}:${r?.em ?? ""}`} name={`f:${qq.id}`} defaultValue={r?.falta ?? ""} rows={2} maxLength={600} />
+                  : <p className="grid gap-1 text-sm"><span className="meta text-warn">{t.oQueFalta}</span>{r?.falta}</p>
               )}
               {tarefa && (
                 <Link href={`/tarefas/${tarefa.id}`} className="text-xs underline text-t2">

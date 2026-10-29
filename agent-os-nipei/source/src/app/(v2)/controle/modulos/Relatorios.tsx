@@ -34,10 +34,7 @@ export default function Relatorios(_: ModuloProps) {
           <p className="corpo text-t2">Cada chamada de IA do mês: pessoa, uso, modelo, tokens e custo.</p>
           <input type="hidden" name="r" value="custos" />
           <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-            <label className="grid gap-0.5 rounded-pilula bg-s2 px-5 pb-2.5 pt-2">
-              <span className="rotulo-campo text-t3">Mês</span>
-              <input type="month" name="mes" defaultValue={mes} className="w-full bg-transparent font-texto text-base text-t1 outline-none" />
-            </label>
+            <Campo rotulo="Mês" type="month" name="mes" defaultValue={mes} />
             <Botao type="submit" variante="tonal" tamanho="M" icone="baixar">Baixar CSV</Botao>
           </div>
         </form>

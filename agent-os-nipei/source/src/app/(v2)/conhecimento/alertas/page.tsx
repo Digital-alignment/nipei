@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Cartao from "@/components/ds/Cartao";
 import { EstadoVazio } from "@/components/ds/Estados";
 import { Section } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
@@ -59,7 +60,7 @@ export default async function Alertas() {
               const projeto = projetos.find((x) => x.id === p.projeto);
               return (
                 // proposta da IA: cartão do Pinu
-                <li key={p.id} className="grid gap-2.5 rounded-cartao p-4 shadow-brilho-ia" style={{ background: "linear-gradient(160deg, var(--ac-soft), var(--s1) 70%)" }}>
+                <li key={p.id}><Cartao variante="pinu">
                   <p className="flex items-center gap-2"><MiniAnelPinu tamanho={18} /><span className="rotulo-maiusculo text-ac-text">{t.tiposProposta[p.tipo]}</span></p>
                   {tarefa && <Link href={`/tarefas/${tarefa.id}`} className="anel-foco titulo-cartao rounded-interno hover:underline">{tarefa.title}{tarefa.prazo && ` · ${fmtDate(tarefa.prazo, lang)}`}</Link>}
                   {projeto && <Link href={`/projetos/${projeto.id}`} className="anel-foco titulo-cartao rounded-interno hover:underline">{projeto.nome}</Link>}
@@ -78,7 +79,7 @@ export default async function Alertas() {
                       <BotaoEnviar name="acao" value="recusar" enviando="…" icone="fechar" variante="fantasma">{t.recusar}</BotaoEnviar>
                     </div>
                   </form>
-                </li>
+                </Cartao></li>
               );
             })}
           </ul>

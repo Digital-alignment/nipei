@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import { AbasComPainel } from "@/components/ds/Abas";
 import OQueSabemos from "@/components/v2/OQueSabemos";
 import { EstadoVazio } from "@/components/ds/Estados";
@@ -133,7 +134,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         </Cartao>
       )}
       {me.gestao && (
-        <div className="rounded-cartao p-4 shadow-brilho-ia" style={{ background: "linear-gradient(160deg, var(--ac-soft), var(--s1) 70%)" }}>
+        <Cartao variante="pinu">
           <div className="flex items-center justify-between gap-2">
             <p className="rotulo-maiusculo inline-flex items-center gap-1 text-t3"><Icone nome="gerar-outra"  tamanho={12} className="text-info" />{t.estudoIA}</p>
             <form action={estudoAction}><input type="hidden" name="pessoa" value={p.id} />
@@ -164,7 +165,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
               )}
             </>
           ) : <p className="text-sm text-t2 mt-2">{t.estudoAviso}</p>}
-        </div>
+        </Cartao>
       )}
       {!me.gestao && abertas.length > 0 && <Cartao><p className="rotulo-maiusculo text-t3 mb-2">{t.proximasTarefas}</p>{lista(abertas.slice(0, 3))}</Cartao>}
     </div>
@@ -269,7 +270,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
                 className="inline-flex items-center gap-1.5 text-sm underline"><Icone nome="mensagem"  tamanho={14} />{t.enviarWhats}</a>
             </div>
           ) : <p className="text-xs text-t2 mb-2">{t.semContato}</p>}
-          <input readOnly value={l.url} aria-label={t.copiarLink} className="w-full rounded-interno bg-s2 px-2 py-1.5 text-xs" />
+          <input readOnly value={l.url} aria-label={t.copiarLink} className={`${CAMPO_COMPACTO} w-full`} />
         </Cartao>
       ))}
       {gerir && !temAcesso && <p className="text-xs text-t2">{t.equipeSemAcesso}</p>}

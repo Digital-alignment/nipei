@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import AvatarDS from "@/components/ds/Avatar";
 import { BarraProgresso } from "@/components/ds/Progresso";
@@ -65,7 +66,7 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
                 <form action={definirResponsavelAction} className="flex items-center gap-2 text-xs">
                   <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="secao" value={s.id} />
                   <span className="text-t2">{t.responsavel}:</span>
-                  <select name="pessoa" defaultValue={c.responsaveis[s.id] ?? ""} className="rounded-interno bg-s2 px-2 py-1">
+                  <select name="pessoa" defaultValue={c.responsaveis[s.id] ?? ""} aria-label={t.responsavel} className={CAMPO_COMPACTO}>
                     <option value="">{t.semResponsavel}</option>
                     {quem.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
@@ -97,7 +98,7 @@ export default async function DiagnosticoPage({ params }: { params: Promise<{ id
                 <p className="text-xs text-t2">{t.temas}: {TEMAS_REUNIAO[n].join(" · ")}</p>
                 <form action={reuniaoAction} className="flex flex-wrap items-center gap-2 text-xs">
                   <input type="hidden" name="diagnostico" value={d.id} /><input type="hidden" name="n" value={n} />
-                  <input type="date" name="data" defaultValue={r?.data} required className="rounded-interno bg-s2 px-2 py-1" />
+                  <input type="date" name="data" defaultValue={r?.data} required aria-label={t.data} className={CAMPO_COMPACTO} />
                   <button name="acao" value="agendar" className="rounded-interno bg-s2 px-2 py-1">{t.agendar}</button>
                   <Link href={`/diagnosticos/${d.id}/reuniao/${n}`} className="underline text-t2">{t.pauta} →</Link>
                 </form>

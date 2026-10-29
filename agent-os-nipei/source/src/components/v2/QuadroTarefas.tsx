@@ -75,7 +75,7 @@ export default function QuadroTarefas({ cartoes, rotulos, novaHref }: {
                 return (
                   <li key={c.id} draggable={c.podeMover} data-tarefa={c.id}
                     onDragStart={(e) => { e.dataTransfer.setData("text/nipei-tarefa", c.id); e.dataTransfer.effectAllowed = "move"; }}
-                    className={`group relative grid gap-2 rounded-[16px] bg-s2 p-3 pr-2 ${c.podeMover ? "md:cursor-grab md:active:cursor-grabbing" : ""}`}>
+                    className={`group relative grid gap-2 rounded-cartao bg-s2 p-3 pr-2 ${c.podeMover ? "md:cursor-grab md:active:cursor-grabbing" : ""}`}>
                     <div className="flex items-start gap-2">
                       <div className="grid min-w-0 flex-1 gap-1.5">
                         {(eq || c.nomeEquipe) && (
@@ -104,12 +104,12 @@ export default function QuadroTarefas({ cartoes, rotulos, novaHref }: {
               })}
             </ul>
             {lista.length > LIMITE && !todas[col] && (
-              <button type="button" onClick={() => setTodas((x) => ({ ...x, [col]: true }))} className="anel-foco min-h-11 rounded-[16px] font-texto text-sm font-medium text-t2 hover:bg-s2 hover:text-t1">{rotulos.mostrarMais} ({lista.length - LIMITE})</button>
+              <button type="button" onClick={() => setTodas((x) => ({ ...x, [col]: true }))} className="anel-foco min-h-11 rounded-cartao font-texto text-sm font-medium text-t2 hover:bg-s2 hover:text-t1">{rotulos.mostrarMais} ({lista.length - LIMITE})</button>
             )}
             {lista.length === 0 && <p className="meta px-1 py-2 text-t3">{rotulos.vazio}</p>}
             {/* adicionar = planejado → hachurado (regra 6) */}
             <Link href={`${novaHref}${novaHref.includes("?") ? "&" : "?"}status=${col}`}
-              className="anel-foco hachurado flex min-h-11 items-center justify-center gap-2 rounded-[16px] font-texto text-sm font-medium text-t2 hover:text-t1">
+              className="anel-foco hachurado flex min-h-11 items-center justify-center gap-2 rounded-cartao font-texto text-sm font-medium text-t2 hover:text-t1">
               <Icone nome="mais" tamanho={16} />{rotulos.adicionar}
             </Link>
           </section>

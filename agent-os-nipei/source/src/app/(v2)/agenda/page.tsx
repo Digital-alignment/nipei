@@ -305,11 +305,11 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
             <p className="rotulo-maiusculo text-t3">{t.diaInteiro}</p>
             <ul className="flex flex-wrap gap-2">
               {semHora.map((e) => (
-                <li key={e.id}><Link href={`/eventos/${encodeURIComponent(e.id)}`} className="anel-foco relative inline-flex min-h-9 items-center gap-2 overflow-hidden rounded-[12px] py-1 pl-3.5 pr-3.5 font-texto text-sm font-medium text-t1 hover:underline" style={tinta(e.equipe)}>
+                <li key={e.id}><Link href={`/eventos/${encodeURIComponent(e.id)}`} className="anel-foco relative inline-flex min-h-9 items-center gap-2 overflow-hidden rounded-interno py-1 pl-3.5 pr-3.5 font-texto text-sm font-medium text-t1 hover:underline" style={tinta(e.equipe)}>
                   <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: corEquipe(e.equipe) }} />{e.titulo}
                 </Link></li>
               ))}
-              {gSemHora.map((e) => <li key={e.id}><a href={e.link || undefined} target="_blank" rel="noreferrer" className="anel-foco inline-flex min-h-9 items-center gap-2 rounded-[12px] px-3.5 font-texto text-sm text-t2 shadow-[inset_0_0_0_1px_var(--s4)] [border-style:dashed] hover:underline"><Icone nome="calendario" tamanho={16} />{e.titulo}</a></li>)}
+              {gSemHora.map((e) => <li key={e.id}><a href={e.link || undefined} target="_blank" rel="noreferrer" className="anel-foco inline-flex min-h-9 items-center gap-2 rounded-interno px-3.5 font-texto text-sm text-t2 shadow-[inset_0_0_0_1px_var(--s4)] [border-style:dashed] hover:underline"><Icone nome="calendario" tamanho={16} />{e.titulo}</a></li>)}
               {ts.map((x) => <PilulaTarefa key={x.id} x={x} arrastavel={c.mover(x)} />)}
             </ul>
           </div>
@@ -335,7 +335,7 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
                   {e.equipe && chaveEquipe(e.equipe) && <span className="meta flex items-center gap-1 text-t2"><Selo nome={EQUIPES_DS[chaveEquipe(e.equipe)!].selo} tamanho={14} style={{ color: corEquipe(e.equipe) }} />{EQUIPES_DS[chaveEquipe(e.equipe)!].nome}</span>}
                 </>
               );
-              const cls = `anel-foco absolute flex flex-col gap-0.5 overflow-hidden rounded-[12px] py-1.5 pl-3 pr-2 hover:brightness-110 ${e.google ? "bg-s1 shadow-[inset_0_0_0_1px_var(--s4)]" : ""} ${e.aConfirmar ? "hachurado" : ""}`;
+              const cls = `anel-foco absolute flex flex-col gap-0.5 overflow-hidden rounded-interno py-1.5 pl-3 pr-2 hover:brightness-110 ${e.google ? "bg-s1 shadow-[inset_0_0_0_1px_var(--s4)]" : ""} ${e.aConfirmar ? "hachurado" : ""}`;
               const st: CSSProperties = { top, height: alto, left: `calc(${pos[i] * largura}% + 4px)`, width: `calc(${largura}% - 8px)`, ...(e.google ? {} : tinta(e.equipe)) };
               return e.google
                 ? <a key={e.id} href={e.href || undefined} target="_blank" rel="noreferrer" className={cls} style={st}>{corpo}</a>

@@ -32,7 +32,7 @@ const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB
 /** URL of a file of this task (served by ./arquivo/[nome]/route.ts). */
 const arquivoUrl = (id: string, a: Anexo) => `/tarefas/${id}/arquivo/${encodeURIComponent(a.path.split("/").pop() ?? "")}`;
 // dentro do painel (superfície 2) os itens e campos ficam um tom abaixo, como poços
-const POCO = "rounded-[16px] bg-s1";
+const POCO = "rounded-cartao bg-s1";
 
 function Md({ children }: { children: string }) {
   return (

@@ -59,7 +59,7 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
                 {can.editObjetivo(me) && (
                   <details className="group">
                     <summary className="anel-foco meta inline-flex min-h-9 cursor-pointer list-none items-center gap-1.5 rounded-pilula text-t2 hover:text-t1"><Icone nome="editar" tamanho={16} />{t.editar}: {t.donoEquipe} / {t.apoio}</summary>
-                    <form action={updateObjetivoAction} className="mt-2 grid gap-3 rounded-[16px] bg-s2 p-3">
+                    <form action={updateObjetivoAction} className="mt-2 grid gap-3 rounded-cartao bg-s2 p-3">
                       <input type="hidden" name="id" value={o.id} />
                       <input type="hidden" name="back" value={`/objetivos?ano=${ano}#${o.id}`} />
                       <Campo tipo="selecao" name="equipe" rotulo={t.donoEquipe} defaultValue={o.equipe} className="bg-s1!">

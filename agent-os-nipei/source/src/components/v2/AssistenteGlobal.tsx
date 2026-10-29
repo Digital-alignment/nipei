@@ -297,7 +297,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                 <div key={cat} className="grid gap-2">
                   <p className="rotulo-maiusculo text-t3">{labels.categorias[cat]}</p>
                   {memoria.filter((x) => x.categoria === cat).map((x) => (
-                    <div key={x.id} className="flex items-center gap-2 rounded-[16px] bg-s1 py-1.5 pl-4 pr-1.5">
+                    <div key={x.id} className="flex items-center gap-2 rounded-cartao bg-s1 py-1.5 pl-4 pr-1.5">
                       <p className="corpo min-w-0 flex-1">{x.texto}</p>
                       <BotaoIcone icone="fechar" aria-label={`${labels.esquecer}: ${x.texto}`} tamanho={40} variante="fantasma" onClick={() => apagar(x.id)} disabled={pending} />
                     </div>

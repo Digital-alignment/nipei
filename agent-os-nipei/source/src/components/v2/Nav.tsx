@@ -212,7 +212,7 @@ export function PainelConta({ rotulos, perfilHref, idiomaAction, sairAction, men
 }) {
   const linha = "anel-foco flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 text-left text-sm font-medium text-t1 hover:bg-s3";
   return (
-    <div className="grid max-h-[calc(100dvh-90px)] w-[358px] max-w-[calc(100vw-32px)] gap-1 overflow-y-auto rounded-[16px] bg-s2 p-3 font-texto text-t1 shadow-[0_0_0_1px_var(--s3)]">
+    <div className="grid max-h-[calc(100dvh-90px)] w-[358px] max-w-[calc(100vw-32px)] gap-1 overflow-y-auto rounded-cartao bg-s2 p-3 font-texto text-t1 shadow-[0_0_0_1px_var(--s3)]">
       {menu}
       <p className="rotulo-maiusculo px-1 text-t3">{rotulos.configuracoes}</p>
       <Tema rotulo={rotulos.tema} />

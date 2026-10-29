@@ -87,7 +87,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
           {podeEditarAcervo(me, i) && (
             <details className="group/ed w-full [&:not([open])]:w-auto">
               <summary className={`${ACAO} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}><Icone nome="editar" tamanho={14} />{t.editar}</summary>
-              <div className="mt-3 grid gap-3 rounded-[16px] bg-s2 p-3">
+              <div className="mt-3 grid gap-3 rounded-cartao bg-s2 p-3">
                 <AcervoForm action={updateAcervoAction} id={i.id} tipos={tiposOpc} projetos={projetos} labels={labels} inicial={i} />
                 <form action={arquivarAcervoAction}><input type="hidden" name="id" value={i.id} />
                   {/* "remover" nunca é vermelho fora do diálogo (regra 9) */}

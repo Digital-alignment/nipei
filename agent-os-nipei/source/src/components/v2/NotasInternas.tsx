@@ -25,7 +25,7 @@ export default function NotasInternas({ pessoaId, notas, t }: { pessoaId: string
       {notas.length === 0 && <p className="text-sm text-t2">{t.semNotas}</p>}
       <ul className="grid gap-3">
         {notas.map((n) => (
-          <li key={n.id} className="rounded-[16px] bg-s1 p-3 grid gap-2">
+          <li key={n.id} className="rounded-cartao bg-s1 p-3 grid gap-2">
             <p className="text-xs text-t2">{quando(n.em)} · {n.por}{n.editadoEm && ` · ${t.notaEditada} ${n.editadoPor} ${quando(n.editadoEm)}`}</p>
             <p className="text-sm whitespace-pre-wrap">{n.texto}</p>
             {n.comentarios.length > 0 && (
@@ -46,7 +46,7 @@ export default function NotasInternas({ pessoaId, notas, t }: { pessoaId: string
                 <summary className="list-none cursor-pointer inline-flex items-center gap-1 text-xs text-t2"><Icone nome="editar"  tamanho={12} />{t.editar}</summary>
                 <form action={notaInternaAction} className="grid gap-1.5 mt-1.5">
                   {oculto("editar", n.id)}
-                  <textarea name="texto" required rows={3} maxLength={4000} defaultValue={n.texto} className="w-full rounded-interno bg-s2 px-2.5 py-1.5 text-sm sm:w-96" />
+                  <Campo tipo="area" rotulo={t.notaInterna} name="texto" required rows={3} maxLength={4000} defaultValue={n.texto} className="w-full sm:w-96" />
                   <BotaoEnviar enviando="…" icone="confirmar" variante="tonal" className="justify-self-start">{t.salvar}</BotaoEnviar>
                 </form>
               </details>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Campo from "@/components/ds/Campo";
 import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
@@ -46,7 +47,7 @@ export default async function Codigo({ params }: { params: Promise<{ id: string 
           </form>
           {c.texto && (
             <form action={codigoAction} className="grid gap-2">{hidden}
-              <textarea name="texto" defaultValue={c.texto} rows={18} className="w-full rounded-[16px] bg-s2 px-4 py-2.5 font-texto text-[15px] text-t1 outline-none placeholder:text-t3 focus:shadow-foco" />
+              <Campo tipo="area" rotulo={t.codigoAcordos} name="texto" defaultValue={c.texto} rows={18} />
               <div className="flex flex-wrap gap-2">
                 <BotaoEnviar name="acao" value="salvar" enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarRascunho}</BotaoEnviar>
                 <BotaoEnviar name="acao" value="publicar" enviando={t.salvando} icone="enviar" variante="primario" tamanho="P">{t.publicarVersao}</BotaoEnviar>

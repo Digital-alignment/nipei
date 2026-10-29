@@ -91,7 +91,7 @@ export default function Tabela({ colunas, linhas, rotulo, ordemInicial, vazio }:
       {/* celular: cada linha vira um cartão */}
       <ul className="grid gap-2 md:hidden" aria-label={rotulo}>
         {ordenadas.map((l) => (
-          <li key={l.id} className={`grid gap-2 rounded-[16px] bg-s1 p-3.5 ${l.apagada ? "opacity-50" : ""}`}>
+          <li key={l.id} className={`grid gap-2 rounded-cartao bg-s1 p-3.5 ${l.apagada ? "opacity-50" : ""}`}>
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1 font-texto text-[15px] text-t1">{titulo(l)}</div>
               {l.acoes}
