@@ -634,6 +634,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
    ───────────────────────────────────────────────────────────────────────────── */
 /* forma e fonte: iguais nos dois temas */
 .v2 {
+  --altura-item-menu:clamp(28px,4.6dvh,44px); /* menu lateral: 44 px em telas altas, encolhe para caber sem sair da barra */
   --raio-pilula:999px; --raio-moldura:28px; --raio-bloco:20px; --raio-cartao:16px; --raio-interno:12px;
   --fonte-display:var(--font-outfit),system-ui,sans-serif; --fonte-texto:var(--font-google-sans),system-ui,sans-serif;
 }

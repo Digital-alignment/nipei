@@ -75,7 +75,7 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
     <>
       <div className={`print:hidden hidden shrink-0 transition-[width] duration-200 md:block ${fechado ? "w-[88px]" : "w-[264px]"}`}>
         <nav aria-label="Menu" className="sticky top-0 h-dvh p-3">
-          <div className={`flex h-full flex-col gap-1.5 bg-s1 font-texto ${fechado ? "w-16 items-center rounded-pilula px-2 py-3" : "w-60 rounded-[24px] px-2.5 py-3.5"}`}>
+          <div className={`flex h-full flex-col gap-1 bg-s1 font-texto ${fechado ? "w-16 items-center rounded-pilula px-2 py-3" : "w-60 rounded-[24px] px-2.5 py-3.5"}`}>
             <div className={`flex items-center gap-2.5 ${fechado ? "flex-col" : "px-1"}`}>
               <Link href="/hoje" aria-label="Nipëi OS" className="anel-foco grid size-10 shrink-0 place-items-center rounded-[12px_4px_12px_4px] bg-ac font-display text-lg font-bold text-ac-ink">N</Link>
               {!fechado && <b className="flex-1 font-display text-base font-semibold">Nipëi OS</b>}
@@ -93,7 +93,7 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
                     return (
                       <li key={item.href} className="group relative">
                         <Link href={item.href} aria-current={on ? "page" : undefined} aria-label={fechado ? rotulos[item.chave] : undefined}
-                          className={`anel-foco relative flex items-center rounded-pilula transition-colors duration-150 ${fechado ? "size-11 justify-center" : "h-11 gap-3 px-3.5"} ${on
+                          className={`anel-foco relative flex items-center rounded-pilula transition-colors duration-150 ${fechado ? "size-(--altura-item-menu) justify-center" : "h-(--altura-item-menu) gap-3 px-3.5"} ${on
                             ? `bg-s2 text-t1 shadow-[inset_0_0_0_1px_var(--s3)] before:absolute before:inset-y-3 before:w-[3px] before:rounded-pilula before:bg-ac before:content-[''] ${fechado ? "before:-left-2" : "before:-left-2.5"}`
                             : "text-t3 hover:bg-s2 hover:text-t1"}`}>
                           <Simbolo item={item} tamanho={22} />
@@ -112,7 +112,7 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
             <span className="flex-1" />
             <div className={`group relative ${fechado ? "" : "w-full"}`}>
               <button type="button" popoverTarget="nipei-conta-nav" aria-label={fechado ? rotulos.configuracoes : undefined}
-                className={`anel-foco flex items-center rounded-pilula text-t3 transition-colors duration-150 hover:bg-s2 hover:text-t1 ${fechado ? "size-11 justify-center" : "h-11 w-full gap-3 px-3.5 text-sm font-medium"}`}>
+                className={`anel-foco flex items-center rounded-pilula text-t3 transition-colors duration-150 hover:bg-s2 hover:text-t1 ${fechado ? "size-(--altura-item-menu) justify-center" : "h-(--altura-item-menu) w-full gap-3 px-3.5 text-sm font-medium"}`}>
                 <Icone nome="configuracoes" tamanho={22} />{!fechado && rotulos.configuracoes}
               </button>
               {fechado && <span role="tooltip" className={tooltip}>{rotulos.configuracoes}</span>}

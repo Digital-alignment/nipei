@@ -439,6 +439,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
   - Expandido: grupos com `rotulo-maiusculo` (Principal / Equipe) · selo + nome + contagem · botão recolher.
   - Item ativo = pílula sutil + contorno de 1 px + **barra de acento à esquerda**, sem brilho.
   - Um só nível.
+  - **Nunca sai da barra**: a altura de cada item (e de Configurações) é o token `--altura-item-menu` = `clamp(28px, 4.6dvh, 44px)` — 44 px em telas altas, encolhe com a altura da janela (zoom do navegador incluído) para caber até em 600 px.
   - Topo do conteúdo: campo **"Pergunte ao Pinu ou busque…"** (mini-anel + microfone) · notificações com contagem · avatar.
 - **Celular**: barra inferior flutuante em pílula com **o orbe do Pinu no centro**, ligado à pílula por **ponte líquida**. Item ativo = círculo preenchido em acento. O "+" abre um menu radial com o fundo escurecido. (A barra deve crescer no futuro.)
 

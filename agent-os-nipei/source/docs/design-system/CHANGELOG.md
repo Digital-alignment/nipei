@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-10-29 — Menu lateral cabe em qualquer altura
+
+- Itens do menu lateral do computador com altura `--altura-item-menu` (`clamp(28px, 4.6dvh, 44px)`, seção 10.10): antes eram 44 px fixos e, abaixo de ~800 px de altura (ex.: zoom 100% num notebook), Configurações e o orbe do Pinu saíam da barra. Conferido de 600 a 1000 px, recolhido e aberto, com o item do Painel.
+
 ## 2026-10-28 — Login sem rolagem, rótulo do campo e auditoria
 
 - **Login**: logo = ícone do app (o mesmo do favicon); a página nunca rola (`h-dvh` + `overflow-hidden`) e se compacta pela altura com as variantes novas `baixa:`, `mini:` e `deitada:` (`globals.css`, seção 5.2); campos com ícone (pessoa, cadeado, mensagem). Conferido de 320×568 a 1440×900 e deitado (667×375, 844×390).
