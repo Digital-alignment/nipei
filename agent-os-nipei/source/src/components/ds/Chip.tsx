@@ -59,13 +59,14 @@ export function Contagem({ valor, rotulo, anel = "bg" }: { valor?: number; rotul
   );
 }
 
-export type EstadoBadge = "pendente" | "andamento" | "feita" | "atrasada" | "interna";
+export type EstadoBadge = "pendente" | "andamento" | "feita" | "atrasada" | "interna" | "aviso";
 const ESTADO: Record<EstadoBadge, { icone: NomeIcone; texto: string; cls: string }> = {
   pendente: { icone: "prazo", texto: "Pendente", cls: "hachurado text-t1 ring-1 ring-inset ring-s3" },
   andamento: { icone: "enviar", texto: "Em andamento", cls: "bg-info-bg text-info" },
   feita: { icone: "sucesso", texto: "Feita", cls: "bg-ok-bg text-ok" },
   atrasada: { icone: "atencao", texto: "Atrasada", cls: "bg-err-bg text-err" },
   interna: { icone: "cadeado", texto: "Nota interna", cls: "bg-s3 text-t1" },
+  aviso: { icone: "prazo", texto: "Atenção", cls: "bg-warn-bg text-warn" },
 };
 
 /** Estado sempre com ícone + texto (regra 10). Pendente = hachurado (regra 6). */

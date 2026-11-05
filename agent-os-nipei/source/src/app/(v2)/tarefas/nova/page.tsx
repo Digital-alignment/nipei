@@ -15,7 +15,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
   // Only the teams this person may create tasks in (plan §4.4); "no team" is for gestão only.
   const equipes = getEquipes().filter((e) => can.criarEm(user, e.id));
   const equipeInicial = equipes.some((e) => e.id === q.equipe) ? q.equipe! : me?.equipes.find((id) => equipes.some((e) => e.id === id)) ?? equipes[0]?.id ?? "";
-  const pessoas = getPessoas().filter((p) => !p.externo).sort((a, b) => a.name.localeCompare(b.name, "pt")); // access doesn't matter for assigning
+  const pessoas = getPessoas().filter((p) => !p.externo && !p.contato).sort((a, b) => a.name.localeCompare(b.name, "pt")); // access doesn't matter for assigning
   const back = q.back?.startsWith("/") && !q.back.startsWith("//") ? q.back : "/hoje";
   const criada = q.criada ? getTarefas().find((x) => x.id === q.criada) : undefined;
 

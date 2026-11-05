@@ -5,7 +5,7 @@ import { getEquipes, getPessoas } from "./data";
 export function organizacao() {
   const pessoas = getPessoas().filter((p) => !p.externo).sort((a, b) => a.name.localeCompare(b.name, "pt"));
   const comEquipe = pessoas.filter((p) => p.equipes.length);
-  const semFuncao = comEquipe.filter((p) => !p.funcao || p.funcao === "Outro");
+  const semFuncao = comEquipe.filter((p) => !p.contato && (!p.funcao || p.funcao === "Outro")); // a Pontes contact has no role here
   return {
     total: pessoas.length,
     comEquipe: comEquipe.length,

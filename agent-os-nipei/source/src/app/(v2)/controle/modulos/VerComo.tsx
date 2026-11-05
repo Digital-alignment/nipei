@@ -16,7 +16,7 @@ export const PAGINAS_VER_COMO: Record<string, string> = { "/hoje": "Hoje", "/age
 function diagnostico(p: Pessoa) {
   const equipes = getEquipes(), me = meDaPessoa(p.id), g = getConexoes(p.id).google;
   const comAcesso = p.equipes.filter((id) => { const e = equipes.find((x) => x.id === id); return e?.acesso || e?.gestao; });
-  const bloqueio = p.externo ? "contato externo (fora das equipes)" : p.suspenso ? "acesso suspenso" : !p.equipes.length ? "não está em nenhuma equipe" : !comAcesso.length ? "nenhuma equipe dele tem acesso à plataforma" : !podeEntrar(p) ? "sem acesso" : "";
+  const bloqueio = p.externo ? "contato externo (fora das equipes)" : p.contato ? "contato (Pontes): não entra na plataforma" : p.suspenso ? "acesso suspenso" : !p.equipes.length ? "não está em nenhuma equipe" : !comAcesso.length ? "nenhuma equipe dele tem acesso à plataforma" : !podeEntrar(p) ? "sem acesso" : "";
   const metodos = [temSenha(p) && "senha", (p.email || g) && "Google", p.whatsapp && p.whatsappVerificado && "link no WhatsApp"].filter(Boolean) as string[];
   return {
     me, bloqueio, metodos,

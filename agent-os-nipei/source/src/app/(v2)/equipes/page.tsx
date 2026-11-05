@@ -7,7 +7,7 @@ import { BarraProgresso } from "@/components/ds/Progresso";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import Icone from "@/components/ds/Icone";
 
-import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, today, type Equipe } from "@/lib/v2/data";
+import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, reconectarEm, today, type Equipe } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
 const menos = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
@@ -23,6 +23,7 @@ export default async function Equipes() {
   const outras = equipes.filter((e) => !minhas.includes(e));
   const semEquipe = tarefas.filter((x) => !x.equipe && x.status !== "done").length;
 
+  const devidos = (e: Equipe) => pessoas.filter((p) => p.equipes.includes(e.id) && (reconectarEm(p) || "9") <= hoje).length;
   const Cartao = ({ e }: { e: Equipe }) => {
     const ts = tarefas.filter((x) => x.equipe === e.id);
     const abertas = ts.filter((x) => x.status !== "done");
@@ -47,6 +48,9 @@ export default async function Equipes() {
             {pessoasEq.length > 6 && <span className="ml-1.5 text-xs text-t2">+{pessoasEq.length - 6}</span>}
             <span className="ml-auto text-xs text-t2">{e.coordenadores.map((c) => pessoa(c)?.name.split(" ")[0]).filter(Boolean).join(", ")}</span>
           </div>
+          {e.contatos ? (
+            <p className="meta mt-3 text-t2">{e.membros.length} {e.membros.length === 1 ? t.ponte.contato : t.ponte.contatos.toLowerCase()}{devidos(e) ? <span className="text-warn"> · {devidos(e)} {t.ponte.reconectar.toLowerCase()}</span> : null}</p>
+          ) : <>
           <div className="grid grid-cols-4 gap-1 mt-3 text-center">
             {[[abertas.length, t.abertasLbl, ""], [atrasadas, t.atrasadasLbl, atrasadas ? "text-err" : ""], [semDono, t.semDonoLbl, semDono ? "text-warn" : ""], [feitas, t.feitas30, ""]].map(([v, l, c]) => (
               <div key={String(l)} className="rounded-interno bg-s2 py-1.5">
@@ -61,6 +65,7 @@ export default async function Equipes() {
             </div>
           )}
           <p className="mt-2 text-xs text-t2">{objetivos.filter((o) => o.equipe === e.id).length} {t.objetivos.toLowerCase()}{e.areas.length ? ` · ${e.areas.length} ${t.areasLbl}` : ""}</p>
+          </>}
         </Link>
       </li>
     );
@@ -76,7 +81,7 @@ export default async function Equipes() {
   return (
     <>
       <CabecalhoPagina selo="broto" rotulo={`${equipes.length} ${t.equipes.toLowerCase()}`} titulo={t.equipes}
-        acoes={<Botao href="/pessoas" variante="tonal" icone="pessoas" tamanho="M">{`${t.pessoas} · ${pessoas.filter((p) => p.equipes.length).length}`}</Botao>} />
+        acoes={<Botao href="/pessoas" variante="tonal" icone="pessoas" tamanho="M">{`${t.pessoas} · ${pessoas.filter((p) => p.equipes.length && !p.contato).length}`}</Botao>} />
       {minhas.length && outras.length ? (<><Grade titulo={t.minhasEquipes} lista={minhas} /><Grade titulo={t.outrasEquipes} lista={outras} /></>) : <Grade lista={equipes} />}
       {semEquipe > 0 && (
         <Link href="/equipes/sem-equipe" className="anel-foco hachurado flex min-h-12 items-center justify-between rounded-cartao px-4 font-texto text-[15px] font-medium text-t1">

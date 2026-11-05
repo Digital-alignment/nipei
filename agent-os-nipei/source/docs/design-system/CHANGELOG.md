@@ -2,6 +2,16 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Contato (Pontes), seção 10.12
+
+- `BadgeEstado` ganha o estado **aviso** (âmbar suave + ampulheta), usado em "Reconectar".
+- Telas: equipe Pontes (`ContatosEquipe`: cartões de contato em grade, busca, chips de tipo, "Novo contato"), ficha do contato (abas Ponte · Perfil · Gestão, `PonteContato`), editar contato (`/pessoas/[id]/ponte`), pílula "Reconectar com X" em Hoje e cartão da equipe Pontes em `/equipes` (contatos e quantos para reconectar no lugar dos números de tarefas). Só componentes existentes.
+
+## 2026-11-05 — Equipe Pontes
+
+- Quinta equipe no design system: token `--eq-pontes` (antigo `--eq-reserva`, terracota) nos três blocos de `globals.css` e no `@theme`, selo `pontes` = `simbolo-39`, `EQUIPES_DS.pontes` e `equipe_5` em `components/ds/equipes.ts`. A página `/design` mostra a equipe.
+- `ds-contraste.mjs` passa a conferir também `eq-pontes` como texto nos dois temas.
+
 ## 2026-10-29 — Menu lateral cabe em qualquer altura
 
 - Itens do menu lateral do computador com altura `--altura-item-menu` (`clamp(28px, 4.6dvh, 44px)`, seção 10.10): antes eram 44 px fixos e, abaixo de ~800 px de altura (ex.: zoom 100% num notebook), Configurações e o orbe do Pinu saíam da barra. Conferido de 600 a 1000 px, recolhido e aberto, com o item do Painel.

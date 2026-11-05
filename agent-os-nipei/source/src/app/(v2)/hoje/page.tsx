@@ -14,7 +14,7 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, pulso } from "@/lib/v2/hoje";
-import { can, currentUser, esperandoPor, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, esperandoPor, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, reconectarEm, reconectarPor, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
@@ -149,6 +149,10 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento });
   if (esperando.length) pilulas.push({ href: "/hoje?aba=esperando", icone: "mensagem", texto: `${esperando.length} ${t.esperandoVoce}`, titulo: t.esperandoTitulo });
   if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA });
+  // Pontes: contacts this person should reconnect with (link person; no link = Pontes coordination), oldest first, max 3
+  if (me) for (const c of getPessoas().filter((x) => x.contato && (reconectarEm(x) || "9") <= hoje && reconectarPor(x, equipes).includes(me.id))
+    .sort((a, b) => reconectarEm(a).localeCompare(reconectarEm(b))).slice(0, 3))
+    pilulas.push({ href: `/pessoas/${c.id}`, icone: "pessoa", texto: `${t.ponte.reconectarCom} ${c.name.split(" ")[0]}`, titulo: t.ponte.contatos });
   const p = user.gestao ? pulso() : null;
 
   const linha = (x: Tarefa, grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>

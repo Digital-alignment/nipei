@@ -21,6 +21,7 @@ export const SELOS = {
   producao: "simbolo-11", // Produção Yawanawa
   guardioes: "simbolo-10", // Guardiões
   manutencao: "simbolo-62", // Manutenção e Logística
+  pontes: "simbolo-39", // Pontes (contatos, fornecedores, aliados)
 } as const satisfies Record<string, ArquivoSimbolo>;
 
 export type NomeSelo = keyof typeof SELOS;

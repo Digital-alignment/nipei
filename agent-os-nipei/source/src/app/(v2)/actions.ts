@@ -226,7 +226,39 @@ export async function createPessoaAction(form: FormData) {
   if (!name || !(equipe ? can.gerirEquipe(me, equipe) : me.gestao)) return;
   const id = createPessoa(name, equipe);
   revalidatePath("/", "layout");
-  redirect(`/pessoas/${id}`);
+  redirect(getEquipes().find((e) => e.id === equipe)?.contatos ? `/pessoas/${id}/ponte` : `/pessoas/${id}`);
+}
+
+// ---------------------------------------------------------------- Pontes (contact card + conversations)
+const contatoGerivel = async (form: FormData) => {
+  const me = await requireUser();
+  const p = getPessoas().find((x) => x.id === String(form.get("pessoa")));
+  return p && p.contato && can.gerirPessoa(me, p) ? { me, p } : null;
+};
+
+export async function ponteAction(form: FormData) {
+  const ok = await contatoGerivel(form);
+  if (!ok) return;
+  const txt = (k: string, max = 200) => String(form.get(k) ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+  const { PONTE_TIPOS, setPonte } = await import("@/lib/v2/data");
+  const vinculo = pick(form.get("vinculo"), getPessoas().filter((x) => !x.contato && !x.externo).map((x) => x.id));
+  setPonte(ok.p.id, {
+    tipo: pick(form.get("tipo"), [...PONTE_TIPOS]), empresa: txt("empresa", 120), comoConhecemos: txt("como_conhecemos", 300),
+    oferece: [...new Set(txt("oferece", 400).split(",").map((x) => x.trim()).filter(Boolean))].slice(0, 12),
+    vinculo, proximoPasso: txt("proximo_passo", 300), reconectarDias: Math.min(730, Math.max(7, Number(form.get("reconectar_dias")) || 90)),
+  }, actorName(ok.me));
+  revalidatePath("/", "layout");
+  redirect(`/pessoas/${ok.p.id}`);
+}
+
+export async function conversaAction(form: FormData) {
+  const ok = await contatoGerivel(form);
+  const texto = String(form.get("texto") ?? "").trim().slice(0, 1000);
+  if (!ok || !texto) return;
+  const { registrarConversa } = await import("@/lib/v2/data");
+  const proximo = form.has("proximo_passo") ? String(form.get("proximo_passo") ?? "") : undefined;
+  registrarConversa(ok.p.id, isDate(form.get("data")) || today(), texto, actorName(ok.me), proximo || undefined);
+  revalidatePath("/", "layout");
 }
 
 export async function setEquipeAcessoAction(form: FormData) {

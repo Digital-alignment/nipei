@@ -13,7 +13,7 @@ import { getConexoes } from "./conexoes";
 import { criarEventoGoogle, eventosGoogle, gmailBuscar, gmailEnviar, gmailLer, gmailParaConhecimento, temGmail } from "./google";
 import { getNotas, podeNotasInternas } from "./notasInternas";
 import {
-  STATUS_RAW, anotarProjeto, can, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
+  STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
   getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault,
   type Me, type Status, type Tarefa,
 } from "./data";
@@ -41,7 +41,8 @@ export type Acao =
   | { tipo: "gmail_enviar"; texto: string; para?: string; assunto?: string; responderA?: string; rascunho?: boolean }
   | { tipo: "evento_google"; titulo: string; dia: string; hora?: string; duracaoMin?: number; descricao?: string; convidados?: string[] }
   | { tipo: "lembrar"; texto: string; categoria: Categoria }
-  | { tipo: "esquecer"; id: string };
+  | { tipo: "esquecer"; id: string }
+  | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
 export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[] };
@@ -175,6 +176,7 @@ const TOOLS = [
   fn("acervo", "Acervo: índice de links do Google Drive (fotos, vídeos, áudios, cursos, documentos, marca). Para achar ONDE está um arquivo ou pasta e dar o link.", { busca: { type: "string" }, tipo: { type: "string", enum: ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] } }),
   fn("conhecimento_pendente", "Fatos propostos esperando revisão (com id) e alertas do auditor abertos.", { equipe: { type: "string" }, texto: { type: "string" } }),
   fn("pessoas", "Pessoas da comunidade: nome, id, equipes, função e carga de tarefas.", { texto: { type: "string" }, equipe: { type: "string" } }),
+  fn("pontes", "Pontes: contatos de fora (fornecedores, aliados possíveis, colaboradores) com o que cada um oferece. Use para \"quem pode nos ajudar com…\", \"temos fornecedor de…\".", { busca: { type: "string", description: "o que se procura (ex.: envase de vidro), nome ou empresa; vazio = todos" }, tipo: { type: "string", enum: ["fornecedor", "aliado", "colaborador"] } }),
   fn("projetos", "Projetos: lista com números, ou detalhes de um (objetivos, atualizações, tarefas abertas).", { projeto: { type: "string", description: "nome ou id; vazio = todos" } }),
   fn("equipe", "Saúde de uma equipe: números, carga por membro, tarefas sem responsável.", { equipe: { type: "string" } }, ["equipe"]),
   fn("objetivos", "Objetivos do ano com progresso e equipe dona.", { ano: { type: "number" } }),
@@ -219,9 +221,10 @@ const TOOLS = [
   fn("lembrar", "PROPÕE guardar na sua memória algo estável sobre a pessoa que fala com você (preferência de resposta, do que ela cuida, rotina, contexto). Uma frase curta na 3ª pessoa.", {
     texto: { type: "string", description: "ex.: \"Prefere respostas curtas, em tópicos\"" }, categoria: { type: "string", enum: [...CATEGORIAS] },
   }, ["texto", "categoria"]),
+  fn("registrar_conversa", "PROPÕE registrar uma conversa com um contato da Pontes (o que foi conversado e, se houver, o novo próximo passo).", { pessoa: { type: "string", description: "nome ou id do contato" }, texto: { type: "string" }, proximo_passo: { type: "string" } }, ["pessoa", "texto"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer"]);
+const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
@@ -271,6 +274,19 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const { hoje: deHoje } = agendaDoDia(me);
     return { hoje, deHoje: deHoje.map((e) => `${e.hora || ""} ${e.titulo}`.trim()), eventos: getEventos().filter((e) => e.inicio >= hoje.slice(0, e.inicio.length) && e.inicio <= ate).map((e) => ({ titulo: e.titulo, inicio: e.inicio, hora: e.hora || null, status: e.status })) };
   }
+  if (nome === "pontes") {
+    const palavras = n(s(a.busca)).split(/\s+/).filter((w) => w.length > 2);
+    const tipo = s(a.tipo);
+    const lista = pessoas.filter((p) => p.contato && (!tipo || p.ponte.tipo === tipo)).map((p) => {
+      const txt = n([p.name, p.ponte.empresa, ...p.ponte.oferece, p.ponte.comoConhecemos, ...p.ponte.conversas.map((c) => c.texto)].join(" "));
+      return { p, pontos: palavras.filter((w) => txt.includes(w)).length };
+    }).filter((x) => !palavras.length || x.pontos > 0).sort((x, y) => y.pontos - x.pontos).slice(0, 15);
+    return lista.length ? lista.map(({ p }) => ({
+      id: p.id, nome: p.name, tipo: p.ponte.tipo || null, empresa: p.ponte.empresa || null, oferece: p.ponte.oferece,
+      vinculo: pessoas.find((x) => x.id === p.ponte.vinculo)?.name ?? null, ultima_conversa: p.ponte.conversas[0]?.data ?? null,
+      proximo_passo: p.ponte.proximoPasso || null, link: `/pessoas/${p.id}`,
+    })) : { aviso: "nenhum contato da Pontes com isso" };
+  }
   if (nome === "acervo") {
     const n = (x: string) => x.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
     const ws = n(s(a.busca)).split(/\s+/).filter((w) => w.length > 2);
@@ -297,7 +313,7 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const q = n(s(a.texto));
     const eq = s(a.equipe) ? acharEquipe(s(a.equipe)) : null;
     const abertas = abertasDe(() => true);
-    return pessoas.filter((p) => !p.externo && (!eq || p.equipes.includes(eq.id) || p.coordena.includes(eq.id)) && (!q || n(p.name).includes(q) || n(p.funcao).includes(q)))
+    return pessoas.filter((p) => !p.externo && !p.contato && (!eq || p.equipes.includes(eq.id) || p.coordena.includes(eq.id)) && (!q || n(p.name).includes(q) || n(p.funcao).includes(q)))
       .slice(0, 30).map((p) => ({ id: p.id, nome: p.name, funcao: p.funcao, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e),
         coordena: equipes.filter((e) => e.coordenadores.includes(p.id)).map((e) => e.nome), acesso_suspenso: p.suspenso || undefined,
         ...contagem(abertas.filter((t) => t.responsaveis.includes(p.id))) }));
@@ -362,7 +378,7 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     if (!titulo) return { erro: "título vazio" };
     if (!can.criarEm(me, equipe)) return { erro: "sem permissão para criar nessa equipe" };
     const prazo = ISO.test(s(a.prazo)) ? s(a.prazo) : "";
-    const resp = (Array.isArray(a.responsaveis) ? a.responsaveis : []).map((x) => acharPessoa(s(x))?.id).filter(Boolean) as string[];
+    const resp = (Array.isArray(a.responsaveis) ? a.responsaveis : []).map((x) => acharPessoa(s(x))).filter((p) => p && !p.contato).map((p) => p!.id);
     const responsaveis = resp.length ? resp : me.pessoa ? [me.pessoa.id] : [];
     const prioridade = PRIORIDADES.includes(s(a.prioridade)) ? s(a.prioridade) : "";
     const nomes = responsaveis.map((r) => primeiro(getPessoas().find((p) => p.id === r)?.name ?? r)).join(", ");
@@ -390,6 +406,13 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     const equipe = (s(a.equipe) && acharEquipe(s(a.equipe))?.id) || t?.equipe || "", projeto = (s(a.projeto) && acharProjeto(s(a.projeto))?.id) || t?.projeto || "";
     return { tipo: "guardar_conhecimento", titulo, ...(url ? { url } : { texto }), equipe: equipe || undefined, projeto: projeto || undefined, tarefa: t?.id,
       resumo: `Guardar no Conhecimento: ${titulo}`, detalhe: url || (texto.length > 300 ? `${texto.slice(0, 300)}…` : texto) };
+  }
+  if (nome === "registrar_conversa") {
+    const p = acharPessoa(s(a.pessoa)), texto = s(a.texto).slice(0, 1000), proximo = s(a.proximo_passo ?? a.proximo).slice(0, 300);
+    if (!p || !p.contato) return { erro: "contato da Pontes não encontrado" };
+    if (!can.gerirPessoa(me, p)) return { erro: "sem permissão para esse contato" };
+    if (!texto) return { erro: "falta o que foi conversado" };
+    return { tipo: "registrar_conversa", pessoa: p.id, texto, proximo: proximo || undefined, resumo: `Conversa com ${primeiro(p.name)}`, detalhe: proximo ? `${texto}\nPróximo passo: ${proximo}` : texto };
   }
   if (nome === "nota_projeto") {
     const pr = acharProjeto(s(a.projeto)), texto = s(a.texto).slice(0, 500);
@@ -476,6 +499,7 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
   if (nome === "atribuir") {
     const p = acharPessoa(s(a.pessoa));
     if (!p) return { erro: "pessoa não encontrada" };
+    if (p.contato) return { erro: "contatos da Pontes não recebem tarefas" };
     return { tipo: "atribuir", id: t.id, pessoa: p.id, resumo: `"${t.title}"`, detalhe: `+ ${primeiro(p.name)}` };
   }
   return { erro: "ação desconhecida" };
@@ -501,6 +525,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     return `/conhecimento/${id}`;
   }
   if (v.tipo === "nota_projeto") { anotarProjeto(v.projeto, v.texto, quem); return `/projetos/${v.projeto}`; }
+  if (v.tipo === "registrar_conversa") { registrarConversa(v.pessoa, today(), v.texto, quem, v.proximo); return `/pessoas/${v.pessoa}`; }
   if (v.tipo === "revisar_fato") {
     revisarFato(v.id, v.decisao, quem);
     if (v.decisao === "confirmar") { const { enfileirarPropostas } = await import("./propostas"); enfileirarPropostas([v.id]); }

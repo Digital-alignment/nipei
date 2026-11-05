@@ -16,6 +16,7 @@ import { notFound } from "next/navigation";
 import { TaskRow } from "@/components/v2/ui";
 
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
+import ContatosEquipe from "@/components/v2/ContatosEquipe";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import { balancear } from "@/lib/v2/carga";
@@ -26,7 +27,7 @@ import { getT } from "@/lib/v2/i18n";
 import { atribuirAction, reatribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
 
-export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string }> }) {
+export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string; q?: string; tipo?: string }> }) {
   const { id } = await params;
   const q = await searchParams;
   const { t, lang } = await getT();
@@ -34,6 +35,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const equipes = getEquipes(), pessoas = getPessoas(), todas = getTarefas();
   const e = equipes.find((x) => x.id === id);
   if (!e) notFound();
+  if (e.contatos) return <ContatosEquipe e={e} pessoas={pessoas} gerir={can.gerirEquipe(me, id)} q={q} hoje={today()} t={t} lang={lang} />; // Pontes: contacts, not tasks
   const sabemos = filtrarConfirmados({ equipe: e.id });
   const hoje = today();
   const gerir = can.gerirEquipe(me, id);

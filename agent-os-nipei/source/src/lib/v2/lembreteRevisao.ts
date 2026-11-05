@@ -46,7 +46,7 @@ export function lembreteRevisao() {
   } catch { rodando = false; return; }
   const pendentes = getFatos().filter((f) => f.status === "proposto");
   const gestaoIds = new Set(getEquipes().filter((e) => e.gestao).map((e) => e.id));
-  const pessoas = getPessoas().filter((p) => p.whatsapp && p.whatsappVerificado && p.avisosWhatsapp && !p.suspenso && !p.externo);
+  const pessoas = getPessoas().filter((p) => p.whatsapp && p.whatsappVerificado && p.avisosWhatsapp && !p.suspenso && !p.externo && !p.contato);
   const fone = new Map(pessoas.map((p) => [p.id, p.whatsapp]));
   void Promise.all(lembretes(pessoas, gestaoIds, pendentes).map((l) => enviarWhatsApp(fone.get(l.id)!, l.texto).catch(() => false)))
     .finally(() => { rodando = false; });

@@ -19,6 +19,7 @@ export type Equipe = {
   acesso: boolean; // members of this team can log in
   gestao: boolean; // members of this team manage everything (full session, v1 included)
   avisos: boolean; // members get WhatsApp notices (scripts/avisos on the VPS)
+  contatos: boolean; // Pontes: outside contacts (suppliers, possible allies). Never log in, never own tasks.
 };
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[] };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
@@ -32,7 +33,15 @@ export type Pessoa = {
   emergenciaNome: string; emergenciaWhatsapp: string; foto: string; fotoEm: string;
   suspenso: boolean; // acesso_suspenso: stays in its teams (can be assigned) but can't log in nor get notices
   externo: boolean;  // tipo_contato: externo — a group or outside contact, not a team member
+  contato: boolean;  // only in "contatos" teams (Pontes): out of assignee lists, Participação and organising
+  ponte: Ponte;      // contact card (Pontes); empty for everyone else
   whatsappVerificado: boolean; whatsappVerificadoEm: string; dadosConfirmadosEm: string;
+};
+export const PONTE_TIPOS = ["fornecedor", "aliado", "colaborador"] as const;
+export type Ponte = {
+  tipo: string; oferece: string[]; empresa: string; comoConhecemos: string; vinculo: string; proximoPasso: string;
+  reconectarDias: number; desde: string;
+  conversas: { data: string; quem: string; texto: string }[]; // "## Conversas", newest first
 };
 export type Tarefa = {
   id: string; file: string; title: string; status: Status; statusRaw: string; prazo: string; priority: string;
@@ -85,7 +94,7 @@ export function getEquipes(): Equipe[] {
   return readDir("Equipes")
     .map(({ fm }) => ({
       id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), temas: arr(fm.temas), coordenadores: arr(fm.coordenadores),
-      membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true, avisos: fm.avisos === true,
+      membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true, avisos: fm.avisos === true, contatos: fm.contatos === true,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -112,10 +121,14 @@ export function getEventos(): Evento[] {
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
+const conversasDe = (body: string) => (body.match(/## Conversas\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "").split(/\r?\n/)
+  .filter((l) => /^- \d{4}-\d{2}-\d{2} · /.test(l)).map((l) => { const [data, quem, ...r] = l.slice(2).split(" · "); return { data, quem: quem ?? "", texto: r.join(" · ") }; });
+
 export function getPessoas(): Pessoa[] {
+  const deContatos = new Set(getEquipes().filter((e) => e.contatos).map((e) => e.id));
   return readDir("Miembros")
     .filter(({ fm }) => !s(fm.type).startsWith("ai") && !s(fm.id).startsWith("agente_"))
-    .map(({ fm, file }) => ({
+    .map(({ fm, file, body }) => ({
       id: s(fm.id) || path.basename(file, ".md"),
       nipeiId: s(fm.nipei_id),
       name: s(fm.name),
@@ -137,6 +150,12 @@ export function getPessoas(): Pessoa[] {
       whatsappVerificado: fm.whatsapp_verificado === true, whatsappVerificadoEm: s(fm.whatsapp_verificado_em),
       dadosConfirmadosEm: s(fm.dados_confirmados_em),
       suspenso: fm.acesso_suspenso === true, externo: s(fm.tipo_contato) === "externo",
+      contato: arr(fm.equipes).length > 0 && arr(fm.equipes).every((e) => deContatos.has(e)),
+      ponte: {
+        tipo: s(fm.ponte_tipo), oferece: arr(fm.oferece), empresa: s(fm.empresa), comoConhecemos: s(fm.como_conhecemos),
+        vinculo: s(fm.vinculo), proximoPasso: s(fm.proximo_passo), reconectarDias: Number(fm.reconectar_dias) || 90,
+        desde: s(fm.ponte_desde), conversas: conversasDe(body),
+      },
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
@@ -344,7 +363,8 @@ export function addToEquipe(pessoaId: string, equipeId: string, quem = "") {
   const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
   const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
-  updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])] });
+  updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])],
+    ...(equipe.fm.contatos === true && !s(pessoa.fm.ponte_desde) ? { ponte_desde: today() } : {}) }); // Pontes: reconnect reminders count from here
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
   if (quem) registrarPessoa(pessoa.file, quem, `entrou na equipe ${s(equipe.fm.nome) || equipeId}`);
 }
@@ -399,7 +419,7 @@ export type GrupoResponsaveis = { grupo: "equipe" | "outras" | "sem"; pessoas: P
 /** Who can own a task: this team's members, then other teams, then people not in a team yet.
  *  Platform access doesn't matter (a suspended person or a team without access can still be assigned). */
 export function responsaveisPara(equipeId = ""): GrupoResponsaveis[] {
-  const ps = getPessoas().filter((p) => !p.externo).sort((a, b) => a.name.localeCompare(b.name, "pt"));
+  const ps = getPessoas().filter((p) => !p.externo && !p.contato).sort((a, b) => a.name.localeCompare(b.name, "pt"));
   const da = equipeId ? ps.filter((p) => p.equipes.includes(equipeId) || p.coordena.includes(equipeId)) : [];
   return ([
     { grupo: "equipe", pessoas: da },
@@ -433,6 +453,41 @@ export function setFuncao(pessoaId: string, funcao: string, quem = "") {
   const nova = funcao.trim().slice(0, 80);
   updateNote(n.file, { funcao: nova });
   if (quem) registrarPessoa(n.file, quem, `função: ${nova || "(vazia)"}`);
+}
+
+// ---------------------------------------------------------------- Pontes (contacts)
+
+/** When a contact is due to be reconnected (last conversation, or since they joined Pontes, + N days); "" = never. */
+export function reconectarEm(p: Pessoa) {
+  const base = p.ponte.conversas[0]?.data || p.ponte.desde;
+  return base ? new Date(Date.parse(`${base}T12:00:00Z`) + p.ponte.reconectarDias * 86_400_000).toISOString().slice(0, 10) : "";
+}
+/** Who should reconnect: the contact's link person, or Pontes' coordination when there is none. */
+export function reconectarPor(p: Pessoa, equipes = getEquipes()) {
+  return p.ponte.vinculo ? [p.ponte.vinculo] : [...new Set(equipes.filter((e) => e.contatos && p.equipes.includes(e.id)).flatMap((e) => e.coordenadores))];
+}
+
+export function setPonte(pessoaId: string, d: Omit<Ponte, "conversas" | "desde">, quem: string) {
+  const n = notaPessoa(pessoaId);
+  updateNote(n.file, {
+    ponte_tipo: d.tipo, oferece: d.oferece, empresa: d.empresa, como_conhecemos: d.comoConhecemos, vinculo: d.vinculo,
+    proximo_passo: d.proximoPasso, reconectar_dias: d.reconectarDias, ...(s(n.fm.ponte_desde) ? {} : { ponte_desde: today() }),
+  });
+  registrarPessoa(n.file, quem, "dados de contato atualizados");
+}
+
+/** "## Conversas" line (newest first); the next step can be updated at the same time. */
+export function registrarConversa(pessoaId: string, data: string, texto: string, quem: string, proximoPasso?: string) {
+  const n = notaPessoa(pessoaId);
+  const full = path.join(vault(), n.file);
+  const linha = `- ${data} · ${quem} · ${texto.replace(/\s+/g, " ").trim()}`;
+  let t = fs.readFileSync(full, "utf-8");
+  if (/\n## Conversas\r?\n/.test(t)) t = t.replace(/(\n## Conversas\r?\n)/, `$1${linha}\n`);
+  else if (/\n## Atividade\r?\n/.test(t)) t = t.replace(/(\n## Atividade\r?\n)/, `\n## Conversas\n${linha}\n$1`);
+  else t = `${t.trimEnd()}\n\n## Conversas\n${linha}\n`;
+  fs.writeFileSync(full, t, "utf-8");
+  if (proximoPasso != null) updateNote(n.file, { proximo_passo: proximoPasso.trim().slice(0, 300) });
+  requestSync(vault());
 }
 
 /** K4: news line at the top of the project's "## Atualizações" section (created if missing). */

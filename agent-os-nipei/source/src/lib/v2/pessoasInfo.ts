@@ -47,7 +47,7 @@ export function resumoPessoas(comParticipacao: boolean) {
   const out = new Map<string, Numeros & { participacao?: Participacao }>();
   for (const p of pessoas) {
     const n = numerosDe(p, tarefas, acessos, hoje);
-    if (!comParticipacao) { out.set(p.id, n); continue; }
+    if (!comParticipacao || p.contato) { out.set(p.id, n); continue; } // contacts (Pontes) never use the platform
     const diag = diagnosticosAbertos(p)[0];
     const pr = diag ? progresso(diag, p.id) : null;
     out.set(p.id, { ...n, participacao: participacao(p, { tarefas, acoes: acoes.get(p.id) ?? [], ultimoUso: acessos[p.id] ?? "", diagnostico: pr ? pr.respondidas / pr.total : 0 }, hoje) });

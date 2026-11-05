@@ -35,6 +35,7 @@ import NotasInternas from "@/components/v2/NotasInternas";
 import Conexoes from "@/components/v2/Conexoes";
 import Seguranca from "@/components/v2/Seguranca";
 import { getNotas } from "@/lib/v2/notasInternas";
+import PonteContato from "@/components/v2/PonteContato";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -379,7 +380,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
       <div className="flex items-start gap-4">
         <span className="mt-6 shrink-0"><AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={80} /></span>
         <div className="min-w-0 flex-1">
-          <CabecalhoPagina selo="mao" rotulo={[p.apelido, p.nativeName, p.funcao].filter(Boolean).join(" · ") || p.nipeiId}
+          <CabecalhoPagina selo="mao" rotulo={(p.contato ? [p.ponte.empresa, t.ponte.tipos[p.ponte.tipo]] : [p.apelido, p.nativeName, p.funcao]).filter(Boolean).join(" · ") || p.nipeiId}
             titulo={<>{p.name}{p.suspenso && <Icone nome="cadeado" tamanho={28} aria-label={t.acessoSuspensoTexto} className="ml-2 inline align-middle text-warn" />}</>}
             acoes={<>
               {podeNotificar && (
@@ -400,14 +401,21 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {!p.contato && <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Num v={n.abertas} label={t.abertasLbl} />
         <Num v={n.atrasadas} label={t.atrasadasLbl} alerta={n.atrasadas > 0} />
         <Num v={n.feitas30} label={t.feitas30} />
         <Num v={n.ultimoUso ? (n.ultimoUso === hoje ? t.hoje : fmtDate(n.ultimoUso, lang)) : "—"} label={t.ultimoUso} />
-      </div>
+      </div>}
 
-      <AbasComPainel id="pessoa" inicial={(q.aba === "conexoes" || q.aba === "seguranca") && me.pessoa?.id === p.id ? q.aba : undefined} abas={[
+      {p.contato ? (
+        // Pontes contact: no tasks, numbers or Participação — the contact card and conversations come first
+        <AbasComPainel id="contato" abas={[
+          { id: "ponte", rotulo: t.ponte.aba, contagem: p.ponte.conversas.length, conteudo: <PonteContato p={p} pessoas={pessoas} gerir={gerir} hoje={hoje} t={t} lang={lang} /> },
+          { id: "perfil", rotulo: t.perfilLbl, contagem: 0, conteudo: perfil },
+          ...(gerir ? [{ id: "gestao", rotulo: t.gestaoLbl, contagem: 0, conteudo: gestao }] : []),
+        ]} />
+      ) : <AbasComPainel id="pessoa" inicial={(q.aba === "conexoes" || q.aba === "seguranca") && me.pessoa?.id === p.id ? q.aba : undefined} abas={[
         { id: "resumo", rotulo: t.resumoLbl, contagem: 0, conteudo: resumo },
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: abertas.length, alerta: n.atrasadas > 0, conteudo: tarefas },
         { id: "perfil", rotulo: t.perfilLbl, contagem: 0, conteudo: perfil },
@@ -416,7 +424,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
         // only on one's own profile: nobody sees or touches someone else's connections
         ...(me.pessoa?.id === p.id && !me.vendoComo ? [{ id: "conexoes", rotulo: t.cx.aba, contagem: 0, conteudo: <Conexoes pessoaId={p.id} t={t} ok={q.google === "ok"} gestao={me.gestao} /> },
           { id: "seguranca", rotulo: t.sg.aba, contagem: 0, conteudo: <Seguranca p={p} t={t} ok={q.aba === "seguranca" ? q.ok : undefined} /> }] : []),
-      ]} />
+      ]} />}
     </>
   );
 }

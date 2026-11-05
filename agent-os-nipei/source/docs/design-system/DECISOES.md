@@ -772,3 +772,14 @@ Paleta e contrastes (todos os pares de texto usados ≥ 4,5:1, exceto o caso de 
 7. Selo de Finanças = `simbolo-46` (semente, lote 1).
 Ajustes técnicos D1–D7 aplicados no documento final.
 → Documento final: `DESIGN-SYSTEM.md`.
+
+## 2026-11-05 — Quinta equipe: Pontes
+
+Ashuan criou a equipe **Pontes**: contatos com quem há conexão (fornecedores, parceiros possíveis, pessoas com quem criar algo no futuro). Ninguém dela entra na plataforma (`acesso: false`, sem avisos); é só para a equipe ter essas pessoas registradas.
+- Cor: a terracota que estava **de reserva** desde A1 (`#E08A5C` escuro / `#A3542A` claro); o token `--eq-reserva` passa a se chamar `--eq-pontes`.
+- Selo: `simbolo-39` (lote 1): dois triângulos unidos por uma barra, uma ponte.
+- Decidido por Ashuan.
+
+## 2026-11-05 — Padrão "Contato (Pontes)" (§10.12)
+
+Plano Equipes, fase 1 (aprovado por Ashuan): ficha de contato, cartão de contato na equipe Pontes, conversas e lembrete de reconectar. Só reaproveita componentes existentes (Cartão clicável, Chip, Badge, Avatar, Linha do tempo, Campo); nenhum ícone novo.

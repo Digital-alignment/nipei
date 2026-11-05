@@ -28,7 +28,7 @@ const CORES: { titulo: string; tokens: [string, string][] }[] = [
   { titulo: "Acento", tokens: [["ac", "ação / acento"], ["ac-press", "pressionado"], ["ac-ink", "texto sobre o acento"], ["ac-text", "texto/ícone em acento"], ["ac-soft", "fundo tingido"], ["ac-apoio", "apoio gráfico (nunca texto)"], ["destaque-bg", "destaque de conteúdo"], ["destaque-ink", "texto do destaque"]] },
 ];
 const ESTADOS = [["ok", "Sucesso", "Tarefa concluída", "sucesso"], ["warn", "Atenção", "Prazo amanhã", "atencao"], ["err", "Erro", "Não foi possível salvar", "erro"], ["info", "Informação", "3 fotos processando", "informacao"]] as const;
-const EQUIPES = [["eq-escritorio", "Escritório / Gestão Geral", "escritorio"], ["eq-producao", "Produção Yawanawa", "producao"], ["eq-guardioes", "Guardiões", "guardioes"], ["eq-manutencao", "Manutenção e Logística", "manutencao"], ["eq-reserva", "(reserva)", null]] as const;
+const EQUIPES = [["eq-escritorio", "Escritório / Gestão Geral", "escritorio"], ["eq-producao", "Produção Yawanawa", "producao"], ["eq-guardioes", "Guardiões", "guardioes"], ["eq-manutencao", "Manutenção e Logística", "manutencao"], ["eq-pontes", "Pontes", "pontes"]] as const;
 const TIPOS: [string, string, string][] = [
   ["titulo-pagina", "Outfit 700 · 40 / 60", "Tarefas"],
   ["saudacao", "Outfit 300 · 30 / 40", "Oi, Ashuan. Como posso ajudar?"],

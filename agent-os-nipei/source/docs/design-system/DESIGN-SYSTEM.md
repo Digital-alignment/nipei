@@ -94,7 +94,7 @@ Todos os pares texto/fundo passam 4,5:1. Linha do "agora" na agenda = âmbar de 
 | Produção Yawanawa | `simbolo-11` | `#A68CF0` | `#6D4AB8` |
 | Guardiões | `simbolo-10` | `#E37AB0` | `#A3306B` |
 | Manutenção e Logística | `simbolo-62` | `#8FA6B8` | `#4F6475` |
-| (reserva) | — | `#E08A5C` | `#A3542A` |
+| Pontes (contatos, sem acesso) | `simbolo-39` | `#E08A5C` | `#A3542A` |
 
 Usos: barra lateral de cartão/evento/linha, ponto no calendário, cor do selo, fundo do avatar sem foto (iniciais em `#0A0A0A` no escuro, `#FFFFFF` no claro). Todas passam 4,5:1 como texto no respectivo tema. **Sempre com selo + nome** (Guardiões fica perto do vermelho de erro; Manutenção, do azul de informação).
 
@@ -312,7 +312,7 @@ Pílula `superfície 2` com ícones; ativo = `superfície 3` + contorno de 1 px.
 
 ### 9.7 Badge
 - **Contagem**: círculo vermelho com número (ou só ponto) no canto do ícone, com anel da cor do fundo.
-- **Estado**: Pendente = **hachurado** + ampulheta · Em andamento = azul suave + enviar · Feita = verde suave + sucesso · Atrasada = vermelho suave + atenção · Nota interna = tonal + cadeado.
+- **Estado**: Pendente = **hachurado** + ampulheta · Em andamento = azul suave + enviar · Feita = verde suave + sucesso · Atrasada = vermelho suave + atenção · Nota interna = tonal + cadeado · Aviso = âmbar suave + ampulheta (ex.: "Reconectar", 10.12).
 
 ### 9.8 Avatar
 Tamanhos 24 · 32 · 40 · 56 · 80. Foto ou iniciais (Outfit 600) sobre a cor da equipe. Ponto de acento = online. Selo da equipe no canto (56+). Grupo sobreposto (−6 px) com "+N". Linha pessoa = avatar + nome (600) + "equipe · função".
@@ -472,6 +472,13 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 
 ---
 
+### 10.12 Contato (Pontes)
+Pessoas da equipe **Pontes** (`contatos: true`): fornecedores, aliados possíveis, colaboradores. Não entram na plataforma; não são responsáveis de tarefas.
+- **Cartão de contato** (grade bento na equipe Pontes): cartão clicável com barra lateral da cor da equipe · Avatar 40 + nome (`titulo-cartao`) · linha `meta` "empresa · tipo" · até 3 Chips de filtro com o que **oferece** (+N) · pé com o Avatar 24 do **vínculo** e a data da última conversa (`meta`). Passou do prazo de reconectar → BadgeEstado "aviso" "Reconectar" (âmbar + ampulheta, 9.7) no lugar da data.
+- Filtros: busca (10.2) + chips de tipo (Todos / Fornecedor / Aliado possível / Colaborador).
+- **Ficha do contato**: abas Ponte · Perfil · Gestão (sem Resumo, Tarefas nem números). Aba Ponte = Cartão com lista de definição (tipo, empresa, oferece em Chips, como conhecemos, vínculo, próximo passo, reconectar a cada N dias) + botão "Editar" tonal; Cartão "Conversas" com o formulário curto (data, texto, botão "Registrar conversa" com ícone `confirmar`) e a Linha do tempo (10.9) das conversas.
+- **Hoje**: Chip "Reconectar com X" (ícone `pessoa`) junto às pendências, só para o vínculo (sem vínculo: coordenação de Pontes); toque abre a ficha.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
@@ -507,7 +514,7 @@ Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
   --destaque-bg:#C3D14A; --destaque-ink:#0A0A0A;
   --ok:#C3D14A; --ok-bg:#1B2410; --warn:#E0A526; --warn-bg:#2A2010;
   --err:#FF6B5E; --err-bg:#2C1514; --info:#6FA8F0; --info-bg:#121D2B;
-  --eq-escritorio:#2BB3A6; --eq-producao:#A68CF0; --eq-guardioes:#E37AB0; --eq-manutencao:#8FA6B8;
+  --eq-escritorio:#2BB3A6; --eq-producao:#A68CF0; --eq-guardioes:#E37AB0; --eq-manutencao:#8FA6B8; --eq-pontes:#E08A5C;
   --brilho-ia:0 0 0 1px rgba(195,209,74,.10),0 0 22px rgba(195,209,74,.10);
   --foco:0 0 0 1.5px var(--ac),0 0 26px rgba(195,209,74,.16);
   --raio-pilula:999px; --raio-moldura:28px; --raio-bloco:20px; --raio-cartao:16px; --raio-interno:12px;
@@ -522,7 +529,7 @@ Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
   --destaque-bg:#1A1A1A; --destaque-ink:#FFFFFF;
   --ok:#2A5C0B; --ok-bg:#EEF3E8; --warn:#8A5A00; --warn-bg:#FBF3E4;
   --err:#B3261E; --err-bg:#FBEAE9; --info:#1F5FAD; --info-bg:#E9F0F9;
-  --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475;
+  --eq-escritorio:#0F766E; --eq-producao:#6D4AB8; --eq-guardioes:#A3306B; --eq-manutencao:#4F6475; --eq-pontes:#A3542A;
   --brilho-ia:0 0 0 1px rgba(42,92,11,.10),0 0 22px rgba(42,92,11,.10);
   --foco:0 0 0 1.5px var(--ac),0 0 22px rgba(42,92,11,.14);
   color-scheme:light;

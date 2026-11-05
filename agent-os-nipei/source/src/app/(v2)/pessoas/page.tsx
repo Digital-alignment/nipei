@@ -47,7 +47,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     nao_verificado: (p) => !!p.whatsapp && !p.whatsappVerificado, sem_acesso: (p) => !temAcesso(p),
   };
   const situacao = me.gestao && (SITUACOES as readonly string[]).includes(q.situacao ?? "") ? q.situacao as (typeof SITUACOES)[number] : null;
-  const daEquipe = todas.filter((p) => p.equipes.length > 0 && (!q.equipe || p.equipes.includes(q.equipe)));
+  const daEquipe = todas.filter((p) => p.equipes.length > 0 && (q.equipe ? p.equipes.includes(q.equipe) : !p.contato)); // contacts (Pontes) only when that team is chosen
   const ativas = ordenar(daEquipe.filter((p) => !situacao || naSituacao[situacao](p)));
   const inativas = todas.filter((p) => p.equipes.length === 0 && !p.externo);
   const link = (o: Record<string, string | undefined>) => "/pessoas?" + new URLSearchParams(Object.entries({ q: q.q, equipe: q.equipe, ordem: q.ordem, situacao: q.situacao, ...o }).filter(([, v]) => v) as [string, string][]);

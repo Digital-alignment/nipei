@@ -23,7 +23,7 @@ const lum = (hex) => {
 const razao = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 
 // [texto, fundo, mínimo | null = o documento diz "não usar" (só informa)]
-const EQUIPES = ["eq-escritorio", "eq-producao", "eq-guardioes", "eq-manutencao"];
+const EQUIPES = ["eq-escritorio", "eq-producao", "eq-guardioes", "eq-manutencao", "eq-pontes"];
 const PARES = [
   // 3.5 — texto sobre as superfícies
   ...["t1", "t2", "t3"].flatMap((t) => ["bg", "s1", "s2"].map((f) => [t, f, 4.5])),
