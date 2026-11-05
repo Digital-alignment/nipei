@@ -200,7 +200,45 @@ export function buscarConhecimento(pergunta: string, opts: { equipe?: string; pr
     .sort((a, b) => b.score - a.score || b.fato.revisadoEm.localeCompare(a.fato.revisadoEm))
     .slice(0, opts.limite ?? 12);
   if (opts.origem) registrarUsoFatos(achados.map((a) => a.fato.id), opts.origem);
+  if (opts.origem && PERGUNTAS_DE_PESSOAS.has(opts.origem) && (achados[0]?.score ?? 0) < POUCO) registrarSemResposta(pergunta, opts.origem);
   return achados;
+}
+
+// ---------------------------------------------------------------- what the AI couldn't answer
+// Questions people asked an AI (Pinu in the panel / WhatsApp / MCP, Venu, v1 routes) whose best confirmed fact
+// matched less than a third of the words. <vault>/.jobs/sem-resposta.jsonl keeps only the question as the AI
+// searched it and the channel — never who asked. Conhecimento shows them to gestão, grouped, as "what to write next".
+// Built queries (task AI, diagnosis, project view) aren't questions and don't count.
+
+const SEM_RESPOSTA = path.join(".jobs", "sem-resposta.jsonl");
+const PERGUNTAS_DE_PESSOAS = new Set(["pinu", "venu", "hermes"]);
+const POUCO = 0.34;
+function registrarSemResposta(pergunta: string, origem: string) {
+  const p = pergunta.replace(/\s+/g, " ").trim().slice(0, 300);
+  if (palavras(p).size < 2) return;
+  try {
+    fs.mkdirSync(path.join(vault(), ".jobs"), { recursive: true });
+    fs.appendFileSync(path.join(vault(), SEM_RESPOSTA), JSON.stringify({ em: new Date().toISOString(), pergunta: p, origem }) + "\n");
+  } catch (e) { console.warn("[conhecimento] sem resposta:", (e as Error).message); }
+}
+
+export type SemResposta = { pergunta: string; vezes: number; ultima: string; origens: string[] };
+/** Same question = same significant words in any order. Most asked first, last `dias` days. */
+export const chavePergunta = (t: string) => [...palavras(t)].sort().join(" ");
+export function semResposta(dias = 30): SemResposta[] {
+  const desde = new Date(Date.now() - dias * 86_400_000).toISOString();
+  const grupos = new Map<string, SemResposta>();
+  let linhas: string[] = [];
+  try { linhas = fs.readFileSync(path.join(vault(), SEM_RESPOSTA), "utf-8").split("\n"); } catch { return []; }
+  for (const l of linhas) {
+    let x: { em: string; pergunta: string; origem: string };
+    try { x = JSON.parse(l); } catch { continue; }
+    if (x.em < desde) continue;
+    const k = chavePergunta(x.pergunta), g = grupos.get(k);
+    if (!g) grupos.set(k, { pergunta: x.pergunta, vezes: 1, ultima: x.em, origens: [x.origem] });
+    else { g.vezes++; if (x.em > g.ultima) { g.ultima = x.em; g.pergunta = x.pergunta; } if (!g.origens.includes(x.origem)) g.origens.push(x.origem); }
+  }
+  return [...grupos.values()].sort((a, b) => b.vezes - a.vezes || b.ultima.localeCompare(a.ultima));
 }
 
 /** Facts as prompt lines: "- [prazo] texto (fonte: …, confirmado por X em AAAA-MM-DD)". */

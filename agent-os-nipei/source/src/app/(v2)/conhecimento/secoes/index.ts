@@ -8,6 +8,7 @@ import Fontes from "./Fontes";
 import Base from "./Base";
 import Mapa from "./Mapa";
 import Perguntas from "./Perguntas";
+import SemResposta, { listaSemResposta } from "./SemResposta";
 import { getPerguntas } from "@/lib/v2/perguntas";
 
 // The Conhecimento page is a list of collapsible sections (components/v2/Recolhivel.tsx). Each one is a
@@ -46,6 +47,10 @@ export const SECOES: Secao[] = [
   {
     id: "perguntas", titulo: (c) => c.t.perguntasAbertas, contagem: () => getPerguntas().filter((p) => p.status === "aberta").length,
     aberto: () => getPerguntas().some((p) => p.status === "aberta"), atalho: (c) => c.t.perguntasAbertasMin, Componente: Perguntas,
+  },
+  {
+    id: "sem-resposta", titulo: (c) => c.t.iaNaoSoube, contagem: () => listaSemResposta().length,
+    aberto: () => false, mostrar: (c) => c.me.gestao && listaSemResposta().length > 0, atalho: (c) => c.t.iaNaoSoubeMin, Componente: SemResposta,
   },
   { id: "mapa", titulo: (c) => c.t.mapaConhecimento, aberto: () => false, Componente: Mapa },
   { id: "fontes", titulo: (c) => c.t.fontes, contagem: (c) => c.fontes.length, aberto: () => false, atalho: (c) => c.t.fontesMin, Componente: Fontes },
