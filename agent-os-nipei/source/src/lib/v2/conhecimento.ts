@@ -494,6 +494,13 @@ export function definirEquipeFato(id: string, equipe: string, quem: string) {
   updateNote(f.file, { equipe, equipe_definida_por: quem, equipe_definida_em: new Date().toISOString() });
 }
 
+/** Projects of a fact (DS 10.21 triage); never touches the status or the text. */
+export function definirProjetosFato(id: string, projetos: string[], quem: string) {
+  const f = getFatos().find((x) => x.id === id);
+  if (!f) throw new Error("Fato não encontrado");
+  updateNote(f.file, { projetos: [...new Set(projetos)], projetos_definidos_por: quem, projetos_definidos_em: new Date().toISOString() });
+}
+
 export function revisarFato(id: string, acao: "confirmar" | "descartar", quem: string, texto?: string) {
   const f = getFatos().find((x) => x.id === id);
   if (!f) throw new Error("Fato não encontrado");

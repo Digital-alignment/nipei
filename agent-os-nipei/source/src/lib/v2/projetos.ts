@@ -21,27 +21,35 @@ export const PARADO_DIAS = 21;
 // ---------------------------------------------------------------- AI suggestions for tasks without a project
 // <vault>/.jobs/sugestoes-projeto.json: { tarefaId: projetoId } — suggestions only; nothing is written to a task until "Salvar".
 
-const ARQ = (vault: string) => path.join(vault, ".jobs", "sugestoes-projeto.json");
-export function getSugestoes(vault: string): Record<string, string> {
-  try { return JSON.parse(fs.readFileSync(ARQ(vault), "utf-8")); } catch { return {}; }
+const ARQ = (vault: string, tipo: Tipo = "tarefas") => path.join(vault, ".jobs", tipo === "fatos" ? "sugestoes-projeto-fatos.json" : "sugestoes-projeto.json");
+type Tipo = "tarefas" | "fatos";
+export function getSugestoes(vault: string, tipo: Tipo = "tarefas"): Record<string, string> {
+  try { return JSON.parse(fs.readFileSync(ARQ(vault, tipo), "utf-8")); } catch { return {}; }
 }
 
-const SISTEMA = `Você organiza as tarefas da comunidade do Santuário Nipeihu por projeto. Para cada tarefa, escolha o projeto mais provável da lista, pelo título, descrição e equipe.
-Se nenhum projeto servir claramente, use "". Não invente projetos.
-Responda só JSON: {"sugestoes": {"<id da tarefa>": "<id do projeto ou vazio>"}}`;
+const SISTEMA = (oque: string) => `Você organiza ${oque} da comunidade do Santuário Nipeihu por projeto. Para cada item, escolha o projeto mais provável da lista, pelo texto e pela equipe.
+Se nenhum projeto servir claramente, use "". Identidade, missão, filosofia e regras gerais do lugar ficam no projeto geral do Santuário, se ele estiver na lista. Não invente projetos.
+Responda só JSON: {"sugestoes": {"<id do item>": "<id do projeto ou vazio>"}}`;
 
-export async function sugerirProjetos(vault: string, tarefas: Tarefa[], projetos: Projeto[], equipes: { id: string; nome: string }[]) {
-  const { chamarIA } = await import("./ia");
+export const sugerirProjetos = (vault: string, tarefas: Tarefa[], projetos: Projeto[], equipes: { id: string; nome: string }[]) =>
+  sugerirProjetosItens(vault, "tarefas", tarefas.map((t) => ({ id: t.id, texto: t.title, equipe: t.equipe })), projetos, equipes);
+
+/** One AI call per 60 items; only preselects (written to .jobs), never to the items themselves. */
+export async function sugerirProjetosItens(vault: string, tipo: Tipo, itens: { id: string; texto: string; equipe: string }[], projetos: Projeto[], equipes: { id: string; nome: string }[]) {
+  const { chamarIATexto } = await import("./ia");
   const catalogo = projetos.filter((p) => p.status !== "concluido").map((p) => `- ${p.id}: ${p.nome} (${p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e).join(", ")}) — ${(p.sobre.objetivo || p.descricao).replace(/\s+/g, " ").slice(0, 200)}`).join("\n");
   const validos = new Set(projetos.map((p) => p.id));
-  const out = getSugestoes(vault);
-  for (let i = 0; i < tarefas.length; i += 60) { // batches: one call per 60 tasks
-    const lote = tarefas.slice(i, i + 60).map((t) => `- ${t.id} | ${t.title} | equipe: ${equipes.find((e) => e.id === t.equipe)?.nome ?? "-"}`).join("\n");
-    const { o } = await chamarIA(SISTEMA, [{ type: "text", text: `## Projetos\n${catalogo}\n\n## Tarefas (id | título | equipe)\n${lote}` }], 4000, 120_000);
-    for (const [tid, pid] of Object.entries((o.sugestoes as Record<string, unknown>) ?? {})) if (validos.has(String(pid))) out[tid] = String(pid);
+  const out = getSugestoes(vault, tipo);
+  for (let i = 0; i < itens.length; i += 60) {
+    const lote = itens.slice(i, i + 60).map((t) => `- ${t.id} | ${t.texto.replace(/\s+/g, " ").slice(0, 300)} | equipe: ${equipes.find((e) => e.id === t.equipe)?.nome ?? "-"}`).join("\n");
+    const ids = new Set(itens.slice(i, i + 60).map((t) => t.id));
+    const raw = await chamarIATexto(SISTEMA(tipo === "fatos" ? "os fatos da base de conhecimento" : "as tarefas"), [{ type: "text", text: `## Projetos\n${catalogo}\n\n## Itens (id | texto | equipe)\n${lote}` }], 4000, 120_000);
+    // read "id": "projeto" pairs one by one: a stray brace or a cut-off answer loses one pair, not the batch
+    for (const [, tid, pid] of raw.matchAll(/"([^"]+)"\s*:\s*"([^"]*)"/g)) if (ids.has(tid) && validos.has(pid)) out[tid] = pid;
+    // save after each batch: a later failing batch keeps what was already suggested
+    fs.mkdirSync(path.dirname(ARQ(vault, tipo)), { recursive: true });
+    fs.writeFileSync(ARQ(vault, tipo), JSON.stringify(out));
   }
-  fs.mkdirSync(path.dirname(ARQ(vault)), { recursive: true });
-  fs.writeFileSync(ARQ(vault), JSON.stringify(out));
   return out;
 }
 

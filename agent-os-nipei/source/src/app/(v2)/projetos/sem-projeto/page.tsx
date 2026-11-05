@@ -71,6 +71,7 @@ export default async function SemProjeto({ searchParams }: { searchParams: Promi
           </form>
         </>
       )}
+      {me.gestao && <div className="mt-6"><Botao href="/conhecimento/projetos?de=santuario" variante="fantasma" tamanho="M" icone="avancar">{t.pj.fatosLink}</Botao></div>}
       <ToastAoAbrir texto={q.ok ? `${t.pj.salvos}: ${q.ok}` : undefined} />
     </div>
   );

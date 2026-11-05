@@ -291,6 +291,44 @@ export async function salvarProjetosAction(form: FormData) {
   redirect(`/projetos/sem-projeto?ok=${n}${de ? `&de=${de}` : ""}`);
 }
 
+// Facts by project (DS 10.21, gestão): same triage as the tasks, over the knowledge base.
+const fatosDe = async (de: string) => {
+  const { getFatos } = await import("@/lib/v2/conhecimento");
+  return getFatos().filter((f) => (f.status === "confirmado" || f.status === "proposto") && (!f.projetos.length || (!!de && f.projetos.includes(de))));
+};
+
+export async function sugerirProjetosFatosAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const de = deProjeto(form);
+  const { sugerirProjetosItens } = await import("@/lib/v2/projetos");
+  const { vault } = await import("@/lib/v2/data");
+  const lista = await fatosDe(de);
+  await tentar(async () => { if (lista.length) await sugerirProjetosItens(vault(), "fatos", lista.slice(0, 300).map((f) => ({ id: f.id, texto: f.texto, equipe: f.equipe })), getProjetos(), getEquipes()); });
+  revalidatePath("/conhecimento/projetos");
+  redirect(`/conhecimento/projetos${de ? `?de=${de}` : ""}`);
+}
+
+export async function salvarProjetosFatosAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const de = deProjeto(form);
+  const { definirProjetosFato } = await import("@/lib/v2/conhecimento");
+  const ids = new Set(getProjetos().map((p) => p.id));
+  const fatos = new Map((await fatosDe(de)).map((f) => [f.id, f]));
+  let n = 0;
+  for (const [k, v] of form.entries()) {
+    if (!k.startsWith("p_")) continue;
+    const f = fatos.get(k.slice(2)), pid = String(v);
+    if (!f || (pid && !ids.has(pid))) continue;
+    const atual = de && f.projetos.includes(de) ? de : "";
+    if (pid === atual) continue;
+    definirProjetosFato(f.id, [...f.projetos.filter((x) => x !== de), ...(pid ? [pid] : [])], actorName(me)); n++;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/conhecimento/projetos?ok=${n}${de ? `&de=${de}` : ""}`);
+}
+
 // ---------------------------------------------------------------- Reunião fixa (DS 10.16)
 export async function reuniaoFixaAction(form: FormData) {
   const me = await requireUser();

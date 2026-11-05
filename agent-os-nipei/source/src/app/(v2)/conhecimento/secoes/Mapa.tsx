@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Botao from "@/components/ds/Botao";
 import Selo from "@/components/ds/Selo";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import { mapaConhecimento } from "@/lib/v2/conhecimento";
@@ -73,6 +74,7 @@ export default function Mapa({ ctx }: { ctx: Ctx }) {
           </tbody>
         </table>
       </div>
+      {ctx.me.gestao && <Botao href="/conhecimento/projetos?de=santuario" variante="fantasma" tamanho="M" icone="avancar" className="mt-3">{t.pj.fatosLink}</Botao>}
     </div>
   );
 }
