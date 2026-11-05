@@ -507,6 +507,12 @@ A aba **Conhecimento** da equipe (antes "O que sabemos") tem três blocos, nesta
 ### 10.20 Boas-vindas à equipe
 Quem entra numa equipe vê em Hoje um Cartão destaque suave (variante `pinu`, sem brilho de IA no título) "Bem-vindo à <equipe>": Propósito e Como pedir (do Sobre), a coordenação (Avatares 24 + nomes), os procedimentos da equipe (lista curta), até 5 fatos confirmados mais usados (`corpo`, cada um abre o fato) e dois botões: "Abrir a equipe" (primário) e "Entendi" (fantasma, ícone `confirmar`, tira o cartão). Um cartão por equipe nova; some sozinho depois de 30 dias. Contatos (Pontes) não recebem.
 
+### 10.21 Projetos (portfólio, ficha e "sem projeto")
+- **Portfólio** (`/projetos`): grupos por estado — Ativos, Ideias, Pausados (recolhível) e Concluídos (recolhível). Cartão clicável: nome (`titulo-cartao`) · BadgeEstado do estado (ativo = andamento, ideia = pendente/hachurado, pausado = interna, concluído = feita) · Avatar 24 do **líder** · equipes em Chip de equipe · abertas / atrasadas / sem responsável em `meta` · Sparkline "No prazo · 8 semanas" (10.15) · **parado** (sem tarefa mexida nem atualização há 21 dias) = BadgeEstado "aviso" "Parado há N dias". Cabeçalho: "Novo projeto" (primário, folha, gestão) e, quando há, Botão tonal "N tarefas sem projeto" → triagem.
+- **Ficha**: o rótulo do cabeçalho mostra estado · líder; antes dos números, Cartão **Sobre** com Objetivo / Para quem / Como medimos (rótulo `rotulo-maiusculo` + `corpo`), com "Editar" (fantasma) para quem pode; vazio → uma linha `meta` "Sem objetivo escrito" + "Escrever".
+- **Editar / novo projeto**: Campo título (nome), área (descrição), Chips de marcar das equipes, seleção líder, seleção estado, datas início/fim, três Campos área do Sobre; Primário "Salvar".
+- **Sem projeto** (`/projetos/sem-projeto`): tarefas abertas sem projeto agrupadas por equipe; cada linha = título + Campo compacto (seleção) do projeto. "Sugerir com o Pinu" (cartão `pinu`, ícone `gerar-outra`) pré-seleciona a sugestão da IA com o Chip `pinu` "sugerido"; nada muda até "Salvar projetos" (primário). Só aparecem as tarefas que a pessoa pode editar.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

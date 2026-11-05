@@ -18,7 +18,8 @@ import { TaskRow } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
+import Cartao from "@/components/ds/Cartao";
+import { PROJETO_SOBRE, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getDiagnosticos } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";
@@ -36,6 +37,9 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas(), todas = getTarefas();
   const gerir = me.gestao || p.equipes.some((e) => me.coordena.includes(e));
+  const editar = gerir || (!!me.pessoa && p.lider === me.pessoa.id); // DS 10.21: the lead edits the project too
+  const lider = getPessoas().find((x) => x.id === p.lider);
+  const temSobre = PROJETO_SOBRE.some(([k]) => p.sobre[k]);
   const ts = todas.filter((x) => x.projeto === id);
   const abertas = ts.filter((x) => x.status !== "done");
   const atrasadas = abertas.filter((x) => x.prazo && x.prazo < hoje).length;
@@ -160,8 +164,9 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   return (
     <>
       <div className="-ml-3 mb-2"><Botao href="/projetos" variante="fantasma" tamanho="P" icone="voltar">{t.projetos}</Botao></div>
-      <CabecalhoPagina selo="broto" rotulo={t.projetos} titulo={p.nome}
+      <CabecalhoPagina selo="broto" rotulo={[t.pj.estados[p.status], lider && `${t.pj.lider}: ${lider.name.split(" ")[0]}`, p.fim && `${t.pj.fim}: ${fmtDate(p.fim, lang)}`].filter(Boolean).join(" · ")} titulo={p.nome}
         acoes={<>
+          {editar && <BotaoIcone icone="editar" aria-label={t.pj.editar} href={`/projetos/${id}/editar`} />}
           <BotaoIcone icone="informacao" aria-label={t.visaoHolistica} href={`/projetos/${id}/visao`} />
           <BotaoIcone icone="sucesso" aria-label={t.objetivos} href="/objetivos" />
           {diags.map((d) => <BotaoIcone key={d.id} icone="tarefa" aria-label={t.diagnostico} href={`/diagnosticos/${d.id}`} />)}
@@ -175,6 +180,14 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
         </details>
       ) : <p className="corpo -mt-3 mb-5 text-t2">{p.descricao}</p>)}
 
+      {/* DS 10.21: what the project is for, before the numbers */}
+      {temSobre ? (
+        <div className="mb-4 grid gap-3 sm:grid-cols-3">
+          {PROJETO_SOBRE.filter(([k]) => p.sobre[k]).map(([k]) => <Cartao key={k}><p className="rotulo-maiusculo text-t3">{t.pj.secoes[k]}</p><p className="corpo whitespace-pre-line text-t1">{p.sobre[k]}</p></Cartao>)}
+        </div>
+      ) : (
+        <p className="meta mb-4 flex flex-wrap items-center gap-2 text-t2">{t.pj.semSobre}{editar && <Botao href={`/projetos/${id}/editar`} variante="fantasma" tamanho="P" icone="editar">{t.pj.escrever}</Botao>}</p>
+      )}
       <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Num v={abertas.length} label={t.abertasLbl} />
         <Num v={atrasadas} label={t.atrasadasLbl} cor={atrasadas ? "text-err" : ""} />

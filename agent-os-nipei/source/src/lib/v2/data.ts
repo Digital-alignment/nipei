@@ -26,7 +26,14 @@ export type Equipe = {
 export const SOBRE_SECOES = [["proposito", "Propósito"], ["decide", "O que decide"], ["naoFaz", "O que não faz"], ["comoPedir", "Como pedir"]] as const;
 export type SobreEquipe = Record<(typeof SOBRE_SECOES)[number][0], string>;
 const secaoNota = (body: string, titulo: string) => (body.match(new RegExp(`(?:^|\\n)## ${titulo}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`))?.[1] ?? "").trim();
-export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[] };
+export const PROJETO_ESTADOS = ["ativo", "ideia", "pausado", "concluido"] as const;
+export const PROJETO_SOBRE = [["objetivo", "Objetivo"], ["paraQuem", "Para quem"], ["comoMedimos", "Como medimos"]] as const;
+export type Projeto = {
+  id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[];
+  // DS 10.21: portfolio fields (the old notes only have "status: ativo")
+  file: string; status: (typeof PROJETO_ESTADOS)[number]; lider: string; inicio: string; fim: string;
+  sobre: Record<(typeof PROJETO_SOBRE)[number][0], string>;
+};
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
 export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string; hora: string; href?: string };
 /** Where an event opens: its page, or (fixed team meeting) the live agenda. */
@@ -111,8 +118,11 @@ export function getEquipes(): Equipe[] {
 }
 
 export function getProjetos(): Projeto[] {
-  return readDir("Projetos").map(({ fm, body }) => ({
-    id: s(fm.id), nome: s(fm.nome), equipes: arr(fm.equipes), descricao: desc(body.split(/\r?\n## /)[0]),
+  return readDir("Projetos").map(({ fm, body, file }) => ({
+    id: s(fm.id), nome: s(fm.nome), equipes: arr(fm.equipes), descricao: desc(body.split(/\r?\n## /)[0]), file,
+    status: ((PROJETO_ESTADOS as readonly string[]).includes(s(fm.status)) ? s(fm.status) : "ativo") as Projeto["status"],
+    lider: s(fm.lider), inicio: s(fm.inicio), fim: s(fm.fim),
+    sobre: Object.fromEntries(PROJETO_SOBRE.map(([k, titulo]) => [k, secaoNota(body, titulo)])) as Projeto["sobre"],
     atualizacoes: (body.match(/## Atualizações\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "").split(/\r?\n/).filter((l) => l.startsWith("- ")).map((l) => l.slice(2)),
   }));
 }
@@ -569,6 +579,35 @@ export function registrarConversa(pessoaId: string, data: string, texto: string,
   requestSync(vault());
 }
 
+/** Creates or updates a project (DS 10.21). The body keeps "## Atualizações" and any section people added in Obsidian. */
+export function salvarProjeto(input: { id?: string; nome: string; descricao: string; equipes: string[]; status: Projeto["status"]; lider: string; inicio: string; fim: string; sobre: Projeto["sobre"] }, quem: string) {
+  const sobre = PROJETO_SOBRE.filter(([k]) => input.sobre[k].trim()).map(([k, titulo]) => `## ${titulo}\n${input.sobre[k].trim()}\n`).join("\n");
+  const fm: Record<string, FmValue> = { nome: input.nome, equipes: input.equipes, status: input.status, lider: input.lider, inicio: input.inicio, fim: input.fim, updated_at: new Date().toISOString() };
+  const atual = input.id ? getProjetos().find((p) => p.id === input.id) : undefined;
+  if (input.id && !atual) throw new Error("Projeto não encontrado");
+  if (!atual) {
+    const ids = new Set(getProjetos().map((p) => p.id));
+    let id = slugify(input.nome) || "projeto";
+    for (let i = 2; ids.has(id); i++) id = `${slugify(input.nome)}_${i}`;
+    const corpo = `<!-- agente: nipei-os v2 (projeto) -->\n# ${input.nome}\n\n${input.descricao.trim()}\n${sobre ? `\n${sobre}` : ""}\n## Atualizações\n- ${today()} · ${quem} · criou o projeto\n`;
+    fs.writeFileSync(path.join(vault(), "Projetos", `${id}.md`), noteText({ id, type: "projeto", ...fm }, corpo), { encoding: "utf-8", flag: "wx" });
+    requestSync(vault());
+    return id;
+  }
+  const full = path.join(vault(), atual.file);
+  const texto = fs.readFileSync(full, "utf-8");
+  const m = texto.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  const body = texto.slice(m?.[0].length ?? 0);
+  const titulos = new Set<string>(PROJETO_SOBRE.map(([, t]) => t));
+  const outras = body.split(/\r?\n(?=## )/).slice(1).filter((sec) => !titulos.has(sec.match(/^## (.*)/)?.[1].trim() ?? ""));
+  const comentario = body.match(/<!--[\s\S]*?-->/)?.[0] ?? "<!-- agente: nipei-os v2 (projeto) -->";
+  const novoBody = `${comentario}\n# ${input.nome}\n\n${input.descricao.trim()}\n${sobre ? `\n${sobre}` : ""}${outras.length ? `\n${outras.map((x) => x.trimEnd()).join("\n\n")}\n` : ""}`;
+  fs.writeFileSync(full, setFrontmatter((m?.[0] ?? "") + novoBody, fm), "utf-8");
+  requestSync(vault());
+  if (atual.status !== input.status) anotarProjeto(atual.id, `estado: ${atual.status} → ${input.status}`, quem);
+  return atual.id;
+}
+
 /** K4: news line at the top of the project's "## Atualizações" section (created if missing). */
 export function anotarProjeto(projetoId: string, texto: string, quem: string) {
   const note = readDir("Projetos").find(({ fm }) => s(fm.id) === projetoId);
@@ -951,7 +990,7 @@ export function registrarAcesso(pessoaId: string) {
 }
 
 /** Partial change through the single writer (bulk actions, load balancing): only the fields given are touched. */
-export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo?: string; status?: Status; priority?: string; equipe?: string }, actor: string) {
+export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo?: string; status?: Status; priority?: string; equipe?: string; projeto?: string }, actor: string) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");
   const pessoas = getPessoas();
@@ -960,6 +999,10 @@ export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo
     if (campos.prazo !== undefined) d.fm.prazo = campos.prazo;
     if (campos.priority && String(d.fm.priority ?? "").toLowerCase() !== campos.priority) d.fm.priority = campos.priority;
     if (campos.equipe) { d.fm.equipe = campos.equipe; if (campos.equipe !== t.equipe) d.fm.area = ""; }
+    if (campos.projeto !== undefined && campos.projeto !== t.projeto) {
+      d.fm.projeto = campos.projeto;
+      d.fm.project = getProjetos().find((p) => p.id === campos.projeto)?.nome ?? "Geral"; // v1 kanban shows this name
+    }
     if (campos.responsaveis) {
       d.fm.responsaveis = campos.responsaveis;
       d.fm.responsible = campos.responsaveis.map((r) => pessoas.find((p) => p.id === r)?.name ?? r).join(", ");

@@ -795,3 +795,7 @@ Plano Equipes, fase 3 (aprovado por Ashuan). A reunião fixa e os procedimentos 
 ## 2026-11-05 — Conhecimento da equipe e Boas-vindas (§10.19–10.20)
 
 Plano Equipes, fase 4 (aprovado por Ashuan). A aba "O que sabemos" vira "Conhecimento" com o que falta (revisar, perguntas sem resposta) antes do que já se sabe: a coordenação vê primeiro o que pede ação. As boas-vindas usam o cartão `pinu` porque juntam o que a base sabe da equipe; não é uma proposta da IA, então não leva o selo do Pinu.
+
+## 2026-11-05 — Projetos: portfólio, Sobre do projeto e triagem "sem projeto" (§10.21)
+
+Pedido do Ashuan ("Projetos é o gargalo"). Diagnóstico: só 4 projetos, sem criar/editar na plataforma, 105 das 187 tarefas abertas sem projeto, nenhum projeto com líder, estado ou objetivo escrito. O estado reaproveita os BadgeEstado (sem cores novas); a triagem segue a regra "IA propõe, pessoa confirma" (nada é gravado sem "Salvar").

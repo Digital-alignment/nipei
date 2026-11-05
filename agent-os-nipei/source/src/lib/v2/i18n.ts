@@ -258,6 +258,16 @@ const pt = {
     okSenha: "Senha salva. Os outros aparelhos foram desconectados.", okSair: "Pronto: os outros aparelhos foram desconectados.",
     metodo: { senha: "senha", google: "Google", link: "link no WhatsApp" },
   },
+  pj: {
+    novo: "Novo projeto", editar: "Editar projeto", salvar: "Salvar projeto", nome: "Nome do projeto", descricao: "Descrição", equipes: "Equipes", lider: "Líder", semLider: "Sem líder",
+    estado: "Estado", estados: { ativo: "Ativo", ideia: "Ideia", pausado: "Pausado", concluido: "Concluído" } as Record<string, string>,
+    grupos: { ativo: "Ativos", ideia: "Ideias", pausado: "Pausados", concluido: "Concluídos" } as Record<string, string>,
+    inicio: "Início", fim: "Previsão de fim", sobre: "Sobre o projeto", secoes: { objetivo: "Objetivo", paraQuem: "Para quem", comoMedimos: "Como medimos" } as Record<string, string>,
+    ajudas: { objetivo: "O que o projeto quer alcançar, em 1 ou 2 frases.", paraQuem: "Quem se beneficia: comunidade, hóspedes, clientes, parceiros…", comoMedimos: "Como saber que deu certo: números, entregas, datas." } as Record<string, string>,
+    semSobre: "Sem objetivo escrito.", escrever: "Escrever", parado: "Parado há {n} dias", semProjeto: "tarefas sem projeto", semProjetoTitulo: "Tarefas sem projeto",
+    semProjetoAjuda: "Escolha o projeto de cada tarefa. Nada muda até você salvar.", sugerir: "Sugerir com o Pinu", sugerirAjuda: "O Pinu lê cada tarefa e pré-seleciona o projeto mais provável; você confere antes de salvar.",
+    sugerido: "sugerido", salvarProjetos: "Salvar projetos", salvos: "Projetos salvos", nenhumSemProjeto: "Todas as tarefas que você pode editar já têm projeto.", semEquipe: "Sem equipe", manter: "— sem projeto —",
+  },
   ec: {
     aba: "Conhecimento", paraRevisar: "fatos desta equipe esperando revisão", revisarUm: "Revisar um por um", vez: "vez", vezes: "vezes",
     bemVindo: "Bem-vindo à {equipe}", bemVindoIntro: "Você entrou nesta equipe. O essencial para começar:", coordenacao: "Coordenação", procedimentos: "O que a equipe sempre faz",
@@ -584,6 +594,16 @@ const en: Dict = {
     sairTodos: "Sign out of all other devices", sairPergunta: "End the session on every other device?", recentes: "Recent sign-ins",
     okSenha: "Password saved. Your other devices were signed out.", okSair: "Done: your other devices were signed out.",
     metodo: { senha: "password", google: "Google", link: "WhatsApp link" },
+  },
+  pj: {
+    novo: "New project", editar: "Edit project", salvar: "Save project", nome: "Project name", descricao: "Description", equipes: "Teams", lider: "Lead", semLider: "No lead",
+    estado: "Status", estados: { ativo: "Active", ideia: "Idea", pausado: "Paused", concluido: "Done" } as Record<string, string>,
+    grupos: { ativo: "Active", ideia: "Ideas", pausado: "Paused", concluido: "Done" } as Record<string, string>,
+    inicio: "Start", fim: "Expected end", sobre: "About the project", secoes: { objetivo: "Goal", paraQuem: "For whom", comoMedimos: "How we measure" } as Record<string, string>,
+    ajudas: { objetivo: "What the project wants to achieve, in 1 or 2 sentences.", paraQuem: "Who benefits: community, guests, clients, partners…", comoMedimos: "How we know it worked: numbers, deliveries, dates." } as Record<string, string>,
+    semSobre: "No goal written.", escrever: "Write", parado: "Stalled for {n} days", semProjeto: "tasks without a project", semProjetoTitulo: "Tasks without a project",
+    semProjetoAjuda: "Pick each task's project. Nothing changes until you save.", sugerir: "Suggest with Pinu", sugerirAjuda: "Pinu reads each task and preselects the most likely project; you check before saving.",
+    sugerido: "suggested", salvarProjetos: "Save projects", salvos: "Projects saved", nenhumSemProjeto: "Every task you can edit already has a project.", semEquipe: "No team", manter: "— no project —",
   },
   ec: {
     aba: "Knowledge", paraRevisar: "facts of this team waiting for review", revisarUm: "Review one by one", vez: "time", vezes: "times",

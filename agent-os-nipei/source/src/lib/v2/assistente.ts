@@ -322,11 +322,12 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
   }
   if (nome === "projetos") {
     const pr = s(a.projeto) ? acharProjeto(s(a.projeto)) : null;
-    if (!pr) return getProjetos().map((p) => ({ id: p.id, nome: p.nome, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e), ...contagem(abertasDe((t) => t.projeto === p.id)) }));
+    if (!pr) return getProjetos().map((p) => ({ id: p.id, nome: p.nome, estado: p.status, lider: pessoas.find((x) => x.id === p.lider)?.name ?? null, objetivo: p.sobre.objetivo || null, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e), ...contagem(abertasDe((t) => t.projeto === p.id)) }));
     const objs = getObjetivos().filter((o) => o.projeto === pr.id);
     const ts = abertasDe((t) => t.projeto === pr.id);
     return {
-      id: pr.id, nome: pr.nome, descricao: pr.descricao.slice(0, 600), ...contagem(ts),
+      id: pr.id, nome: pr.nome, estado: pr.status, lider: pessoas.find((x) => x.id === pr.lider)?.name ?? null, inicio: pr.inicio || null, fim: pr.fim || null,
+      sobre: Object.fromEntries(Object.entries(pr.sobre).filter(([, v]) => v)), descricao: pr.descricao.slice(0, 600), ...contagem(ts),
       objetivos: objs.map((o) => ({ titulo: o.titulo, ano: o.ano, progresso: progresso(o.id, getTarefas()) })),
       atualizacoes: pr.atualizacoes.slice(0, 6), tarefas: ts.slice(0, 15).map((t) => curta(t, pessoas, equipes)),
     };

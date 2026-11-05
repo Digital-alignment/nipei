@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Projetos: portfólio, Sobre e "sem projeto" (10.21)
+
+- `/projetos` agrupado por estado (BadgeEstado), com líder, equipes em Chip, Sparkline no prazo e "Parado há N dias"; "Novo projeto" e atalho "N tarefas sem projeto".
+- Ficha do projeto: Sobre (Objetivo / Para quem / Como medimos) antes dos números; editar com `ProjetoForm`. Página `/projetos/sem-projeto` com sugestão do Pinu (cartão `pinu`, Chip "sugerido"). Só componentes existentes.
+
 ## 2026-11-05 — Conhecimento da equipe e Boas-vindas (10.19–10.20)
 
 - Equipe: aba **Conhecimento** (para revisar com número display, o que a IA não soube nos temas da equipe, o que sabemos).

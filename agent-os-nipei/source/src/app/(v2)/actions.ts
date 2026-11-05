@@ -239,6 +239,60 @@ export async function createPessoaAction(form: FormData) {
   redirect(getEquipes().find((e) => e.id === equipe)?.contatos ? `/pessoas/${id}/ponte` : `/pessoas/${id}`);
 }
 
+// ---------------------------------------------------------------- Projetos (DS 10.21)
+const podeEditarProjeto = (me: Awaited<ReturnType<typeof requireUser>>, p: { equipes: string[]; lider: string }) =>
+  me.gestao || p.equipes.some((e) => me.coordena.includes(e)) || (!!me.pessoa && p.lider === me.pessoa.id);
+
+export async function projetoAction(form: FormData) {
+  const me = await requireUser();
+  const { PROJETO_ESTADOS, PROJETO_SOBRE, salvarProjeto } = await import("@/lib/v2/data");
+  const id = String(form.get("id") ?? "");
+  const atual = id ? getProjetos().find((p) => p.id === id) : undefined;
+  if (id ? !atual || !podeEditarProjeto(me, atual) : !me.gestao) return;
+  const nome = String(form.get("nome") ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+  if (nome.length < 3) return;
+  const equipes = form.getAll("equipes").map(String).filter((e) => getEquipes().some((x) => x.id === e && !x.contatos));
+  const novo = salvarProjeto({
+    id: atual?.id, nome, descricao: String(form.get("descricao") ?? "").trim().slice(0, 2000), equipes,
+    status: (pick(form.get("status"), [...PROJETO_ESTADOS]) || "ativo") as (typeof PROJETO_ESTADOS)[number],
+    lider: pick(form.get("lider"), getPessoas().filter((p) => !p.contato && !p.externo).map((p) => p.id)),
+    inicio: isDate(form.get("inicio")), fim: isDate(form.get("fim")),
+    sobre: Object.fromEntries(PROJETO_SOBRE.map(([k]) => [k, String(form.get(k) ?? "").replace(/\r\n/g, "\n").replace(/^## /gm, "").trim().slice(0, 1500)])) as never,
+  }, actorName(me));
+  revalidatePath("/", "layout");
+  redirect(`/projetos/${novo}`);
+}
+
+/** Tasks without a project the person can edit (triage, DS 10.21). */
+async function semProjetoDe(me: Awaited<ReturnType<typeof requireUser>>) {
+  return getTarefas().filter((t) => t.status !== "done" && !t.projeto && can.editTarefa(me, t));
+}
+
+export async function sugerirProjetosAction() {
+  const me = await requireUser();
+  const { sugerirProjetos } = await import("@/lib/v2/projetos");
+  const { vault } = await import("@/lib/v2/data");
+  const lista = await semProjetoDe(me);
+  await tentar(async () => { if (lista.length) await sugerirProjetos(vault(), lista.slice(0, 180), getProjetos(), getEquipes()); });
+  revalidatePath("/projetos/sem-projeto");
+  redirect("/projetos/sem-projeto");
+}
+
+export async function salvarProjetosAction(form: FormData) {
+  const me = await requireUser();
+  const ids = new Set(getProjetos().map((p) => p.id));
+  const pode = new Map((await semProjetoDe(me)).map((t) => [t.id, t]));
+  let n = 0;
+  for (const [k, v] of form.entries()) {
+    if (!k.startsWith("p_")) continue;
+    const t = pode.get(k.slice(2)), pid = String(v);
+    if (!t || !pid || !ids.has(pid)) continue;
+    mudarTarefa(t.id, { projeto: pid }, actorName(me)); n++;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/projetos/sem-projeto?ok=${n}`);
+}
+
 // ---------------------------------------------------------------- Reunião fixa (DS 10.16)
 export async function reuniaoFixaAction(form: FormData) {
   const me = await requireUser();
