@@ -6,7 +6,7 @@ import { PROJETO_ESTADOS, PROJETO_SOBRE, type Equipe, type Pessoa, type Projeto 
 import type { Dict } from "@/lib/v2/i18n";
 
 // New / edit project (DS 10.21): name, description, teams (checkable chips), lead, status, dates and the "Sobre".
-export default function ProjetoForm({ p, equipes, pessoas, t }: { p?: Projeto; equipes: Equipe[]; pessoas: Pessoa[]; t: Dict }) {
+export default function ProjetoForm({ p, equipes, pessoas, t, gestao }: { p?: Projeto; equipes: Equipe[]; pessoas: Pessoa[]; t: Dict; gestao: boolean }) {
   const tp = t.pj;
   return (
     <form action={projetoAction}>
@@ -35,6 +35,12 @@ export default function ProjetoForm({ p, equipes, pessoas, t }: { p?: Projeto; e
           <Campo tipo="data" name="inicio" rotulo={tp.inicio} defaultValue={p?.inicio} />
           <Campo tipo="data" name="fim" rotulo={tp.fim} defaultValue={p?.fim} />
         </div>
+        {gestao && (
+          <label className="flex min-h-11 cursor-pointer items-start gap-3">
+            <input type="checkbox" name="privado" defaultChecked={p?.privado} className="mt-1 size-4 accent-ac" />
+            <span><span className="corpo text-t1">{tp.privado}</span><span className="meta block text-t2">{tp.privadoAjuda}</span></span>
+          </label>
+        )}
         <p className="rotulo-maiusculo mt-2 text-t3">{tp.sobre}</p>
         {PROJETO_SOBRE.map(([k]) => <Campo key={k} tipo="area" name={k} rotulo={tp.secoes[k]} ajuda={tp.ajudas[k]} maxLength={1500} defaultValue={p?.sobre[k]} />)}
         <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{tp.salvar}</BotaoEnviar></div>

@@ -2,7 +2,7 @@ import { ToastAoAbrir } from "@/components/ds/Toast";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 
 import NovaTarefaForm from "@/components/v2/NovaTarefaForm";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, projetosVisiveis } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
 type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string; status?: string };
@@ -26,7 +26,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
       <NovaTarefaForm
         equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}
         pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso, foto: p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined }))}
-        projetos={getProjetos().map((p) => ({ id: p.id, nome: p.nome }))}
+        projetos={projetosVisiveis(user).map((p) => ({ id: p.id, nome: p.nome }))}
         objetivos={getObjetivos().map((o) => ({ id: o.id, titulo: o.titulo, ano: o.ano, projeto: o.projeto }))}
         inicial={{
           equipe: equipeInicial, projeto: q.projeto ?? "", objetivo: q.objetivo ?? "",

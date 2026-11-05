@@ -6,7 +6,7 @@ import Icone from "@/components/ds/Icone";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, responsaveisPara } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, responsaveisPara, podeVerProjeto } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { updateTarefaAction } from "../../../actions";
 
@@ -32,7 +32,7 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
   const equipes = getEquipes().filter((e) => e.id === tarefa.equipe || can.criarEm(me, e.id));
   // team first, then everyone else (access doesn't matter); current owners always stay listed so saving never drops them
   const pessoas = [...responsaveisPara(tarefa.equipe).flatMap((g) => g.pessoas), ...getPessoas().filter((p) => p.externo && tarefa.responsaveis.includes(p.id))];
-  const projetos = getProjetos(), objetivos = getObjetivos();
+  const projetos = getProjetos().filter((p) => podeVerProjeto(me, p) || p.id === tarefa.projeto), objetivos = getObjetivos();
 
   return (
     <>

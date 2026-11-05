@@ -6,7 +6,7 @@ import AvatarDS from "@/components/ds/Avatar";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import { Sparkline } from "@/components/ds/padroes/Tabela";
 import { chaveEquipe } from "@/components/ds/equipes";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, PROJETO_ESTADOS, today, type Projeto } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, PROJETO_ESTADOS, projetosVisiveis, today, type Projeto } from "@/lib/v2/data";
 import { PARADO_DIAS, diasParado, noPrazoProjeto } from "@/lib/v2/projetos";
 import { getT } from "@/lib/v2/i18n";
 
@@ -17,7 +17,7 @@ export default async function Projetos() {
   const { t } = await getT();
   const me = (await currentUser())!;
   const hoje = today();
-  const equipes = getEquipes(), tarefas = getTarefas(), pessoas = getPessoas(), projetos = getProjetos();
+  const equipes = getEquipes(), tarefas = getTarefas(), pessoas = getPessoas(), projetos = projetosVisiveis(me);
   const ano = Number(hoje.slice(0, 4));
   const doAno = getObjetivos().filter((o) => o.ano === ano).length;
   const semProjeto = tarefas.filter((x) => x.status !== "done" && !x.projeto && can.editTarefa(me, x)).length;
@@ -33,6 +33,7 @@ export default async function Projetos() {
         <Cartao variante="clicavel" href={`/projetos/${p.id}`} className="h-full">
           <div className="flex items-start gap-2">
             <p className="titulo-cartao min-w-0 flex-1">{p.nome}</p>
+            {p.privado && <BadgeEstado estado="interna">{t.pj.privadoCurto}</BadgeEstado>}
             <BadgeEstado estado={BADGE[p.status]}>{t.pj.estados[p.status]}</BadgeEstado>
           </div>
           {(p.sobre.objetivo || p.descricao) && <p className="meta line-clamp-2 text-t2">{p.sobre.objetivo || p.descricao}</p>}

@@ -5,7 +5,7 @@ import AcervoForm, { FiltroAuto, type AcervoFormLabels } from "@/components/v2/A
 import CopiarBotao from "@/components/v2/CopiarBotao";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 import Recolhivel, { BotaoSecao } from "@/components/ds/SecaoRecolhivel";
-import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, getProjetos, podeEditarAcervo, type AcervoItem } from "@/lib/v2/data";
+import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, getProjetos, podeEditarAcervo, type AcervoItem, projetosVisiveis } from "@/lib/v2/data";
 import { tipoLink } from "@/lib/v2/acervoLinks";
 import { getFatos, getFontes } from "@/lib/v2/conhecimento";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
@@ -33,7 +33,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
   const q = await searchParams;
   const { t, lang } = await getT();
   const me = (await currentUser())!;
-  const projetos = getProjetos(), pessoas = getPessoas(), todos = getAcervo();
+  const projetos = projetosVisiveis(me), pessoas = getPessoas(), todos = getAcervo();
   const podeAdicionar = me.gestao || me.coordena.length > 0;
   const ordem = (ORDENS as readonly string[]).includes(q.ordem ?? "") ? q.ordem! : "ano";
   const busca = (q.q ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").trim();

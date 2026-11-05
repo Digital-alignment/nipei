@@ -14,7 +14,7 @@ export default async function NovoProjeto() {
     <div className="mx-auto max-w-xl">
       <div className="-ml-3 mb-2"><Botao href="/projetos" variante="fantasma" tamanho="P" icone="voltar">{t.projetos}</Botao></div>
       <CabecalhoPagina selo="broto" rotulo={t.projetos} titulo={t.pj.novo} />
-      <ProjetoForm equipes={getEquipes()} pessoas={getPessoas()} t={t} />
+      <ProjetoForm equipes={getEquipes()} pessoas={getPessoas()} t={t} gestao={me.gestao} />
     </div>
   );
 }

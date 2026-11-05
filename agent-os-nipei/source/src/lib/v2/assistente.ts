@@ -12,11 +12,7 @@ import { funcaoLigada } from "./funcoes";
 import { getConexoes } from "./conexoes";
 import { criarEventoGoogle, eventosGoogle, gmailBuscar, gmailEnviar, gmailLer, gmailParaConhecimento, temGmail } from "./google";
 import { getNotas, podeNotasInternas } from "./notasInternas";
-import {
-  STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas,
-  getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault,
-  type Me, type Status, type Tarefa,
-} from "./data";
+import { STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault, type Me, type Status, type Tarefa, podeVerProjeto, projetosVisiveis } from "./data";
 
 // The Nipëi assistant (Equipe 1): one OpenRouter tool-calling loop over the platform's own getters
 // (never a raw vault walk), available on every page. It knows who is talking and which page they are
@@ -322,7 +318,8 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
   }
   if (nome === "projetos") {
     const pr = s(a.projeto) ? acharProjeto(s(a.projeto)) : null;
-    if (!pr) return getProjetos().map((p) => ({ id: p.id, nome: p.nome, estado: p.status, lider: pessoas.find((x) => x.id === p.lider)?.name ?? null, objetivo: p.sobre.objetivo || null, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e), ...contagem(abertasDe((t) => t.projeto === p.id)) }));
+    if (pr && !podeVerProjeto(me, pr)) return { erro: "projeto não encontrado" };
+    if (!pr) return projetosVisiveis(me).map((p) => ({ id: p.id, nome: p.nome, estado: p.status, lider: pessoas.find((x) => x.id === p.lider)?.name ?? null, objetivo: p.sobre.objetivo || null, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e), ...contagem(abertasDe((t) => t.projeto === p.id)) }));
     const objs = getObjetivos().filter((o) => o.projeto === pr.id);
     const ts = abertasDe((t) => t.projeto === pr.id);
     return {

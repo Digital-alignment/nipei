@@ -8,7 +8,7 @@ import { Section } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Imprimir from "@/components/v2/Imprimir";
 import Md from "@/components/v2/Md";
-import { currentUser, getPessoas } from "@/lib/v2/data";
+import { currentUser, getPessoas, getProjetos, podeVerProjeto } from "@/lib/v2/data";
 import { diaLocal } from "@/lib/v2/conhecimento";
 import { coletarVisao, getSintese } from "@/lib/v2/visao";
 import { fmtDate, getT } from "@/lib/v2/i18n";
@@ -29,7 +29,8 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
   const { t, lang } = await getT();
   const me = (await currentUser())!;
   const v = coletarVisao(id);
-  if (!v) notFound();
+  const pr = getProjetos().find((x) => x.id === id);
+  if (!v || !pr || !podeVerProjeto(me, pr)) notFound(); // private project (DS 10.21)
   const sintese = getSintese(id);
   const c = v.coletivo, d = v.diag;
   const nome = (pid: string) => getPessoas().find((p) => p.id === pid)?.name ?? pid;

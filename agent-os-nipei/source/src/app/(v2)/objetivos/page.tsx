@@ -9,7 +9,7 @@ import Cartao from "@/components/ds/Cartao";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Campo from "@/components/ds/Campo";
 import Icone from "@/components/ds/Icone";
-import { can, currentUser, getEquipes, getObjetivos, getProjetos, getTarefas, progresso } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getProjetos, getTarefas, progresso, projetosVisiveis } from "@/lib/v2/data";
 import { updateObjetivoAction } from "../actions";
 import { getT } from "@/lib/v2/i18n";
 
@@ -18,7 +18,7 @@ export default async function Objetivos({ searchParams }: { searchParams: Promis
   const ano = q.ano === "2027" ? 2027 : 2026;
   const { t } = await getT();
   const me = (await currentUser())!;
-  const equipes = getEquipes(), projetos = getProjetos(), tarefas = getTarefas();
+  const equipes = getEquipes(), projetos = projetosVisiveis(me), tarefas = getTarefas();
   const objetivos = getObjetivos().filter((o) => o.ano === ano && (!q.equipe || o.equipe === q.equipe || o.apoio.includes(q.equipe)));
   const eq = (id: string) => equipes.find((e) => e.id === id);
 

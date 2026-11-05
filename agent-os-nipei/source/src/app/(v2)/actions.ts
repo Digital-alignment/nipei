@@ -19,12 +19,7 @@ import {
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import {
-  ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, createPessoa, createTarefa,
-  currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus,
-  updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today,
-  addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos,
-} from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -248,7 +243,7 @@ export async function projetoAction(form: FormData) {
   const { PROJETO_ESTADOS, PROJETO_SOBRE, salvarProjeto } = await import("@/lib/v2/data");
   const id = String(form.get("id") ?? "");
   const atual = id ? getProjetos().find((p) => p.id === id) : undefined;
-  if (id ? !atual || !podeEditarProjeto(me, atual) : !me.gestao) return;
+  if (id ? !atual || !podeEditarProjeto(me, atual) || !podeVerProjeto(me, atual) : !me.gestao) return;
   const nome = String(form.get("nome") ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
   if (nome.length < 3) return;
   const equipes = form.getAll("equipes").map(String).filter((e) => getEquipes().some((x) => x.id === e && !x.contatos));
@@ -256,41 +251,44 @@ export async function projetoAction(form: FormData) {
     id: atual?.id, nome, descricao: String(form.get("descricao") ?? "").trim().slice(0, 2000), equipes,
     status: (pick(form.get("status"), [...PROJETO_ESTADOS]) || "ativo") as (typeof PROJETO_ESTADOS)[number],
     lider: pick(form.get("lider"), getPessoas().filter((p) => !p.contato && !p.externo).map((p) => p.id)),
-    inicio: isDate(form.get("inicio")), fim: isDate(form.get("fim")),
+    inicio: isDate(form.get("inicio")), fim: isDate(form.get("fim")), privado: me.gestao ? form.get("privado") === "on" : !!atual?.privado,
     sobre: Object.fromEntries(PROJETO_SOBRE.map(([k]) => [k, String(form.get(k) ?? "").replace(/\r\n/g, "\n").replace(/^## /gm, "").trim().slice(0, 1500)])) as never,
   }, actorName(me));
   revalidatePath("/", "layout");
   redirect(`/projetos/${novo}`);
 }
 
-/** Tasks without a project the person can edit (triage, DS 10.21). */
-async function semProjetoDe(me: Awaited<ReturnType<typeof requireUser>>) {
-  return getTarefas().filter((t) => t.status !== "done" && !t.projeto && can.editTarefa(me, t));
+/** Tasks without a project the person can edit (triage, DS 10.21); `de` = also re-sort the tasks of that project. */
+async function semProjetoDe(me: Awaited<ReturnType<typeof requireUser>>, de = "") {
+  return getTarefas().filter((t) => t.status !== "done" && (!t.projeto || (!!de && t.projeto === de)) && can.editTarefa(me, t));
 }
+const deProjeto = (form: FormData) => pick(form.get("de"), getProjetos().map((p) => p.id));
 
-export async function sugerirProjetosAction() {
+export async function sugerirProjetosAction(form: FormData) {
   const me = await requireUser();
+  const de = deProjeto(form);
   const { sugerirProjetos } = await import("@/lib/v2/projetos");
   const { vault } = await import("@/lib/v2/data");
-  const lista = await semProjetoDe(me);
-  await tentar(async () => { if (lista.length) await sugerirProjetos(vault(), lista.slice(0, 180), getProjetos(), getEquipes()); });
+  const lista = await semProjetoDe(me, de);
+  await tentar(async () => { if (lista.length) await sugerirProjetos(vault(), lista.slice(0, 240), getProjetos(), getEquipes()); });
   revalidatePath("/projetos/sem-projeto");
-  redirect("/projetos/sem-projeto");
+  redirect(`/projetos/sem-projeto${de ? `?de=${de}` : ""}`);
 }
 
 export async function salvarProjetosAction(form: FormData) {
   const me = await requireUser();
   const ids = new Set(getProjetos().map((p) => p.id));
-  const pode = new Map((await semProjetoDe(me)).map((t) => [t.id, t]));
+  const de = deProjeto(form);
+  const pode = new Map((await semProjetoDe(me, de)).map((t) => [t.id, t]));
   let n = 0;
   for (const [k, v] of form.entries()) {
     if (!k.startsWith("p_")) continue;
     const t = pode.get(k.slice(2)), pid = String(v);
-    if (!t || !pid || !ids.has(pid)) continue;
+    if (!t || !pid || !ids.has(pid) || pid === t.projeto) continue;
     mudarTarefa(t.id, { projeto: pid }, actorName(me)); n++;
   }
   revalidatePath("/", "layout");
-  redirect(`/projetos/sem-projeto?ok=${n}`);
+  redirect(`/projetos/sem-projeto?ok=${n}${de ? `&de=${de}` : ""}`);
 }
 
 // ---------------------------------------------------------------- Reunião fixa (DS 10.16)

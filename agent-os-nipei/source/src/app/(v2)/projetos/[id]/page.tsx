@@ -19,7 +19,7 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import Cartao from "@/components/ds/Cartao";
-import { PROJETO_SOBRE, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
+import { PROJETO_SOBRE, podeVerProjeto, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getDiagnosticos } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";
@@ -32,7 +32,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   const { t, lang } = await getT();
   const me = (await currentUser())!;
   const p = getProjetos().find((x) => x.id === id);
-  if (!p) notFound();
+  if (!p || !podeVerProjeto(me, p)) notFound();
   const sabemos = filtrarConfirmados({ projeto: p.id });
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas(), todas = getTarefas();
@@ -164,7 +164,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   return (
     <>
       <div className="-ml-3 mb-2"><Botao href="/projetos" variante="fantasma" tamanho="P" icone="voltar">{t.projetos}</Botao></div>
-      <CabecalhoPagina selo="broto" rotulo={[t.pj.estados[p.status], lider && `${t.pj.lider}: ${lider.name.split(" ")[0]}`, p.fim && `${t.pj.fim}: ${fmtDate(p.fim, lang)}`].filter(Boolean).join(" · ")} titulo={p.nome}
+      <CabecalhoPagina selo="broto" rotulo={[p.privado && t.pj.privadoCurto, t.pj.estados[p.status], lider && `${t.pj.lider}: ${lider.name.split(" ")[0]}`, p.fim && `${t.pj.fim}: ${fmtDate(p.fim, lang)}`].filter(Boolean).join(" · ")} titulo={p.nome}
         acoes={<>
           {editar && <BotaoIcone icone="editar" aria-label={t.pj.editar} href={`/projetos/${id}/editar`} />}
           <BotaoIcone icone="informacao" aria-label={t.visaoHolistica} href={`/projetos/${id}/visao`} />

@@ -4,7 +4,7 @@ import Aviso from "@/components/ds/Aviso";
 import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
 import Recolhivel, { AtalhosSecao } from "@/components/ds/SecaoRecolhivel";
-import { currentUser, getEquipes, getPessoas, getProjetos } from "@/lib/v2/data";
+import { currentUser, getEquipes, getPessoas, getProjetos, projetosVisiveis } from "@/lib/v2/data";
 import { buscarConhecimento, getFatos, getFontes, podeRevisar } from "@/lib/v2/conhecimento";
 import Campo from "@/components/ds/Campo";
 import { EstadoVazio } from "@/components/ds/Estados";
@@ -29,7 +29,7 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
     return { pendentes: meus.filter((f) => f.status === "proposto"), revisados: meus.filter((f) => f.status !== "proposto").length, total: meus.length };
   };
   const ctx: Ctx = {
-    me, t, lang, q, fontes, fatos, equipes: getEquipes(), projetos: getProjetos(), porFonte,
+    me, t, lang, q, fontes, fatos, equipes: getEquipes(), projetos: projetosVisiveis(me), porFonte,
     nome: (id) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? id,
     paraMim: fontes.filter((f) => porFonte(f.id).pendentes.some((x) => podeRevisar(me, x))),
     confirmados: fatos.filter((f) => f.status === "confirmado"),

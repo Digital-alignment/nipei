@@ -32,6 +32,7 @@ export type Projeto = {
   id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[];
   // DS 10.21: portfolio fields (the old notes only have "status: ativo")
   file: string; status: (typeof PROJETO_ESTADOS)[number]; lider: string; inicio: string; fim: string;
+  privado: boolean; // only the project's teams, gestão and the lead see it (e.g. "Casa (obra)")
   sobre: Record<(typeof PROJETO_SOBRE)[number][0], string>;
 };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
@@ -121,7 +122,7 @@ export function getProjetos(): Projeto[] {
   return readDir("Projetos").map(({ fm, body, file }) => ({
     id: s(fm.id), nome: s(fm.nome), equipes: arr(fm.equipes), descricao: desc(body.split(/\r?\n## /)[0]), file,
     status: ((PROJETO_ESTADOS as readonly string[]).includes(s(fm.status)) ? s(fm.status) : "ativo") as Projeto["status"],
-    lider: s(fm.lider), inicio: s(fm.inicio), fim: s(fm.fim),
+    lider: s(fm.lider), inicio: s(fm.inicio), fim: s(fm.fim), privado: fm.privado === true,
     sobre: Object.fromEntries(PROJETO_SOBRE.map(([k, titulo]) => [k, secaoNota(body, titulo)])) as Projeto["sobre"],
     atualizacoes: (body.match(/## Atualizações\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1] ?? "").split(/\r?\n/).filter((l) => l.startsWith("- ")).map((l) => l.slice(2)),
   }));
@@ -580,9 +581,14 @@ export function registrarConversa(pessoaId: string, data: string, texto: string,
 }
 
 /** Creates or updates a project (DS 10.21). The body keeps "## Atualizações" and any section people added in Obsidian. */
-export function salvarProjeto(input: { id?: string; nome: string; descricao: string; equipes: string[]; status: Projeto["status"]; lider: string; inicio: string; fim: string; sobre: Projeto["sobre"] }, quem: string) {
+/** A private project is seen only by gestão, its teams (members or coordination) and its lead. */
+export const podeVerProjeto = (me: Me, p: Projeto) =>
+  !p.privado || me.gestao || p.equipes.some((e) => me.equipes.includes(e) || me.coordena.includes(e)) || (!!me.pessoa && p.lider === me.pessoa.id);
+export const projetosVisiveis = (me: Me) => getProjetos().filter((p) => podeVerProjeto(me, p));
+
+export function salvarProjeto(input: { id?: string; nome: string; descricao: string; equipes: string[]; status: Projeto["status"]; lider: string; inicio: string; fim: string; privado: boolean; sobre: Projeto["sobre"] }, quem: string) {
   const sobre = PROJETO_SOBRE.filter(([k]) => input.sobre[k].trim()).map(([k, titulo]) => `## ${titulo}\n${input.sobre[k].trim()}\n`).join("\n");
-  const fm: Record<string, FmValue> = { nome: input.nome, equipes: input.equipes, status: input.status, lider: input.lider, inicio: input.inicio, fim: input.fim, updated_at: new Date().toISOString() };
+  const fm: Record<string, FmValue> = { nome: input.nome, equipes: input.equipes, status: input.status, lider: input.lider, inicio: input.inicio, fim: input.fim, privado: input.privado, updated_at: new Date().toISOString() };
   const atual = input.id ? getProjetos().find((p) => p.id === input.id) : undefined;
   if (input.id && !atual) throw new Error("Projeto não encontrado");
   if (!atual) {
