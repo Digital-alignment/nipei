@@ -783,3 +783,7 @@ Ashuan criou a equipe **Pontes**: contatos com quem há conexão (fornecedores, 
 ## 2026-11-05 — Padrão "Contato (Pontes)" (§10.12)
 
 Plano Equipes, fase 1 (aprovado por Ashuan): ficha de contato, cartão de contato na equipe Pontes, conversas e lembrete de reconectar. Só reaproveita componentes existentes (Cartão clicável, Chip, Badge, Avatar, Linha do tempo, Campo); nenhum ícone novo.
+
+## 2026-11-05 — Sobre a equipe, Pedidos e Saúde da equipe (§10.13–10.15)
+
+Plano Equipes, fase 2 (aprovado por Ashuan). Só componentes existentes (Cartão, Campo, Linha de tarefa, BadgeEstado, Sparkline). Um pedido é uma tarefa da equipe sem responsável marcada como pedido: reaproveita atribuir, avisos e a ficha da tarefa. "Recusado" usa o estado tonal (não vermelho): recusar não é erro.

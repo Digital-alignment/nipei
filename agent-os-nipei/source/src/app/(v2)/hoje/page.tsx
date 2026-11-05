@@ -28,6 +28,7 @@ import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { createTarefaAction, focoAction } from "../actions";
 import Chip from "@/components/ds/Chip";
+import { pedidosNovos } from "@/lib/v2/pedidos";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Cartao from "@/components/ds/Cartao";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
@@ -153,6 +154,9 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   if (me) for (const c of getPessoas().filter((x) => x.contato && (reconectarEm(x) || "9") <= hoje && reconectarPor(x, equipes).includes(me.id))
     .sort((a, b) => reconectarEm(a).localeCompare(reconectarEm(b))).slice(0, 3))
     pilulas.push({ href: `/pessoas/${c.id}`, icone: "pessoa", texto: `${t.ponte.reconectarCom} ${c.name.split(" ")[0]}`, titulo: t.ponte.contatos });
+  // DS 10.14: requests waiting for an owner in the teams I coordinate
+  const pedidos = user.coordena.flatMap((e) => pedidosNovos(getTarefas(), e)).length;
+  if (pedidos) pilulas.push({ href: "/pedidos", icone: "enviar", texto: `${pedidos} ${pedidos === 1 ? t.eq.pedidoNovo : t.eq.pedidosNovos}`, titulo: t.eq.pedidos });
   const p = user.gestao ? pulso() : null;
 
   const linha = (x: Tarefa, grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
@@ -394,6 +398,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         <MenuAcoes gatilho="criar" rotulo={t.criarLbl} itens={[
           { icone: "tarefa", rotulo: t.novaTarefa, href: "/tarefas/nova" },
           { icone: "calendario", rotulo: t.novoEvento, href: "/eventos/novo" },
+          { icone: "enviar", rotulo: t.eq.pedirA, href: "/pedidos/novo" },
           { icone: "enviar", rotulo: t.novaFonteConhecimento, href: "/conhecimento#enviar" },
           ...(user.gestao || user.coordena.length ? [{ icone: "mais" as const, rotulo: t.adicionarAcervo, href: "/acervo#novo" }] : []),
         ]} />

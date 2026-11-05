@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Sobre a equipe, Pedidos e Saúde (10.13–10.15)
+
+- Equipe: aba **Sobre** (4 cartões; estado vazio com "Escrever"), aba **Pedidos** (linha com BadgeEstado, atribuir, recusar com motivo na linha), ícone "Pedir algo" no cabeçalho. Páginas `/equipes/[id]/sobre`, `/pedidos`, `/pedidos/novo` (toast "Pedido enviado").
+- `/equipes`: Sparkline "No prazo · 8 semanas" + tendência em texto em cada cartão. Hoje: pílula de pedidos e item "Pedir algo a uma equipe" no "+". Só componentes existentes.
+
 ## 2026-11-05 — Contato (Pontes), seção 10.12
 
 - `BadgeEstado` ganha o estado **aviso** (âmbar suave + ampulheta), usado em "Reconectar".

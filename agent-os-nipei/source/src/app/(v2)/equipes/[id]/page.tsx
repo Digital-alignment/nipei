@@ -17,17 +17,20 @@ import { TaskRow } from "@/components/v2/ui";
 
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import ContatosEquipe from "@/components/v2/ContatosEquipe";
+import { BadgeEstado } from "@/components/ds/Chip";
+import { pedidosNovos } from "@/lib/v2/pedidos";
+import { SOBRE_SECOES } from "@/lib/v2/data";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import { balancear } from "@/lib/v2/carga";
 import { can, currentUser, getAcessos, getEquipes, getObjetivos, getPessoas, getTarefas, novidadesPara, progresso, today, type Pessoa, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { numerosDe } from "@/lib/v2/pessoasInfo";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
-import { getT } from "@/lib/v2/i18n";
-import { atribuirAction, reatribuirAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
+import { fmtDate, getT } from "@/lib/v2/i18n";
+import { atribuirAction, reatribuirAction, recusarPedidoAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
 
-export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string; q?: string; tipo?: string }> }) {
+export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string; q?: string; tipo?: string; aba?: string }> }) {
   const { id } = await params;
   const q = await searchParams;
   const { t, lang } = await getT();
@@ -234,6 +237,58 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
     </div>
   );
 
+  // DS 10.13 Sobre a equipe
+  const temSobre = SOBRE_SECOES.some(([k]) => e.sobre[k]);
+  const sobreAba = (
+    <div className="mt-3">
+      {gerir && temSobre && <div className="mb-3"><Botao href={`/equipes/${id}/sobre`} variante="tonal" tamanho="P" icone="editar">{t.eq.editarSobre}</Botao></div>}
+      {temSobre ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SOBRE_SECOES.filter(([k]) => e.sobre[k]).map(([k]) => (
+            <Cartao key={k}><p className="rotulo-maiusculo text-t3">{t.eq.secoes[k]}</p><p className="corpo whitespace-pre-line text-t1">{e.sobre[k]}</p></Cartao>
+          ))}
+        </div>
+      ) : <EstadoVazio selo={chaveEquipe(e.id) ? EQUIPES_DS[chaveEquipe(e.id)!].selo : "broto"} titulo={t.eq.sobreVazio} texto={gerir ? t.eq.sobreVazioGerir : undefined}
+          acao={gerir ? <Botao href={`/equipes/${id}/sobre`} variante="primario" tamanho="M" icone="editar">{t.eq.escrever}</Botao> : undefined} />}
+    </div>
+  );
+
+  // DS 10.14 Pedidos (coordination/gestão): pick an owner or decline with a reason
+  const novos = gerir ? pedidosNovos(todas, id) : [];
+  const pedidosAba = (
+    <div className="mt-3">
+      <p className="meta mb-3 text-t2">{t.eq.pedidosAjuda}</p>
+      {novos.length === 0 ? <EstadoVazio compacto titulo={t.eq.semPedidos} /> : (
+        <ul className="grid gap-2">
+          {novos.map((x) => {
+            const quem = pessoas.find((p) => p.id === x.pedidoPor);
+            return (
+              <li key={x.id} className="rounded-cartao bg-s1 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <BadgeEstado estado={x.prazo && x.prazo < hoje ? "atrasada" : "pendente"}>{x.prazo && x.prazo < hoje ? t.eq.atrasado : t.eq.novo}</BadgeEstado>
+                  <Link href={`/tarefas/${x.id}`} className="titulo-cartao min-w-0 flex-1 hover:underline">{x.title}</Link>
+                </div>
+                <p className="meta mt-1 text-t2">{quem?.name.split(" ")[0] ?? x.pedidoPor} {t.eq.pedidoPor} · {x.criadoEm ? fmtDate(x.criadoEm.slice(0, 10), lang) : ""}{x.prazo ? ` · ${t.eq.ate} ${fmtDate(x.prazo, lang)}` : ""}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {extra(x)}
+                  <details className="group">
+                    <summary className="anel-foco inline-flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-pilula px-3 font-texto text-sm font-semibold text-t1 hover:bg-s2"><Icone nome="fechar" tamanho={16} />{t.eq.recusar}</summary>
+                    <form action={recusarPedidoAction} className="mt-2 flex flex-wrap items-center gap-2">
+                      <input type="hidden" name="id" value={x.id} />
+                      <Campo name="motivo" rotulo={t.eq.motivo} required maxLength={300} className="min-w-56 flex-1" />
+                      <BotaoEnviar enviando="…" icone="fechar" variante="tonal" tamanho="P">{t.eq.recusarPedido}</BotaoEnviar>
+                    </form>
+                  </details>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+  const abasIds = ["sobre", "tarefas", "pedidos", "pessoas", "objetivos", "sabemos", "config"];
+
   const Num = ({ v, label, cor, href }: { v: number; label: string; cor?: string; href?: string }) => {
     const c = <><p className={`font-display text-2xl font-light leading-none tabular-nums md:text-3xl ${v ? cor ?? "text-t1" : "text-t1"}`}>{v}</p><p className="meta text-t2">{label}</p></>;
     return href ? <Link href={href} className="anel-foco grid gap-0.5 rounded-cartao bg-s1 px-3 py-3 transition-colors hover:bg-s2">{c}</Link>
@@ -248,6 +303,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         acoes={<>
           <BotaoIcone icone="calendario" aria-label={t.reuniaoEquipe} href={`/equipes/${id}/reuniao`} />
           <BotaoIcone icone="pessoas" aria-label={t.pessoas} href={`/pessoas?equipe=${id}`} />
+          <BotaoIcone icone="enviar" aria-label={t.eq.pedirAlgo} href={`/pedidos/novo?equipe=${id}`} />
           <Botao href={`/tarefas/nova?equipe=${id}${pessoaFiltro ? `&responsavel=${pessoaFiltro.id}` : ""}&back=/equipes/${id}`} icone="mais" folha>{t.novaTarefa}</Botao>
         </>} />
       <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -256,8 +312,10 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         <Num v={semDono} label={t.semDonoLbl} cor="text-warn" href={url({ pessoa: "sem" })} />
         <Num v={feitas30.length} label={t.feitas30} cor="text-ok" />
       </div>
-      <AbasComPainel id="equipe" inicial={q.pessoa || q.area ? "tarefas" : undefined} abas={[
+      <AbasComPainel id="equipe" inicial={abasIds.includes(q.aba ?? "") ? q.aba : q.pessoa || q.area ? "tarefas" : undefined} abas={[
+        { id: "sobre", rotulo: t.eq.sobre, contagem: 0, conteudo: sobreAba },
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
+        ...(gerir ? [{ id: "pedidos", rotulo: t.eq.pedidos, contagem: novos.length, alerta: novos.length > 0, conteudo: pedidosAba }] : []),
         { id: "pessoas", rotulo: t.membros, contagem: gente.length, conteudo: pessoasAba },
         { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
         { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?equipe=${e.id}#base`} /> },

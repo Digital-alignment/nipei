@@ -479,6 +479,19 @@ Pessoas da equipe **Pontes** (`contatos: true`): fornecedores, aliados possívei
 - **Ficha do contato**: abas Ponte · Perfil · Gestão (sem Resumo, Tarefas nem números). Aba Ponte = Cartão com lista de definição (tipo, empresa, oferece em Chips, como conhecemos, vínculo, próximo passo, reconectar a cada N dias) + botão "Editar" tonal; Cartão "Conversas" com o formulário curto (data, texto, botão "Registrar conversa" com ícone `confirmar`) e a Linha do tempo (10.9) das conversas.
 - **Hoje**: Chip "Reconectar com X" (ícone `pessoa`) junto às pendências, só para o vínculo (sem vínculo: coordenação de Pontes); toque abre a ficha.
 
+### 10.13 Sobre a equipe
+Primeira aba da página da equipe. Quatro Cartões em grade bento (2 colunas a partir de `sm`): **Propósito** · **O que decide** · **O que não faz** · **Como pedir**, cada um com rótulo `rotulo-maiusculo` e texto `corpo`. Coordenação e gestão veem "Editar" (Botão tonal com ícone `editar`) no topo da aba → página com os quatro Campos área de texto. Sem nada escrito: Estado vazio (selo da equipe) com a ação "Escrever" para quem pode editar; os outros veem só a frase.
+
+### 10.14 Pedidos à equipe
+Quem não sabe a quem pedir, pede à equipe.
+- **Pedir algo**: Botão de ícone `enviar` (rótulo "Pedir algo") no cabeçalho da equipe, junto de Reunião e Pessoas, e item no "+" de Hoje → página com Campo seleção de equipe (quando não veio da equipe), Campo título "O que você precisa?", Campo área "Detalhes" e Campo data "Até quando?" (opcional). Primário "Enviar pedido" (ícone `enviar`).
+- **Aba Pedidos** (só coordenação/gestão; contagem em pílula, `alerta` quando há novos): linhas de tarefa (10.3) com quem pediu e quando (`meta`), o seletor "Atribuir a…" e "Recusar" (Botão fantasma) que abre, na própria linha, o Campo "Motivo" + "Recusar pedido" (o Diálogo de confirmação não tem campo de texto).
+- **/pedidos**: "Para minhas equipes" (coordenação) e "Meus pedidos" (quem pediu). Estado com BadgeEstado: Pendente (novo) · Em andamento (atribuído, com o nome) · Feita · Atrasada (passou do "até quando") · Recusado = estado "interna" com o texto "Recusado" e o motivo em `meta`.
+- Hoje: Chip "N pedidos para sua equipe" (ícone `enviar`) para a coordenação.
+
+### 10.15 Saúde da equipe (cartão de `/equipes`)
+Abaixo da barra "% em dia": `Sparkline` (10.8) das últimas 8 semanas com o % de tarefas concluídas no prazo em cada semana + texto `meta` "No prazo · 8 semanas" e a tendência **sempre em texto** ("melhorando", "estável", "caindo"; caindo em `text-warn`). Menos de 2 semanas com dados → só "Sem histórico ainda".
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

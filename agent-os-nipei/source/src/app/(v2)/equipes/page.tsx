@@ -7,6 +7,8 @@ import { BarraProgresso } from "@/components/ds/Progresso";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import Icone from "@/components/ds/Icone";
 
+import { Sparkline } from "@/components/ds/padroes/Tabela";
+import { noPrazoSemanas, tendencia } from "@/lib/v2/pedidos";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, reconectarEm, today, type Equipe } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
@@ -24,6 +26,19 @@ export default async function Equipes() {
   const semEquipe = tarefas.filter((x) => !x.equipe && x.status !== "done").length;
 
   const devidos = (e: Equipe) => pessoas.filter((p) => p.equipes.includes(e.id) && (reconectarEm(p) || "9") <= hoje).length;
+  // DS 10.15: % done on time per week (8 weeks) + the trend in words
+  const Saude = ({ e }: { e: Equipe }) => {
+    const semanas = noPrazoSemanas(tarefas, e.id, hoje), pontos = semanas.filter((x): x is number => x != null), tend = tendencia(semanas);
+    return (
+      <div className="mt-3 flex items-center gap-2">
+        {pontos.length >= 2 ? <>
+          <Sparkline pontos={pontos} rotulo={`${t.eq.noPrazo}: ${pontos.join("%, ")}%`} />
+          <span className="meta text-t2">{t.eq.noPrazo}</span>
+          {tend && <span className={`meta ml-auto font-medium ${tend === "caindo" ? "text-warn" : "text-t1"}`}>{t.eq[tend]}</span>}
+        </> : <span className="meta text-t3">{t.eq.semHistorico}</span>}
+      </div>
+    );
+  };
   const Cartao = ({ e }: { e: Equipe }) => {
     const ts = tarefas.filter((x) => x.equipe === e.id);
     const abertas = ts.filter((x) => x.status !== "done");
@@ -64,6 +79,7 @@ export default async function Equipes() {
               <div className="flex-1"><BarraProgresso valor={emDia} rotulo={`${emDia}% ${t.emDiaLbl}`} rotuloAcessivel={t.emDiaLbl} /></div>
             </div>
           )}
+          <Saude e={e} />
           <p className="mt-2 text-xs text-t2">{objetivos.filter((o) => o.equipe === e.id).length} {t.objetivos.toLowerCase()}{e.areas.length ? ` · ${e.areas.length} ${t.areasLbl}` : ""}</p>
           </>}
         </Link>

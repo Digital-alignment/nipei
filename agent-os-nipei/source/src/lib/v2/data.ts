@@ -20,7 +20,11 @@ export type Equipe = {
   gestao: boolean; // members of this team manage everything (full session, v1 included)
   avisos: boolean; // members get WhatsApp notices (scripts/avisos on the VPS)
   contatos: boolean; // Pontes: outside contacts (suppliers, possible allies). Never log in, never own tasks.
+  sobre: SobreEquipe; // "Sobre a equipe": sections of the team note body (DS 10.13); the assistant routes questions with it
 };
+export const SOBRE_SECOES = [["proposito", "Propósito"], ["decide", "O que decide"], ["naoFaz", "O que não faz"], ["comoPedir", "Como pedir"]] as const;
+export type SobreEquipe = Record<(typeof SOBRE_SECOES)[number][0], string>;
+const secaoNota = (body: string, titulo: string) => (body.match(new RegExp(`(?:^|\\n)## ${titulo}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`))?.[1] ?? "").trim();
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[] };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
 export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string; hora: string };
@@ -49,6 +53,7 @@ export type Tarefa = {
   checklist: { feitos: number; total: number }; anexos: number; recorrencia: string;
   atualizadoEm: string; // last write to the note (smart order: stale vs fresh)
   concluidoEm: string; // when it was marked done (only since 2026-10-20; older tasks don't have it)
+  pedidoPor: string; pedidoRecusado: string; criadoEm: string; // DS 10.14: requests to a team ("" = not a request)
 };
 
 export const vault = () => {
@@ -92,9 +97,10 @@ export const STATUS_RAW: Record<Status, string> = { todo: "A fazer", doing: "Em 
 
 export function getEquipes(): Equipe[] {
   return readDir("Equipes")
-    .map(({ fm }) => ({
+    .map(({ fm, body }) => ({
       id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), temas: arr(fm.temas), coordenadores: arr(fm.coordenadores),
       membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true, avisos: fm.avisos === true, contatos: fm.contatos === true,
+      sobre: Object.fromEntries(SOBRE_SECOES.map(([k, titulo]) => [k, secaoNota(body, titulo)])) as SobreEquipe,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -183,6 +189,9 @@ export function getTarefas(): Tarefa[] {
       recorrencia: s(fm.recorrencia),
       atualizadoEm: s(fm.updated_at),
       concluidoEm: s(fm.concluido_em),
+      pedidoPor: fm.pedido === true ? s(fm.pedido_por) || "?" : "", // DS 10.14: a request to the team (no owner yet)
+      pedidoRecusado: s(fm.pedido_recusado),
+      criadoEm: s(fm.created_at),
     };
   });
 }
@@ -346,7 +355,7 @@ export function setTarefaStatus(id: string, status: Status, actor: string) {
   writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW[status]; });
 }
 
-export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string; priority?: string; area?: string }, actor: string, opts: { descricao?: string; checklist?: { feito: boolean; texto: string }[]; semAviso?: boolean } = {}) {
+export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string; priority?: string; area?: string; pedidoPor?: string }, actor: string, opts: { descricao?: string; checklist?: { feito: boolean; texto: string }[]; semAviso?: boolean } = {}) {
   const projeto = getProjetos().find((p) => p.id === input.projeto);
   return createTarefaNote(vault(), {
     title: input.title, prazo: input.prazo, project: projeto?.nome ?? "Geral",
@@ -355,6 +364,7 @@ export function createTarefa(input: { title: string; equipe: string; prazo: stri
     ...(input.recorrencia ? { recorrencia: input.recorrencia } : {}),
     ...(input.priority ? { priority: input.priority } : {}),
     ...(input.area ? { area: input.area } : {}),
+    ...(input.pedidoPor ? { pedido: true, pedido_por: input.pedidoPor } : {}),
   }, actor, opts).id;
 }
 
@@ -453,6 +463,41 @@ export function setFuncao(pessoaId: string, funcao: string, quem = "") {
   const nova = funcao.trim().slice(0, 80);
   updateNote(n.file, { funcao: nova });
   if (quem) registrarPessoa(n.file, quem, `função: ${nova || "(vazia)"}`);
+}
+
+// ---------------------------------------------------------------- Sobre a equipe / pedidos (DS 10.13–10.14)
+
+/** Rewrites the four "Sobre" sections of the team note (kept right after the description, before "## Coordenação"). */
+export function setSobreEquipe(equipeId: string, sobre: SobreEquipe, quem: string) {
+  const note = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
+  if (!note) throw new Error("Equipe não encontrada");
+  const full = path.join(vault(), note.file);
+  let t = fs.readFileSync(full, "utf-8");
+  for (const [, titulo] of SOBRE_SECOES) t = t.replace(new RegExp(`\\r?\\n## ${titulo}\\r?\\n[\\s\\S]*?(?=\\r?\\n## |$)`), "");
+  const bloco = SOBRE_SECOES.filter(([k]) => sobre[k].trim()).map(([k, titulo]) => `## ${titulo}\n${sobre[k].trim()}\n`).join("\n");
+  if (bloco) {
+    const i = t.search(/\r?\n## /);
+    t = i < 0 ? `${t.trimEnd()}\n\n${bloco}` : `${t.slice(0, i).trimEnd()}\n\n${bloco}${t.slice(i)}`;
+  }
+  fs.writeFileSync(full, setFrontmatter(t, { updated_at: new Date().toISOString() }), "utf-8");
+  requestSync(vault());
+  void quem;
+}
+
+/** Request state for the requester and the team (DS 10.14). */
+export function estadoPedido(t: Tarefa, hoje: string): "pendente" | "andamento" | "feita" | "atrasada" | "recusado" {
+  if (t.pedidoRecusado) return "recusado";
+  if (t.status === "done") return "feita";
+  if (t.prazo && t.prazo < hoje) return "atrasada";
+  return t.responsaveis.length ? "andamento" : "pendente";
+}
+
+/** Refuses a request: closes it with the reason (kept in the note and in "## Atividade"). */
+export function recusarPedido(id: string, motivo: string, actor: string) {
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t || !t.pedidoPor) throw new Error("Pedido não encontrado");
+  const m = motivo.replace(/\s+/g, " ").trim().slice(0, 300) || "sem motivo";
+  writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW.done; d.fm.pedido_recusado = m; }, [`recusou o pedido: ${m}`]);
 }
 
 // ---------------------------------------------------------------- Pontes (contacts)

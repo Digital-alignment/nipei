@@ -42,7 +42,8 @@ export type Acao =
   | { tipo: "evento_google"; titulo: string; dia: string; hora?: string; duracaoMin?: number; descricao?: string; convidados?: string[] }
   | { tipo: "lembrar"; texto: string; categoria: Categoria }
   | { tipo: "esquecer"; id: string }
-  | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string };
+  | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string }
+  | { tipo: "pedir_equipe"; equipe: string; titulo: string; descricao?: string; prazo?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
 export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[] };
@@ -178,7 +179,7 @@ const TOOLS = [
   fn("pessoas", "Pessoas da comunidade: nome, id, equipes, função e carga de tarefas.", { texto: { type: "string" }, equipe: { type: "string" } }),
   fn("pontes", "Pontes: contatos de fora (fornecedores, aliados possíveis, colaboradores) com o que cada um oferece. Use para \"quem pode nos ajudar com…\", \"temos fornecedor de…\".", { busca: { type: "string", description: "o que se procura (ex.: envase de vidro), nome ou empresa; vazio = todos" }, tipo: { type: "string", enum: ["fornecedor", "aliado", "colaborador"] } }),
   fn("projetos", "Projetos: lista com números, ou detalhes de um (objetivos, atualizações, tarefas abertas).", { projeto: { type: "string", description: "nome ou id; vazio = todos" } }),
-  fn("equipe", "Saúde de uma equipe: números, carga por membro, tarefas sem responsável.", { equipe: { type: "string" } }, ["equipe"]),
+  fn("equipe", "Uma equipe: Sobre (propósito, o que decide, o que não faz, como pedir), números, carga por membro, tarefas sem responsável e pedidos novos.", { equipe: { type: "string" } }, ["equipe"]),
   fn("objetivos", "Objetivos do ano com progresso e equipe dona.", { ano: { type: "number" } }),
   fn("pulso_equipes", "Tarefas abertas, atrasadas e sem responsável por equipe.", {}),
   fn("gmail_buscar", "Busca e-mails no Gmail de quem fala com você (sintaxe do Gmail, ex.: \"is:unread newer_than:2d\", \"from:fulano\"). Só se a pessoa ativou o Gmail.", { busca: { type: "string" }, max: { type: "number", description: "padrão 10, máx. 20" } }),
@@ -221,10 +222,11 @@ const TOOLS = [
   fn("lembrar", "PROPÕE guardar na sua memória algo estável sobre a pessoa que fala com você (preferência de resposta, do que ela cuida, rotina, contexto). Uma frase curta na 3ª pessoa.", {
     texto: { type: "string", description: "ex.: \"Prefere respostas curtas, em tópicos\"" }, categoria: { type: "string", enum: [...CATEGORIAS] },
   }, ["texto", "categoria"]),
+  fn("pedir_equipe", "PROPÕE fazer um pedido a uma equipe quando a pessoa precisa de algo e não sabe quem faz (vira tarefa da equipe sem responsável; a coordenação escolhe quem faz). Veja antes o Sobre da equipe (ferramenta equipe).", { equipe: { type: "string" }, titulo: { type: "string", description: "o que precisa, curto" }, descricao: { type: "string" }, prazo: DATA }, ["equipe", "titulo"]),
   fn("registrar_conversa", "PROPÕE registrar uma conversa com um contato da Pontes (o que foi conversado e, se houver, o novo próximo passo).", { pessoa: { type: "string", description: "nome ou id do contato" }, texto: { type: "string" }, proximo_passo: { type: "string" } }, ["pessoa", "texto"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa"]);
+const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
@@ -338,6 +340,8 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
       id: e.id, nome: e.nome, ...contagem(ts), coordenacao: e.coordenadores.map((c) => primeiro(pessoas.find((p) => p.id === c)?.name ?? c)),
       carga: membros.map((p) => ({ nome: primeiro(p.name), ...contagem(ts.filter((t) => t.responsaveis.includes(p.id))) })).sort((x, y) => y.abertas - x.abertas),
       sem_responsavel: ts.filter((t) => !t.responsaveis.length).slice(0, 10).map((t) => curta(t, pessoas, equipes)),
+      sobre: Object.fromEntries(Object.entries(e.sobre).filter(([, v]) => v)),
+      pedidos_novos: ts.filter((t) => t.pedidoPor && !t.responsaveis.length).length,
     };
   }
   if (nome === "objetivos") {
@@ -406,6 +410,14 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     const equipe = (s(a.equipe) && acharEquipe(s(a.equipe))?.id) || t?.equipe || "", projeto = (s(a.projeto) && acharProjeto(s(a.projeto))?.id) || t?.projeto || "";
     return { tipo: "guardar_conhecimento", titulo, ...(url ? { url } : { texto }), equipe: equipe || undefined, projeto: projeto || undefined, tarefa: t?.id,
       resumo: `Guardar no Conhecimento: ${titulo}`, detalhe: url || (texto.length > 300 ? `${texto.slice(0, 300)}…` : texto) };
+  }
+  if (nome === "pedir_equipe") {
+    const e = s(a.equipe) ? acharEquipe(s(a.equipe)) : undefined, titulo = s(a.titulo).slice(0, 200), prazo = s(a.prazo);
+    if (!e || e.contatos) return { erro: "equipe não encontrada" };
+    if (!me.pessoa) return { erro: "só quem tem ficha pode pedir" };
+    if (titulo.length < 3) return { erro: "falta dizer o que precisa" };
+    if (prazo && !ISO.test(prazo)) return { erro: "prazo inválido (AAAA-MM-DD)" };
+    return { tipo: "pedir_equipe", equipe: e.id, titulo, descricao: s(a.descricao).slice(0, 3000) || undefined, prazo: prazo || undefined, resumo: `Pedido para ${e.nome}: ${titulo}`, detalhe: [s(a.descricao), prazo && `até ${prazo.split("-").reverse().join("/")}`].filter(Boolean).join(" · ") || undefined };
   }
   if (nome === "registrar_conversa") {
     const p = acharPessoa(s(a.pessoa)), texto = s(a.texto).slice(0, 1000), proximo = s(a.proximo_passo ?? a.proximo).slice(0, 300);
@@ -525,6 +537,13 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     return `/conhecimento/${id}`;
   }
   if (v.tipo === "nota_projeto") { anotarProjeto(v.projeto, v.texto, quem); return `/projetos/${v.projeto}`; }
+  if (v.tipo === "pedir_equipe") {
+    const id = createTarefa({ title: v.titulo, equipe: v.equipe, prazo: v.prazo ?? "", responsaveis: [], projeto: "", objetivo: "", recorrencia: "", pedidoPor: me.pessoa!.id }, quem, { descricao: v.descricao, semAviso: true });
+    const e = getEquipes().find((x) => x.id === v.equipe)!;
+    const { avisarPedido } = await import("./pedidos");
+    void avisarPedido(e, { id, titulo: v.titulo, prazo: v.prazo ?? "" }, { id: me.pessoa!.id, nome: me.pessoa!.name }).catch(() => {});
+    return "/pedidos";
+  }
   if (v.tipo === "registrar_conversa") { registrarConversa(v.pessoa, today(), v.texto, quem, v.proximo); return `/pessoas/${v.pessoa}`; }
   if (v.tipo === "revisar_fato") {
     revisarFato(v.id, v.decisao, quem);
@@ -619,13 +638,16 @@ export async function chamarMCP(me: Me, nome: string, args: Record<string, unkno
   return { ok: true, dados: { feito: v.resumo, detalhe: v.detalhe ?? null, link: link ? `https://os.nipeihu.app${link.startsWith("/") ? link : ""}` : null } };
 }
 
+/** "Equipe 1 = Nome (propósito…)" for the prompts: the "Sobre" lets the model take a question to the right team (DS 10.13). */
+const listaEquipes = (equipes: ReturnType<typeof getEquipes>) => equipes.map((e) => `${e.id.replace("equipe_", "Equipe ")} = ${e.nome}${e.contatos ? " (contatos de fora; use a ferramenta pontes)" : e.sobre.proposito ? ` (${e.sobre.proposito.replace(/\s+/g, " ").slice(0, 160)})` : ""}`).join("; ");
+
 /** Sent once when the app connects: who the person is, today's date, the team names, memory and the rules. */
 export function instrucoesMCP(me: Me) {
   const p = me.pessoa, equipes = getEquipes();
   const nomeEq = (id: string) => equipes.find((e) => e.id === id)?.nome ?? id;
   const mem = getMemoria(donoMemoria(me));
   return `Nipëi OS: plataforma da comunidade do Santuário Nipeihu (povo Yawanawá). Você está conectado como ${p?.name ?? me.username}${me.gestao ? " (gestão, Equipe 1)" : ""}; equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}.
-Fuso: America/Bahia (consulte a data atual antes de usar "hoje", "amanhã"). Equipes: ${equipes.map((e) => `${e.id.replace("equipe_", "Equipe ")} = ${e.nome}`).join("; ")}.
+Fuso: America/Bahia (consulte a data atual antes de usar "hoje", "amanhã"). Equipes: ${listaEquipes(equipes)}.
 ${mem.length ? `Memória aprovada pela pessoa (siga isto):\n${mem.map((x) => `- (${x.categoria}) ${x.texto}`).join("\n")}` : "Ainda não há memória sobre a pessoa."}
 Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência.
 Memória: use lembrar só quando a pessoa pedir ou concordar; nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas.${me.gestao ? "\nNotas internas (notas_internas) são confidenciais da gestão: nunca as copie para mensagens, tarefas, projetos ou memória." : ""}`;
@@ -641,7 +663,7 @@ const SISTEMA = (me: Me, lang: string, pagina: string) => {
   return `Você é o assistente do Nipëi OS (Santuário Nipeihu, povo Yawanawá, Aldeia Mutum, Inirau): conhece a plataforma inteira e ajuda a consultar, planejar e executar.
 Você fala com ${p ? primeiro(p.name) : me.username}${p?.funcao ? ` (${p.funcao})` : ""}${me.gestao ? ", da gestão (Equipe 1)" : ""}. Equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}${me.coordena.length ? `; coordena: ${me.coordena.map(nomeEq).join(", ")}` : ""}.
 Hoje é ${dia}, ${today()} (horário da Bahia). ${contextoPagina(me, pagina)}
-Equipes da plataforma (as pessoas dizem "Equipe 1", "Equipe 2"…): ${equipes.map((e) => `${e.id.replace("equipe_", "Equipe ")} = ${e.nome}`).join("; ")}.
+Equipes da plataforma (as pessoas dizem "Equipe 1", "Equipe 2"…): ${listaEquipes(equipes)}.
 ${(() => { const mem = getMemoria(donoMemoria(me)); return mem.length ? `O que você sabe sobre ${p ? primeiro(p.name) : "a pessoa"} (aprovado por ela; siga isto):\n${mem.map((x) => `- [${x.id}] (${x.categoria}) ${x.texto}`).join("\n")}` : "Você ainda não tem memória sobre esta pessoa."; })()}
 Responda no idioma da pessoa (padrão: ${lang === "en" ? "inglês" : "português do Brasil"}), curto e direto: 1 a 4 frases ou uma lista curta, a menos que a memória diga outra preferência. Chame a pessoa pelo primeiro nome só de vez em quando.
 Regras:

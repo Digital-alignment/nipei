@@ -229,6 +229,41 @@ export async function createPessoaAction(form: FormData) {
   redirect(getEquipes().find((e) => e.id === equipe)?.contatos ? `/pessoas/${id}/ponte` : `/pessoas/${id}`);
 }
 
+// ---------------------------------------------------------------- Sobre a equipe + pedidos (DS 10.13–10.14)
+export async function sobreEquipeAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(form.get("equipe")));
+  if (!e || !can.gerirEquipe(me, e.id)) return;
+  const { SOBRE_SECOES, setSobreEquipe } = await import("@/lib/v2/data");
+  const sobre = Object.fromEntries(SOBRE_SECOES.map(([k]) => [k, String(form.get(k) ?? "").replace(/\r\n/g, "\n").replace(/^## /gm, "").trim().slice(0, 1500)]));
+  setSobreEquipe(e.id, sobre as never, actorName(me));
+  revalidatePath("/", "layout");
+  redirect(`/equipes/${e.id}?aba=sobre`);
+}
+
+export async function pedirAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(form.get("equipe")) && !x.contatos);
+  const titulo = String(form.get("titulo") ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
+  if (!me.pessoa || !e || titulo.length < 3) return;
+  const prazo = isDate(form.get("prazo"));
+  const id = createTarefa({ title: titulo, equipe: e.id, prazo, responsaveis: [], projeto: "", objetivo: "", recorrencia: "", pedidoPor: me.pessoa.id },
+    actorName(me), { descricao: String(form.get("descricao") ?? "").trim().slice(0, 3000) || undefined, semAviso: true });
+  const { avisarPedido } = await import("@/lib/v2/pedidos");
+  void avisarPedido(e, { id, titulo, prazo }, { id: me.pessoa.id, nome: me.pessoa.name }).catch(() => {});
+  revalidatePath("/", "layout");
+  redirect("/pedidos?enviado=1");
+}
+
+export async function recusarPedidoAction(form: FormData) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === String(form.get("id")));
+  if (!t || !t.pedidoPor || !can.gerirEquipe(me, t.equipe)) return;
+  const { recusarPedido } = await import("@/lib/v2/data");
+  await tentar(async () => recusarPedido(t.id, String(form.get("motivo") ?? ""), actorName(me)));
+  revalidatePath("/", "layout");
+}
+
 // ---------------------------------------------------------------- Pontes (contact card + conversations)
 const contatoGerivel = async (form: FormData) => {
   const me = await requireUser();

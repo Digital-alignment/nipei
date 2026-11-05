@@ -65,7 +65,7 @@ export function participacao(p: Pessoa, f: Fontes, hoje: string): Participacao {
 /** Self-check: node --experimental-strip-types src/lib/v2/participacao.ts */
 if (typeof process !== "undefined" && process.argv[1]?.endsWith("participacao.ts")) {
   const p = { id: "ana", dadosConfirmadosEm: "2026-10-01", whatsappVerificado: true } as Pessoa;
-  const t = (o: Partial<Tarefa>): Tarefa => ({ id: Math.random().toString(), file: "", title: "", status: "todo", statusRaw: "", prazo: "", priority: "", equipe: "", area: "", projeto: "", objetivo: "", responsaveis: ["ana"], responsible: "", checklist: { feitos: 0, total: 0 }, anexos: 0, recorrencia: "", atualizadoEm: "", concluidoEm: "", ...o });
+  const t = (o: Partial<Tarefa>): Tarefa => ({ id: Math.random().toString(), file: "", title: "", status: "todo", statusRaw: "", prazo: "", priority: "", equipe: "", area: "", projeto: "", objetivo: "", responsaveis: ["ana"], responsible: "", checklist: { feitos: 0, total: 0 }, anexos: 0, recorrencia: "", atualizadoEm: "", concluidoEm: "", pedidoPor: "", pedidoRecusado: "", criadoEm: "", ...o });
   const hoje = "2027-01-20";
   const vazio = participacao(p, { tarefas: [], acoes: [], ultimoUso: "", diagnostico: 0 }, hoje);
   console.assert(vazio.nivel === "sem" && vazio.total == null, "sem dados", vazio);
