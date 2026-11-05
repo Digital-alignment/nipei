@@ -7,7 +7,8 @@ import Aviso from "@/components/ds/Aviso";
 import LinhaDoTempo from "@/components/ds/padroes/LinhaDoTempo";
 import { getEquipes, getPessoas } from "@/lib/v2/data";
 import { alertasEnviados, alertasLigados } from "@/lib/v2/alertas";
-import { alertasAction, operacaoAction } from "../acoes";
+import { NOTAS_ANTIGAS, notasAntigasLigadas } from "@/lib/hermesRAG";
+import { alertasAction, notasAntigasAction, operacaoAction } from "../acoes";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import type { ModuloProps } from "./index";
 
@@ -36,6 +37,10 @@ export default function Operacao({ q }: ModuloProps) {
       <ToastAoAbrir texto={q.ok} />
 
       <section className="grid gap-3">
+        <ListaConfiguracoes titulo="IA">
+          <InterruptorAcao acao={notasAntigasAction} valorLigado="ligar" valorDesligado="desligar" ligado={notasAntigasLigadas()} rotulo="Notas antigas na IA"
+            descricao={`Desligado: o assistente, os apps de IA (MCP), a IA das tarefas, o diagnóstico e as rotas antigas respondem só com a base confirmada do Conhecimento. Ligado: também leem as notas não revisadas do vault (${NOTAS_ANTIGAS.join(", ")}). Nada é apagado; dá para voltar a qualquer momento.`} />
+        </ListaConfiguracoes>
         <ListaConfiguracoes titulo="Alertas">
           <InterruptorAcao acao={alertasAction} valorLigado="ligar" valorDesligado="desligar" ligado={ligados} rotulo="Alertas no seu WhatsApp"
             descricao="A cada 10 minutos a Saúde é verificada; quando algo fica vermelho, ou volta ao normal, chega uma mensagem (sem repetir). Se o próprio WhatsApp do Nipëi cair, o aviso não sai — o painel continua mostrando." />

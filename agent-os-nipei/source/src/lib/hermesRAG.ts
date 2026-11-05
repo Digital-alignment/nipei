@@ -38,40 +38,20 @@ ${NIPEI_STRICT_DOMAIN_RULE}
 `;
 
 
-// People notes still carry the old v1 model (squad_assignments, company_assignments, global_role).
-// For the AI they are described from the CURRENT fields only: teams, coordination, role, access, plus
-// the note's change history. Equipe names come from Equipes/.
-function nomesEquipes(vaultRoot: string): Record<string, string> {
-  const dir = path.join(vaultRoot, "Equipes");
-  if (!fs.existsSync(dir)) return {};
-  return Object.fromEntries(fs.readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => {
-    const t = fs.readFileSync(path.join(dir, f), "utf-8");
-    return [t.match(/^id:\s*"?([^"\r\n]+)"?/m)?.[1] ?? f.slice(0, -3), t.match(/^nome:\s*"?([^"\r\n]+)"?/m)?.[1] ?? f.slice(0, -3)];
-  }));
-}
-
-export function resumoPessoa(content: string, equipes: Record<string, string>): string {
-  const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "";
-  const um = (k: string) => fm.match(new RegExp(`^${k}:[ \\t]*"?([^"\\r\\n]*)"?`, "m"))?.[1].trim() ?? "";
-  const lista = (k: string) => (fm.match(new RegExp(`^${k}:[ \\t]*\\[([^\\]]*)\\]`, "m"))?.[1] ?? "").split(",").map((x) => x.trim().replace(/^"|"$/g, "")).filter(Boolean);
-  const nome = um("name");
-  const eqs = lista("equipes").map((e) => equipes[e] ?? e);
-  const coord = lista("coordena").map((e) => equipes[e] ?? e);
-  const historico = content.match(/## Atividade\r?\n([\s\S]*?)(?=\r?\n## |$)/)?.[1].split(/\r?\n/).filter((l) => l.startsWith("- ")).slice(0, 5).join(" ") ?? "";
-  return [
-    `Pessoa: ${nome}${um("apelido") ? ` (${um("apelido")})` : ""}${um("native_name") ? ` — ${um("native_name")}` : ""}.`,
-    um("tipo_contato") === "externo" ? "Contato externo (não é de nenhuma equipe)." : `Equipes atuais: ${eqs.join(", ") || "nenhuma ainda"}.`,
-    coord.length ? `Coordena: ${coord.join(", ")}.` : "",
-    um("funcao") ? `Função: ${um("funcao")}.` : "",
-    um("area") ? `Área: ${um("area")}.` : "",
-    /^acesso_suspenso:\s*true/m.test(fm) ? "Acesso à plataforma suspenso no momento." : "",
-    historico ? `Mudanças recentes: ${historico}` : "",
-  ].filter(Boolean).join(" ");
+// "Notas antigas na IA" (/controle → Operação). Off since 2026-11-04, when the base was fully reviewed:
+// every AI (assistant, MCP, task AI, diagnosis, v1 routes) answers from confirmed facts only. Stored in
+// <vault>/.jobs/admin/config.json (same file as the alerts switch); missing = off.
+export const NOTAS_ANTIGAS = ["Master_Sources", "Ingested_Knowledge", "Squads", "Conhecimento_Geral", "Clientes"];
+const configAdmin = () => path.join(defaultVault() ?? "", ".jobs", "admin", "config.json");
+const lerConfigAdmin = (): Record<string, unknown> => { try { return JSON.parse(fs.readFileSync(configAdmin(), "utf-8")); } catch { return {}; } };
+export const notasAntigasLigadas = () => lerConfigAdmin().notasAntigas === true;
+export function ligarNotasAntigas(on: boolean) {
+  fs.mkdirSync(path.dirname(configAdmin()), { recursive: true });
+  fs.writeFileSync(configAdmin(), JSON.stringify({ ...lerConfigAdmin(), notasAntigas: on }), { mode: 0o600 });
 }
 
 /**
- * Searches nipei-vault for notes relevant to the user query.
- * Scans Master_Sources, Ingested_Knowledge, Squads, Omi, and Generated_Content.
+ * Searches nipei-vault for notes relevant to the user query (only with the switch on), plus confirmed facts.
  */
 export function queryVaultGrounding(
   userQuery: string,
@@ -97,22 +77,11 @@ export function queryVaultGrounding(
     .split(/[^a-z0-9]/)
     .filter((t) => t.length > 2);
 
-  // Strictly limited to Nipëi Vault directories (Domain Isolation)
-  const searchDirs = [
-    path.join(vaultRoot, "Master_Sources"),
-    path.join(vaultRoot, "Ingested_Knowledge"),
-    path.join(vaultRoot, "Squads"),
-    path.join(vaultRoot, "Conhecimento_Geral"),
-    path.join(vaultRoot, "Clientes"),
-    path.join(vaultRoot, "Miembros"),
-    path.join(vaultRoot, "Nipei OS"),
-    path.join(vaultRoot, "Productivity"),
-    path.join(vaultRoot, "Omi"),
-    path.join(vaultRoot, "Generated_Content"),
-  ];
+  // Old vault notes (not reviewed) only while the panel switch is on; off = confirmed facts only (merged below).
+  // Live data (people, tasks, app docs) has its own tools and was only noise here, so it's out either way.
+  const searchDirs = notasAntigasLigadas() ? NOTAS_ANTIGAS.map((d) => path.join(vaultRoot, d)) : [];
 
   const citations: VaultCitation[] = [];
-  const equipesNomes = nomesEquipes(vaultRoot);
 
   for (const dir of searchDirs) {
     if (!fs.existsSync(dir)) continue;
@@ -125,9 +94,7 @@ export function queryVaultGrounding(
           readFilesRecursively(fullPath);
         } else if (item.isFile() && item.name.endsWith(".md")) {
           try {
-            const bruto = fs.readFileSync(fullPath, "utf-8");
-            const ehPessoa = path.basename(path.dirname(fullPath)) === "Miembros";
-            const content = ehPessoa ? resumoPessoa(bruto, equipesNomes) : bruto;
+            const content = fs.readFileSync(fullPath, "utf-8");
             const lowerContent = content.toLowerCase();
 
             let matches = 0;
@@ -137,14 +104,14 @@ export function queryVaultGrounding(
 
             if (matches > 0) {
               const relevanceScore = Math.min(1.0, matches / Math.max(1, queryTerms.length));
-              const titleMatch = bruto.match(/title:\s*"([^"]+)"/) || bruto.match(/#\s*(.+)/);
+              const titleMatch = content.match(/title:\s*"([^"]+)"/) || content.match(/#\s*(.+)/);
               const title = titleMatch ? titleMatch[1].trim() : item.name;
               const sha256 = crypto.createHash("sha256").update(content).digest("hex");
               const relativePath = path.relative(vaultRoot, fullPath).replace(/\\/g, "/");
 
               // Extract snippet
               const lines = content.split("\n").filter((l) => !l.startsWith("---") && l.trim().length > 0);
-              const snippet = ehPessoa ? content.slice(0, 400) : lines.slice(0, 4).join(" ").slice(0, 200);
+              const snippet = lines.slice(0, 4).join(" ").slice(0, 200);
 
               citations.push({
                 path: relativePath,

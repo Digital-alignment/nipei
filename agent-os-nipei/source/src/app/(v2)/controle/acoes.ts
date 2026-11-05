@@ -83,6 +83,15 @@ export async function alertasAction(form: FormData) {
   voltarOp(o === "ligar" ? "Alertas ligados." : "Alertas desligados.");
 }
 
+export async function notasAntigasAction(form: FormData) {
+  const me = await confirmado();
+  const { ligarNotasAntigas } = await import("@/lib/hermesRAG");
+  const on = String(form.get("o")) === "ligar";
+  ligarNotasAntigas(on);
+  registrarAdmin(me.pessoa!.id, `notas antigas na IA ${on ? "ligadas" : "desligadas"}`);
+  voltarOp(on ? "Notas antigas voltaram para a IA." : "A IA agora usa só a base confirmada.");
+}
+
 export async function operacaoAction(form: FormData) {
   const me = await confirmado();
   const o = String(form.get("o"));
