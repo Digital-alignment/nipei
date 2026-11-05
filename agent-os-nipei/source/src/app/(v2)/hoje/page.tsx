@@ -14,7 +14,7 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, pulso } from "@/lib/v2/hoje";
-import { can, currentUser, esperandoPor, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, reconectarEm, reconectarPor, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, esperandoPor, getEquipes, getEventos, getPessoas, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
@@ -26,9 +26,11 @@ import Campo from "@/components/ds/Campo";
 import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { createTarefaAction, focoAction } from "../actions";
+import { createTarefaAction, focoAction, presencaAction } from "../actions";
 import Chip from "@/components/ds/Chip";
 import { pedidosNovos } from "@/lib/v2/pedidos";
+import { diaSemana, getPresenca, segunda } from "@/lib/v2/rotinas";
+import SemanaPresenca from "@/components/v2/SemanaPresenca";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Cartao from "@/components/ds/Cartao";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
@@ -169,7 +171,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} />;
   };
   const doDia = diaSel ? ordenarAgora(minhas.filter((x) => x.prazo === diaSel), ctx) : null;
-  const eventosDoDia = diaSel ? getEventos().filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)) : [];
+  const eventosDoDia = diaSel ? [...getEventos(), ...reunioesFixas(diaSel, diaSel)].filter((e) => e.inicio === diaSel || (!!e.fim && e.inicio <= diaSel && diaSel <= e.fim)) : [];
   // eventos da Agenda Google: abrem no Google (ícone "abrir fora"), para não confundir com os da comunidade
   const chipGoogle = (e: EventoGoogle) => <Chip key={`g${e.id}`} href={e.link} icone="abrir-fora">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>;
   const googleDoDia = diaSel ? googleEvs.filter((e) => e.dia === diaSel) : [];
@@ -202,9 +204,9 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </h1>
         {(eventosHoje.length > 0 || googleEvs.some((e) => e.dia === hoje) || proximos.length > 0 || pilulas.length > 0 || comPulso) && (
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
-            {eventosHoje.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
+            {eventosHoje.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
             {googleEvs.filter((e) => e.dia === hoje).map(chipGoogle)}
-            {proximos.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>)}
+            {proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>)}
             {pilulas.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)}
             {comPulso && <Chip href="/pulso" icone="atencao">{p!.atrasadas} {t.atrasadasLbl} · {p!.semDono} {t.semDonoLbl}</Chip>}
           </div>
@@ -266,6 +268,23 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </Cartao>
       )}
 
+      {me && !me.contato && me.equipes.length > 0 && (() => {
+        // DS 10.18: where I am this week (tap a day to cycle); empty week → "same as last week"
+        const seg = segunda(hoje), minha = getPresenca(seg)[me.id], passada = getPresenca(segunda(dia(-7)))[me.id];
+        const dias = minha ?? Array(7).fill(""), noSant = dias.filter((x) => x === "s").length;
+        return (
+          <Cartao className="mb-4">
+            <SecaoRecolhivel id="hoje-semana" emCartao aberto={false} titulo={t.rot.ondeEstou} contagem={noSant ? `${noSant} ${t.rot.diasNoSantuario}` : undefined}>
+              <SemanaPresenca pessoa={me.id} dias={dias} hojeIdx={diaSemana(hoje) - 1} t={t} editar />
+              {!minha && passada?.some(Boolean) && (
+                <form action={presencaAction}><input type="hidden" name="pessoa" value={me.id} /><input type="hidden" name="copiar" value="1" />
+                  <BotaoEnviar enviando="…" icone="gerar-outra" variante="tonal" tamanho="P">{t.rot.igualPassada}</BotaoEnviar></form>
+              )}
+            </SecaoRecolhivel>
+          </Cartao>
+        );
+      })()}
+
       {mostrarOrg && org && (
         <Cartao className="mb-4">
           <SecaoRecolhivel id="hoje-organizar" emCartao contagem={`${org.pct}%`}
@@ -322,7 +341,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           </div>
           {(eventosDoDia.length > 0 || googleDoDia.length > 0) && (
             <div className="flex flex-wrap gap-2">
-              {eventosDoDia.map((e) => <Chip key={e.id} href={`/eventos/${e.id}`} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
+              {eventosDoDia.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
               {googleDoDia.map(chipGoogle)}
             </div>
           )}

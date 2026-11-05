@@ -492,6 +492,15 @@ Quem não sabe a quem pedir, pede à equipe.
 ### 10.15 Saúde da equipe (cartão de `/equipes`)
 Abaixo da barra "% em dia": `Sparkline` (10.8) das últimas 8 semanas com o % de tarefas concluídas no prazo em cada semana + texto `meta` "No prazo · 8 semanas" e a tendência **sempre em texto** ("melhorando", "estável", "caindo"; caindo em `text-warn`). Menos de 2 semanas com dados → só "Sem histórico ainda".
 
+### 10.16 Reunião fixa da equipe
+Na aba Configuração da equipe, Cartão "Reunião fixa": Campo seleção do dia da semana (ou "Sem reunião fixa") + Campo hora + Primário "Salvar". A reunião aparece na Agenda como evento da equipe (mesma tinta da equipe, 10.6) que abre a pauta ao vivo (`/equipes/[id]/reuniao`), e em Hoje como Chip de evento (ícone `calendario`, hora em negrito) para membros e coordenação.
+
+### 10.17 Procedimentos da equipe
+Aba **Procedimentos** da equipe: lista de Cartões — título (`titulo-cartao`) · quando roda em `meta` ("Toda segunda", "1 dia antes de eventos com 'retiro'", "Manual") · nº de passos · responsável (Avatar 24) · ações "Gerar agora" (tonal, ícone `tarefa`) e "Editar" (fantasma, ícone `editar`). Coordenação/gestão vê "+ Novo procedimento". Página de edição: Campo título, Campo seleção "Quando" (Manual / Toda semana / Antes ou depois de um evento), campos do gatilho (dia; dias antes, negativo = depois; palavra no título do evento), Campo seleção responsável (opcional), Campo área "Passos" (um por linha), Primário "Salvar" e "Arquivar" (fantasma). Cada vez que roda vira uma tarefa da equipe com o checklist; nunca duas vezes para o mesmo dia/evento. Sem procedimentos: Estado vazio com "Novo procedimento".
+
+### 10.18 Onde estou esta semana (presença)
+Linha de 7 dias (segunda → domingo) em pílulas de 44 px: inicial do dia em cima, estado embaixo; tocar cicla **—** → **Santuário** (acento suave + ícone `inicio`) → **Remoto** (tonal + ícone `mensagem`) → **Fora** (hachurado + ícone `fechar`). No celular só o ícone (o nome do estado fica no rótulo acessível); o texto aparece a partir de `sm`. Hoje = anel de acento. Em Hoje fica num Cartão recolhível "Onde estou esta semana" (9.12 em cartão; o resumo fechado mostra quantos dias no Santuário) com "Igual à semana passada" (tonal) quando a semana está vazia. Na equipe (aba Membros, topo): faixa da semana (10.5) com, por dia, os Avatares 24 de quem está no Santuário (+N) e a contagem de remotos; a coordenação abre "Marcar a semana" (`/equipes/[id]/semana`) com uma linha por membro.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

@@ -787,3 +787,7 @@ Plano Equipes, fase 1 (aprovado por Ashuan): ficha de contato, cartão de contat
 ## 2026-11-05 — Sobre a equipe, Pedidos e Saúde da equipe (§10.13–10.15)
 
 Plano Equipes, fase 2 (aprovado por Ashuan). Só componentes existentes (Cartão, Campo, Linha de tarefa, BadgeEstado, Sparkline). Um pedido é uma tarefa da equipe sem responsável marcada como pedido: reaproveita atribuir, avisos e a ficha da tarefa. "Recusado" usa o estado tonal (não vermelho): recusar não é erro.
+
+## 2026-11-05 — Reunião fixa, Procedimentos e Presença (§10.16–10.18)
+
+Plano Equipes, fase 3 (aprovado por Ashuan). A reunião fixa e os procedimentos reaproveitam evento, tarefa e checklist; a presença é uma linha de pílulas que cicla ao toque (um controle só, sem formulário) e usa o hachurado para "fora", como o resto do sistema usa para o que não está acontecendo.

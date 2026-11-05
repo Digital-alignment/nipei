@@ -1,4 +1,4 @@
-import { getEquipes, getEventos, getPessoas, getTarefas, today, type Evento, type Me } from "./data";
+import { getEquipes, getEventos, getPessoas, getTarefas, reunioesFixas, today, type Evento, type Me } from "./data";
 
 // Hoje: today's agenda strip and the team pulse (gestão).
 
@@ -8,7 +8,7 @@ export function agendaDoDia(me: Me): { hoje: Evento[]; proximos: Evento[] } {
   const em = (n: number) => new Date(Date.parse(`${hoje}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
   const dias = (e: Evento) => e.inicio.length === 10;
   const relevante = (e: Evento) => me.gestao || !e.equipe || me.equipes.includes(e.equipe);
-  const eventos = getEventos().filter((e) => dias(e) && relevante(e));
+  const eventos = [...getEventos(), ...reunioesFixas(hoje, em(3))].filter((e) => dias(e) && relevante(e)); // + fixed team meetings (DS 10.16)
   const dentro = (e: Evento, d: string) => e.inicio === d || (!!e.fim && e.inicio <= d && d <= e.fim);
   const porHora = (a: Evento, b: Evento) => (a.hora || "99").localeCompare(b.hora || "99");
   return {

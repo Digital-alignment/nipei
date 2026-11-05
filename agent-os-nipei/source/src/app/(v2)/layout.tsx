@@ -1,3 +1,4 @@
+import { lembreteReuniao, rodarProcedimentos } from "@/lib/v2/rotinas";
 import Link from "next/link";
 import { Suspense } from "react";
 import ErroAviso from "@/components/v2/ErroAviso";
@@ -41,6 +42,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   void esvaziarFilaPropostas(); // confirmed facts waiting for proposals: sent once 30 min old (lib/v2/propostas.ts)
   vigiarSaude(); // health alerts on the admins' WhatsApp (background, at most every 10 min)
   lembreteRevisao(); // weekly WhatsApp to whoever has facts to review (lib/v2/lembreteRevisao.ts)
+  void rodarProcedimentos(); void lembreteReuniao(); // team routines (lib/v2/rotinas.ts): procedures → tasks, fixed-meeting reminder; production only
   const { t, lang } = await getT();
   const name = user.pessoa?.name ?? user.username;
   const menuFechado = (await cookies()).get("nipei_menu")?.value !== "aberto"; // recolhido por padrão; set by components/v2/Nav.tsx

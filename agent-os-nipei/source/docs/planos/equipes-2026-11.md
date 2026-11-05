@@ -1,6 +1,6 @@
 # Plano — Equipes e Pontes (novembro 2026)
 
-Aprovado por: Ashuan (05/11/2026) · Fase 1: em produção (v2.67.0) · Fase 2: em produção (v2.68.0) · Rotas a partir de `agent-os-nipei/source/`.
+Aprovado por: Ashuan (05/11/2026) · Fase 1: em produção (v2.67.0) · Fase 2: em produção (v2.68.0) · Fase 3: em produção (v2.69.0) · Rotas a partir de `agent-os-nipei/source/`.
 
 ## Regras que valem para todas as fases
 

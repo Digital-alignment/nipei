@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Reunião fixa, Procedimentos e Presença (10.16–10.18)
+
+- Configuração da equipe: cartão "Reunião fixa" (dia + hora); a reunião aparece na Agenda e em Hoje com a tinta da equipe e abre a pauta ao vivo.
+- Equipe: aba **Procedimentos** (cartões com quando roda, passos, "Gerar agora", "Editar"; estado vazio), página de edição; faixa "Esta semana" na aba Membros e página "Marcar a semana".
+- Novo componente de tela `SemanaPresenca` (7 pílulas que ciclam ao toque; no celular só o ícone). Hoje: cartão recolhível "Onde estou esta semana".
+
 ## 2026-11-05 — Sobre a equipe, Pedidos e Saúde (10.13–10.15)
 
 - Equipe: aba **Sobre** (4 cartões; estado vazio com "Escrever"), aba **Pedidos** (linha com BadgeEstado, atribuir, recusar com motivo na linha), ícone "Pedir algo" no cabeçalho. Páginas `/equipes/[id]/sobre`, `/pedidos`, `/pedidos/novo` (toast "Pedido enviado").

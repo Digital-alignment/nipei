@@ -18,7 +18,7 @@ import MenuAcoes from "@/components/ds/MenuAcoes";
 import { GrupoTarefas } from "@/components/ds/padroes/LinhaTarefa";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import { signToken } from "@/lib/auth";
-import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, novidadesPara, today, type Evento, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getEventos, getPessoas, getTarefas, linkEvento, novidadesPara, reunioesFixas, today, type Evento, type Tarefa } from "@/lib/v2/data";
 import { ordenarAgora, type Selo as SeloOrdem } from "@/lib/v2/ordem";
 import { fmtDate, getT, type Lang } from "@/lib/v2/i18n";
 import { loteAction } from "../actions";
@@ -75,7 +75,8 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const abertas = getTarefas().filter((x) => x.status !== "done" && visivel(x));
   const comPrazo = abertas.filter((x) => x.prazo);
   const semPrazo = abertas.filter((x) => !x.prazo);
-  const eventos = getEventos().filter((e) => quem === "todas" ? !equipe || e.equipe === equipe : !e.equipe || user.equipes.includes(e.equipe) || user.gestao);
+  // fixed team meetings (DS 10.16) are computed, not stored: a window around today is enough for every view
+  const eventos = [...getEventos(), ...reunioesFixas(new Date(Date.parse(`${hoje}T12:00:00Z`) + (-62) * 86_400_000).toISOString().slice(0, 10), new Date(Date.parse(`${hoje}T12:00:00Z`) + (120) * 86_400_000).toISOString().slice(0, 10))].filter((e) => quem === "todas" ? !equipe || e.equipe === equipe : !e.equipe || user.equipes.includes(e.equipe) || user.gestao);
 
   const ctx = { hoje, comNovidade: new Set(novidadesPara(user, 3, 50).map((n) => n.tarefaId)) };
   const rotSelo: Record<SeloOrdem, string> = { urgente: t.seloUrgente, andamento: t.seloAndamento, novidade: t.seloNovidade, quasePronta: t.seloQuasePronta, parada: t.seloParada };
@@ -186,7 +187,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
           <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
             {semDia.map((e) => (
               <li key={e.id}>
-                <Link href={`/eventos/${encodeURIComponent(e.id)}`} title={t.definirData} className="anel-foco flex min-h-11 items-center gap-2.5 rounded-[14px] px-3 font-texto text-[15px] text-t1 hover:underline" style={tinta(e.equipe)}>
+                <Link href={linkEvento(e)} title={t.definirData} className="anel-foco flex min-h-11 items-center gap-2.5 rounded-[14px] px-3 font-texto text-[15px] text-t1 hover:underline" style={tinta(e.equipe)}>
                   <span className="meta w-16 shrink-0 tabular-nums text-t2">{e.inicio.length === 7 ? fmtDate(e.inicio, lang) : e.inicio}</span>
                   <span className="truncate">{e.titulo}</span>
                 </Link>
@@ -278,7 +279,7 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
   const { hoje, comPrazo, eventos, gevs, t, lang, link } = c;
   const evs = eventos.filter((e) => noDia(e, d));
   const comHora = [
-    ...evs.filter((e) => e.hora).map((e) => ({ id: e.id, titulo: e.titulo, ini: minutos(e.hora), fim: minutos(e.hora) + 60, equipe: e.equipe, href: `/eventos/${encodeURIComponent(e.id)}`, google: false, aConfirmar: e.status !== "confirmado" })),
+    ...evs.filter((e) => e.hora).map((e) => ({ id: e.id, titulo: e.titulo, ini: minutos(e.hora), fim: minutos(e.hora) + 60, equipe: e.equipe, href: linkEvento(e), google: false, aConfirmar: e.status !== "confirmado" })),
     ...gevs.filter((e) => e.dia === d && e.hora).map((e) => ({ id: e.id, titulo: e.titulo, ini: minutos(e.hora), fim: /^\d{2}:\d{2}$/.test(e.fim) ? Math.max(minutos(e.hora) + 30, minutos(e.fim)) : minutos(e.hora) + 60, equipe: "", href: e.link, google: true, aConfirmar: false })),
   ].sort((a, b) => a.ini - b.ini);
   const semHora = evs.filter((e) => !e.hora);
@@ -305,7 +306,7 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
             <p className="rotulo-maiusculo text-t3">{t.diaInteiro}</p>
             <ul className="flex flex-wrap gap-2">
               {semHora.map((e) => (
-                <li key={e.id}><Link href={`/eventos/${encodeURIComponent(e.id)}`} className="anel-foco relative inline-flex min-h-9 items-center gap-2 overflow-hidden rounded-interno py-1 pl-3.5 pr-3.5 font-texto text-sm font-medium text-t1 hover:underline" style={tinta(e.equipe)}>
+                <li key={e.id}><Link href={linkEvento(e)} className="anel-foco relative inline-flex min-h-9 items-center gap-2 overflow-hidden rounded-interno py-1 pl-3.5 pr-3.5 font-texto text-sm font-medium text-t1 hover:underline" style={tinta(e.equipe)}>
                   <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: corEquipe(e.equipe) }} />{e.titulo}
                 </Link></li>
               ))}
@@ -385,7 +386,7 @@ function Dia({ d, hoje, comPrazo, eventos, gevs, linhas, t, lang, podeEvento, va
         <ul className="mb-2 grid gap-1.5">
           {evs.map((e) => (
             <li key={e.id}>
-              <Link href={`/eventos/${encodeURIComponent(e.id)}`} className={`anel-foco relative flex min-h-12 items-center gap-3 overflow-hidden rounded-[14px] py-2 pl-4 pr-3 hover:brightness-110 ${e.status !== "confirmado" ? "hachurado" : ""}`} style={tinta(e.equipe)}>
+              <Link href={linkEvento(e)} className={`anel-foco relative flex min-h-12 items-center gap-3 overflow-hidden rounded-[14px] py-2 pl-4 pr-3 hover:brightness-110 ${e.status !== "confirmado" ? "hachurado" : ""}`} style={tinta(e.equipe)}>
                 <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: corEquipe(e.equipe) }} />
                 <span className="meta w-11 shrink-0 tabular-nums text-t2">{e.hora || "—"}</span>
                 <span className="min-w-0 flex-1 truncate font-texto text-[15px] font-semibold text-t1">{e.titulo}</span>

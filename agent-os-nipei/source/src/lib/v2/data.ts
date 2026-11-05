@@ -20,6 +20,7 @@ export type Equipe = {
   gestao: boolean; // members of this team manage everything (full session, v1 included)
   avisos: boolean; // members get WhatsApp notices (scripts/avisos on the VPS)
   contatos: boolean; // Pontes: outside contacts (suppliers, possible allies). Never log in, never own tasks.
+  reuniao: { dia: number; hora: string }; // DS 10.16: fixed weekly meeting (dia 1 = Monday … 7 = Sunday, 0 = none)
   sobre: SobreEquipe; // "Sobre a equipe": sections of the team note body (DS 10.13); the assistant routes questions with it
 };
 export const SOBRE_SECOES = [["proposito", "Propósito"], ["decide", "O que decide"], ["naoFaz", "O que não faz"], ["comoPedir", "Como pedir"]] as const;
@@ -27,7 +28,9 @@ export type SobreEquipe = Record<(typeof SOBRE_SECOES)[number][0], string>;
 const secaoNota = (body: string, titulo: string) => (body.match(new RegExp(`(?:^|\\n)## ${titulo}\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`))?.[1] ?? "").trim();
 export type Projeto = { id: string; nome: string; equipes: string[]; descricao: string; atualizacoes: string[] };
 export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
-export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string; hora: string };
+export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string; hora: string; href?: string };
+/** Where an event opens: its page, or (fixed team meeting) the live agenda. */
+export const linkEvento = (e: Evento) => e.href ?? `/eventos/${encodeURIComponent(e.id)}`;
 export type Pessoa = {
   id: string; nipeiId: string; name: string; nativeName: string; equipes: string[]; coordena: string[]; usuario: string;
   whatsapp: string; email: string; area: string; funcao: string; disponibilidade: string; incompleta: boolean; cadastroEm: string;
@@ -100,6 +103,7 @@ export function getEquipes(): Equipe[] {
     .map(({ fm, body }) => ({
       id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), temas: arr(fm.temas), coordenadores: arr(fm.coordenadores),
       membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true, avisos: fm.avisos === true, contatos: fm.contatos === true,
+      reuniao: { dia: Math.min(7, Math.max(0, Number(fm.reuniao_dia) || 0)), hora: /^\d{2}:\d{2}$/.test(s(fm.reuniao_hora)) ? s(fm.reuniao_hora) : "" },
       sobre: Object.fromEntries(SOBRE_SECOES.map(([k, titulo]) => [k, secaoNota(body, titulo)])) as SobreEquipe,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -463,6 +467,25 @@ export function setFuncao(pessoaId: string, funcao: string, quem = "") {
   const nova = funcao.trim().slice(0, 80);
   updateNote(n.file, { funcao: nova });
   if (quem) registrarPessoa(n.file, quem, `função: ${nova || "(vazia)"}`);
+}
+
+// ---------------------------------------------------------------- Reunião fixa (DS 10.16)
+
+export function setReuniaoFixa(equipeId: string, dia: number, hora: string) {
+  const note = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
+  if (!note) throw new Error("Equipe não encontrada");
+  updateNote(note.file, { reuniao_dia: dia, reuniao_hora: dia ? hora : "" });
+}
+
+/** The fixed weekly meetings between two days (inclusive) as agenda events (not stored: computed from the team note). */
+export function reunioesFixas(de: string, ate: string, equipes = getEquipes()): Evento[] {
+  const out: Evento[] = [];
+  for (let t = Date.parse(`${de}T12:00:00Z`); t <= Date.parse(`${ate}T12:00:00Z`); t += 86_400_000) {
+    const d = new Date(t), dia = ((d.getUTCDay() + 6) % 7) + 1, iso = d.toISOString().slice(0, 10);
+    for (const e of equipes) if (e.reuniao.dia === dia && !e.contatos)
+      out.push({ id: `reuniao-${e.id}-${iso}`, file: "", titulo: `Reunião ${e.nome}`, inicio: iso, fim: "", status: "confirmado", equipe: e.id, hora: e.reuniao.hora, href: `/equipes/${e.id}/reuniao` });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- Sobre a equipe / pedidos (DS 10.13–10.14)

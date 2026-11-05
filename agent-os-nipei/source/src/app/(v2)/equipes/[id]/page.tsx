@@ -19,6 +19,7 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import ContatosEquipe from "@/components/v2/ContatosEquipe";
 import { BadgeEstado } from "@/components/ds/Chip";
 import { pedidosNovos } from "@/lib/v2/pedidos";
+import { diaSemana, getPresenca, getProcedimentos, segunda } from "@/lib/v2/rotinas";
 import { SOBRE_SECOES } from "@/lib/v2/data";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
@@ -27,7 +28,7 @@ import { can, currentUser, getAcessos, getEquipes, getObjetivos, getPessoas, get
 import { numerosDe } from "@/lib/v2/pessoasInfo";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { atribuirAction, reatribuirAction, recusarPedidoAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
+import { atribuirAction, reatribuirAction, gerarProcedimentoAction, recusarPedidoAction, reuniaoFixaAction, setEquipeAcessoAction, setEquipeAvisosAction } from "../../actions";
 
 
 export default async function EquipeDetalhe({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ area?: string; pessoa?: string; q?: string; tipo?: string; aba?: string }> }) {
@@ -154,8 +155,33 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       )}
     </Cartao>
   );
+  // DS 10.18: who is at the Sanctuary each day this week (members + coordination)
+  const semanaPres = getPresenca(segunda(hoje)), hojeIdx = diaSemana(hoje) - 1;
+  const daEq = [...new Set([...e.membros, ...e.coordenadores])].map((pid) => pessoas.find((p) => p.id === pid)).filter((p): p is Pessoa => !!p);
+  const faixaSemana = (
+    <Cartao className="mb-3 mt-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="rotulo-maiusculo text-t3">{t.rot.estaSemana}</p>
+        {gerir && <Botao href={`/equipes/${id}/semana`} variante="fantasma" tamanho="P" icone="calendario">{t.rot.marcarSemana}</Botao>}
+      </div>
+      <ul className="grid grid-cols-7 gap-1.5">
+        {t.rot.diasCurtos.map((d, i) => {
+          const no = daEq.filter((p) => semanaPres[p.id]?.[i] === "s"), rem = daEq.filter((p) => semanaPres[p.id]?.[i] === "r").length;
+          return (
+            <li key={d} className={`flex min-h-24 flex-col items-center gap-1 rounded-interno bg-s2 px-0.5 py-1.5 ${i === hojeIdx ? "ring-2 ring-ac" : ""}`}>
+              <span className="text-xs font-semibold text-t2">{d}</span>
+              <span className="flex flex-col items-center -space-y-1.5">{no.slice(0, 3).map((p) => <span key={p.id} className="rounded-pilula ring-2 ring-s2"><AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={24} /></span>)}</span>
+              {no.length > 3 && <span className="text-xs text-t2">+{no.length - 3}</span>}
+              {rem > 0 && <span className="inline-flex items-center gap-0.5 text-xs text-t3" title={`${rem} ${t.rot.remotos}`}><Icone nome="mensagem" tamanho={12} />{rem}<span className="sr-only"> {t.rot.remotos}</span></span>}
+            </li>
+          );
+        })}
+      </ul>
+    </Cartao>
+  );
   const pessoasAba = (
     <>
+    {faixaSemana}
     {equilibrio}
     <ul className="mt-3 grid gap-2">
       {gente.map(({ p, n, coord, fora }) => {
@@ -220,6 +246,21 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   );
   const config = (
     <div className="mt-3">
+      {gerir && (
+        <Cartao className="mb-3">
+          <p className="rotulo-maiusculo text-t3">{t.rot.reuniaoFixa}</p>
+          <p className="meta text-t2">{t.rot.reuniaoFixaAjuda}</p>
+          <form action={reuniaoFixaAction} className="grid gap-2 sm:grid-cols-[1fr_10rem_auto] sm:items-center">
+            <input type="hidden" name="equipe" value={e.id} />
+            <Campo tipo="selecao" name="dia" rotulo={t.rot.dia} defaultValue={String(e.reuniao.dia)}>
+              <option value="0">{t.rot.semReuniao}</option>
+              {t.rot.dias.map((d, i) => <option key={d} value={i + 1}>{d}</option>)}
+            </Campo>
+            <Campo name="hora" type="time" rotulo={t.rot.hora} defaultValue={e.reuniao.hora} />
+            <BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.rot.salvar}</BotaoEnviar>
+          </form>
+        </Cartao>
+      )}
       <Cartao className="mb-3">
         <p className="rotulo-maiusculo text-t3 mb-2">{t.acessoPlataforma}</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -287,7 +328,40 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       )}
     </div>
   );
-  const abasIds = ["sobre", "tarefas", "pedidos", "pessoas", "objetivos", "sabemos", "config"];
+  // DS 10.17 Procedimentos
+  const procs = getProcedimentos().filter((x) => x.equipe === id && !x.arquivado);
+  const quandoRoda = (x: (typeof procs)[number]) => x.gatilho === "semanal" ? `${t.rot.toda} ${t.rot.dias[x.dia - 1].toLowerCase()}`
+    : x.gatilho === "evento" ? (x.antesDias === 0 ? t.rot.noDia : (x.antesDias > 0 ? t.rot.antes : t.rot.depois).replace("{n}", String(Math.abs(x.antesDias)))).replace("“{p}”", x.eventoContem ? `“${x.eventoContem}”` : t.rot.qualquer).replace("{p}", x.eventoContem || t.rot.qualquer)
+    : t.rot.manual;
+  const procedimentosAba = (
+    <div className="mt-3">
+      {gerir && procs.length > 0 && <div className="mb-3"><Botao href={`/equipes/${id}/procedimentos/novo`} variante="tonal" tamanho="P" icone="mais">{t.rot.novoProc}</Botao></div>}
+      {procs.length === 0 ? <EstadoVazio selo={chaveEquipe(e.id) ? EQUIPES_DS[chaveEquipe(e.id)!].selo : "broto"} titulo={t.rot.semProc} texto={t.rot.semProcAjuda}
+          acao={gerir ? <Botao href={`/equipes/${id}/procedimentos/novo`} variante="primario" tamanho="M" icone="mais">{t.rot.novoProc}</Botao> : undefined} /> : (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {procs.map((x) => {
+            const resp = pessoas.find((p) => p.id === x.responsavel);
+            return (
+              <li key={x.id}>
+                <Cartao className="h-full">
+                  <p className="titulo-cartao">{x.titulo}</p>
+                  <p className="meta text-t2">{quandoRoda(x)} · {x.passos.length} {t.rot.nPassos}</p>
+                  {resp && <span className="meta inline-flex items-center gap-1.5 text-t2"><AvatarDS nome={resp.name} tamanho={24} />{resp.name.split(" ")[0]}</span>}
+                  {gerir && (
+                    <div className="mt-auto flex flex-wrap gap-2">
+                      <form action={gerarProcedimentoAction}><input type="hidden" name="id" value={x.id} /><BotaoEnviar enviando="…" icone="tarefa" variante="tonal" tamanho="P">{t.rot.gerarAgora}</BotaoEnviar></form>
+                      <Botao href={`/equipes/${id}/procedimentos/${x.id}`} variante="fantasma" tamanho="P" icone="editar">{t.rot.editar}</Botao>
+                    </div>
+                  )}
+                </Cartao>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+  const abasIds = ["sobre", "tarefas", "pedidos", "procedimentos", "pessoas", "objetivos", "sabemos", "config"];
 
   const Num = ({ v, label, cor, href }: { v: number; label: string; cor?: string; href?: string }) => {
     const c = <><p className={`font-display text-2xl font-light leading-none tabular-nums md:text-3xl ${v ? cor ?? "text-t1" : "text-t1"}`}>{v}</p><p className="meta text-t2">{label}</p></>;
@@ -316,6 +390,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         { id: "sobre", rotulo: t.eq.sobre, contagem: 0, conteudo: sobreAba },
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
         ...(gerir ? [{ id: "pedidos", rotulo: t.eq.pedidos, contagem: novos.length, alerta: novos.length > 0, conteudo: pedidosAba }] : []),
+        { id: "procedimentos", rotulo: t.rot.procedimentos, contagem: procs.length, conteudo: procedimentosAba },
         { id: "pessoas", rotulo: t.membros, contagem: gente.length, conteudo: pessoasAba },
         { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
         { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?equipe=${e.id}#base`} /> },

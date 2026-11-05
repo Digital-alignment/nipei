@@ -229,6 +229,69 @@ export async function createPessoaAction(form: FormData) {
   redirect(getEquipes().find((e) => e.id === equipe)?.contatos ? `/pessoas/${id}/ponte` : `/pessoas/${id}`);
 }
 
+// ---------------------------------------------------------------- Reunião fixa (DS 10.16)
+export async function reuniaoFixaAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(form.get("equipe")));
+  if (!e || e.contatos || !can.gerirEquipe(me, e.id)) return;
+  const dia = Math.min(7, Math.max(0, Number(form.get("dia")) || 0)), hora = String(form.get("hora") ?? "");
+  const { setReuniaoFixa } = await import("@/lib/v2/data");
+  setReuniaoFixa(e.id, dia, /^\d{2}:\d{2}$/.test(hora) ? hora : "");
+  revalidatePath("/", "layout");
+}
+
+// ---------------------------------------------------------------- Procedimentos (DS 10.17) + presença (DS 10.18)
+export async function procedimentoAction(form: FormData) {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(form.get("equipe")));
+  if (!e || e.contatos || !can.gerirEquipe(me, e.id)) return;
+  const { GATILHOS, getProcedimentos, salvarProcedimento } = await import("@/lib/v2/rotinas");
+  const id = String(form.get("id") ?? "");
+  const antigo = id ? getProcedimentos().find((p) => p.id === id && p.equipe === e.id) : undefined;
+  if (id && !antigo) return;
+  const titulo = String(form.get("titulo") ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+  if (titulo.length < 3) return;
+  const gatilho = (pick(form.get("gatilho"), [...GATILHOS]) || "manual") as (typeof GATILHOS)[number];
+  const responsavel = pick(form.get("responsavel"), getPessoas().filter((p) => !p.contato && !p.externo).map((p) => p.id));
+  salvarProcedimento({
+    id: antigo?.id, titulo, equipe: e.id, gatilho, dia: Math.min(7, Math.max(1, Number(form.get("dia")) || 1)),
+    antesDias: Math.min(60, Math.max(-60, Math.round(Number(form.get("antes_dias")) || 0))), eventoContem: String(form.get("evento_contem") ?? "").trim().slice(0, 40),
+    responsavel, passos: String(form.get("passos") ?? "").split(/\r?\n/).map((x) => x.replace(/^[-*\s[\]x]+/i, "").trim()).filter(Boolean).slice(0, 30).map((x) => x.slice(0, 200)),
+    arquivado: form.get("arquivar") === "1",
+  });
+  revalidatePath("/", "layout");
+  redirect(`/equipes/${e.id}?aba=procedimentos`);
+}
+
+export async function gerarProcedimentoAction(form: FormData) {
+  const me = await requireUser();
+  const { getProcedimentos, gerarTarefa } = await import("@/lib/v2/rotinas");
+  const p = getProcedimentos().find((x) => x.id === String(form.get("id")));
+  if (!p || p.arquivado || !can.gerirEquipe(me, p.equipe)) return;
+  const id = gerarTarefa(createTarefa, p, today(), undefined, actorName(me));
+  revalidatePath("/", "layout");
+  redirect(`/tarefas/${id}`);
+}
+
+/** One tap on a day of "where I am this week": the person themselves, or the coordination for a member. */
+export async function presencaAction(form: FormData) {
+  const me = await requireUser();
+  const pessoa = getPessoas().find((x) => x.id === String(form.get("pessoa")));
+  if (!pessoa || pessoa.contato || !(me.pessoa?.id === pessoa.id || can.gerirPessoa(me, pessoa))) return;
+  const { getPresenca, proximoEstado, segunda, setPresenca } = await import("@/lib/v2/rotinas");
+  const semana = segunda(today());
+  const dias = getPresenca(semana)[pessoa.id] ?? Array(7).fill("");
+  if (form.get("copiar") === "1") {
+    const passada = getPresenca(segunda(new Date(Date.parse(`${semana}T12:00:00Z`) - 7 * 86_400_000).toISOString().slice(0, 10)))[pessoa.id];
+    if (passada) setPresenca(semana, pessoa.id, passada);
+  } else {
+    const i = Math.min(6, Math.max(0, Number(form.get("dia")) || 0));
+    dias[i] = proximoEstado(dias[i]);
+    setPresenca(semana, pessoa.id, dias);
+  }
+  revalidatePath("/", "layout");
+}
+
 // ---------------------------------------------------------------- Sobre a equipe + pedidos (DS 10.13–10.14)
 export async function sobreEquipeAction(form: FormData) {
   const me = await requireUser();
