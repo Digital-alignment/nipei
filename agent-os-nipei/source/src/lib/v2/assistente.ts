@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { avanco, ritmo } from "./objetivos";
+import { quemSabe } from "./pessoasFicha";
 import { buscarConhecimento, chaveTrecho, criarFonte, formatarConhecimento, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "./conhecimento";
 import { getAlertas } from "./auditor";
 import { agendaDoDia, pulso } from "./hoje";
@@ -174,6 +175,7 @@ const TOOLS = [
   fn("acervo", "Acervo: índice de links do Google Drive (fotos, vídeos, áudios, cursos, documentos, marca). Para achar ONDE está um arquivo ou pasta e dar o link.", { busca: { type: "string" }, tipo: { type: "string", enum: ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] } }),
   fn("conhecimento_pendente", "Fatos propostos esperando revisão (com id) e alertas do auditor abertos.", { equipe: { type: "string" }, texto: { type: "string" } }),
   fn("pessoas", "Pessoas da comunidade: nome, id, equipes, função e carga de tarefas.", { texto: { type: "string" }, equipe: { type: "string" } }),
+  fn("quem_sabe", "Quem procurar sobre um assunto: pessoas da comunidade com motivos (referente de, papel, equipe/coordenação, projeto que lidera, objetivo pelo qual responde, fatos do Conhecimento). Use para \"a quem pergunto sobre…\", \"quem cuida de…\".", { assunto: { type: "string" } }, ["assunto"]),
   fn("pontes", "Pontes: contatos de fora (fornecedores, aliados possíveis, colaboradores) com o que cada um oferece. Use para \"quem pode nos ajudar com…\", \"temos fornecedor de…\".", { busca: { type: "string", description: "o que se procura (ex.: envase de vidro), nome ou empresa; vazio = todos" }, tipo: { type: "string", enum: ["fornecedor", "aliado", "colaborador"] } }),
   fn("projetos", "Projetos: lista com números, ou detalhes de um (objetivos, atualizações, tarefas abertas).", { projeto: { type: "string", description: "nome ou id; vazio = todos" } }),
   fn("equipe", "Uma equipe: Sobre (propósito, o que decide, o que não faz, como pedir), números, carga por membro, tarefas sem responsável e pedidos novos.", { equipe: { type: "string" } }, ["equipe"]),
@@ -273,6 +275,11 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const { hoje: deHoje } = agendaDoDia(me);
     return { hoje, deHoje: deHoje.map((e) => `${e.hora || ""} ${e.titulo}`.trim()), eventos: getEventos().filter((e) => e.inicio >= hoje.slice(0, e.inicio.length) && e.inicio <= ate).map((e) => ({ titulo: e.titulo, inicio: e.inicio, hora: e.hora || null, status: e.status })) };
   }
+  if (nome === "quem_sabe") {
+    const r = quemSabe(s(a.assunto), { pessoas, equipes, projetos: projetosVisiveis(me), objetivos: getObjetivos(), fatos: getFatos().filter((f) => f.status === "confirmado") });
+    return r.length ? r.map((x) => ({ id: x.pessoa.id, nome: x.pessoa.name, papel: x.pessoa.funcao || null, motivos: x.motivos, link: `/pessoas/${x.pessoa.id}` }))
+      : { aviso: "ninguém registrado como referência nesse assunto; tente pontes (contatos de fora) ou buscar_conhecimento" };
+  }
   if (nome === "pontes") {
     const palavras = n(s(a.busca)).split(/\s+/).filter((w) => w.length > 2);
     const tipo = s(a.tipo);
@@ -313,7 +320,7 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const eq = s(a.equipe) ? acharEquipe(s(a.equipe)) : null;
     const abertas = abertasDe(() => true);
     return pessoas.filter((p) => !p.externo && !p.contato && (!eq || p.equipes.includes(eq.id) || p.coordena.includes(eq.id)) && (!q || n(p.name).includes(q) || n(p.funcao).includes(q)))
-      .slice(0, 30).map((p) => ({ id: p.id, nome: p.name, funcao: p.funcao, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e),
+      .slice(0, 30).map((p) => ({ id: p.id, nome: p.name, papel: p.funcao, referente_de: p.referenteDe.length ? p.referenteDe : undefined, equipes: p.equipes.map((e) => equipes.find((x) => x.id === e)?.nome ?? e),
         coordena: equipes.filter((e) => e.coordenadores.includes(p.id)).map((e) => e.nome), acesso_suspenso: p.suspenso || undefined,
         ...contagem(abertas.filter((t) => t.responsaveis.includes(p.id))) }));
   }

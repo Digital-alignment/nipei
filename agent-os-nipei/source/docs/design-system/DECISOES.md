@@ -803,3 +803,7 @@ Pedido do Ashuan ("Projetos é o gargalo"). Diagnóstico: só 4 projetos, sem cr
 ## 2026-11-05 — Objetivos como resultados (§10.22)
 
 Ashuan aprovou trocar os 13 objetivos-área por 14 resultados (fim de 2026 e 1º semestre de 2027) com responsável, prazo e meta (número ou marcos), check-in semanal e ritmo calculado. O ritmo usa os BadgeEstado existentes (sem cor nova); os objetivos antigos ficam "fechados", nunca apagados.
+
+## 2026-11-05 — Pessoas: papel unificado, "referente de" e "Completar fichas" (§10.23)
+
+Diagnóstico (05/11): 58 pessoas, 50 sem função, 25 sem equipe, 45 sem WhatsApp, só 2 com perfil confirmado; "função" e "área" misturadas. Ashuan aprovou: um campo "Papel" (área migrada), "Referente de" para o Pinu saber a quem levar uma pergunta, responsabilidades na ficha e uma tela de gestão para completar as fichas em lote, com sugestão do Pinu (nada gravado sem "Salvar").

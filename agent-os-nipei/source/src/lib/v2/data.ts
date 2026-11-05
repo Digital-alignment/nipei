@@ -58,6 +58,7 @@ export type Pessoa = {
   externo: boolean;  // tipo_contato: externo — a group or outside contact, not a team member
   contato: boolean;  // only in "contatos" teams (Pontes): out of assignee lists, Participação and organising
   ponte: Ponte;      // contact card (Pontes); empty for everyone else
+  referenteDe: string[]; // DS 10.23: topics this person is the go-to for (the assistant routes questions with it)
   boasVindas: { equipe: string; desde: string }[]; // DS 10.20: teams joined recently whose welcome card wasn't dismissed
   whatsappVerificado: boolean; whatsappVerificadoEm: string; dadosConfirmadosEm: string;
 };
@@ -192,6 +193,7 @@ export function getPessoas(): Pessoa[] {
         vinculo: s(fm.vinculo), proximoPasso: s(fm.proximo_passo), reconectarDias: Number(fm.reconectar_dias) || 90,
         desde: s(fm.ponte_desde), conversas: conversasDe(body),
       },
+      referenteDe: arr(fm.referente_de),
       boasVindas: arr(fm.boas_vindas).map((x) => { const [equipe, desde] = x.split("|"); return { equipe, desde: desde ?? "" }; }),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
@@ -435,6 +437,21 @@ export function historicoPessoa(pessoaId: string, max = 15): { quando: string; q
     const [quando, quem, ...resto] = l.slice(2).split(" · ");
     return { quando: quando ?? "", quem: quem ?? "", oque: resto.join(" · ") };
   });
+}
+
+/** Gestão edits (DS 10.23 "Completar fichas" and the Responsabilidades card): only the fields given; a new WhatsApp must be verified again. */
+export function setCamposPessoa(pessoaId: string, c: { funcao?: string; whatsapp?: string; email?: string; referenteDe?: string[] }, quem: string) {
+  const n = notaPessoa(pessoaId);
+  const items: Record<string, FmValue> = {};
+  const mudou: string[] = [];
+  if (c.funcao != null && c.funcao !== s(n.fm.funcao)) { items.funcao = c.funcao; mudou.push(`papel: ${c.funcao || "(vazio)"}`); }
+  if (c.whatsapp != null && c.whatsapp !== s(n.fm.whatsapp)) { items.whatsapp = c.whatsapp; items.whatsapp_verificado = false; mudou.push("WhatsApp atualizado"); }
+  if (c.email != null && c.email !== s(n.fm.email)) { items.email = c.email; mudou.push("e-mail atualizado"); }
+  if (c.referenteDe && c.referenteDe.join("|") !== arr(n.fm.referente_de).join("|")) { items.referente_de = c.referenteDe; mudou.push(`referente de: ${c.referenteDe.join(", ") || "(nada)"}`); }
+  if (!mudou.length) return false;
+  updateNote(n.file, items);
+  registrarPessoa(n.file, quem, mudou.join(" · "));
+  return true;
 }
 
 /** "Entendi" on the welcome card (DS 10.20). */

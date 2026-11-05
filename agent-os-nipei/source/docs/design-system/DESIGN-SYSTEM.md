@@ -523,6 +523,11 @@ Um objetivo é um **resultado com prazo**: título como resultado, **responsáve
 - **Editar / novo**: Campo título, área (descrição), seleções projeto, responsável, equipe dona, datas início/prazo, Segmentado "Como medimos" (Número / Marcos) com os campos correspondentes (inicial, alvo, unidade · marcos, um por linha).
 - **Hoje**: Chip "Check-in: <objetivo>" (ícone `confirmar`) para o responsável quando a última atualização tem mais de 7 dias.
 
+### 10.23 Pessoas: papel, "referente de", responsabilidades e "Completar fichas"
+- **Papel** = o cargo real da pessoa no Santuário ("Coordenadora de retiros", "Engenheiro e arquiteto"); um só campo (o antigo "área" foi unificado nele). **Referente de** = temas em que a pessoa é a referência (Chips de metadado).
+- **Ficha → Resumo**: Cartão **Responsabilidades** primeiro: papel (`titulo-cartao`), "Referente de" (Chips), e linhas `corpo` com link para o que a pessoa coordena (equipes), lidera (projetos), é responsável (objetivos ativos, com BadgeEstado do ritmo) e cuida (procedimentos); "Esta semana" com a presença (10.18, só leitura). Gestão e a própria pessoa veem "Editar" (fantasma) que abre, no próprio cartão, Campo papel + Campo "Referente de" (separado por vírgulas) + Primário "Salvar".
+- **Completar fichas** (`/pessoas/completar`, gestão): números do que falta no topo (Chips de filtro: Sem papel · Sem equipe · Sem WhatsApp · Sem referente, com contagem); uma linha por pessoa (Cartão no celular, linha densa no computador): Avatar 24 + nome (link) · equipes em Chip · Campos compactos papel, equipe (só para quem não tem: "Adicionar à equipe…"), WhatsApp, e-mail, referente de. "Sugerir com o Pinu" (cartão `pinu`) pré-preenche só os campos vazios com Chip `pinu` "sugerido"; nada é gravado até "Salvar fichas" (primário, fixo no pé). Contatos de Pontes e externos não aparecem.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

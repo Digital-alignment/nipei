@@ -234,6 +234,60 @@ export async function createPessoaAction(form: FormData) {
   redirect(getEquipes().find((e) => e.id === equipe)?.contatos ? `/pessoas/${id}/ponte` : `/pessoas/${id}`);
 }
 
+// ---------------------------------------------------------------- Pessoas: papel, referente e "Completar fichas" (DS 10.23)
+const listaTemas = (v: FormDataEntryValue | null) => [...new Set(String(v ?? "").split(",").map((x) => x.replace(/\s+/g, " ").trim()).filter(Boolean))].slice(0, 8).map((x) => x.slice(0, 60));
+const papelLimpo = (v: FormDataEntryValue | null) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+
+/** Responsabilidades card: the person themselves or gestão edits role and "referente de". */
+export async function camposPessoaAction(form: FormData) {
+  const me = await requireUser();
+  const p = getPessoas().find((x) => x.id === String(form.get("pessoa")));
+  if (!p || !(me.gestao || me.pessoa?.id === p.id)) return;
+  const { setCamposPessoa } = await import("@/lib/v2/data");
+  setCamposPessoa(p.id, { funcao: papelLimpo(form.get("funcao")), referenteDe: listaTemas(form.get("referente")) }, actorName(me));
+  revalidatePath("/", "layout");
+}
+
+const fichasEditaveis = () => getPessoas().filter((p) => !p.contato && !p.externo);
+
+export async function sugerirFichasAction() {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { sugerirFichas } = await import("@/lib/v2/pessoasFicha");
+  const { vault } = await import("@/lib/v2/data");
+  const { getFatos } = await import("@/lib/v2/conhecimento");
+  const alvo = fichasEditaveis().filter((p) => !p.funcao || !p.equipes.length || !p.referenteDe.length);
+  await tentar(async () => { if (alvo.length) await sugerirFichas(vault(), alvo, { equipes: getEquipes(), tarefas: getTarefas(), fatos: getFatos().filter((f) => f.status === "confirmado"), projetos: getProjetos() }); });
+  revalidatePath("/pessoas/completar");
+  redirect("/pessoas/completar");
+}
+
+export async function salvarFichasAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { setCamposPessoa } = await import("@/lib/v2/data");
+  const { normalizarFone } = await import("@/lib/v2/whatsapp");
+  const equipes = getEquipes().filter((e) => !e.contatos && (!e.gestao || me.gestao)).map((e) => e.id);
+  let n = 0;
+  for (const p of fichasEditaveis()) {
+    if (!form.has(`papel_${p.id}`)) continue; // only the rows on the page
+    const email = String(form.get(`email_${p.id}`) ?? "").trim().slice(0, 120);
+    const fone = String(form.get(`whats_${p.id}`) ?? "").trim();
+    const mudou = setCamposPessoa(p.id, {
+      funcao: papelLimpo(form.get(`papel_${p.id}`)),
+      referenteDe: listaTemas(form.get(`ref_${p.id}`)),
+      ...(email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? { email } : {}),
+      // untouched field = no change (keeps the verification); a new number is normalised (Brazil by default) and must be verified again
+      ...(fone === p.whatsapp ? {} : fone === "" ? { whatsapp: "" } : normalizarFone(fone, "55") ? { whatsapp: normalizarFone(fone, "55") } : {}),
+    }, actorName(me));
+    const eq = pick(form.get(`equipe_${p.id}`), equipes);
+    if (eq && !p.equipes.includes(eq)) addToEquipe(p.id, eq, actorName(me));
+    if (mudou || eq) n++;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/pessoas/completar?ok=${n}`);
+}
+
 // ---------------------------------------------------------------- Objetivos (DS 10.22)
 const podeEditarObjetivo = (me: Awaited<ReturnType<typeof requireUser>>, o: { equipe: string; responsavel: string }) =>
   me.gestao || me.coordena.includes(o.equipe) || (!!me.pessoa && o.responsavel === me.pessoa.id);

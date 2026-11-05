@@ -258,6 +258,15 @@ const pt = {
     okSenha: "Senha salva. Os outros aparelhos foram desconectados.", okSair: "Pronto: os outros aparelhos foram desconectados.",
     metodo: { senha: "senha", google: "Google", link: "link no WhatsApp" },
   },
+  ps: {
+    papel: "Papel", papelPh: "Ex.: Coordenadora de retiros", referente: "Referente de", referenteAjuda: "Temas separados por vírgula: rede elétrica, rapé, inscrições…",
+    responsabilidades: "Responsabilidades", coordena: "Coordena", lidera: "Lidera", responsavelPor: "Responsável por", procedimentos: "Procedimentos", estaSemana: "Esta semana",
+    semResponsabilidades: "Ainda sem responsabilidades registradas.", editar: "Editar", salvar: "Salvar",
+    completar: "Completar fichas", completarAjuda: "Preencha o que falta de várias pessoas de uma vez. Nada muda até você salvar.", semPapel: "Sem papel", semEquipe: "Sem equipe",
+    semWhats: "Sem WhatsApp", semReferente: "Sem referente", todas: "Todas", adicionarEquipe: "Adicionar à equipe…", whatsapp: "WhatsApp", email: "E-mail",
+    sugerir: "Sugerir com o Pinu", sugerirAjuda: "O Pinu lê as tarefas, os fatos e as equipes de cada pessoa e preenche os campos vazios; você confere antes de salvar.",
+    sugerido: "sugerido", salvarFichas: "Salvar fichas", salvas: "Fichas atualizadas", nenhuma: "Ninguém com esse filtro.",
+  },
   ob: {
     ativos: "Ativos", fechados: "Fechados", novo: "Novo objetivo", editar: "Editar objetivo", salvar: "Salvar objetivo", titulo: "Resultado (o que queremos alcançar)", descricao: "Contexto",
     projeto: "Projeto", semProjeto: "Sem projeto", responsavel: "Responsável", semResponsavel: "Sem responsável", equipe: "Equipe dona", inicio: "Início", prazo: "Prazo",
@@ -604,6 +613,15 @@ const en: Dict = {
     sairTodos: "Sign out of all other devices", sairPergunta: "End the session on every other device?", recentes: "Recent sign-ins",
     okSenha: "Password saved. Your other devices were signed out.", okSair: "Done: your other devices were signed out.",
     metodo: { senha: "password", google: "Google", link: "WhatsApp link" },
+  },
+  ps: {
+    papel: "Role", papelPh: "E.g. Retreat coordinator", referente: "Go-to for", referenteAjuda: "Topics separated by commas: electrical network, rapé, sign-ups…",
+    responsabilidades: "Responsibilities", coordena: "Coordinates", lidera: "Leads", responsavelPor: "Owns", procedimentos: "Procedures", estaSemana: "This week",
+    semResponsabilidades: "No responsibilities recorded yet.", editar: "Edit", salvar: "Save",
+    completar: "Complete profiles", completarAjuda: "Fill in what is missing for many people at once. Nothing changes until you save.", semPapel: "No role", semEquipe: "No team",
+    semWhats: "No WhatsApp", semReferente: "No go-to topic", todas: "All", adicionarEquipe: "Add to team…", whatsapp: "WhatsApp", email: "Email",
+    sugerir: "Suggest with Pinu", sugerirAjuda: "Pinu reads each person's tasks, facts and teams and fills the empty fields; you check before saving.",
+    sugerido: "suggested", salvarFichas: "Save profiles", salvas: "Profiles updated", nenhuma: "No one matches this filter.",
   },
   ob: {
     ativos: "Active", fechados: "Closed", novo: "New goal", editar: "Edit goal", salvar: "Save goal", titulo: "Result (what we want to achieve)", descricao: "Context",

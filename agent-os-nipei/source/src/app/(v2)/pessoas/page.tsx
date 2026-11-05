@@ -92,7 +92,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         <div className="-ml-3 mb-2"><Botao href={e ? `/equipes/${e.id}` : "/equipes"} variante="fantasma" tamanho="P" icone="voltar">{e ? e.nome : t.equipes}</Botao></div>
       ); })()}
       <CabecalhoPagina selo="mao" rotulo={`${ativas.length} ${t.membros.toLowerCase()}`} titulo={t.pessoas}
-        acoes={me.gestao && <Botao href="/pessoas/organizar" variante="tonal" icone="pessoas" tamanho="M">{t.organizarEquipes}</Botao>}
+        acoes={me.gestao && <><Botao href="/pessoas/completar" variante="tonal" icone="editar" tamanho="M">{t.ps.completar}</Botao><Botao href="/pessoas/organizar" variante="tonal" icone="pessoas" tamanho="M">{t.organizarEquipes}</Botao></>}
         filtros={<>
           <ChipDS ativo={!q.equipe} href={link({ equipe: undefined })}>{t.todas}</ChipDS>
           {[...equipes].sort((a, b) => Number(b.id === q.equipe) - Number(a.id === q.equipe)).map((e) => <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} ativo={q.equipe === e.id} key={e.id} href={link({ equipe: e.id })}>{e.nome}</ChipDS>)}

@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Pessoas: papel, referente, responsabilidades e "Completar fichas" (10.23)
+
+- Ficha → Resumo começa pelo cartão Responsabilidades (papel, referente em Chips, coordena, lidera, objetivos com ritmo, procedimentos, presença da semana) com edição de papel e referente.
+- `/pessoas/completar` (gestão): filtros do que falta, uma linha por pessoa com campos compactos, sugestão do Pinu (cartão `pinu`, Chip "sugerido"), "Salvar fichas" fixo no pé. Botão "Completar fichas" em /pessoas. Só componentes existentes.
+
 ## 2026-11-05 — Objetivos como resultados (10.22)
 
 - `/objetivos` (Ativos / Fechados) com ritmo em BadgeEstado, responsável, prazo e avanço ("3 de 8 retiros", "2 de 5 marcos"); ficha com check-in (valor ou marcos), histórico e tarefas ligadas; formulário com "Como medimos" (Número / Marcos) sem JavaScript.

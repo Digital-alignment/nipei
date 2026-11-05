@@ -21,7 +21,7 @@ import PrazoRapido from "@/components/v2/PrazoRapido";
 import Notificar from "@/components/v2/Notificar";
 import { historico } from "@/lib/v2/notificar";
 import { signToken } from "@/lib/auth";
-import { can, currentUser, getEquipes, getPessoas, getTarefas, historicoPessoa, novidadesPara, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, historicoPessoa, novidadesPara, projetosVisiveis, today, type Tarefa } from "@/lib/v2/data";
 import { getColetivo, getDiagnosticos, getRespostas, participa, progresso } from "@/lib/v2/diagnostico";
 import { ordenarAgora, type Selo } from "@/lib/v2/ordem";
 import { NIVEL_COR } from "@/lib/v2/participacao";
@@ -36,6 +36,9 @@ import Conexoes from "@/components/v2/Conexoes";
 import Seguranca from "@/components/v2/Seguranca";
 import { getNotas } from "@/lib/v2/notasInternas";
 import PonteContato from "@/components/v2/PonteContato";
+import Responsabilidades from "@/components/v2/Responsabilidades";
+import { responsabilidades } from "@/lib/v2/pessoasFicha";
+import { diaSemana, getPresenca, getProcedimentos, segunda } from "@/lib/v2/rotinas";
 
 const CADASTRO_TTL = 60 * 60 * 24 * 30;
 const LOGIN_LINK_TTL = 60 * 60 * 24 * 7;
@@ -104,12 +107,16 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
   const Campo = ({ k, v }: { k: string; v?: React.ReactNode }) => v ? <div><dt className="rotulo-campo text-t3">{k}</dt><dd className="corpo text-t1">{v}</dd></div> : null;
 
   // ---------------- tabs
+  // DS 10.23: what the person is responsible for, first
+  const resp = responsabilidades(p, { equipes, projetos: projetosVisiveis(me), objetivos: getObjetivos(), procedimentos: getProcedimentos() });
   const resumo = (
     <div className="grid gap-3 pt-3">
-      {(p.funcao || p.area || p.disponibilidade) && (
+      <Responsabilidades p={p} r={resp} tarefas={todas} hoje={hoje} semana={getPresenca(segunda(hoje))[p.id]} hojeIdx={diaSemana(hoje) - 1}
+        editar={me.gestao || me.pessoa?.id === p.id} t={t} />
+      {(p.area || p.disponibilidade) && (
         <Cartao>
           <dl className="grid gap-3 sm:grid-cols-2">
-            <Campo k={t.funcaoLbl} v={p.funcao} /><Campo k={t.areaLbl} v={p.area} /><Campo k={t.dispLbl} v={p.disponibilidade} />
+            <Campo k={t.areaLbl} v={p.area} /><Campo k={t.dispLbl} v={p.disponibilidade} />
           </dl>
         </Cartao>
       )}
