@@ -19,6 +19,8 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import Cartao from "@/components/ds/Cartao";
+import { BadgeEstado } from "@/components/ds/Chip";
+import { BADGE_RITMO, avanco, ritmo, rotuloAvanco } from "@/lib/v2/objetivos";
 import { PROJETO_SOBRE, podeVerProjeto, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getDiagnosticos } from "@/lib/v2/diagnostico";
@@ -91,27 +93,24 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
     </div>
   );
 
-  // ---- objectives tab
+  // ---- objectives tab (DS 10.22): active results with pace and progress; closed ones only counted
   const objetivosAba = (
-    <div className="mt-3 grid gap-2">
-      {objetivos.length === 0 && <EstadoVazio compacto titulo={<>{t.semObjetivosProjeto}</>} />}
-      {objetivos.map((o) => {
-        const pr = progresso(o.id, todas);
-        const dono = equipes.find((e) => e.id === o.equipe);
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {objetivos.filter((o) => o.status === "ativo").length === 0 && <EstadoVazio compacto titulo={<>{t.semObjetivosProjeto}</>} />}
+      {objetivos.filter((o) => o.status === "ativo").map((o) => {
+        const r = ritmo(o, todas, hoje), a = avanco(o, todas), resp = pessoas.find((x) => x.id === o.responsavel);
         return (
-          <div key={o.id} className="rounded-cartao bg-s1 p-3 pl-4 border-l-4" style={{ borderLeftColor: dono?.cor }}>
-            <div className="flex items-start gap-2">
-              <Link href={`/objetivos?ano=${o.ano}#${o.id}`} className="text-sm font-medium leading-snug flex-1 hover:underline">{o.titulo}</Link>
-              <span className="text-xs text-t3 tabular-nums">{o.ano}</span>
-            </div>
-            <div className="mt-2 flex items-center gap-3">
-              <div className="flex-1">{pr ? <BarraProgresso valor={pr.done} max={pr.total} rotulo={`${pr.total ? Math.round((pr.done / pr.total) * 100) : 0}% · ${pr.done}/${pr.total}`} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
-              <Link href={`/tarefas/nova?objetivo=${o.id}&projeto=${id}&equipe=${o.equipe}&back=/projetos/${id}`} aria-label={t.novaTarefa} title={t.novaTarefa} className="text-t3 hover:text-t1"><Icone nome="mais"  tamanho={18} /></Link>
-            </div>
-          </div>
+          <Cartao key={o.id} variante="clicavel" href={`/objetivos/${o.id}`} equipe={o.equipe}>
+            <div className="flex items-start gap-2"><p className="titulo-cartao min-w-0 flex-1">{o.titulo}</p><BadgeEstado estado={BADGE_RITMO[r]}>{t.ob.ritmos[r]}</BadgeEstado></div>
+            <p className="meta text-t2">{[resp?.name.split(" ")[0], o.prazo && `${t.ob.ate} ${fmtDate(o.prazo, lang)}`].filter(Boolean).join(" · ")}</p>
+            {a != null && <BarraProgresso valor={Math.round(a * 100)} rotulo={rotuloAvanco(o, todas, { de: t.ob.de, marcos: t.ob.marcos, tarefas: t.ob.tarefas })} rotuloAcessivel={t.ob.comoMedimos} />}
+          </Cartao>
         );
       })}
-      <Link href="/objetivos" className="justify-self-start text-xs underline text-t2 mt-1">{t.todosObjetivos}</Link>
+      <div className="flex flex-wrap gap-2 sm:col-span-2">
+        {me.gestao && <Botao href={`/objetivos/novo?projeto=${id}`} variante="tonal" tamanho="P" icone="mais">{t.ob.novo}</Botao>}
+        <Botao href="/objetivos" variante="fantasma" tamanho="P" icone="avancar">{t.todosObjetivos}</Botao>
+      </div>
     </div>
   );
 
@@ -199,7 +198,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
 
       <AbasComPainel id="projeto" inicial={q.equipe || q.pessoa ? "tarefas" : undefined} abas={[
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
-        { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
+        { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.filter((o) => o.status === "ativo").length, conteudo: objetivosAba },
         { id: "pessoas", rotulo: t.pessoas, contagem: envolvidos.length, conteudo: pessoasAba },
         { id: "atualizacoes", rotulo: t.atualizacoes, contagem: 0, conteudo: atualizacoesAba },
         { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?projeto=${p.id}#base`} /> },

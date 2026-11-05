@@ -19,7 +19,7 @@ export default async function Projetos() {
   const hoje = today();
   const equipes = getEquipes(), tarefas = getTarefas(), pessoas = getPessoas(), projetos = projetosVisiveis(me);
   const ano = Number(hoje.slice(0, 4));
-  const doAno = getObjetivos().filter((o) => o.ano === ano).length;
+  const ativosObj = getObjetivos().filter((o) => o.status === "ativo").length;
   const semProjeto = tarefas.filter((x) => x.status !== "done" && !x.projeto && can.editTarefa(me, x)).length;
 
   const Card = ({ p }: { p: Projeto }) => {
@@ -61,7 +61,7 @@ export default async function Projetos() {
     <>
       <CabecalhoPagina selo="broto" rotulo={`${projetos.length} ${t.projetos.toLowerCase()}`} titulo={t.projetos}
         acoes={<>
-          <Botao href={`/objetivos?ano=${ano}`} variante="tonal" icone="sucesso" tamanho="M">{`${t.objetivos} · ${doAno}`}</Botao>
+          <Botao href="/objetivos" variante="tonal" icone="sucesso" tamanho="M">{`${t.objetivos} · ${ativosObj}`}</Botao>
           {me.gestao && <Botao href="/projetos/novo" icone="mais" folha>{t.pj.novo}</Botao>}
         </>}
         filtros={semProjeto > 0 ? <Botao href="/projetos/sem-projeto" variante="tonal" tamanho="P" icone="filtrar">{`${semProjeto} ${t.pj.semProjeto}`}</Botao> : undefined} />

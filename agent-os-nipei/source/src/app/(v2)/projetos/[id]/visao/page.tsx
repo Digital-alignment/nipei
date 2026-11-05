@@ -73,7 +73,7 @@ export default async function VisaoProjeto({ params }: { params: Promise<{ id: s
         <Section title={t.objetivos} count={v.objetivos.length}>
           <div className="grid gap-2">
             {v.objetivos.map((o) => (
-              <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos?ano=${o.ano}#${o.id}`}>
+              <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos/${o.id}`}>
                 <p className="text-sm font-medium">{o.titulo} <span className="text-t2 font-normal">· {o.ano}</span></p>
                 <div className="mt-2">{o.progresso ? <BarraProgresso valor={o.progresso.done} max={o.progresso.total} rotulo={`${o.progresso.total ? Math.round((o.progresso.done / o.progresso.total) * 100) : 0}% · ${o.progresso.done}/${o.progresso.total}`} /> : <span className="text-xs text-t2">{t.semTarefasLigadas}</span>}</div>
               </Cartao>

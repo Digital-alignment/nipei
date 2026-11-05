@@ -515,6 +515,14 @@ Quem entra numa equipe vê em Hoje um Cartão destaque suave (variante `pinu`, s
 - **Fatos por projeto** (`/conhecimento/projetos`, gestão): o mesmo padrão do "sem projeto" sobre os fatos confirmados e propostos (texto do fato em `corpo`, até 3 linhas, abre o fato; outros projetos do fato em `meta`). Atalho no fim da triagem de tarefas e no Mapa do conhecimento.
 - **Projeto privado**: só gestão, as equipes do projeto e o líder veem (lista, ficha, visão, seletores, Pinu). BadgeEstado "interna" (cadeado) "Privado" no cartão e "Privado" no rótulo da ficha. As tarefas continuam visíveis para a equipe de cada tarefa (quem trabalha nelas).
 
+### 10.22 Objetivos (resultado, meta e check-in)
+Um objetivo é um **resultado com prazo**: título como resultado, **responsável** (uma pessoa), **prazo**, projeto e a meta — **número** (inicial → alvo, unidade) ou **marcos** (3 a 6). O avanço vem da meta (número ou marcos feitos); sem meta, das tarefas ligadas.
+- **Ritmo** (calculado pela data e pelo avanço), sempre BadgeEstado com texto: Em ritmo (`feita`, verde) · Em risco (`aviso`, âmbar: avanço mais de 20 pontos abaixo do esperado para a data) · Atrasado (`atrasada`, vermelho: passou do prazo sem concluir) · Concluído (`feita`) · Sem prazo (`pendente`, hachurado).
+- **Lista** (`/objetivos`): Segmentado Ativos / Fechados + chips de equipe; cartões por prazo (o mais próximo primeiro): título · BadgeEstado do ritmo · Avatar 24 do responsável · prazo e projeto em `meta` · BarraProgresso com rótulo ("3 de 8 retiros", "2 de 5 marcos") · rótulo "Check-in →" em `text-ac-text` (o cartão inteiro já é link para a ficha, onde está o check-in) quando é a pessoa responsável e a última atualização tem mais de 7 dias. O cartão abre a ficha.
+- **Ficha** (`/objetivos/[id]`): cabeçalho com ritmo · responsável · prazo; Cartão **Check-in** (para o responsável e a gestão): Campo número "Valor atual" (meta numérica) ou a lista de marcos com caixas, Campo área "O que avançou?", Primário "Registrar check-in"; histórico dos check-ins em Linha do tempo (10.9); tarefas ligadas (10.3) + "Nova tarefa"; Editar (fantasma) e "Fechar objetivo" (fantasma, com motivo).
+- **Editar / novo**: Campo título, área (descrição), seleções projeto, responsável, equipe dona, datas início/prazo, Segmentado "Como medimos" (Número / Marcos) com os campos correspondentes (inicial, alvo, unidade · marcos, um por linha).
+- **Hoje**: Chip "Check-in: <objetivo>" (ícone `confirmar`) para o responsável quando a última atualização tem mais de 7 dias.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

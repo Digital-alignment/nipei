@@ -35,7 +35,15 @@ export type Projeto = {
   privado: boolean; // only the project's teams, gestão and the lead see it (e.g. "Casa (obra)")
   sobre: Record<(typeof PROJETO_SOBRE)[number][0], string>;
 };
-export type Objetivo = { id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean };
+export type Objetivo = {
+  id: string; file: string; titulo: string; ano: number; equipe: string; apoio: string[]; projeto: string; descricao: string; donoConfirmado: boolean;
+  // DS 10.22: a result with a deadline. Old notes (status em_andamento/planejado, no target) read as "ativo" with no target.
+  status: "ativo" | "concluido" | "fechado"; responsavel: string; inicio: string; prazo: string;
+  meta: { inicial: number; alvo: number; atual: number; unidade: string } | null;
+  marcos: { texto: string; feito: boolean }[]; // "## Marcos" checklist in the body
+  checkins: { data: string; quem: string; texto: string }[]; // "## Check-ins", newest first
+  motivoFechado: string;
+};
 export type Evento = { id: string; file: string; titulo: string; inicio: string; fim: string; status: string; equipe: string; hora: string; href?: string };
 /** Where an event opens: its page, or (fixed team meeting) the live agenda. */
 export const linkEvento = (e: Evento) => e.href ?? `/eventos/${encodeURIComponent(e.id)}`;
@@ -132,7 +140,13 @@ export function getObjetivos(): Objetivo[] {
   return readDir("Objetivos")
     .map(({ fm, body, file }) => ({
       id: s(fm.id), file, titulo: s(fm.titulo), ano: Number(fm.ano) || 0, equipe: s(fm.equipe), apoio: arr(fm.apoio), projeto: s(fm.projeto),
-      descricao: desc(body), donoConfirmado: fm.dono_confirmado === true,
+      descricao: desc(body.split(/\r?\n## /)[0]), donoConfirmado: fm.dono_confirmado === true,
+      status: (["concluido", "fechado"].includes(s(fm.status)) ? s(fm.status) : "ativo") as Objetivo["status"],
+      responsavel: s(fm.responsavel), inicio: s(fm.inicio), prazo: s(fm.prazo),
+      meta: fm.meta_alvo != null && s(fm.meta_alvo) !== "" ? { inicial: Number(fm.meta_inicial) || 0, alvo: Number(fm.meta_alvo) || 0, atual: Number(fm.meta_atual) || 0, unidade: s(fm.meta_unidade) } : null,
+      marcos: secaoNota(body, "Marcos").split(/\r?\n/).map((l) => l.match(/^- \[( |x|X)\] (.+)$/)).filter((m): m is RegExpMatchArray => !!m).map((m) => ({ feito: m[1] !== " ", texto: m[2].trim() })),
+      checkins: secaoNota(body, "Check-ins").split(/\r?\n/).filter((l) => /^- \d{4}-\d{2}-\d{2} · /.test(l)).map((l) => { const [data, quem, ...r] = l.slice(2).split(" · "); return { data, quem: quem ?? "", texto: r.join(" · ") }; }),
+      motivoFechado: s(fm.motivo_fechado),
     }))
     .sort((a, b) => a.ano - b.ano || a.id.localeCompare(b.id));
 }
@@ -996,7 +1010,7 @@ export function registrarAcesso(pessoaId: string) {
 }
 
 /** Partial change through the single writer (bulk actions, load balancing): only the fields given are touched. */
-export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo?: string; status?: Status; priority?: string; equipe?: string; projeto?: string }, actor: string) {
+export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo?: string; status?: Status; priority?: string; equipe?: string; projeto?: string; objetivo?: string }, actor: string) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");
   const pessoas = getPessoas();
@@ -1005,6 +1019,7 @@ export function mudarTarefa(id: string, campos: { responsaveis?: string[]; prazo
     if (campos.prazo !== undefined) d.fm.prazo = campos.prazo;
     if (campos.priority && String(d.fm.priority ?? "").toLowerCase() !== campos.priority) d.fm.priority = campos.priority;
     if (campos.equipe) { d.fm.equipe = campos.equipe; if (campos.equipe !== t.equipe) d.fm.area = ""; }
+    if (campos.objetivo !== undefined && campos.objetivo !== t.objetivo) d.fm.objetivo = campos.objetivo;
     if (campos.projeto !== undefined && campos.projeto !== t.projeto) {
       d.fm.projeto = campos.projeto;
       d.fm.project = getProjetos().find((p) => p.id === campos.projeto)?.nome ?? "Geral"; // v1 kanban shows this name

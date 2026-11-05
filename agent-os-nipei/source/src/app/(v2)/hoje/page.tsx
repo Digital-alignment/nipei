@@ -15,7 +15,7 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, pulso } from "@/lib/v2/hoje";
-import { can, currentUser, esperandoPor, getEquipes, getEventos, getPessoas, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
+import { can, currentUser, esperandoPor, getEquipes, getEventos, getObjetivos, getPessoas, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
@@ -30,6 +30,7 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { createTarefaAction, dispensarBoasVindasAction, focoAction, presencaAction } from "../actions";
 import Chip from "@/components/ds/Chip";
 import { pedidosNovos } from "@/lib/v2/pedidos";
+import { checkinPendente } from "@/lib/v2/objetivos";
 import { diaSemana, getPresenca, getProcedimentos, segunda } from "@/lib/v2/rotinas";
 import SemanaPresenca from "@/components/v2/SemanaPresenca";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
@@ -157,6 +158,9 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   if (me) for (const c of getPessoas().filter((x) => x.contato && (reconectarEm(x) || "9") <= hoje && reconectarPor(x, equipes).includes(me.id))
     .sort((a, b) => reconectarEm(a).localeCompare(reconectarEm(b))).slice(0, 3))
     pilulas.push({ href: `/pessoas/${c.id}`, icone: "pessoa", texto: `${t.ponte.reconectarCom} ${c.name.split(" ")[0]}`, titulo: t.ponte.contatos });
+  // DS 10.22: weekly check-in of the objectives I own
+  if (me) for (const o of getObjetivos().filter((x) => x.responsavel === me.id && checkinPendente(x, hoje)).slice(0, 2))
+    pilulas.push({ href: `/objetivos/${o.id}`, icone: "confirmar", texto: `${t.ob.checkinDe}: ${o.titulo.length > 36 ? `${o.titulo.slice(0, 34)}…` : o.titulo}`, titulo: t.objetivos });
   // DS 10.14: requests waiting for an owner in the teams I coordinate
   const pedidos = user.coordena.flatMap((e) => pedidosNovos(getTarefas(), e)).length;
   if (pedidos) pilulas.push({ href: "/pedidos", icone: "enviar", texto: `${pedidos} ${pedidos === 1 ? t.eq.pedidoNovo : t.eq.pedidosNovos}`, titulo: t.eq.pedidos });

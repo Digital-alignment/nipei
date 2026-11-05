@@ -27,7 +27,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
         equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}
         pessoas={pessoas.map((p) => ({ id: p.id, nome: p.name, equipes: p.equipes, coordena: p.coordena, suspenso: p.suspenso, foto: p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined }))}
         projetos={projetosVisiveis(user).map((p) => ({ id: p.id, nome: p.nome }))}
-        objetivos={getObjetivos().map((o) => ({ id: o.id, titulo: o.titulo, ano: o.ano, projeto: o.projeto }))}
+        objetivos={getObjetivos().filter((o) => o.status === "ativo").map((o) => ({ id: o.id, titulo: o.titulo, ano: o.ano, projeto: o.projeto }))}
         inicial={{
           equipe: equipeInicial, projeto: q.projeto ?? "", objetivo: q.objetivo ?? "",
           prazo: /^\d{4}-\d{2}-\d{2}$/.test(q.prazo ?? "") ? q.prazo! : "",

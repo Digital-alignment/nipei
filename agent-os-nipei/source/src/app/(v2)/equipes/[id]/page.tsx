@@ -224,13 +224,13 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
     </>
   );
 
-  const objetivos = getObjetivos().filter((o) => o.equipe === id || o.apoio.includes(id));
+  const objetivos = getObjetivos().filter((o) => o.status === "ativo" && (o.equipe === id || o.apoio.includes(id)));
   const objetivosAba = objetivos.length ? (
     <div className="grid gap-2 mt-3">
       {objetivos.map((o) => {
         const p = progresso(o.id, todas);
         return (
-          <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos?ano=${o.ano}#${o.id}`}>
+          <Cartao key={o.id} variante="clicavel" className="block" href={`/objetivos/${o.id}`}>
             <p className="text-sm font-medium">{o.titulo} <span className="text-t2 font-normal">· {o.ano}{o.equipe !== id ? ` · ${t.apoio}` : ""}</span></p>
             {p && <div className="mt-2"><BarraProgresso valor={p.done} max={p.total} rotulo={`${p.total ? Math.round((p.done / p.total) * 100) : 0}% · ${p.done}/${p.total}`} /></div>}
           </Cartao>

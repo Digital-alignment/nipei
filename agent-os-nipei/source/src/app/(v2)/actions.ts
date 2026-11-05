@@ -234,6 +234,58 @@ export async function createPessoaAction(form: FormData) {
   redirect(getEquipes().find((e) => e.id === equipe)?.contatos ? `/pessoas/${id}/ponte` : `/pessoas/${id}`);
 }
 
+// ---------------------------------------------------------------- Objetivos (DS 10.22)
+const podeEditarObjetivo = (me: Awaited<ReturnType<typeof requireUser>>, o: { equipe: string; responsavel: string }) =>
+  me.gestao || me.coordena.includes(o.equipe) || (!!me.pessoa && o.responsavel === me.pessoa.id);
+
+export async function objetivoAction(form: FormData) {
+  const me = await requireUser();
+  const id = String(form.get("id") ?? "");
+  const atual = id ? getObjetivos().find((o) => o.id === id) : undefined;
+  if (id ? !atual || !podeEditarObjetivo(me, atual) : !me.gestao) return;
+  const titulo = String(form.get("titulo") ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
+  const equipes = getEquipes().filter((e) => !e.contatos).map((e) => e.id);
+  const equipe = pick(form.get("equipe"), equipes);
+  if (titulo.length < 3 || !equipe) return;
+  const num = (k: string) => { const v = Number(String(form.get(k) ?? "").replace(",", ".")); return Number.isFinite(v) ? v : 0; };
+  const tipo = form.get("tipo") === "numero" ? "numero" : "marcos";
+  const { salvarObjetivo } = await import("@/lib/v2/objetivos");
+  const novo = await salvarObjetivo({
+    id: atual?.id, titulo, descricao: String(form.get("descricao") ?? "").trim().slice(0, 2000),
+    projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)), equipe, apoio: atual?.apoio ?? [],
+    responsavel: pick(form.get("responsavel"), getPessoas().filter((p) => !p.contato && !p.externo).map((p) => p.id)),
+    inicio: isDate(form.get("inicio")), prazo: isDate(form.get("prazo")),
+    meta: tipo === "numero" ? { inicial: num("inicial"), alvo: num("alvo"), unidade: String(form.get("unidade") ?? "").trim().slice(0, 30) } : null,
+    marcos: tipo === "marcos" ? String(form.get("marcos") ?? "").split(/\r?\n/).map((x) => x.replace(/^[-*\s[\]x]+/i, "").trim()).filter(Boolean).slice(0, 8).map((x) => x.slice(0, 160)) : [],
+  });
+  revalidatePath("/", "layout");
+  redirect(`/objetivos/${novo}`);
+}
+
+export async function checkinObjetivoAction(form: FormData) {
+  const me = await requireUser();
+  const o = getObjetivos().find((x) => x.id === String(form.get("id")));
+  if (!o || !(me.gestao || (!!me.pessoa && o.responsavel === me.pessoa.id))) return;
+  const { checkinObjetivo } = await import("@/lib/v2/objetivos");
+  const v = String(form.get("valor") ?? "").replace(",", ".");
+  await tentar(async () => checkinObjetivo(o.id, actorName(me), {
+    valor: o.meta && v !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined,
+    marcosFeitos: o.marcos.length ? form.getAll("marco").map(Number).filter((i) => i >= 0 && i < o.marcos.length) : undefined,
+    texto: String(form.get("texto") ?? "").slice(0, 400),
+  }));
+  revalidatePath("/", "layout");
+}
+
+export async function fecharObjetivoAction(form: FormData) {
+  const me = await requireUser();
+  const o = getObjetivos().find((x) => x.id === String(form.get("id")));
+  if (!o || !podeEditarObjetivo(me, o)) return;
+  const { fecharObjetivo } = await import("@/lib/v2/objetivos");
+  await fecharObjetivo(o.id, String(form.get("motivo") ?? ""), actorName(me));
+  revalidatePath("/", "layout");
+  redirect("/objetivos");
+}
+
 // ---------------------------------------------------------------- Projetos (DS 10.21)
 const podeEditarProjeto = (me: Awaited<ReturnType<typeof requireUser>>, p: { equipes: string[]; lider: string }) =>
   me.gestao || p.equipes.some((e) => me.coordena.includes(e)) || (!!me.pessoa && p.lider === me.pessoa.id);

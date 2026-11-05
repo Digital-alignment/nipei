@@ -799,3 +799,7 @@ Plano Equipes, fase 4 (aprovado por Ashuan). A aba "O que sabemos" vira "Conheci
 ## 2026-11-05 — Projetos: portfólio, Sobre do projeto e triagem "sem projeto" (§10.21)
 
 Pedido do Ashuan ("Projetos é o gargalo"). Diagnóstico: só 4 projetos, sem criar/editar na plataforma, 105 das 187 tarefas abertas sem projeto, nenhum projeto com líder, estado ou objetivo escrito. O estado reaproveita os BadgeEstado (sem cores novas); a triagem segue a regra "IA propõe, pessoa confirma" (nada é gravado sem "Salvar").
+
+## 2026-11-05 — Objetivos como resultados (§10.22)
+
+Ashuan aprovou trocar os 13 objetivos-área por 14 resultados (fim de 2026 e 1º semestre de 2027) com responsável, prazo e meta (número ou marcos), check-in semanal e ritmo calculado. O ritmo usa os BadgeEstado existentes (sem cor nova); os objetivos antigos ficam "fechados", nunca apagados.

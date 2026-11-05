@@ -274,7 +274,7 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
         acoes={pode && <BotaoIcone icone="editar" aria-label={t.editar} href={`/tarefas/${id}/editar`} />}
         filtros={<>
           {projeto && <Chip href={`/projetos/${projeto.id}`} icone="tarefa">{projeto.nome}</Chip>}
-          {objetivo && <Chip href={`/objetivos?ano=${objetivo.ano}#${objetivo.id}`} icone="sucesso">{objetivo.titulo}</Chip>}
+          {objetivo && <Chip href={`/objetivos/${objetivo.id}`} icone="sucesso">{objetivo.titulo}</Chip>}
           {!eq && <Chip href="/equipes/sem-equipe" icone="pessoas">{t.semEquipe}</Chip>}
         </>}
       />

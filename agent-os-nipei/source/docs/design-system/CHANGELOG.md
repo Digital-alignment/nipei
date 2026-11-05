@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Objetivos como resultados (10.22)
+
+- `/objetivos` (Ativos / Fechados) com ritmo em BadgeEstado, responsável, prazo e avanço ("3 de 8 retiros", "2 de 5 marcos"); ficha com check-in (valor ou marcos), histórico e tarefas ligadas; formulário com "Como medimos" (Número / Marcos) sem JavaScript.
+- Aba Objetivos do projeto em cartões com ritmo; pílula "Check-in" em Hoje. Só componentes existentes.
+
 ## 2026-11-05 — Projetos: portfólio, Sobre e "sem projeto" (10.21)
 
 - `/projetos` agrupado por estado (BadgeEstado), com líder, equipes em Chip, Sparkline no prazo e "Parado há N dias"; "Novo projeto" e atalho "N tarefas sem projeto".

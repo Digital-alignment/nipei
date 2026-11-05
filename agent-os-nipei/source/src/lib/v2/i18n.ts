@@ -258,6 +258,16 @@ const pt = {
     okSenha: "Senha salva. Os outros aparelhos foram desconectados.", okSair: "Pronto: os outros aparelhos foram desconectados.",
     metodo: { senha: "senha", google: "Google", link: "link no WhatsApp" },
   },
+  ob: {
+    ativos: "Ativos", fechados: "Fechados", novo: "Novo objetivo", editar: "Editar objetivo", salvar: "Salvar objetivo", titulo: "Resultado (o que queremos alcançar)", descricao: "Contexto",
+    projeto: "Projeto", semProjeto: "Sem projeto", responsavel: "Responsável", semResponsavel: "Sem responsável", equipe: "Equipe dona", inicio: "Início", prazo: "Prazo",
+    comoMedimos: "Como medimos", numero: "Número", marcosLbl: "Marcos", inicial: "Valor inicial", alvo: "Meta", unidade: "Unidade (ex.: retiros)", marcosAjuda: "Um marco por linha (3 a 6)",
+    ritmos: { em_ritmo: "Em ritmo", em_risco: "Em risco", atrasado: "Atrasado", concluido: "Concluído", sem_prazo: "Sem prazo" } as Record<string, string>,
+    de: "de", marcos: "marcos", tarefas: "tarefas", ate: "até", checkin: "Check-in", checkinTitulo: "Como está este objetivo?", valorAtual: "Valor atual",
+    oQueAvancou: "O que avançou? (uma linha)", registrar: "Registrar check-in", historico: "Check-ins", semCheckins: "Nenhum check-in ainda.", atualizou: "atualizou",
+    tarefasLigadas: "Tarefas ligadas", fechar: "Fechar objetivo", motivo: "Motivo", fechado: "Fechado", nenhum: "Nenhum objetivo aqui", checkinDe: "Check-in",
+    vazioAjuda: "Um objetivo é um resultado com prazo, responsável e uma meta que dá para medir.",
+  },
   pj: {
     novo: "Novo projeto", editar: "Editar projeto", salvar: "Salvar projeto", nome: "Nome do projeto", descricao: "Descrição", equipes: "Equipes", lider: "Líder", semLider: "Sem líder",
     estado: "Estado", estados: { ativo: "Ativo", ideia: "Ideia", pausado: "Pausado", concluido: "Concluído" } as Record<string, string>,
@@ -594,6 +604,16 @@ const en: Dict = {
     sairTodos: "Sign out of all other devices", sairPergunta: "End the session on every other device?", recentes: "Recent sign-ins",
     okSenha: "Password saved. Your other devices were signed out.", okSair: "Done: your other devices were signed out.",
     metodo: { senha: "password", google: "Google", link: "WhatsApp link" },
+  },
+  ob: {
+    ativos: "Active", fechados: "Closed", novo: "New goal", editar: "Edit goal", salvar: "Save goal", titulo: "Result (what we want to achieve)", descricao: "Context",
+    projeto: "Project", semProjeto: "No project", responsavel: "Owner", semResponsavel: "No owner", equipe: "Owning team", inicio: "Start", prazo: "Deadline",
+    comoMedimos: "How we measure", numero: "Number", marcosLbl: "Milestones", inicial: "Starting value", alvo: "Target", unidade: "Unit (e.g. retreats)", marcosAjuda: "One milestone per line (3 to 6)",
+    ritmos: { em_ritmo: "On track", em_risco: "At risk", atrasado: "Late", concluido: "Done", sem_prazo: "No deadline" } as Record<string, string>,
+    de: "of", marcos: "milestones", tarefas: "tasks", ate: "by", checkin: "Check-in", checkinTitulo: "How is this goal going?", valorAtual: "Current value",
+    oQueAvancou: "What moved? (one line)", registrar: "Log check-in", historico: "Check-ins", semCheckins: "No check-ins yet.", atualizou: "updated",
+    tarefasLigadas: "Linked tasks", fechar: "Close goal", motivo: "Reason", fechado: "Closed", nenhum: "No goals here", checkinDe: "Check-in",
+    vazioAjuda: "A goal is a result with a deadline, an owner and a target you can measure.",
   },
   pj: {
     novo: "New project", editar: "Edit project", salvar: "Save project", nome: "Project name", descricao: "Description", equipes: "Teams", lider: "Lead", semLider: "No lead",
