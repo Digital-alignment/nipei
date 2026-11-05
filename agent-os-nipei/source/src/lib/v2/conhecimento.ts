@@ -405,12 +405,14 @@ Leia a fonte e devolva:
 - "fatos": de 0 a 40 afirmações curtas, verificáveis e autossuficientes (cada uma entendida sozinha: nomes completos, datas absolutas AAAA-MM-DD, valores com moeda). Só o que a fonte diz: zero invenção, nada de opinião genérica.
 Para cada fato: {"texto": string, "tipo": "fato"|"decisao"|"prazo"|"procedimento"|"contato"|"valor", "equipe": id|null, "projetos": [ids], "objetivos": [ids], "pessoas": [ids], "data_referencia": "AAAA-MM-DD"|null}
 Use só ids do catálogo abaixo; se não souber, deixe vazio.
+"equipe": a equipe dona do assunto do fato, pelos temas de cada equipe no catálogo (a coordenação dela revisa o fato); null quando o fato é sobre a identidade, a missão ou a filosofia do Santuário, sobre a Inî Rau como um todo ou sobre um projeto em geral (a Equipe 1 revisa).
+Não crie fatos sobre a própria fonte ou nota (quem a enviou, quando, que é antiga ou será substituída): só sobre o conteúdo.
 Responda APENAS com um objeto JSON: {"titulo": string, "resumo": string, "texto": string, "fatos": [...]}`;
 
 function catalogo() {
   return [
     "## Catálogo de ids",
-    "Equipes: " + getEquipes().map((e) => `${e.id} (${e.nome})`).join("; "),
+    "Equipes: " + getEquipes().map((e) => `${e.id} (${e.nome}${e.temas.length ? `; temas: ${e.temas.join(", ")}` : ""})`).join("; "),
     "Projetos: " + getProjetos().map((p) => `${p.id} (${p.nome})`).join("; "),
     "Objetivos: " + getObjetivos().map((o) => `${o.id} (${o.ano}: ${o.titulo})`).join("; "),
     "Pessoas: " + getPessoas().filter((p) => p.equipes.length).map((p) => `${p.id} (${p.name})`).join("; "),

@@ -15,6 +15,7 @@ export type Status = "todo" | "doing" | "done";
 
 export type Equipe = {
   id: string; nome: string; cor: string; areas: string[]; coordenadores: string[]; membros: string[];
+  temas: string[]; // what this team knows about (Conhecimento: the AI files facts by these; `temas:` in the team note)
   acesso: boolean; // members of this team can log in
   gestao: boolean; // members of this team manage everything (full session, v1 included)
   avisos: boolean; // members get WhatsApp notices (scripts/avisos on the VPS)
@@ -83,7 +84,7 @@ export const STATUS_RAW: Record<Status, string> = { todo: "A fazer", doing: "Em 
 export function getEquipes(): Equipe[] {
   return readDir("Equipes")
     .map(({ fm }) => ({
-      id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), coordenadores: arr(fm.coordenadores),
+      id: s(fm.id), nome: s(fm.nome), cor: s(fm.cor) || "#737373", areas: arr(fm.areas), temas: arr(fm.temas), coordenadores: arr(fm.coordenadores),
       membros: arr(fm.membros), acesso: fm.acesso === true, gestao: fm.gestao === true, avisos: fm.avisos === true,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
