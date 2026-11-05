@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AbasComPainel } from "@/components/ds/Abas";
-import OQueSabemos from "@/components/v2/OQueSabemos";
-import { filtrarConfirmados } from "@/lib/v2/conhecimento";
+import ConhecimentoEquipe, { lacunasEquipe } from "@/components/v2/ConhecimentoEquipe";
+import { filtrarConfirmados, getFatos, podeRevisar } from "@/lib/v2/conhecimento";
 import ChipDS from "@/components/ds/Chip";
 import { EstadoVazio } from "@/components/ds/Estados";
 import AvatarDS from "@/components/ds/Avatar";
@@ -41,6 +41,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   if (!e) notFound();
   if (e.contatos) return <ContatosEquipe e={e} pessoas={pessoas} gerir={can.gerirEquipe(me, id)} q={q} hoje={today()} t={t} lang={lang} />; // Pontes: contacts, not tasks
   const sabemos = filtrarConfirmados({ equipe: e.id });
+  const paraRevisar = getFatos().filter((f) => f.status === "proposto" && f.equipe === e.id && podeRevisar(me, f)).length;
   const hoje = today();
   const gerir = can.gerirEquipe(me, id);
   const daEquipe = todas.filter((x) => x.equipe === id);
@@ -393,7 +394,8 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         { id: "procedimentos", rotulo: t.rot.procedimentos, contagem: procs.length, conteudo: procedimentosAba },
         { id: "pessoas", rotulo: t.membros, contagem: gente.length, conteudo: pessoasAba },
         { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
-        { id: "sabemos", rotulo: t.oQueSabemos, contagem: sabemos.length, conteudo: <OQueSabemos fatos={sabemos} t={t} base={`/conhecimento?equipe=${e.id}#base`} /> },
+        // DS 10.19: id "sabemos" kept so the tab remembered on each device still opens
+        { id: "sabemos", rotulo: t.ec.aba, contagem: paraRevisar || sabemos.length, alerta: paraRevisar > 0, conteudo: <ConhecimentoEquipe e={e} revisar={paraRevisar} sabemos={sabemos} lacunas={gerir ? lacunasEquipe(e) : []} t={t} /> },
         ...(gerir ? [{ id: "config", rotulo: t.configuracao, contagem: 0, conteudo: config }] : []),
       ]} />
     </>

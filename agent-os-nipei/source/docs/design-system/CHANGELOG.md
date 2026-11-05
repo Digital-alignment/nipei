@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-05 — Conhecimento da equipe e Boas-vindas (10.19–10.20)
+
+- Equipe: aba **Conhecimento** (para revisar com número display, o que a IA não soube nos temas da equipe, o que sabemos).
+- Hoje: cartão `pinu` com barra da equipe "Bem-vindo à <equipe>" (Sobre, coordenação, procedimentos, fatos mais usados, "Abrir a equipe" / "Entendi"). Só componentes existentes.
+
 ## 2026-11-05 — Reunião fixa, Procedimentos e Presença (10.16–10.18)
 
 - Configuração da equipe: cartão "Reunião fixa" (dia + hora); a reunião aparece na Agenda e em Hoje com a tinta da equipe e abre a pauta ao vivo.

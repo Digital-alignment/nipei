@@ -258,6 +258,11 @@ const pt = {
     okSenha: "Senha salva. Os outros aparelhos foram desconectados.", okSair: "Pronto: os outros aparelhos foram desconectados.",
     metodo: { senha: "senha", google: "Google", link: "link no WhatsApp" },
   },
+  ec: {
+    aba: "Conhecimento", paraRevisar: "fatos desta equipe esperando revisão", revisarUm: "Revisar um por um", vez: "vez", vezes: "vezes",
+    bemVindo: "Bem-vindo à {equipe}", bemVindoIntro: "Você entrou nesta equipe. O essencial para começar:", coordenacao: "Coordenação", procedimentos: "O que a equipe sempre faz",
+    sabemos: "O que a equipe sabe", abrirEquipe: "Abrir a equipe", entendi: "Entendi", whats: "Oi, {nome}! Você agora faz parte da equipe {equipe} no Nipëi. Veja o essencial: {link}",
+  },
   rot: {
     reuniaoFixa: "Reunião fixa", reuniaoFixaAjuda: "Aparece na Agenda da equipe e abre a pauta ao vivo. A coordenação recebe um lembrete na véspera.", semReuniao: "Sem reunião fixa", dia: "Dia", hora: "Hora", salvar: "Salvar",
     dias: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"], diasCurtos: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
@@ -580,6 +585,11 @@ const en: Dict = {
     okSenha: "Password saved. Your other devices were signed out.", okSair: "Done: your other devices were signed out.",
     metodo: { senha: "password", google: "Google", link: "WhatsApp link" },
   },
+  ec: {
+    aba: "Knowledge", paraRevisar: "facts of this team waiting for review", revisarUm: "Review one by one", vez: "time", vezes: "times",
+    bemVindo: "Welcome to {equipe}", bemVindoIntro: "You joined this team. The essentials to get started:", coordenacao: "Coordination", procedimentos: "What the team always does",
+    sabemos: "What the team knows", abrirEquipe: "Open the team", entendi: "Got it", whats: "Hi, {nome}! You are now part of the {equipe} team on Nipëi. The essentials: {link}",
+  },
   rot: {
     reuniaoFixa: "Fixed meeting", reuniaoFixaAjuda: "Shows in the team's Agenda and opens the live agenda. The coordination gets a reminder the day before.", semReuniao: "No fixed meeting", dia: "Day", hora: "Time", salvar: "Save",
     dias: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], diasCurtos: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -646,6 +656,9 @@ const en: Dict = {
   tarefaCriada: "Task created", tituloPh: "What needs to be done?", descricaoPh: "Details, context, links (optional)", sextaLbl: "Friday", semPrazoLbl: "no deadline",
   buscarPessoa: "Search person…", euLbl: "Me", checklistPh: "One step per line", criarOutra: "Create and add another", nenhumaPessoa: "No one with that name.",
 };
+
+/** The dictionary of a language outside a request (WhatsApp texts sent in the background). */
+export const dicionario = (lang: Lang): Dict => (lang === "en" ? en : pt);
 
 export async function getLang(): Promise<Lang> {
   return (await cookies()).get(LANG_COOKIE)?.value === "en" ? "en" : "pt";

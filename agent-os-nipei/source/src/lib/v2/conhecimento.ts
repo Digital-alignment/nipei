@@ -241,6 +241,12 @@ export function semResposta(dias = 30): SemResposta[] {
   return [...grupos.values()].sort((a, b) => b.vezes - a.vezes || b.ultima.localeCompare(a.ultima));
 }
 
+/** Questions the AI couldn't answer that touch a team's topics (`temas` of the team note): the team's knowledge gaps. */
+export function semRespostaPorTemas(temas: string[], dias = 30): SemResposta[] {
+  const alvo = palavras(temas.join(" "));
+  return alvo.size ? semResposta(dias).filter((x) => [...palavras(x.pergunta)].some((w) => alvo.has(w))) : [];
+}
+
 /** Facts as prompt lines: "- [prazo] texto (fonte: …, confirmado por X em AAAA-MM-DD)". */
 export const formatarConhecimento = (achados: Achado[]) =>
   achados.map(({ fato: f, fonte }) => `- [${f.tipo}] ${f.texto} (fonte: ${fonte || f.fonte}; confirmado por ${f.revisadoPor || "?"} em ${diaLocal(f.revisadoEm)})`).join("\n");

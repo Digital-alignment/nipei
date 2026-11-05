@@ -9,7 +9,8 @@ import EscolherEquipes from "@/components/v2/EscolherEquipes";
 import { funcaoLigada } from "@/lib/v2/funcoes";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
-import { getFatos, podeRevisar } from "@/lib/v2/conhecimento";
+import { filtrarConfirmados, getFatos, podeRevisar, usoFatos } from "@/lib/v2/conhecimento";
+import AvatarDS from "@/components/ds/Avatar";
 import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
@@ -26,10 +27,10 @@ import Campo from "@/components/ds/Campo";
 import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { createTarefaAction, focoAction, presencaAction } from "../actions";
+import { createTarefaAction, dispensarBoasVindasAction, focoAction, presencaAction } from "../actions";
 import Chip from "@/components/ds/Chip";
 import { pedidosNovos } from "@/lib/v2/pedidos";
-import { diaSemana, getPresenca, segunda } from "@/lib/v2/rotinas";
+import { diaSemana, getPresenca, getProcedimentos, segunda } from "@/lib/v2/rotinas";
 import SemanaPresenca from "@/components/v2/SemanaPresenca";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Cartao from "@/components/ds/Cartao";
@@ -267,6 +268,37 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           </SecaoRecolhivel>
         </Cartao>
       )}
+
+      {me && me.boasVindas.filter((b) => b.desde >= dia(-30)).map((b) => {
+        // DS 10.20: welcome to a team joined in the last 30 days, until "Entendi"
+        const eq = equipes.find((x) => x.id === b.equipe);
+        if (!eq || eq.contatos) return null;
+        const uso = usoFatos();
+        const fatosEq = filtrarConfirmados({ equipe: eq.id }).sort((x, y) => (uso[y.id]?.n ?? 0) - (uso[x.id]?.n ?? 0)).slice(0, 5);
+        const procs = getProcedimentos().filter((x) => x.equipe === eq.id && !x.arquivado);
+        const coord = eq.coordenadores.map((c) => pessoas.find((x) => x.id === c)).filter((x): x is NonNullable<typeof x> => !!x);
+        return (
+          <Cartao key={b.equipe} variante="pinu" equipe={eq.id} className="mb-4">
+            <p className="titulo-cartao">{t.ec.bemVindo.replace("{equipe}", eq.nome)}</p>
+            <p className="corpo text-t2">{t.ec.bemVindoIntro}</p>
+            {eq.sobre.proposito && <div><p className="rotulo-maiusculo text-t3">{t.eq.secoes.proposito}</p><p className="corpo text-t1">{eq.sobre.proposito}</p></div>}
+            {eq.sobre.comoPedir && <div><p className="rotulo-maiusculo text-t3">{t.eq.secoes.comoPedir}</p><p className="corpo text-t1">{eq.sobre.comoPedir}</p></div>}
+            {coord.length > 0 && (
+              <div><p className="rotulo-maiusculo text-t3">{t.ec.coordenacao}</p>
+                <p className="flex flex-wrap gap-3">{coord.map((c) => <span key={c.id} className="corpo inline-flex items-center gap-1.5"><AvatarDS nome={c.name} tamanho={24} />{c.name.split(" ")[0]}</span>)}</p></div>
+            )}
+            {procs.length > 0 && <div><p className="rotulo-maiusculo text-t3">{t.ec.procedimentos}</p><ul className="corpo list-disc pl-5 text-t1">{procs.slice(0, 5).map((x) => <li key={x.id}>{x.titulo}</li>)}</ul></div>}
+            {fatosEq.length > 0 && (
+              <div><p className="rotulo-maiusculo text-t3">{t.ec.sabemos}</p>
+                <ul className="grid gap-1">{fatosEq.map((f) => <li key={f.id}><Link href={`/conhecimento/fato/${f.id}`} className="corpo text-t1 hover:underline">{f.texto}</Link></li>)}</ul></div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Botao href={`/equipes/${eq.id}?aba=sobre`} icone="avancar" tamanho="M">{t.ec.abrirEquipe}</Botao>
+              <form action={dispensarBoasVindasAction}><input type="hidden" name="equipe" value={eq.id} /><BotaoEnviar enviando="…" icone="confirmar" variante="fantasma">{t.ec.entendi}</BotaoEnviar></form>
+            </div>
+          </Cartao>
+        );
+      })}
 
       {me && !me.contato && me.equipes.length > 0 && (() => {
         // DS 10.18: where I am this week (tap a day to cycle); empty week → "same as last week"

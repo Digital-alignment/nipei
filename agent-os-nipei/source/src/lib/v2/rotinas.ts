@@ -122,6 +122,20 @@ export async function lembreteReuniao() {
 }
 const avisados = (e: Equipe, ps: Pessoa[]) => ps.filter((p) => e.coordenadores.includes(p.id) && p.whatsapp && p.whatsappVerificado && p.avisosWhatsapp && !p.suspenso);
 
+// ---------------------------------------------------------------- welcome to the team (DS 10.20)
+
+/** Short WhatsApp with the team link when someone joins a team that can log in. Production only. */
+export async function avisarBoasVindas(pessoaId: string, equipeId: string) {
+  if (process.env.NODE_ENV !== "production") return;
+  const { getEquipes, getPessoas } = await import("./data");
+  const { enviarWhatsApp } = await import("./whatsapp");
+  const { pt, en } = await import("./i18n").then((m) => ({ pt: m.dicionario("pt"), en: m.dicionario("en") }));
+  const e = getEquipes().find((x) => x.id === equipeId), p = getPessoas().find((x) => x.id === pessoaId);
+  if (!e || !p || e.contatos || !e.acesso || !p.whatsapp || !p.whatsappVerificado || !p.avisosWhatsapp || p.suspenso) return;
+  const t = p.idioma === "en" ? en : pt;
+  await enviarWhatsApp(p.whatsapp, t.ec.whats.replace("{nome}", p.name.split(/[\s(]/)[0]).replace("{equipe}", e.nome).replace("{link}", "https://os.nipeihu.app/hoje"));
+}
+
 // ---------------------------------------------------------------- where I am this week (Presenca/<monday>.md)
 
 export const ESTADOS_PRESENCA = ["", "s", "r", "f"] as const; // — · Santuário · Remoto · Fora (tap cycles in this order)

@@ -107,6 +107,16 @@ export async function addToEquipeAction(form: FormData) {
     if (!escolhidas.length) throw new Error("Escolha pelo menos uma equipe");
     for (const id of escolhidas) addToEquipe(String(form.get("pessoa")), id, actorName(me));
   });
+  const { avisarBoasVindas } = await import("@/lib/v2/rotinas");
+  for (const id of escolhidas) void avisarBoasVindas(String(form.get("pessoa")), id).catch(() => {}); // DS 10.20 (production only)
+  revalidatePath("/", "layout");
+}
+
+export async function dispensarBoasVindasAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.pessoa) return;
+  const { dispensarBoasVindas } = await import("@/lib/v2/data");
+  dispensarBoasVindas(me.pessoa.id, String(form.get("equipe") ?? ""));
   revalidatePath("/", "layout");
 }
 
@@ -770,10 +780,11 @@ export async function equipeFatoAction(form: FormData) {
 export async function criarPerguntaAction(form: FormData) {
   const me = await requireUser();
   const { criarPergunta } = await import("@/lib/v2/perguntas");
-  try { criarPergunta(String(form.get("texto") ?? ""), me.pessoa?.id ?? me.username, me.pessoa?.equipes[0] ?? ""); }
+  const daEquipe = pick(form.get("equipe"), getEquipes().map((e) => e.id)); // asked from a team's Conhecimento tab (DS 10.19)
+  try { criarPergunta(String(form.get("texto") ?? ""), me.pessoa?.id ?? me.username, daEquipe || (me.pessoa?.equipes[0] ?? "")); }
   catch (e) { redirect(`/conhecimento?erro=${encodeURIComponent((e as Error).message)}`); }
-  revalidatePath("/conhecimento", "layout");
-  redirect("/conhecimento#perguntas");
+  revalidatePath("/", "layout");
+  redirect(daEquipe ? `/equipes/${daEquipe}?aba=sabemos` : "/conhecimento#perguntas");
 }
 
 /** C8: answer an open question — the answer becomes a source and goes through review. */

@@ -501,6 +501,12 @@ Aba **Procedimentos** da equipe: lista de Cartões — título (`titulo-cartao`)
 ### 10.18 Onde estou esta semana (presença)
 Linha de 7 dias (segunda → domingo) em pílulas de 44 px: inicial do dia em cima, estado embaixo; tocar cicla **—** → **Santuário** (acento suave + ícone `inicio`) → **Remoto** (tonal + ícone `mensagem`) → **Fora** (hachurado + ícone `fechar`). No celular só o ícone (o nome do estado fica no rótulo acessível); o texto aparece a partir de `sm`. Hoje = anel de acento. Em Hoje fica num Cartão recolhível "Onde estou esta semana" (9.12 em cartão; o resumo fechado mostra quantos dias no Santuário) com "Igual à semana passada" (tonal) quando a semana está vazia. Na equipe (aba Membros, topo): faixa da semana (10.5) com, por dia, os Avatares 24 de quem está no Santuário (+N) e a contagem de remotos; a coordenação abre "Marcar a semana" (`/equipes/[id]/semana`) com uma linha por membro.
 
+### 10.19 Conhecimento da equipe
+A aba **Conhecimento** da equipe (antes "O que sabemos") tem três blocos, nesta ordem: **Para revisar** (só para quem pode revisar: Cartão com o número em `numero-display` + Primário "Revisar um por um" → `/conhecimento/revisar?equipe=`; zero → some), **O que a IA não soube** nos temas da equipe (lista: pergunta · "N vezes" em `meta` · "Perguntar à comunidade" tonal; até 5; vazio → some) e **O que sabemos** (a lista de fatos confirmados de sempre, 10 + "Ver na base"). Contagem da aba = fatos para revisar (com `alerta`) para quem revisa; para os outros, os confirmados.
+
+### 10.20 Boas-vindas à equipe
+Quem entra numa equipe vê em Hoje um Cartão destaque suave (variante `pinu`, sem brilho de IA no título) "Bem-vindo à <equipe>": Propósito e Como pedir (do Sobre), a coordenação (Avatares 24 + nomes), os procedimentos da equipe (lista curta), até 5 fatos confirmados mais usados (`corpo`, cada um abre o fato) e dois botões: "Abrir a equipe" (primário) e "Entendi" (fantasma, ícone `confirmar`, tira o cartão). Um cartão por equipe nova; some sozinho depois de 30 dias. Contatos (Pontes) não recebem.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

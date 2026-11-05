@@ -42,6 +42,7 @@ export type Pessoa = {
   externo: boolean;  // tipo_contato: externo — a group or outside contact, not a team member
   contato: boolean;  // only in "contatos" teams (Pontes): out of assignee lists, Participação and organising
   ponte: Ponte;      // contact card (Pontes); empty for everyone else
+  boasVindas: { equipe: string; desde: string }[]; // DS 10.20: teams joined recently whose welcome card wasn't dismissed
   whatsappVerificado: boolean; whatsappVerificadoEm: string; dadosConfirmadosEm: string;
 };
 export const PONTE_TIPOS = ["fornecedor", "aliado", "colaborador"] as const;
@@ -166,6 +167,7 @@ export function getPessoas(): Pessoa[] {
         vinculo: s(fm.vinculo), proximoPasso: s(fm.proximo_passo), reconectarDias: Number(fm.reconectar_dias) || 90,
         desde: s(fm.ponte_desde), conversas: conversasDe(body),
       },
+      boasVindas: arr(fm.boas_vindas).map((x) => { const [equipe, desde] = x.split("|"); return { equipe, desde: desde ?? "" }; }),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
@@ -377,8 +379,11 @@ export function addToEquipe(pessoaId: string, equipeId: string, quem = "") {
   const pessoa = readDir("Miembros").find(({ fm, file }) => (s(fm.id) || path.basename(file, ".md")) === pessoaId);
   const equipe = readDir("Equipes").find(({ fm }) => s(fm.id) === equipeId);
   if (!pessoa || !equipe) throw new Error("Pessoa ou equipe não encontrada");
+  const ja = arr(pessoa.fm.equipes).includes(equipeId);
   updateNote(pessoa.file, { equipes: [...new Set([...arr(pessoa.fm.equipes), equipeId])],
-    ...(equipe.fm.contatos === true && !s(pessoa.fm.ponte_desde) ? { ponte_desde: today() } : {}) }); // Pontes: reconnect reminders count from here
+    ...(equipe.fm.contatos === true && !s(pessoa.fm.ponte_desde) ? { ponte_desde: today() } : {}), // Pontes: reconnect reminders count from here
+    // DS 10.20: welcome card in Hoje for a new member (not for contacts)
+    ...(!ja && equipe.fm.contatos !== true ? { boas_vindas: [...arr(pessoa.fm.boas_vindas).filter((x) => !x.startsWith(`${equipeId}|`)), `${equipeId}|${today()}`] } : {}) });
   updateNote(equipe.file, { membros: [...new Set([...arr(equipe.fm.membros), pessoaId])] });
   if (quem) registrarPessoa(pessoa.file, quem, `entrou na equipe ${s(equipe.fm.nome) || equipeId}`);
 }
@@ -405,6 +410,12 @@ export function historicoPessoa(pessoaId: string, max = 15): { quando: string; q
     const [quando, quem, ...resto] = l.slice(2).split(" · ");
     return { quando: quando ?? "", quem: quem ?? "", oque: resto.join(" · ") };
   });
+}
+
+/** "Entendi" on the welcome card (DS 10.20). */
+export function dispensarBoasVindas(pessoaId: string, equipeId: string) {
+  const n = notaPessoa(pessoaId);
+  updateNote(n.file, { boas_vindas: arr(n.fm.boas_vindas).filter((x) => !x.startsWith(`${equipeId}|`)) });
 }
 
 /** Takes a person out of a team (and out of its coordination). Both notes are updated. */

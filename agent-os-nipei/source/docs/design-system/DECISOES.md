@@ -791,3 +791,7 @@ Plano Equipes, fase 2 (aprovado por Ashuan). Só componentes existentes (Cartão
 ## 2026-11-05 — Reunião fixa, Procedimentos e Presença (§10.16–10.18)
 
 Plano Equipes, fase 3 (aprovado por Ashuan). A reunião fixa e os procedimentos reaproveitam evento, tarefa e checklist; a presença é uma linha de pílulas que cicla ao toque (um controle só, sem formulário) e usa o hachurado para "fora", como o resto do sistema usa para o que não está acontecendo.
+
+## 2026-11-05 — Conhecimento da equipe e Boas-vindas (§10.19–10.20)
+
+Plano Equipes, fase 4 (aprovado por Ashuan). A aba "O que sabemos" vira "Conhecimento" com o que falta (revisar, perguntas sem resposta) antes do que já se sabe: a coordenação vê primeiro o que pede ação. As boas-vindas usam o cartão `pinu` porque juntam o que a base sabe da equipe; não é uma proposta da IA, então não leva o selo do Pinu.
