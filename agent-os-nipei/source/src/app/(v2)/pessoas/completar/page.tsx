@@ -68,7 +68,7 @@ export default async function CompletarFichas({ searchParams }: { searchParams: 
                   <input name={`ref_${p.id}`} defaultValue={ref} placeholder={tp.referente} aria-label={`${tp.referente}: ${p.name}`} className={CAMPO_COMPACTO} />
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {p.equipes.length ? <span className="meta self-center text-t3">{p.equipes.length} {t.equipes.toLowerCase()}</span> : (
+                  {p.equipes.length ? <span className="meta self-center text-t3">{p.equipes.length} {p.equipes.length === 1 ? t.equipe.toLowerCase() : t.equipes.toLowerCase()}</span> : (
                     <select name={`equipe_${p.id}`} defaultValue={s.equipe ?? ""} aria-label={`${tp.adicionarEquipe} ${p.name}`} className={CAMPO_COMPACTO}>
                       <option value="">{tp.adicionarEquipe}</option>
                       {equipes.filter((e) => !e.gestao).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}

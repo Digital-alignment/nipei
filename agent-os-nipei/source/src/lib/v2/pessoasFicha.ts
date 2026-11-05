@@ -59,15 +59,15 @@ export async function sugerirFichas(vault: string, pessoas: Pessoa[], d: { equip
   const equipes = d.equipes.filter((e) => !e.contatos);
   const validas = new Set(equipes.map((e) => e.id));
   const catalogo = equipes.map((e) => `- ${e.id}: ${e.nome} (temas: ${e.temas.join(", ")})`).join("\n");
-  for (let i = 0; i < pessoas.length; i += 25) {
-    const lote = pessoas.slice(i, i + 25).map((p) => {
+  for (let i = 0; i < pessoas.length; i += 12) { // small batches: the model also spends tokens reasoning
+    const lote = pessoas.slice(i, i + 12).map((p) => {
       const ts = d.tarefas.filter((t) => t.responsaveis.includes(p.id)).slice(0, 12).map((t) => t.title).join("; ");
       const fs_ = d.fatos.filter((f) => f.pessoas.includes(p.id)).slice(0, 4).map((f) => f.texto.slice(0, 160)).join(" / ");
       const pr = d.projetos.filter((x) => x.lider === p.id).map((x) => x.nome).join(", ");
       return `## ${p.id} — ${p.name}\nequipes: ${p.equipes.join(", ") || "nenhuma"} · papel atual: ${p.funcao || "-"}${pr ? ` · lidera: ${pr}` : ""}\ntarefas: ${ts || "-"}\nfatos: ${fs_ || "-"}`;
     }).join("\n\n");
-    const raw = await chamarIATexto(SISTEMA, [{ type: "text", text: `## Equipes\n${catalogo}\n\n# Pessoas\n${lote}` }], 3000, 120_000);
-    const ids = new Set(pessoas.slice(i, i + 25).map((p) => p.id));
+    const raw = await chamarIATexto(SISTEMA, [{ type: "text", text: `## Equipes\n${catalogo}\n\n# Pessoas\n${lote}` }], 8000, 150_000);
+    const ids = new Set(pessoas.slice(i, i + 12).map((p) => p.id));
     for (const linha of raw.split(/\r?\n/)) {
       const [id, papel, equipe, temas] = linha.replace(/^[-*\s]+/, "").split("|").map((x) => (x ?? "").trim());
       if (!ids.has(id)) continue;

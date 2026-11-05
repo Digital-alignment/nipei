@@ -43,7 +43,7 @@ export async function sugerirProjetosItens(vault: string, tipo: Tipo, itens: { i
   for (let i = 0; i < itens.length; i += 60) {
     const lote = itens.slice(i, i + 60).map((t) => `- ${t.id} | ${t.texto.replace(/\s+/g, " ").slice(0, 300)} | equipe: ${equipes.find((e) => e.id === t.equipe)?.nome ?? "-"}`).join("\n");
     const ids = new Set(itens.slice(i, i + 60).map((t) => t.id));
-    const raw = await chamarIATexto(SISTEMA(tipo === "fatos" ? "os fatos da base de conhecimento" : "as tarefas"), [{ type: "text", text: `## Projetos\n${catalogo}\n\n## Itens (id | texto | equipe)\n${lote}` }], 4000, 120_000);
+    const raw = await chamarIATexto(SISTEMA(tipo === "fatos" ? "os fatos da base de conhecimento" : "as tarefas"), [{ type: "text", text: `## Projetos\n${catalogo}\n\n## Itens (id | texto | equipe)\n${lote}` }], 8000, 150_000);
     // read "id": "projeto" pairs one by one: a stray brace or a cut-off answer loses one pair, not the batch
     for (const [, tid, pid] of raw.matchAll(/"([^"]+)"\s*:\s*"([^"]*)"/g)) if (ids.has(tid) && validos.has(pid)) out[tid] = pid;
     // save after each batch: a later failing batch keeps what was already suggested
