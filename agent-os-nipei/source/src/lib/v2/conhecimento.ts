@@ -170,8 +170,8 @@ export function versoesFato(id: string, fatos: Fato[] = getFatos()): Fato[] {
 }
 
 const PARADAS = new Set("para pela pelo como mais muito sobre entre depois antes cada todo toda todos todas deve devem será serão está estão foram ser são tem têm isso esse essa este esta quando onde qual quais também ainda what with that this from have".split(" "));
-/** Significant words (≥4 letters, no accents, no stop words). */
-export const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !PARADAS.has(w)));
+/** Significant words (≥4 letters, no accents, no stop words), singular ("regras" = "regra", "retiros" = "retiro"). */
+export const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !PARADAS.has(w)).map((w) => w.replace(/s$/, "")));
 
 // ---------------------------------------------------------------- K3: the one knowledge search
 
@@ -187,9 +187,12 @@ export function buscarConhecimento(pergunta: string, opts: { equipe?: string; pr
   const q = palavras(pergunta);
   const tags = new Set([opts.equipe && `e:${opts.equipe}`, ...(opts.projetos ?? []).map((x) => `p:${x}`), ...(opts.objetivos ?? []).map((x) => `o:${x}`), ...(opts.pessoas ?? []).map((x) => `h:${x}`)].filter(Boolean) as string[]);
   const fontes = new Map(getFontes().map((f) => [f.id, f.titulo]));
+  // the source title is the fact's topic ("Regras de convivência e conduta"): its words count too (¾ of a word in the
+  // fact itself, so a fact that says it beats one that is only filed under it)
+  const temas = new Map([...fontes].map(([id, titulo]) => [id, palavras(titulo)]));
   const achados = getFatos().filter((f) => f.status === "confirmado").map((f) => {
-    const w = palavras(f.texto);
-    const comuns = [...q].filter((x) => w.has(x)).length;
+    const w = palavras(f.texto), tema = temas.get(f.fonte);
+    const comuns = [...q].reduce((n, x) => n + (w.has(x) ? 1 : tema?.has(x) ? 0.75 : 0), 0);
     const ft = [f.equipe && `e:${f.equipe}`, ...f.projetos.map((x) => `p:${x}`), ...f.objetivos.map((x) => `o:${x}`), ...f.pessoas.map((x) => `h:${x}`)];
     const score = (q.size ? comuns / Math.min(q.size, 8) : 0) + 0.15 * ft.filter((x) => x && tags.has(x)).length;
     return { fato: f, fonte: fontes.get(f.fonte) ?? "", score };
