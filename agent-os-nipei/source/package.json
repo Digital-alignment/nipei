@@ -1,6 +1,6 @@
 {
   "name": "nipei-os",
-  "version": "2.76.0",
+  "version": "2.76.1",
   "private": true,
   "scripts": {
     "dev": "next dev -H 127.0.0.1",
@@ -9,7 +9,8 @@
     "icones": "node scripts/gerar-icones.mjs",
     "entrar:local": "node scripts/entrar-local.mjs",
     "verificar:ds": "node scripts/verificar-ds.mjs && node scripts/ds-contraste.mjs",
-    "prebuild": "npm run verificar:ds"
+    "prebuild": "npm run verificar:ds",
+    "auditar": "python scripts/auditar.py"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
 import type { Equipe, Objetivo, Pessoa, Projeto, Tarefa } from "./data";
+import { palavras } from "./conhecimento";
 
 // Pessoas (DS 10.23): what a person is responsible for, "who knows about X", and the AI suggestions for "Completar fichas".
 
 const n = (x: string) => x.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-const palavras = (x: string) => new Set(n(x).split(/[^a-z0-9]+/).filter((w) => w.length >= 4).map((w) => w.replace(/s$/, "")));
+// same words as the knowledge search (3-letter acronyms like ONG count, stop words don't)
 const comum = (a: Set<string>, b: Set<string>) => [...a].filter((w) => b.has(w)).length;
 
 export type Responsabilidades = { coordena: Equipe[]; lidera: Projeto[]; objetivos: Objetivo[]; procedimentos: { id: string; titulo: string; equipe: string }[] };
