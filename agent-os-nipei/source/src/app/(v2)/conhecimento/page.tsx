@@ -5,7 +5,7 @@ import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
 import Recolhivel, { AtalhosSecao } from "@/components/ds/SecaoRecolhivel";
 import { currentUser, getEquipes, getPessoas, getProjetos, projetosVisiveis } from "@/lib/v2/data";
-import { buscarConhecimento, getFatos, getFontes, podeRevisar } from "@/lib/v2/conhecimento";
+import { buscarConhecimento, getFatos, getFontes, podeRevisar, projetosOcultos } from "@/lib/v2/conhecimento";
 import Campo from "@/components/ds/Campo";
 import { EstadoVazio } from "@/components/ds/Estados";
 import { BotaoIcone } from "@/components/ds/Botao";
@@ -23,7 +23,8 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   const q = await searchParams;
   const { t, lang } = await getT();
   const me = (await currentUser())!;
-  const fontes = getFontes(), fatos = getFatos(), pessoas = getPessoas();
+  const ocultos = projetosOcultos(me); // DS 10.21: facts of private projects this person can't see are left out of every section
+  const fontes = getFontes(), fatos = getFatos().filter((f) => !f.projetos.some((x) => ocultos.has(x))), pessoas = getPessoas();
   const porFonte = (fid: string) => {
     const meus = fatos.filter((f) => f.fonte === fid);
     return { pendentes: meus.filter((f) => f.status === "proposto"), revisados: meus.filter((f) => f.status !== "proposto").length, total: meus.length };
@@ -44,7 +45,7 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   const secoes = SECOES.filter((s) => !s.mostrar || s.mostrar(ctx));
   // perguntar à base: a lista sai na hora, sem IA (mesma busca que as IAs usam); o Pinu só resume se pedirem
   const pergunta = (q.pergunta ?? "").trim().slice(0, 300);
-  const achados = pergunta ? buscarConhecimento(pergunta, { limite: 8 }) : [];
+  const achados = pergunta ? buscarConhecimento(pergunta, { limite: 8, me }) : [];
   // C8: what the base can't answer stays as an open question for the community
   const perguntar = (rotulo: string, variante: "tonal" | "fantasma") => (
     <form action={criarPerguntaAction} className="justify-self-start">

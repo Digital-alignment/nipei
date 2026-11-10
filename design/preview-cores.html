@@ -1,0 +1,55 @@
+<!doctype html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nipëi OS — prévia de cores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:"Google Sans",system-ui,sans-serif;background:#DEDEDE}
+.wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0}
+.t{padding:24px 16px}.light{background:#FFFFFF;color:#1A1A1A}.dark{background:#141414;color:#FFFFFF}
+h1{font-family:Outfit;font-weight:600;font-size:24px;margin:0 0 4px}h2{font-family:Outfit;font-weight:500;font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:24px 0 8px;opacity:.8}
+.sec-l{color:#424242}.sec-d{color:#B3B3B3}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:600 14px "Google Sans";border:0;border-radius:6px;padding:10px 16px}
+.banner{border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:6px;border-left:4px solid}
+.team{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;margin-bottom:6px;font-size:14px}
+.bar{width:4px;align-self:stretch;border-radius:2px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chip{font-size:13px;padding:5px 10px;border-radius:999px;display:inline-flex;gap:6px;align-items:center}
+</style></head><body><div class="wrap">
+
+<div class="t light">
+<h1>Tema claro</h1><div class="sec-l">Texto principal #1A1A1A · secundário #424242</div>
+<h2 class="sec-l">Ações</h2>
+<div class="row"><button class="btn" style="background:#2A5C0B;color:#fff">Primário</button><button class="btn" style="background:#042608;color:#fff">Pressionado</button><button class="btn" style="background:#fff;color:#1A1A1A;box-shadow:inset 0 0 0 1px #858585">Secundário</button></div>
+<h2 class="sec-l">Estados</h2>
+<div class="banner" style="background:#EEF3E8;border-color:#2A5C0B;color:#2A5C0B">Sucesso — tarefa concluída</div>
+<div class="banner" style="background:#FBF3E4;border-color:#8A5A00;color:#8A5A00">Atenção — prazo amanhã</div>
+<div class="banner" style="background:#FBEAE9;border-color:#B3261E;color:#B3261E">Erro — não foi possível salvar</div>
+<div class="banner" style="background:#E9F0F9;border-color:#1F5FAD;color:#1F5FAD">Info — 3 fotos processando</div>
+<h2 class="sec-l">Equipes (proposta)</h2>
+<div class="team" style="background:#F5F5F5"><span class="bar" style="background:#0F766E"></span>Escritório / Gestão Geral · teal</div>
+<div class="team" style="background:#F5F5F5"><span class="bar" style="background:#6D4AB8"></span>Produção Yawanawa · violeta</div>
+<div class="team" style="background:#F5F5F5"><span class="bar" style="background:#A3306B"></span>Guardiões · magenta</div>
+<div class="team" style="background:#F5F5F5"><span class="bar" style="background:#4F6475"></span>Manutenção e Logística · ardósia</div>
+<div class="row" style="margin-top:8px"><span class="chip" style="box-shadow:inset 0 0 0 1px #B3B3B3"><span class="dot" style="background:#A3542A"></span>alternativa: terracota</span></div>
+</div>
+
+<div class="t dark">
+<h1>Tema escuro</h1><div class="sec-d">Texto principal #FFFFFF · secundário #B3B3B3</div>
+<h2 class="sec-d">Ações</h2>
+<div class="row"><button class="btn" style="background:#808F12;color:#0A0A0A">Antes #808F12 · 5,5</button></div>
+<div class="row" style="margin-top:8px"><button class="btn" style="background:#A8B81A;color:#0A0A0A">A · #A8B81A · 9,0</button><button class="btn" style="background:#B5C42E;color:#0A0A0A">B · #B5C42E · 10,3</button><button class="btn" style="background:#C3D14A;color:#0A0A0A">C · #C3D14A · 11,8</button></div>
+<div class="row" style="margin-top:8px"><button class="btn" style="background:#2A5C0B;color:#fff">Fundo tingido</button><button class="btn" style="background:#141414;color:#fff;box-shadow:inset 0 0 0 1px #858585">Secundário</button></div>
+<h2 class="sec-d">Estados</h2>
+<div class="banner" style="background:#1B2410;border-color:#808F12;color:#C3D14A">Sucesso — tarefa concluída</div>
+<div class="banner" style="background:#2A2010;border-color:#E0A526;color:#E0A526">Atenção — prazo amanhã</div>
+<div class="banner" style="background:#2C1514;border-color:#FF6B5E;color:#FF6B5E">Erro — não foi possível salvar</div>
+<div class="banner" style="background:#121D2B;border-color:#6FA8F0;color:#6FA8F0">Info — 3 fotos processando</div>
+<h2 class="sec-d">Equipes (proposta)</h2>
+<div class="team" style="background:#1A1A1A"><span class="bar" style="background:#2BB3A6"></span>Escritório / Gestão Geral · teal</div>
+<div class="team" style="background:#1A1A1A"><span class="bar" style="background:#A68CF0"></span>Produção Yawanawa · violeta</div>
+<div class="team" style="background:#1A1A1A"><span class="bar" style="background:#E37AB0"></span>Guardiões · magenta</div>
+<div class="team" style="background:#1A1A1A"><span class="bar" style="background:#8FA6B8"></span>Manutenção e Logística · ardósia</div>
+<div class="row" style="margin-top:8px"><span class="chip" style="box-shadow:inset 0 0 0 1px #424242"><span class="dot" style="background:#E08A5C"></span>alternativa: terracota</span></div>
+</div>
+</div></body></html>

@@ -12,7 +12,7 @@ import type { Ctx } from "./index";
  */
 export default function Mapa({ ctx }: { ctx: Ctx }) {
   const { t } = ctx;
-  const { nos, ligacoes } = mapaConhecimento();
+  const { nos, ligacoes } = mapaConhecimento(ctx.me);
   const linhas = nos.filter((n) => n.tipo === "equipe" && (n.id !== "e:-" || n.confirmados + n.pendentes > 0));
   const colunas = nos.filter((n) => n.tipo === "projeto" && (n.id !== "p:-" || n.confirmados + n.pendentes > 0));
   const celula = (e: string, p: string) => ligacoes.find((l) => l.de === e && l.para === p) ?? { confirmados: 0, pendentes: 0 };

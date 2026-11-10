@@ -6,7 +6,7 @@ import { isIP } from "net";
 import { requestSync } from "@/lib/tarefaNote";
 import { chamarIA, chamarIATexto, type Parte } from "./ia";
 import { auditarFatos } from "./auditor";
-import { getEquipes, getObjetivos, getPessoas, getProjetos, noteText, readDir, slugify, updateNote, vault, type FmValue, type Me } from "./data";
+import { getEquipes, getObjetivos, getPessoas, getProjetos, noteText, podeVerProjeto, readDir, slugify, updateNote, vault, type FmValue, type Me } from "./data";
 
 // Conhecimento (K1): someone uploads a source (file, link, pasted text) → the AI reads it and splits it
 // into short facts → a person confirms, edits or discards each fact. Only confirmed facts are "the truth".
@@ -109,14 +109,21 @@ export function registrarUsoFatos(ids: string[], origem: string) {
 // "e:-" / "p:-" = facts without a team / project (the gaps). Counts only confirmed and pending facts.
 export type NoMapa = { id: string; tipo: "equipe" | "projeto" | "pessoa"; nome: string; confirmados: number; pendentes: number; usos: number };
 export type LigacaoMapa = { de: string; para: string; confirmados: number; pendentes: number };
-export function mapaConhecimento(): { nos: NoMapa[]; ligacoes: LigacaoMapa[] } {
-  const equipes = getEquipes(), projetos = getProjetos(), pessoas = getPessoas(), uso = usoFatos();
+/** Private projects (DS 10.21) this person can't see; without a person (background AI, Hermes, Venu) every private one is hidden. */
+export function projetosOcultos(me?: Me | null): Set<string> {
+  return new Set(getProjetos().filter((p) => p.privado && (!me || !podeVerProjeto(me, p))).map((p) => p.id));
+}
+const ocultoPara = (f: Fato, ocultos: Set<string>) => ocultos.size > 0 && f.projetos.some((x) => ocultos.has(x));
+
+export function mapaConhecimento(me?: Me | null): { nos: NoMapa[]; ligacoes: LigacaoMapa[] } {
+  const ocultos = projetosOcultos(me);
+  const equipes = getEquipes(), projetos = getProjetos().filter((p) => !ocultos.has(p.id)), pessoas = getPessoas(), uso = usoFatos();
   const nos = new Map<string, NoMapa>(), ligacoes = new Map<string, LigacaoMapa>();
   const no = (id: string, tipo: NoMapa["tipo"], nome: string) => nos.get(id) ?? nos.set(id, { id, tipo, nome, confirmados: 0, pendentes: 0, usos: 0 }).get(id)!;
   for (const e of equipes) no(`e:${e.id}`, "equipe", e.nome);
   for (const p of projetos) no(`p:${p.id}`, "projeto", p.nome);
   for (const f of getFatos()) {
-    if (f.status !== "confirmado" && f.status !== "proposto") continue;
+    if ((f.status !== "confirmado" && f.status !== "proposto") || ocultoPara(f, ocultos)) continue;
     const campo = f.status === "confirmado" ? "confirmados" : "pendentes";
     const ids = [
       f.equipe ? `e:${f.equipe}` : "e:-", ...(f.projetos.length ? f.projetos.map((p) => `p:${p}`) : ["p:-"]), ...f.pessoas.map((h) => `h:${h}`),
@@ -169,9 +176,13 @@ export function versoesFato(id: string, fatos: Fato[] = getFatos()): Fato[] {
   return lista;
 }
 
-const PARADAS = new Set("para pela pelo como mais muito sobre entre depois antes cada todo toda todos todas deve devem será serão está estão foram ser são tem têm isso esse essa este esta quando onde qual quais também ainda what with that this from have".split(" "));
-/** Significant words (≥4 letters, no accents, no stop words), singular ("regras" = "regra", "retiros" = "retiro"). */
-export const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !PARADAS.has(w)).map((w) => w.replace(/s$/, "")));
+const PARADAS = new Set(("para pela pelo como mais muito sobre entre depois antes cada todo toda todos todas deve devem sera serao esta estao foram ser sao tem tem isso esse essa este esta quando onde qual quais tambem ainda what with that this from have " +
+  // 3 letters (acronyms like ONG, MEI, DRE count since v2.76; these don't)
+  "que com dos das uma uns por nao nos nas sua seu ter ver foi ele ela mas era vai sem pra pro and for the you are qua ate mes ano dia").split(" "));
+/** Significant words (≥3 letters, no accents, no stop words), singular ("regras" = "regra", "retiros" = "retiro"). */
+export const palavras = (t: string) => new Set(t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 3 && !PARADAS.has(w)).map((w) => (w.length > 3 ? w.replace(/s$/, "") : w)));
+/** Same stem: words of 6+ letters sharing the first 6 ("faturada" ~ "faturamento", "contratar" ~ "contratos"). */
+const raiz = (w: string) => (w.length >= 6 ? w.slice(0, 6) : "");
 
 // ---------------------------------------------------------------- K3: the one knowledge search
 
@@ -183,16 +194,21 @@ export type Achado = { fato: Fato; fonte: string; score: number };
  * for each shared team/project/objective/person; newest review first on ties.
  */
 export function buscarConhecimento(pergunta: string, opts: { equipe?: string; projetos?: string[]; objetivos?: string[]; pessoas?: string[]; limite?: number; minimo?: number;
-  /** which AI gets these facts (D11, "a IA usou isto"); leave out when a person only browses */ origem?: string } = {}): Achado[] {
+  /** which AI gets these facts (D11, "a IA usou isto"); leave out when a person only browses */ origem?: string;
+  /** who will read the answer: facts of private projects they can't see are left out (none given = all private ones out) */ me?: Me | null;
+  /** the caller already checked access: true = gestão-only AI; ids = only these private projects (a page the person can open) */ comPrivados?: boolean | string[] } = {}): Achado[] {
   const q = palavras(pergunta);
   const tags = new Set([opts.equipe && `e:${opts.equipe}`, ...(opts.projetos ?? []).map((x) => `p:${x}`), ...(opts.objetivos ?? []).map((x) => `o:${x}`), ...(opts.pessoas ?? []).map((x) => `h:${x}`)].filter(Boolean) as string[]);
   const fontes = new Map(getFontes().map((f) => [f.id, f.titulo]));
   // the source title is the fact's topic ("Regras de convivência e conduta"): its words count too (¾ of a word in the
   // fact itself, so a fact that says it beats one that is only filed under it)
   const temas = new Map([...fontes].map(([id, titulo]) => [id, palavras(titulo)]));
-  const achados = getFatos().filter((f) => f.status === "confirmado").map((f) => {
-    const w = palavras(f.texto), tema = temas.get(f.fonte);
-    const comuns = [...q].reduce((n, x) => n + (w.has(x) ? 1 : tema?.has(x) ? 0.75 : 0), 0);
+  const ocultos = opts.comPrivados === true ? new Set<string>() : projetosOcultos(opts.me);
+  if (Array.isArray(opts.comPrivados)) for (const x of opts.comPrivados) ocultos.delete(x);
+  const achados = getFatos().filter((f) => f.status === "confirmado" && !ocultoPara(f, ocultos)).map((f) => {
+    const w = palavras(f.texto), tema = temas.get(f.fonte), raizes = new Set([...w].map(raiz).filter(Boolean));
+    // exact word 1 · same stem 0.8 · in the source title 0.75
+    const comuns = [...q].reduce((n, x) => n + (w.has(x) ? 1 : raiz(x) && raizes.has(raiz(x)) ? 0.8 : tema?.has(x) ? 0.75 : 0), 0);
     const ft = [f.equipe && `e:${f.equipe}`, ...f.projetos.map((x) => `p:${x}`), ...f.objetivos.map((x) => `o:${x}`), ...f.pessoas.map((x) => `h:${x}`)];
     const score = (q.size ? comuns / Math.min(q.size, 8) : 0) + 0.15 * ft.filter((x) => x && tags.has(x)).length;
     return { fato: f, fonte: fontes.get(f.fonte) ?? "", score };
@@ -259,10 +275,11 @@ const semAcento = (t: string) => t.toLowerCase().normalize("NFD").replace(/\p{M}
  * in the fact or its source title, in any order, accents ignored; plus exact filters ("-" = without team / project,
  * the map's gap cells). Newest review first.
  */
-export function filtrarConfirmados(opts: { q?: string; equipe?: string; tipo?: string; projeto?: string; pessoa?: string }): Fato[] {
+export function filtrarConfirmados(opts: { q?: string; equipe?: string; tipo?: string; projeto?: string; pessoa?: string; me?: Me | null }): Fato[] {
   const termos = semAcento(opts.q ?? "").split(/[^a-z0-9]+/).filter((x) => x.length >= 2);
   const fontes = new Map(getFontes().map((f) => [f.id, f.titulo]));
-  return getFatos().filter((f) => f.status === "confirmado"
+  const ocultos = projetosOcultos(opts.me);
+  return getFatos().filter((f) => f.status === "confirmado" && !ocultoPara(f, ocultos)
     && (!opts.equipe || (opts.equipe === "-" ? !f.equipe : f.equipe === opts.equipe)) && (!opts.tipo || f.tipo === opts.tipo)
     && (!opts.projeto || (opts.projeto === "-" ? !f.projetos.length : f.projetos.includes(opts.projeto))) && (!opts.pessoa || f.pessoas.includes(opts.pessoa))
     && (!termos.length || ((t) => termos.every((x) => t.includes(x)))(semAcento(`${f.texto} ${fontes.get(f.fonte) ?? ""}`))))
@@ -420,7 +437,7 @@ function catalogo() {
     "## Catálogo de ids",
     "Equipes: " + getEquipes().map((e) => `${e.id} (${e.nome}${e.temas.length ? `; temas: ${e.temas.join(", ")}` : ""})`).join("; "),
     "Projetos: " + getProjetos().map((p) => `${p.id} (${p.nome})`).join("; "),
-    "Objetivos: " + getObjetivos().map((o) => `${o.id} (${o.ano}: ${o.titulo})`).join("; "),
+    "Objetivos: " + getObjetivos().filter((o) => o.status === "ativo").map((o) => `${o.id} (${o.ano}: ${o.titulo})`).join("; "), // closed ones never get new facts
     "Pessoas: " + getPessoas().filter((p) => p.equipes.length).map((p) => `${p.id} (${p.name})`).join("; "),
   ].join("\n");
 }

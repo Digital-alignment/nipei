@@ -53,7 +53,7 @@ export default async function PessoaDetalhe({ params, searchParams }: { params: 
   const me = (await currentUser())!;
   const p = getPessoas().find((x) => x.id === id);
   if (!p) notFound();
-  const sabemos = filtrarConfirmados({ pessoa: p.id });
+  const sabemos = filtrarConfirmados({ pessoa: p.id, me });
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas();
   const gerir = can.gerirPessoa(me, p) || (p.equipes.length === 0 && me.gestao);

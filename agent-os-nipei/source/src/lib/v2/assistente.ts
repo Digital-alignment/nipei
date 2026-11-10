@@ -301,7 +301,7 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
   }
   if (nome === "buscar_conhecimento") {
     const p = s(a.pergunta);
-    const fatos = buscarConhecimento(p, { origem: "pinu", limite: 8 });
+    const fatos = buscarConhecimento(p, { origem: "pinu", limite: 8, me });
     const rag = queryVaultGrounding(p).citations.filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 3);
     return { confirmados: formatarConhecimento(fatos) || "(nada confirmado)", notasAntigas: rag.map((c) => `${c.title}: ${c.snippet.slice(0, 500)}`) };
   }

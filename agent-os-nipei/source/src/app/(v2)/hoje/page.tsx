@@ -278,7 +278,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         const eq = equipes.find((x) => x.id === b.equipe);
         if (!eq || eq.contatos) return null;
         const uso = usoFatos();
-        const fatosEq = filtrarConfirmados({ equipe: eq.id }).sort((x, y) => (uso[y.id]?.n ?? 0) - (uso[x.id]?.n ?? 0)).slice(0, 5);
+        const fatosEq = filtrarConfirmados({ equipe: eq.id, me: user }).sort((x, y) => (uso[y.id]?.n ?? 0) - (uso[x.id]?.n ?? 0)).slice(0, 5);
         const procs = getProcedimentos().filter((x) => x.equipe === eq.id && !x.arquivado);
         const coord = eq.coordenadores.map((c) => pessoas.find((x) => x.id === c)).filter((x): x is NonNullable<typeof x> => !!x);
         return (

@@ -40,7 +40,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const e = equipes.find((x) => x.id === id);
   if (!e) notFound();
   if (e.contatos) return <ContatosEquipe e={e} pessoas={pessoas} gerir={can.gerirEquipe(me, id)} q={q} hoje={today()} t={t} lang={lang} />; // Pontes: contacts, not tasks
-  const sabemos = filtrarConfirmados({ equipe: e.id });
+  const sabemos = filtrarConfirmados({ equipe: e.id, me });
   const paraRevisar = getFatos().filter((f) => f.status === "proposto" && f.equipe === e.id && podeRevisar(me, f)).length;
   const hoje = today();
   const gerir = can.gerirEquipe(me, id);

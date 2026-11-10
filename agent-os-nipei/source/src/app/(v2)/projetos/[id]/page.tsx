@@ -35,7 +35,7 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
   const me = (await currentUser())!;
   const p = getProjetos().find((x) => x.id === id);
   if (!p || !podeVerProjeto(me, p)) notFound();
-  const sabemos = filtrarConfirmados({ projeto: p.id });
+  const sabemos = filtrarConfirmados({ projeto: p.id, me });
   const hoje = today();
   const equipes = getEquipes(), pessoas = getPessoas(), todas = getTarefas();
   const gerir = me.gestao || p.equipes.some((e) => me.coordena.includes(e));

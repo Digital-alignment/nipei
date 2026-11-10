@@ -16,7 +16,7 @@ const MAX = 60;
 export default function Base({ ctx }: { ctx: Ctx }) {
   const { q, t, equipes, confirmados } = ctx;
   const acervoDe = new Map(ctx.fontes.filter((f) => f.acervo).map((f) => [f.id, f.acervo]));
-  const lista = filtrarConfirmados(q);
+  const lista = filtrarConfirmados({ ...q, me: ctx.me });
   const uso = usoFatos();
   const projetos = ctx.projetos.filter((p) => confirmados.some((f) => f.projetos.includes(p.id)));
   const pessoas = [...new Set(confirmados.flatMap((f) => f.pessoas))].map((id) => ({ id, nome: ctx.nome(id) })).sort((a, b) => a.nome.localeCompare(b.nome));

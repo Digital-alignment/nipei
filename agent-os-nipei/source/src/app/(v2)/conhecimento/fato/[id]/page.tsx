@@ -11,7 +11,7 @@ import { chaveEquipe } from "@/components/ds/equipes";
 import LinhaDoTempo, { type ItemTempo } from "@/components/ds/padroes/LinhaDoTempo";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { currentUser, getEquipes, getPessoas, getProjetos } from "@/lib/v2/data";
-import { diaLocal, getFatos, getFontes, podeRevisar, usoFatos, versoesFato, type Fato } from "@/lib/v2/conhecimento";
+import { diaLocal, getFatos, getFontes, podeRevisar, projetosOcultos, usoFatos, versoesFato, type Fato } from "@/lib/v2/conhecimento";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { corrigirFatoAction } from "../../../actions";
 
@@ -23,7 +23,7 @@ export default async function FatoDetalhe({ params }: { params: Promise<{ id: st
   const me = (await currentUser())!;
   const fatos = getFatos();
   const f = fatos.find((x) => x.id === id);
-  if (!f) notFound();
+  if (!f || f.projetos.some((x) => projetosOcultos(me).has(x))) notFound(); // DS 10.21: private project
   const fonte = getFontes().find((x) => x.id === f.fonte);
   const equipes = getEquipes(), projetos = getProjetos(), pessoas = getPessoas();
   const versoes = versoesFato(f.id, fatos);

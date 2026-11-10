@@ -70,6 +70,7 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
   const rag = queryVaultGrounding(`${tarefa.title} ${doc.descricao}`.slice(0, 500), "squad_1_ceo");
   const base = buscarConhecimento(`${tarefa.title} ${doc.descricao} ${doc.checklist.map((c) => c.texto).join(" ")}`, {
     origem: "tarefas", equipe: tarefa.equipe, projetos: tarefa.projeto ? [tarefa.projeto] : [], objetivos: tarefa.objetivo ? [tarefa.objetivo] : [], pessoas: tarefa.responsaveis, limite: 15,
+    comPrivados: tarefa.projeto ? [tarefa.projeto] : undefined, // the task's own project, even when private (task AI is gestão-only)
   });
 
   const linhas = [
