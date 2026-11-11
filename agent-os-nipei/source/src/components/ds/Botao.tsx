@@ -49,7 +49,7 @@ type Comum = {
   children: ReactNode;
 };
 type ComoBotao = Comum & { href?: undefined } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "disabled" | "className">;
-type ComoLink = Comum & { href: string; target?: string; rel?: string };
+type ComoLink = Comum & { href: string; target?: string; rel?: string; /** arquivo para baixar (rota que devolve CSV, PDF…): <a download>, sem a navegação do Next */ download?: boolean };
 
 /** Botão do design system. Com `href` vira link com a mesma aparência. */
 export default function Botao(props: ComoBotao | ComoLink) {
@@ -67,8 +67,9 @@ export default function Botao(props: ComoBotao | ComoLink) {
     </>
   );
   if ("href" in resto && resto.href !== undefined) {
-    const { href, target, rel } = resto as ComoLink;
+    const { href, target, rel, download } = resto as ComoLink;
     if (parado) return <span className={cls} aria-disabled="true">{conteudo}</span>;
+    if (download) return <a href={href} download className={cls}>{conteudo}</a>;
     return <Link href={href} target={target} rel={rel} className={cls}>{conteudo}</Link>;
   }
   const { type = "button", ...attrs } = resto as Omit<ComoBotao, keyof Comum>;

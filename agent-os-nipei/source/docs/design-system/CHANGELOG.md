@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Revisão do plano de trabalho (10.24)
+
+- `Botao` aceita `download` (link comum para rotas que devolvem arquivo; antes o Next pré-carregava a exportação). Resumo sem avatares de iniciais (cortavam em 24 px; ficam os nomes), anel com rótulo acessível, resumo e Pedir respostas lado a lado a partir de 1024 px, linhas de Entregas com 44 px e respiro no hover, data do pedido sem dias passados.
+
 ## 2026-11-11 — Pedir respostas no plano de trabalho (10.24)
 
 - Cartão "Pedir respostas" com quem recebe, quem não recebe e por quê, data limite e envio com Diálogo. Componente novo de apoio `components/v2/EnviarComConfirmacao.tsx` = Botão do sistema + `useConfirmar` (não um botão feito à mão).

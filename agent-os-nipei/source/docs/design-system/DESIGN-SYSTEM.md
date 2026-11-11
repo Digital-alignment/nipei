@@ -281,6 +281,7 @@ Cada componente existe nos dois temas e nos estados: normal · hover · pression
 - Tamanhos: **G** 56 px (padrão; "grande sempre que possível") · **M** 48 px · **P** 40 px (só computador denso).
 - Sempre ícone + texto (ícone à esquerda; "Ver tudo ▶" à direita).
 - Carregando: arco girando + "Salvando…"; o botão fica desativado.
+- Botão que baixa um arquivo (exportar CSV, Markdown): mesmo visual, ícone `baixar`, `download` (link comum, sem pré-carregar a rota).
 - **Botão de ícone**: círculo 52 / 44 / 40 px, fundo tonal.
 - **"+" flutuante (criar)**: círculo de 56 px no canto inferior direito, fundo claro (`t1`, tinta = fundo) — o único botão claro da tela; abre o menu de ações de criação para cima (Nova tarefa, Novo evento…). No celular fica acima da barra.
 - **Botão dividido**: "Continuar" + peça com ▶, separadas por corte diagonal; cores invertidas (tonal + acento).
@@ -530,7 +531,7 @@ Um objetivo é um **resultado com prazo**: título como resultado, **responsáve
 
 ### 10.24 Plano de trabalho (Acervo → "Agenda work plan", só gestão)
 O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), como checklist visual. Abas no cabeçalho do Acervo (9.11): "Arquivos" e "Agenda work plan" (esta aba só existe para a gestão).
-- **Resumo** (Cartão padrão): AnelProgresso 72 com o % geral · linha `corpo` "N de M respostas e entregas" · `meta` com rascunhos e quem responde (Avatares 24 + nomes) · ações: Botão tonal "Exportar CSV" e fantasma "Exportar (EN)", ambos com ícone; "Abrir diagnóstico" (fantasma) leva ao `/diagnosticos/[id]`.
+- **Resumo** (Cartão padrão): AnelProgresso 72 com o % geral · linha `corpo` "N de M respostas e entregas" · rascunhos na mesma linha · `meta` "Respondem: nomes" (sem avatares de iniciais) · ações: Botão tonal "Exportar CSV" e fantasma "Exportar EN", ícone `baixar`, com `download`; a partir de 1024 px o Resumo e o cartão Pedir respostas ficam lado a lado; "Abrir diagnóstico" (fantasma) leva ao `/diagnosticos/[id]`.
 - **Seções** na ordem do documento original, cada uma uma Seção recolhível (9.12) em cartão: título "N. Seção" + contagem "feitas/total"; o resumo fechado mostra a BarraProgresso (sólido = feito; rascunhos não contam). Dentro, uma linha por pergunta: BadgeEstado (Feita = todas respondidas · Em andamento = alguém respondeu ou há rascunho · Pendente = ninguém, hachurado) · texto da pergunta (`corpo`) · `meta`: individual "3/6 · faltam: PPR, Rodrigo"; coletiva "Responsável: X" ou "Sem responsável" + a lacuna escrita. Nunca o texto das respostas.
 - **Entregas** (Cartão): mesma linha com BadgeEstado + nome da entrega + detalhe em `meta` (período, nº de itens, versão e aceites, PT/EN); cada linha abre a página onde se faz.
 - **Pedir respostas** (Cartão, logo abaixo do resumo, só quando falta alguém): uma linha `meta` por pessoa com o que falta dela (nome em semibold; quem não recebe em `text-t3` com o motivo: acesso suspenso ou sem WhatsApp) · Campo data "Responder até" (padrão: daqui a 3 semanas) · Botão primário "Pedir respostas" (ícone enviar) que abre o Diálogo (não perigoso) com os nomes antes de enviar. Resultado em Toast.
