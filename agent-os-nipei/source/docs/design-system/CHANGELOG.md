@@ -4,7 +4,7 @@ Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nip�
 
 ## 2026-11-11 — Finanças: importar planilha (10.25)
 
-- `/financas/importar`: `Upload` ganhou `soArquivo` (sem botão de câmera); prévia em Tabela 10.8 com BadgeEstado por linha (erro, repetido, aviso, a pagar/a receber), projeto e evento padrão, "Importar N" e "Cancelar". Em `/financas`, linha "Importação de <data>" com "Desfazer" (`EnviarComConfirmacao` ganhou `perigoso` e `variante`).
+- `/financas/importar`: `Upload` ganhou `soArquivo` (sem botão de câmera); prévia em Tabela 10.8 com BadgeEstado por linha (erro, repetido, aviso, a pagar/a receber), projeto e evento padrão, "Importar N" e "Cancelar"; categoria editável por linha (Campo compacto de seleção, também no cartão do celular). Em `/financas`, linha "Importação de <data>" com "Desfazer" (`EnviarComConfirmacao` ganhou `perigoso` e `variante`).
 
 ## 2026-11-11 — Finanças: evento e participante (10.25)
 

@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Cartao from "@/components/ds/Cartao";
-import Campo from "@/components/ds/Campo";
+import Campo, { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import Botao from "@/components/ds/Botao";
 import { BadgeEstado } from "@/components/ds/Chip";
 import Tabela from "@/components/ds/padroes/Tabela";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Upload from "@/components/v2/Upload";
-import { currentUser, getLancamentos, getProjetos } from "@/lib/v2/data";
+import { CATEGORIAS, currentUser, getLancamentos, getProjetos } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { getPrevia, importaveis } from "@/lib/v2/importarFinancas";
 import { cancelarImportacaoAction, importarPlanilhaAction, lerPlanilhaAction } from "../../actions";
@@ -55,7 +55,7 @@ export default async function ImportarFinancas() {
         <p className="meta mt-1 text-t2">
           {pl(p.linhas.length, t.linhaMin, t.linhas)} · {ok.length} {t.prontas}{avisos ? ` · ${avisos} ${t.comAviso}` : ""}{ignoradas ? ` · ${ignoradas} ${t.ignoradas}` : ""}
         </p>
-        <form action={importarPlanilhaAction} className="mt-4 grid gap-3 sm:grid-cols-2">
+        <form id="importar-planilha" action={importarPlanilhaAction} className="mt-4 grid gap-3 sm:grid-cols-2">
           <Campo tipo="selecao" name="projeto" rotulo={t.projeto} defaultValue="santuario">
             <option value="">{t.geral}</option>{projetos.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
           </Campo>
@@ -70,7 +70,7 @@ export default async function ImportarFinancas() {
 
       <div className="mt-6">
         <Tabela rotulo={t.importarPasso2} colunas={[
-          { id: "data", rotulo: t.data }, { id: "desc", rotulo: t.descricao }, { id: "cat", rotulo: t.categoria, soComputador: true },
+          { id: "data", rotulo: t.data }, { id: "desc", rotulo: t.descricao }, { id: "cat", rotulo: t.categoria },
           { id: "ev", rotulo: t.eventoFin, soComputador: true }, { id: "valor", rotulo: t.valor, numero: true },
         ]} linhas={p.linhas.map((l) => ({
           id: String(l.linha), apagada: !!l.erro || l.repetido,
@@ -86,7 +86,13 @@ export default async function ImportarFinancas() {
                 {l.avisos.map((a) => <BadgeEstado key={a} estado="aviso">{a}</BadgeEstado>)}
               </span>
             ),
-            cat: l.categoria, ev: l.evento,
+            // editable for rows that will be imported (bank statements have no category); the field sits outside the form → `form=`
+            cat: l.erro || l.repetido ? l.categoria : (
+              <select form="importar-planilha" name={`cat:${l.linha}`} defaultValue={l.categoria} aria-label={`${t.categoria}: ${l.descricao || l.linha}`} className={`${CAMPO_COMPACTO} w-full min-w-0 md:min-w-44`}>
+                {CATEGORIAS[l.tipo].map((c) => <option key={c}>{c}</option>)}
+              </select>
+            ),
+            ev: l.evento,
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,
           },
         }))} />

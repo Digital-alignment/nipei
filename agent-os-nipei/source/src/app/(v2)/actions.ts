@@ -831,8 +831,14 @@ export async function importarPlanilhaAction(form: FormData) {
   const projeto = pick(form.get("projeto"), getProjetos().map((x) => x.id));
   const evento = String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
   const linhas = importaveis(p);
+  // category chosen in the preview: the Tabela renders each row twice (table + phone card), so the field comes twice;
+  // the edited copy is the one that differs from what was read. Only categories of the row's own type are accepted.
+  const categoria = (l: (typeof linhas)[number]) => {
+    const validas = CATEGORIAS[l.tipo] as readonly string[];
+    return form.getAll(`cat:${l.linha}`).map(String).find((c) => c !== l.categoria && validas.includes(c)) ?? l.categoria;
+  };
   for (const l of linhas) createLancamento({
-    data: l.data, tipo: l.tipo, valor: l.valor, categoria: l.categoria, descricao: l.descricao, projeto, equipe: "",
+    data: l.data, tipo: l.tipo, valor: l.valor, categoria: categoria(l), descricao: l.descricao, projeto, equipe: "",
     registradoPor: quem, pendente: l.pendente, evento: l.evento || evento, participante: l.participante, importacao: p.id,
   });
   apagarPrevia(quem);
