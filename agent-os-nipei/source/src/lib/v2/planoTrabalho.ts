@@ -9,6 +9,7 @@ export type PerguntaPlano = {
   id: string; texto: string; texto_en: string; escopo: "individual" | "coletivo";
   feitas: number; rascunhos: number; total: number; estado: EstadoPlano;
   faltam: string[]; // individual: who has not answered yet
+  rascunhoDe: string[]; // individual: who has a draft not confirmed yet
   responsavel: string; falta: string; // collective: section owner and the gap note
 };
 export type SecaoPlano = { id: string; numero: number; titulo: string; titulo_en: string; escopo: "individual" | "coletivo"; perguntas: PerguntaPlano[]; feitas: number; rascunhos: number; total: number };
@@ -41,13 +42,14 @@ export function planoTrabalho(d = diagnosticoLynn()): Plano | null {
       if (s.escopo === "coletivo") {
         const r = c.respostas[q.id];
         const feitas = r?.status === "respondida" ? 1 : 0, rascunhos = !feitas && r?.texto ? 1 : 0;
-        return { id: q.id, texto: q.texto, texto_en: q.texto_en, escopo: "coletivo", feitas, rascunhos, total: 1, estado: estado(feitas, rascunhos, 1), faltam: [], responsavel: c.responsaveis[s.id] ? nomeDe(c.responsaveis[s.id]) : "", falta: r?.falta ?? "" };
+        return { id: q.id, texto: q.texto, texto_en: q.texto_en, escopo: "coletivo", feitas, rascunhos, total: 1, estado: estado(feitas, rascunhos, 1), faltam: [], rascunhoDe: [], responsavel: c.responsaveis[s.id] ? nomeDe(c.responsaveis[s.id]) : "", falta: r?.falta ?? "" };
       }
       const st = pessoas.map((p) => respostas.get(p.id)?.[q.id]);
       const feitas = st.filter((r) => r?.status === "respondida").length;
       const rascunhos = st.filter((r) => r?.texto && r.status !== "respondida").length;
       const faltam = pessoas.filter((_, k) => st[k]?.status !== "respondida").map(curto);
-      return { id: q.id, texto: q.texto, texto_en: q.texto_en, escopo: "individual", feitas, rascunhos, total: pessoas.length, estado: estado(feitas, rascunhos, pessoas.length), faltam, responsavel: "", falta: "" };
+      const rascunhoDe = pessoas.filter((_, k) => st[k]?.texto && st[k]?.status !== "respondida").map(curto);
+      return { id: q.id, texto: q.texto, texto_en: q.texto_en, escopo: "individual", feitas, rascunhos, total: pessoas.length, estado: estado(feitas, rascunhos, pessoas.length), faltam, rascunhoDe, responsavel: "", falta: "" };
     });
     const soma = (k: "feitas" | "rascunhos" | "total") => perguntas.reduce((n, q) => n + q[k], 0);
     return { id: s.id, numero: i + 1, titulo: s.titulo, titulo_en: s.titulo_en, escopo: s.escopo, perguntas, feitas: soma("feitas"), rascunhos: soma("rascunhos"), total: soma("total") };
@@ -75,6 +77,31 @@ export function planoTrabalho(d = diagnosticoLynn()): Plano | null {
   return { d, pessoas, secoes, entregaveis, feitas, rascunhos: secoes.reduce((n, s) => n + s.rascunhos, 0), total };
 }
 
+// ---------------------------------------------------------------- "Pedir respostas" (WhatsApp to who is missing)
+export type Pedido = { pessoa: Pessoa; individuais: number; rascunhos: number; coletivas: { id: string; titulo: string }[]; motivo: "" | "suspenso" | "sem_whatsapp" };
+
+/** Who still owes something: their own unanswered questions + collective sections they own with open questions.
+ *  `motivo` says why someone can't be asked (suspended people can't log in to answer). Never the sender. */
+export function pedidos(p: Plano, remetenteId = ""): Pedido[] {
+  const curto = (x: Pessoa) => x.name.split(" (")[0];
+  return p.pessoas.filter((x) => x.id !== remetenteId).map((x): Pedido => {
+    const individuais = p.secoes.filter((s) => s.escopo === "individual").flatMap((s) => s.perguntas).filter((q) => q.faltam.includes(curto(x))).length;
+    const rascunhos = p.secoes.flatMap((s) => s.perguntas).filter((q) => q.rascunhoDe.includes(curto(x))).length;
+    const coletivas = p.secoes.filter((s) => s.escopo === "coletivo" && s.perguntas.some((q) => q.estado !== "feito") && s.perguntas[0]?.responsavel === curto(x)).map((s) => ({ id: s.id, titulo: s.titulo }));
+    return { pessoa: x, individuais, rascunhos, coletivas, motivo: x.suspenso ? "suspenso" : !x.whatsapp ? "sem_whatsapp" : "" };
+  }).filter((x) => x.individuais > 0 || x.coletivas.length > 0);
+}
+
+export function textoPedido(x: Pedido, d: Diagnostico, prazo: string, origin: string): string {
+  const quando = prazo ? prazo.split("-").reverse().slice(0, 2).join("/") : "";
+  return [
+    `Olá, ${x.pessoa.name.split(" (")[0]}! A Lynn volta em janeiro e estamos juntando o plano de trabalho da equipe${quando ? `. Pode responder até ${quando}?` : "."}`,
+    x.individuais ? `Faltam ${x.individuais} resposta${x.individuais > 1 ? "s" : ""} suas${x.rascunhos ? ` (${x.rascunhos} já em rascunho: é só revisar e confirmar)` : ""}: ${origin}/pessoas/${x.pessoa.id}/respostas?d=${d.id}` : "",
+    ...x.coletivas.map((c) => `Parte da equipe sob sua responsabilidade — ${c.titulo}: ${origin}/diagnosticos/${d.id}/coletivo?secao=${c.id}`),
+    "Obrigado!",
+  ].filter(Boolean).join("\n\n");
+}
+
 // self-check: VAULT_PATH=<vault> npx tsx src/lib/v2/planoTrabalho.ts
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/planoTrabalho.ts")) {
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); };
@@ -85,6 +112,13 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
     const ids = p.secoes.map((s) => s.id).filter((x) => ORDEM_LYNN.includes(x));
     assert(ids.join() === ORDEM_LYNN.filter((x) => ids.includes(x)).join(), `ordem da Lynn: ${ids}`);
     console.log(p.pessoas.map((x) => x.id).join(", "), "|", p.secoes.map((s) => `${s.numero}.${s.id} ${s.feitas}/${s.total}`).join(" · "), "|", `${p.feitas}/${p.total}`);
+    const ps = pedidos(p, "ashuan_web");
+    assert(!ps.some((x) => x.pessoa.id === "ashuan_web"), "nunca para quem envia");
+    assert(ps.every((x) => x.motivo !== "suspenso" || x.pessoa.suspenso), "suspenso marcado");
+    for (const x of ps) console.log(" pedido:", x.pessoa.id, x.individuais, x.coletivas.map((c) => c.id).join("+") || "-", x.motivo || "ok");
+    const t = textoPedido(ps[0], p.d, "2026-11-30", "https://os.nipeihu.app");
+    assert(t.includes("30/11") && t.includes(`/respostas?d=${p.d.id}`) || !ps[0].individuais, "texto com prazo e link");
+    console.log(t);
   }
   console.log("planoTrabalho: ok");
 }

@@ -176,6 +176,29 @@ export async function cadastroLoteAction(form: FormData): Promise<{ enviados?: n
   return { enviados, semWhats, parou };
 }
 
+/** Gestão (Acervo → Agenda work plan, DS 10.24): WhatsApp to everyone who still owes answers to Lynn's homework,
+ *  with their link and an optional deadline. Same limits as Notificar; suspended people and people without
+ *  WhatsApp are skipped and counted. */
+export async function pedirRespostasAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) redirect("/acervo");
+  const prazo = /^\d{4}-\d{2}-\d{2}$/.test(String(form.get("prazo") ?? "")) ? String(form.get("prazo")) : "";
+  const { planoTrabalho, pedidos, textoPedido } = await import("@/lib/v2/planoTrabalho");
+  const { enviar } = await import("@/lib/v2/notificar");
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  const origin = process.env.NEXT_PUBLIC_APP_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const p = planoTrabalho();
+  let enviados = 0, pulados = 0, parou = "";
+  for (const x of p ? pedidos(p, me.pessoa?.id) : []) {
+    if (x.motivo) { pulados++; continue; }
+    try { await enviar(x.pessoa, textoPedido(x, p!.d, prazo, origin), "alerta", actorName(me)); enviados++; }
+    catch (e) { parou = (e as Error).message; if (/limite/i.test(parou)) break; }
+  }
+  const msg = `Pedido enviado a ${enviados} pessoa${enviados === 1 ? "" : "s"}${pulados ? ` · ${pulados} sem acesso ou sem WhatsApp` : ""}`;
+  redirect(`/acervo?aba=plano&${parou ? `erro=${encodeURIComponent(`${msg}. Parou: ${parou}`.slice(0, 200))}` : `ok=${encodeURIComponent(msg)}`}`);
+}
+
 /** Gestão: suspend or restore someone's access (no login, no notices; teams and tasks stay). Never yourself. */
 export async function suspensoAction(form: FormData) {
   const me = await requireUser();

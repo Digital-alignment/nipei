@@ -44,7 +44,8 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
   if (plano) return (
     <>
       <CabecalhoPagina selo="quadrados" rotulo="Lynn · equipe" titulo={t.acervo} subtitulo="O que a equipe tem de entregar à Lynn: o que já respondemos, o que está em rascunho e o que falta." abas={abas} />
-      <PlanoTrabalho en={lang === "en"} />
+      <ToastAoAbrir texto={q.erro ? undefined : q.ok} />
+      <PlanoTrabalho en={lang === "en"} meId={me.pessoa?.id} />
     </>
   );
   const projetos = projetosVisiveis(me), pessoas = getPessoas(), todos = getAcervo();

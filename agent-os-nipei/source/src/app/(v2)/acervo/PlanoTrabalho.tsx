@@ -6,7 +6,10 @@ import { AnelProgresso, BarraProgresso } from "@/components/ds/Progresso";
 import { GrupoAvatares } from "@/components/ds/Avatar";
 import Recolhivel from "@/components/ds/SecaoRecolhivel";
 import { EstadoVazio } from "@/components/ds/Estados";
-import { planoTrabalho, type EstadoPlano } from "@/lib/v2/planoTrabalho";
+import Campo from "@/components/ds/Campo";
+import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
+import { pedidos, planoTrabalho, type EstadoPlano } from "@/lib/v2/planoTrabalho";
+import { pedirRespostasAction } from "../actions";
 
 // Acervo → "Agenda work plan" (DS 10.24, gestão only; the page checks it). Lynn's homework as a checklist:
 // overall ring, one collapsible section per part of her document, a line per question with who is missing,
@@ -14,9 +17,12 @@ import { planoTrabalho, type EstadoPlano } from "@/lib/v2/planoTrabalho";
 const BADGE: Record<EstadoPlano, EstadoBadge> = { feito: "feita", rascunho: "andamento", falta: "pendente" };
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
-export default function PlanoTrabalho({ en }: { en: boolean }) {
+export default function PlanoTrabalho({ en, meId }: { en: boolean; meId?: string }) {
   const p = planoTrabalho();
   if (!p) return <EstadoVazio compacto titulo={<>Nenhum diagnóstico da Lynn aberto</>} texto="Crie um em Diagnósticos com o modelo team-development." />;
+  const ps = pedidos(p, meId), recebem = ps.filter((x) => !x.motivo), fora = ps.filter((x) => x.motivo);
+  const nome = (x: { pessoa: { name: string } }) => x.pessoa.name.split(" (")[0];
+  const prazoPadrao = new Date(Date.now() + 21 * 86_400_000).toISOString().slice(0, 10);
   const txt = { feito: en ? "Done" : "Feita", rascunho: en ? "In progress" : "Em andamento", falta: en ? "Pending" : "Pendente" };
 
   return (
@@ -39,6 +45,24 @@ export default function PlanoTrabalho({ en }: { en: boolean }) {
           <Botao href={`/diagnosticos/${p.d.id}`} icone="avancar" variante="fantasma" tamanho="M">Abrir diagnóstico</Botao>
         </div>
       </Cartao>
+
+      {ps.length > 0 && (
+        <Cartao>
+          <p className="titulo-cartao">Pedir respostas</p>
+          <p className="corpo mt-1 text-t2">Um WhatsApp para cada pessoa com o que falta dela e o link para responder.</p>
+          <ul className="mt-3 grid gap-1.5">
+            {recebem.map((x) => <li key={x.pessoa.id} className="meta text-t2"><span className="font-semibold text-t1">{nome(x)}</span> · {[x.individuais && `${x.individuais} respostas${x.rascunhos ? ` (${x.rascunhos} em rascunho)` : ""}`, ...x.coletivas.map((c) => c.titulo)].filter(Boolean).join(" · ")}</li>)}
+            {fora.map((x) => <li key={x.pessoa.id} className="meta text-t3">{nome(x)} · não recebe: {x.motivo === "suspenso" ? "acesso suspenso (não consegue entrar para responder)" : "sem WhatsApp na ficha"}</li>)}
+          </ul>
+          {recebem.length > 0 && (
+            <form action={pedirRespostasAction} className="mt-4 flex flex-wrap items-end gap-3">
+              <div className="w-44"><Campo tipo="data" name="prazo" rotulo="Responder até" defaultValue={prazoPadrao} /></div>
+              <EnviarComConfirmacao icone="enviar" confirmarRotulo="Enviar" pergunta={`Enviar o pedido a ${recebem.length} pessoa${recebem.length > 1 ? "s" : ""} por WhatsApp?`}
+                mensagem={recebem.map(nome).join(", ")}>Pedir respostas</EnviarComConfirmacao>
+            </form>
+          )}
+        </Cartao>
+      )}
 
       {p.secoes.map((s) => (
         <Recolhivel key={s.id} id={`plano-${s.id}`} emCartao aberto={false} contagem={`${s.feitas}/${s.total}`}

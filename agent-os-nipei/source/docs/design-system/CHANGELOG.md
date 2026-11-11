@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Pedir respostas no plano de trabalho (10.24)
+
+- Cartão "Pedir respostas" com quem recebe, quem não recebe e por quê, data limite e envio com Diálogo. Componente novo de apoio `components/v2/EnviarComConfirmacao.tsx` = Botão do sistema + `useConfirmar` (não um botão feito à mão).
+
 ## 2026-11-11 — Plano de trabalho no Acervo (10.24)
 
 - Acervo ganha abas (Arquivos / Agenda work plan); a segunda, só gestão, mostra o diagnóstico da Lynn como checklist: anel do % geral, seções recolhíveis com barra e uma linha por pergunta (BadgeEstado + quem falta), entregas, exportar CSV e Markdown (EN). Só componentes existentes.
