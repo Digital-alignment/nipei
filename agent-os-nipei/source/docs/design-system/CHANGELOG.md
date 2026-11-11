@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: importar planilha (10.25)
+
+- `/financas/importar`: `Upload` ganhou `soArquivo` (sem botão de câmera); prévia em Tabela 10.8 com BadgeEstado por linha (erro, repetido, aviso, a pagar/a receber), projeto e evento padrão, "Importar N" e "Cancelar". Em `/financas`, linha "Importação de <data>" com "Desfazer" (`EnviarComConfirmacao` ganhou `perigoso` e `variante`).
+
 ## 2026-11-11 — Finanças: evento e participante (10.25)
 
 - Lançamento com Evento (texto com sugestões por `<datalist>` nativo) e Participante. `/financas` ganha a Seção "Por evento" (todos os meses); o diagnóstico ganha "Por evento" e "Pagamentos dos participantes" (Tabela 10.8, a receber em `text-warn`). CSV, documento final, rascunho da IA e Pinu (`financas_resumo.por_evento`) levam os dois.

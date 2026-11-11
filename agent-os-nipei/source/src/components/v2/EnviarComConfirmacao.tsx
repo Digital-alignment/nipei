@@ -7,16 +7,17 @@ import { useConfirmar } from "@/components/ds/Dialogo";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** Botão do sistema que pergunta no <Dialogo> antes de enviar o formulário (ações que saem do Nipëi, como WhatsApp). */
-export default function EnviarComConfirmacao({ children, icone, pergunta, mensagem, confirmarRotulo, textoCarregando = "Enviando…" }: {
+export default function EnviarComConfirmacao({ children, icone, pergunta, mensagem, confirmarRotulo, textoCarregando = "Enviando…", perigoso = false, variante }: {
   children: ReactNode; icone: NomeIcone; pergunta: string; mensagem?: ReactNode; confirmarRotulo: string; textoCarregando?: string;
+  perigoso?: boolean; variante?: "primario" | "tonal" | "fantasma";
 }) {
   const { pending } = useFormStatus();
   const confirmar = useConfirmar();
   return (
-    <Botao type="button" icone={icone} tamanho="M" carregando={pending} textoCarregando={textoCarregando}
+    <Botao type="button" icone={icone} tamanho="M" variante={variante} carregando={pending} textoCarregando={textoCarregando}
       onClick={async (e) => {
         const form = e.currentTarget.form;
-        if (await confirmar({ titulo: pergunta, mensagem, perigoso: false, confirmarRotulo })) form?.requestSubmit();
+        if (await confirmar({ titulo: pergunta, mensagem, perigoso, confirmarRotulo })) form?.requestSubmit();
       }}>
       {children}
     </Botao>

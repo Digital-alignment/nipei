@@ -14,8 +14,12 @@ import { Interruptor } from "@/components/ds/Controles";
 import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { resumoFinanceiro } from "@/lib/v2/diagnostico";
+import { quandoImportacao } from "@/lib/v2/importarFinancas";
+import Botao from "@/components/ds/Botao";
+import { ToastAoAbrir } from "@/components/ds/Toast";
+import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
 import ExportarGoogle from "@/components/v2/ExportarGoogle";
-import { anularLancamentoAction, createLancamentoAction, quitarLancamentoAction } from "../actions";
+import { anularLancamentoAction, createLancamentoAction, desfazerImportacaoAction, quitarLancamentoAction } from "../actions";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // KPIs: whole reais, so the number never gets cut in 2 columns (cents stay in the list)
@@ -35,7 +39,7 @@ function Bar({ label, value, max, cls }: { label: string; value: number; max: nu
   );
 }
 
-export default async function Financas({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
+export default async function Financas({ searchParams }: { searchParams: Promise<{ m?: string; ok?: string }> }) {
   const me = (await currentUser())!;
   if (!me.gestao) redirect("/hoje");
   const q = await searchParams;
@@ -49,6 +53,9 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const rotPend = (tipo: string) => (tipo === "entrada" ? t.aReceber : t.aPagar);
   // per event, every month (a retreat crosses months); also the suggestions of the "Evento" field
   const porEvento = resumoFinanceiro(todos.filter((l) => !l.anulado)).porEvento.filter((x) => x.evento);
+  // spreadsheet imports with entries still valid, newest first (each one can be undone at once)
+  const importacoes = Object.entries(todos.filter((l) => l.importacao && !l.anulado).reduce<Record<string, number>>((a, l) => ({ ...a, [l.importacao]: (a[l.importacao] ?? 0) + 1 }), {}))
+    .sort((a, b) => b[0].localeCompare(a[0])).slice(0, 3);
   const soma = (ls: typeof validos, tipo: "entrada" | "despesa") => ls.filter((l) => l.tipo === tipo).reduce((a, l) => a + l.valor, 0);
   const doMes = validos.filter((l) => l.data.startsWith(mes));
   const entradas = soma(doMes, "entrada"), despesas = soma(doMes, "despesa");
@@ -73,7 +80,20 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   return (
     <>
       <CabecalhoPagina selo="semente" rotulo={t.gestaoLbl} titulo={t.financas}
-        acoes={<ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} />} />
+        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /></div>} />
+      <ToastAoAbrir texto={q.ok} />
+      {importacoes.length > 0 && (
+        <ul className="mb-4 grid gap-1">
+          {importacoes.map(([id, n]) => (
+            <li key={id} className="flex flex-wrap items-center gap-2">
+              <span className="meta text-t2">{t.importacaoDe} {fmtDate(quandoImportacao(id).slice(0, 10), lang)} · {n} {n === 1 ? t.lancamentoMin : t.lancamentosMin}</span>
+              <form action={desfazerImportacaoAction}><input type="hidden" name="importacao" value={id} />
+                <EnviarComConfirmacao icone="voltar" variante="fantasma" perigoso confirmarRotulo={t.desfazer} textoCarregando="…"
+                  pergunta={`${t.desfazer}: ${n} ${t.lancamentosMin}?`} mensagem={t.desfazerExplica}>{t.desfazer}</EnviarComConfirmacao></form>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="mb-4 flex items-center justify-between">
         <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, -1)}`} />
         <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>

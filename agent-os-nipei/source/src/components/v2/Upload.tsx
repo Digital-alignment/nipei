@@ -27,10 +27,11 @@ async function reduzir(file: File): Promise<File> {
   }
 }
 
-export default function Upload({ id, action, accept, labels, extra = {}, soFoto = false }: {
+export default function Upload({ id, action, accept, labels, extra = {}, soFoto = false, soArquivo = false }: {
   id: string; action: (f: FormData) => Promise<{ error?: string }>; accept: string; labels: Labels;
   extra?: Record<string, string>; // more fields for the action (e.g. the cadastro link token)
   soFoto?: boolean; // profile photo: one button (the phone offers gallery or camera), no rear-camera shortcut
+  soArquivo?: boolean; // documents only (e.g. a spreadsheet): no camera button
 }) {
   const arquivo = useRef<HTMLInputElement>(null), foto = useRef<HTMLInputElement>(null);
   const [erro, setErro] = useState("");
@@ -58,7 +59,7 @@ export default function Upload({ id, action, accept, labels, extra = {}, soFoto 
       <input ref={arquivo} type="file" accept={accept} className="hidden" onChange={() => enviar(arquivo.current)} />
       <input ref={foto} type="file" accept="image/*" capture="environment" className="hidden" onChange={() => enviar(foto.current)} />
       <Botao variante="tonal" tamanho="M" icone={soFoto ? "imagem" : "mais"} carregando={pending} onClick={() => arquivo.current?.click()}>{labels.arquivo}</Botao>
-      {!soFoto && <Botao variante="tonal" tamanho="M" icone="imagem" desativado={pending} onClick={() => foto.current?.click()}>{labels.foto}</Botao>}
+      {!soFoto && !soArquivo && <Botao variante="tonal" tamanho="M" icone="imagem" desativado={pending} onClick={() => foto.current?.click()}>{labels.foto}</Botao>}
       {pending && <span className="meta text-t2">{labels.enviando}</span>}
       {erro && <span role="alert" className="meta inline-flex items-center gap-1 text-err"><Icone nome="erro" tamanho={16} />{erro}</span>}
     </div>

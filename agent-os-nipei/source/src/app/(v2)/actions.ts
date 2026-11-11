@@ -17,9 +17,10 @@ import {
   criarDiagnostico, encerrarDiagnostico,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
+import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib/v2/importarFinancas";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, getLancamentos, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -776,17 +777,11 @@ export async function aplicarIAAction(form: FormData) {
   voltarTarefa(t.id);
 }
 
-/** Money typed in pt-BR: "1.234,56", "R$ 25.000" (dots = thousands) or "1234.56". NaN when it is not a number. */
-const numBR = (v: string) => {
-  v = v.replace(/\s|R\$/g, "");
-  return Number(v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : /^\d{1,3}(\.\d{3})+$/.test(v) ? v.replace(/\./g, "") : v);
-};
-
 export async function createLancamentoAction(form: FormData) {
   const me = await requireUser();
   if (!me.gestao) return;
   const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
-  const valor = numBR(String(form.get("valor") ?? ""));
+  const valor = Math.abs(numBR(String(form.get("valor") ?? "")));
   const data = String(form.get("data") ?? "");
   if (!(valor > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
   createLancamento({
@@ -809,6 +804,57 @@ export async function anularLancamentoAction(form: FormData) {
   if (!me.gestao) return;
   anularLancamento(String(form.get("id")), me.pessoa?.id ?? me.username);
   revalidatePath("/financas");
+}
+
+// ---- Importar planilha (DS 10.25): upload → preview in .jobs → confirm → entries with `importacao`
+export async function lerPlanilhaAction(form: FormData): Promise<{ error?: string }> {
+  const me = await requireUser();
+  if (!me.gestao) return { error: "Só a gestão importa finanças" };
+  const f = form.get("arquivo");
+  if (!(f instanceof File) || !f.size) return { error: "Escolha um arquivo" };
+  if (/\.(xlsx?|ods|numbers)$/i.test(f.name)) return { error: "Salve a planilha como CSV (Sheets: Arquivo → Fazer download → CSV; Excel: Salvar como → CSV) e envie de novo." };
+  if (f.size > 2 * 1024 * 1024) return { error: "Máximo 2 MB" };
+  const buf = Buffer.from(await f.arrayBuffer());
+  // Excel pt-BR saves CSV in Windows-1252: fall back when the bytes are not valid UTF-8
+  let texto = buf.toString("utf-8");
+  if (texto.includes("\uFFFD")) texto = new TextDecoder("windows-1252").decode(buf);
+  const r = salvarPrevia(me.pessoa?.id ?? me.username, f.name, texto);
+  if (r.erro) return { error: r.erro };
+  redirect("/financas/importar");
+}
+
+export async function importarPlanilhaAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const quem = me.pessoa?.id ?? me.username, p = getPrevia(quem);
+  if (!p) redirect("/financas/importar");
+  const projeto = pick(form.get("projeto"), getProjetos().map((x) => x.id));
+  const evento = String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const linhas = importaveis(p);
+  for (const l of linhas) createLancamento({
+    data: l.data, tipo: l.tipo, valor: l.valor, categoria: l.categoria, descricao: l.descricao, projeto, equipe: "",
+    registradoPor: quem, pendente: l.pendente, evento: l.evento || evento, participante: l.participante, importacao: p.id,
+  });
+  apagarPrevia(quem);
+  revalidatePath("/financas");
+  redirect(`/financas?ok=${encodeURIComponent(`${linhas.length} ${linhas.length === 1 ? "lançamento importado" : "lançamentos importados"}`)}`);
+}
+
+export async function cancelarImportacaoAction() {
+  const me = await requireUser();
+  if (me.gestao) apagarPrevia(me.pessoa?.id ?? me.username);
+  redirect("/financas/importar");
+}
+
+/** Undo = void every entry of that import (entries are never deleted from the app). */
+export async function desfazerImportacaoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const id = String(form.get("importacao") ?? "");
+  const ls = id ? getLancamentos().filter((l) => l.importacao === id && !l.anulado) : [];
+  for (const l of ls) anularLancamento(l.id, me.pessoa?.id ?? me.username);
+  revalidatePath("/financas");
+  redirect(`/financas?ok=${encodeURIComponent(`Importação desfeita: ${ls.length} lançamentos anulados`)}`);
 }
 
 export async function quitarLancamentoAction(form: FormData) {
