@@ -58,17 +58,23 @@ async function midiaBase64(d: Dados, a: { mimetype?: string } | undefined, padra
 }
 const audioBase64 = (d: Dados) => midiaBase64(d, d.message?.audioMessage as { mimetype?: string } | undefined, "audio/ogg");
 
-/** Voice note → text (Gemini; NIPEI_TRANSCRICAO_MODEL, default the current flash-lite). */
+/** Voice note → text, through the platform's OpenRouter key (the direct Gemini key answered 402 on 2026-11-11).
+ *  NIPEI_TRANSCRICAO_MODEL = an OpenRouter model that takes audio (default google/gemini-3.5-flash-lite). */
+const FORMATO_AUDIO: Record<string, string> = { "audio/ogg": "ogg", "audio/opus": "ogg", "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/mp4": "m4a", "audio/m4a": "m4a", "audio/aac": "aac", "audio/wav": "wav", "audio/x-wav": "wav", "audio/webm": "webm", "audio/flac": "flac" };
 export async function transcrever(base64: string, mime: string, pessoa?: string): Promise<string> {
-  const modelo = process.env.NIPEI_TRANSCRICAO_MODEL || "gemini-flash-lite-latest";
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(60_000),
-    body: JSON.stringify({ contents: [{ parts: [{ text: "Transcreva este áudio exatamente, no idioma falado. Responda só com a transcrição." }, { inline_data: { mime_type: mime.split(";")[0], data: base64 } }] }] }),
+  const { motorIA } = await import("./motorIA");
+  const m = motorIA(), modelo = process.env.NIPEI_TRANSCRICAO_MODEL || "google/gemini-3.5-flash-lite";
+  const r = await fetch(m.url, {
+    method: "POST", headers: m.headers, signal: AbortSignal.timeout(60_000),
+    body: JSON.stringify({ model: modelo, temperature: 0, usage: { include: true }, messages: [{ role: "user", content: [
+      { type: "text", text: "Transcreva este áudio exatamente, no idioma falado. Responda só com a transcrição." },
+      { type: "input_audio", input_audio: { data: base64, format: FORMATO_AUDIO[mime.split(";")[0].trim()] ?? "ogg" } },
+    ] }] }),
   });
   if (!r.ok) throw new Error(`transcrição falhou (${r.status})`);
   const j = await r.json();
-  registrarCustoIA(pessoa, "transcricao", "gemini", modelo, j?.usageMetadata);
-  return String(j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "").trim();
+  registrarCustoIA(pessoa, "transcricao", m.provedor, modelo, j?.usage);
+  return String(j?.choices?.[0]?.message?.content ?? "").trim();
 }
 
 /** Receipt photo/PDF → what it says (the platform AI, lib/v2/ia.ts, which reads images and PDFs). The text only helps the
