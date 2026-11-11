@@ -13,6 +13,7 @@ import { BadgeEstado } from "@/components/ds/Chip";
 import { Interruptor } from "@/components/ds/Controles";
 import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
+import { resumoFinanceiro } from "@/lib/v2/diagnostico";
 import ExportarGoogle from "@/components/v2/ExportarGoogle";
 import { anularLancamentoAction, createLancamentoAction, quitarLancamentoAction } from "../actions";
 
@@ -46,6 +47,8 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const validos = todos.filter((l) => !l.anulado && !l.pendente);
   const pendentes = todos.filter((l) => !l.anulado && l.pendente).sort((a, b) => a.data.localeCompare(b.data));
   const rotPend = (tipo: string) => (tipo === "entrada" ? t.aReceber : t.aPagar);
+  // per event, every month (a retreat crosses months); also the suggestions of the "Evento" field
+  const porEvento = resumoFinanceiro(todos.filter((l) => !l.anulado)).porEvento.filter((x) => x.evento);
   const soma = (ls: typeof validos, tipo: "entrada" | "despesa") => ls.filter((l) => l.tipo === tipo).reduce((a, l) => a + l.valor, 0);
   const doMes = validos.filter((l) => l.data.startsWith(mes));
   const entradas = soma(doMes, "entrada"), despesas = soma(doMes, "despesa");
@@ -109,6 +112,11 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             <optgroup label={t.entradas}>{CATEGORIAS.entrada.map((c) => <option key={c}>{c}</option>)}</optgroup>
           </Campo>
           <Campo name="descricao" rotulo={t.descricao} maxLength={200} />
+          <div className="grid grid-cols-2 gap-3">
+            <Campo name="evento" rotulo={t.eventoFin} list="eventos-fin" maxLength={80} placeholder={t.eventoFinEx} />
+            <Campo name="participante" rotulo={t.participante} maxLength={80} />
+          </div>
+          <datalist id="eventos-fin">{porEvento.map((x) => <option key={x.evento} value={x.evento} />)}</datalist>
           <label className="flex min-h-11 items-center justify-between gap-3 font-texto text-sm text-t1">{t.aindaNaoPago}<Interruptor name="pendente" rotulo={t.aindaNaoPago} /></label>
           <div className="grid grid-cols-2 gap-3">
             <Campo tipo="selecao" name="projeto" rotulo={t.projeto}><option value="">{t.geral}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
@@ -124,12 +132,24 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             {pendentes.map((l) => (
               <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-interno bg-s1 px-3 py-2">
                 <span className="meta tabular-nums text-t3">{fmtDate(l.data, lang)}</span>
-                <span className="corpo min-w-0 flex-1 text-t1">{l.descricao || l.categoria}</span>
+                <span className="corpo min-w-0 flex-1 text-t1">{l.descricao || l.categoria}{l.participante && <span className="meta text-t3"> · {l.participante}</span>}{l.evento && <span className="meta text-t3"> · {l.evento}</span>}</span>
                 <span className={`font-semibold tabular-nums ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>
                 <form action={quitarLancamentoAction}><input type="hidden" name="id" value={l.id} /><BotaoEnviar enviando="…" icone="confirmar" variante="tonal">{l.tipo === "entrada" ? t.recebido : t.pago}</BotaoEnviar></form>
               </li>
             ))}
           </ul>
+        </Section>
+      )}
+
+      {porEvento.length > 0 && (
+        <Section title={t.porEvento} count={porEvento.length}>
+          <Tabela rotulo={t.porEvento} colunas={[
+            { id: "ev", rotulo: t.eventoFin }, { id: "e", rotulo: t.entradas, numero: true }, { id: "d", rotulo: t.despesas, numero: true },
+            { id: "r", rotulo: t.resultado, numero: true }, { id: "p", rotulo: t.aReceber, numero: true },
+          ]} linhas={porEvento.map((x) => ({ id: x.evento, celulas: {
+            ev: x.evento, e: <span className="text-ok">{brl0(x.entradas)}</span>, d: <span className="text-err">{brl0(x.despesas)}</span>,
+            r: <span className={x.resultado < 0 ? "text-err" : "text-t1"}>{brl0(x.resultado)}</span>, p: x.aReceber ? <span className="text-warn">{brl0(x.aReceber)}</span> : "—",
+          } }))} />
         </Section>
       )}
 
@@ -165,12 +185,13 @@ export default async function Financas({ searchParams }: { searchParams: Promise
       <Section title={t.lancamentos} count={lista.length}>
         <Tabela rotulo={t.lancamentos} vazio={<EstadoVazio compacto titulo={<>{t.semLancamentos}</>} />} ordemInicial={{ id: "data", desc: true }} colunas={[
           { id: "desc", rotulo: t.descricao, ordenavel: true }, { id: "data", rotulo: t.data, ordenavel: true }, { id: "cat", rotulo: t.categoria, ordenavel: true },
-          { id: "proj", rotulo: t.projeto, soComputador: true }, { id: "por", rotulo: t.registradoPorLbl, soComputador: true }, { id: "valor", rotulo: t.valor, numero: true, ordenavel: true },
+          { id: "ev", rotulo: t.eventoFin, soComputador: true }, { id: "proj", rotulo: t.projeto, soComputador: true }, { id: "por", rotulo: t.registradoPorLbl, soComputador: true }, { id: "valor", rotulo: t.valor, numero: true, ordenavel: true },
         ]} linhas={lista.map((l) => ({
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
-            desc: <span className="inline-flex flex-wrap items-center gap-2"><span className={l.anulado ? "line-through" : ""}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</span>{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}</span>,
+            desc: <span className="inline-flex flex-wrap items-center gap-2"><span className={l.anulado ? "line-through" : ""}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</span>{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}</span>,
+            ev: l.evento,
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,
           },

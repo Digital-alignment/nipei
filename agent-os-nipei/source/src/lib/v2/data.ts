@@ -696,6 +696,8 @@ export type Lancamento = {
   id: string; file: string; data: string; tipo: "entrada" | "despesa"; valor: number; categoria: string; descricao: string;
   projeto: string; equipe: string; registradoPor: string; anulado: boolean;
   pendente: boolean; // "a pagar" / "a receber": not yet in the totals until quitado
+  evento: string; // free label shared by the entries of one retreat/dieta ("Retiro outubro 2026")
+  participante: string; // who paid (registration income); guests are not Pessoas, so it is a name
 };
 
 export function getLancamentos(): Lancamento[] {
@@ -703,19 +705,19 @@ export function getLancamentos(): Lancamento[] {
     .map(({ fm, file }) => ({
       id: s(fm.id), file, data: s(fm.data), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Lancamento["tipo"],
       valor: Number(fm.valor) || 0, categoria: s(fm.categoria), descricao: s(fm.descricao), projeto: s(fm.projeto),
-      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true,
+      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante),
     }))
     .sort((a, b) => b.data.localeCompare(a.data) || b.id.localeCompare(a.id));
 }
 
-export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente"> & { pendente?: boolean }) {
+export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante"> & { pendente?: boolean; evento?: string; participante?: string }) {
   const dir = path.join(vault(), LANC_DIR);
   fs.mkdirSync(dir, { recursive: true });
   const id = `lanc_${Date.now().toString(36)}`;
   const fm: Record<string, FmValue> = {
     id, type: "lancamento", data: input.data, tipo: input.tipo, valor: Math.round(input.valor * 100) / 100, categoria: input.categoria,
     descricao: input.descricao, projeto: input.projeto, equipe: input.equipe, registrado_por: input.registradoPor,
-    anulado: false, pendente: !!input.pendente, updated_at: new Date().toISOString(),
+    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", updated_at: new Date().toISOString(),
   };
   const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
   fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });

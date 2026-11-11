@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: evento e participante (10.25)
+
+- Lançamento com Evento (texto com sugestões por `<datalist>` nativo) e Participante. `/financas` ganha a Seção "Por evento" (todos os meses); o diagnóstico ganha "Por evento" e "Pagamentos dos participantes" (Tabela 10.8, a receber em `text-warn`). CSV, documento final, rascunho da IA e Pinu (`financas_resumo.por_evento`) levam os dois.
+
 ## 2026-11-11 — Finanças: pendentes, orçamento e CSV do período (10.25)
 
 - KPIs de `/financas` sem centavos e em `md:text-3xl` (antes cortavam em 2 colunas). Lançamento pode ser "a pagar / a receber" (Interruptor no formulário, BadgeEstado na lista, bloco Pendentes com "Pago"/"Recebido"); fora dos totais até quitar. Diagnóstico → Revisão financeira: Tabela 10.8 Orçado · Real · Diferença por categoria (campos de orçamento para quem edita), linha de pendentes e "Baixar CSV do período". Categorias novas: "Hospedagem e limpeza" e "Marketing e divulgação".

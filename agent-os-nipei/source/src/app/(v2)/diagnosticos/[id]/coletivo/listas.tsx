@@ -148,6 +148,28 @@ export function Financas({ d, c, t, pode }: P) {
         <div className="grid gap-2">
           <p className="text-sm font-medium">{t.entradas} {brl(r.totalEntradas)} · {t.despesas} {brl(r.totalDespesas)} · {t.resultado}: <span className={r.resultado < 0 ? "text-err" : "text-ok"}>{brl(r.resultado)}</span> · {r.n} {t.lancamentosPeriodo}</p>
           {(r.aReceber > 0 || r.aPagar > 0) && <p className="meta text-t2">{t.pendentes}: {brl(r.aReceber)} {t.aReceber.toLowerCase()} · {brl(r.aPagar)} {t.aPagar.toLowerCase()}</p>}
+          {r.porEvento.some((x) => x.evento) && (
+            <div className="mt-2">
+              <p className="rotulo-maiusculo mb-2 text-t3">{t.porEvento}</p>
+              <Tabela rotulo={t.porEvento} colunas={[
+                { id: "ev", rotulo: t.eventoFin }, { id: "e", rotulo: t.entradas, numero: true }, { id: "d", rotulo: t.despesas, numero: true },
+                { id: "r", rotulo: t.resultado, numero: true }, { id: "p", rotulo: t.aReceber, numero: true },
+              ]} linhas={r.porEvento.map((x) => ({ id: x.evento || "-", celulas: {
+                ev: x.evento || t.semEvento, e: brl(x.entradas), d: brl(x.despesas),
+                r: <span className={x.resultado < 0 ? "text-err" : "text-ok"}>{brl(x.resultado)}</span>, p: x.aReceber ? <span className="text-warn">{brl(x.aReceber)}</span> : "—",
+              } }))} />
+            </div>
+          )}
+          {r.participantes.length > 0 && (
+            <div className="mt-2">
+              <p className="rotulo-maiusculo mb-2 text-t3">{t.pagamentosParticipantes} · {r.participantes.length} · {r.participantes.filter((x) => x.aReceber > 0).length} {t.comSaldo}</p>
+              <Tabela rotulo={t.pagamentosParticipantes} colunas={[
+                { id: "n", rotulo: t.participante }, { id: "ev", rotulo: t.eventoFin }, { id: "pg", rotulo: t.pago, numero: true }, { id: "ar", rotulo: t.aReceber, numero: true },
+              ]} linhas={r.participantes.map((x) => ({ id: `${x.participante}|${x.evento}`, celulas: {
+                n: x.participante, ev: x.evento || "—", pg: brl(x.pago), ar: x.aReceber ? <span className="text-warn">{brl(x.aReceber)}</span> : "—",
+              } }))} />
+            </div>
+          )}
           {pode && <div><Botao href={`/diagnosticos/${d.id}/financas-csv`} download icone="baixar" variante="fantasma" tamanho="M">{t.baixarCsvPeriodo}</Botao></div>}
         </div>
       )}

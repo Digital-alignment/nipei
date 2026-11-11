@@ -379,7 +379,8 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     return {
       periodo: `${de} a ${ate}`, entradas: ls.filter((l) => l.tipo === "entrada").reduce((x, l) => x + l.valor, 0), despesas: ls.filter((l) => l.tipo === "despesa").reduce((x, l) => x + l.valor, 0),
       por_categoria: somar((l) => l.categoria), por_projeto: somar((l) => l.projeto), lancamentos: todos.length,
-      pendentes: todos.filter((l) => l.pendente).map((l) => ({ data: l.data, tipo: l.tipo === "entrada" ? "a receber" : "a pagar", valor: l.valor, descricao: l.descricao || l.categoria })),
+      por_evento: somar((l) => l.evento),
+      pendentes: todos.filter((l) => l.pendente).map((l) => ({ data: l.data, tipo: l.tipo === "entrada" ? "a receber" : "a pagar", valor: l.valor, descricao: l.descricao || l.categoria, evento: l.evento, participante: l.participante })),
     };
   }
   return { erro: `ferramenta desconhecida: ${nome}` };

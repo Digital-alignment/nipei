@@ -18,8 +18,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const r = resumoFinanceiro(lanc, c.orcamento);
   const pessoas = getPessoas(), projetos = getProjetos(), equipes = getEquipes();
   const linhas = [
-    ["data", "tipo", "situação", "valor", "categoria", "descrição", "projeto", "equipe", "registrado por"],
-    ...lanc.map((l) => [l.data, l.tipo, l.pendente ? (l.tipo === "entrada" ? "a receber" : "a pagar") : "pago", num(l.valor), l.categoria, l.descricao,
+    ["data", "tipo", "situação", "valor", "categoria", "descrição", "evento", "participante", "projeto", "equipe", "registrado por"],
+    ...lanc.map((l) => [l.data, l.tipo, l.pendente ? (l.tipo === "entrada" ? "a receber" : "a pagar") : "pago", num(l.valor), l.categoria, l.descricao, l.evento, l.participante,
       projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto, equipes.find((e) => e.id === l.equipe)?.nome ?? l.equipe,
       pessoas.find((p) => p.id === l.registradoPor)?.name ?? l.registradoPor]),
     [],
@@ -28,8 +28,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     [],
     ["total entradas", "", "", num(r.totalEntradas)], ["total despesas", "", "", num(r.totalDespesas)], ["resultado", "", "", num(r.resultado)],
     ["a receber", "", "", num(r.aReceber)], ["a pagar", "", "", num(r.aPagar)],
+    ...(r.porEvento.some((x) => x.evento) ? [[], ["evento", "entradas", "despesas", "resultado", "a receber"],
+      ...r.porEvento.map((x) => [x.evento || "sem evento", num(x.entradas), num(x.despesas), num(x.resultado), num(x.aReceber)])] : []),
+    ...(r.participantes.length ? [[], ["participante", "evento", "pago", "a receber"], ...r.participantes.map((x) => [x.participante, x.evento, num(x.pago), num(x.aReceber)])] : []),
   ];
-  const corpo = "﻿" + linhas.map((l) => l.map(cel).join(";")).join("\r\n") + "\r\n";
+  const corpo = "\uFEFF" + linhas.map((l) => l.map(cel).join(";")).join("\r\n") + "\r\n";
   const nome = `financas-${d.id}-${c.periodo.de || "inicio"}-${c.periodo.ate || "hoje"}.csv`;
   return new NextResponse(corpo, { headers: {
     "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="${nome}"`, "Cache-Control": "no-store",

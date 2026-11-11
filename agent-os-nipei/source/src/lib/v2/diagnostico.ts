@@ -289,7 +289,7 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
     "## Base de conhecimento confirmada", base.length ? formatarConhecimento(base) : "(nada)",
     "## Notas do vault (não revisadas)", ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 6).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
     `## Tarefas do projeto (${tarefas.length})`, ...tarefas.slice(0, 80).map((t) => `- ${t.id}: ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
-    secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo}${l.pendente ? (l.tipo === "entrada" ? " A RECEBER" : " A PAGAR") : ""} R$ ${l.valor} ${l.categoria}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}\n## Orçamento original por categoria\n${Object.entries(col.orcamento).map(([k, v]) => `- ${k}: R$ ${v}`).join("\n") || "(nenhum orçamento registrado)"}` : "",
+    secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo}${l.pendente ? (l.tipo === "entrada" ? " A RECEBER" : " A PAGAR") : ""} R$ ${l.valor} ${l.categoria}${l.evento ? ` [${l.evento}]` : ""}${l.participante ? ` (participante: ${l.participante})` : ""}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}\n## Orçamento original por categoria\n${Object.entries(col.orcamento).map(([k, v]) => `- ${k}: R$ ${v}`).join("\n") || "(nenhum orçamento registrado)"}` : "",
     `## Perguntas (${sec.titulo})`, ...sec.perguntas.map((q) => `- ${q.id}: ${q.texto}\n  Guia: ${q.guia.join(" | ")}`),
   ].filter(Boolean).join("\n");
   const { o } = await chamarIA(SISTEMA_COLETIVO, [{ type: "text", text: contexto }], 6000, 150_000);
@@ -507,9 +507,27 @@ export function resumoFinanceiro(lanc: Lancamento[], orcamento: Record<string, n
       return { categoria, tipo, orcado, real: r, diferenca: r - orcado, pior: orcado > 0 && (tipo === "despesa" ? r > orcado : r < orcado) };
     })
     .sort((a, b) => (a.tipo === b.tipo ? b.real + b.orcado - a.real - a.orcado : a.tipo === "entrada" ? -1 : 1));
+  // per event (retreat vs dieta): paid totals + what is still to receive; entries without event go to ""
+  const ev = new Map<string, { evento: string; entradas: number; despesas: number; aReceber: number }>();
+  for (const l of lanc) {
+    const k = l.evento.toLowerCase(), x = ev.get(k) ?? { evento: l.evento, entradas: 0, despesas: 0, aReceber: 0 };
+    if (l.pendente) { if (l.tipo === "entrada") x.aReceber += l.valor; } else x[l.tipo === "entrada" ? "entradas" : "despesas"] += l.valor;
+    ev.set(k, x);
+  }
+  const porEvento = [...ev.values()].map((x) => ({ ...x, resultado: x.entradas - x.despesas }))
+    .sort((a, b) => (!a.evento ? 1 : !b.evento ? -1 : b.entradas + b.despesas - a.entradas - a.despesas));
+  // participant payments: income entries with a name, one line per participant and event
+  const pt = new Map<string, { participante: string; evento: string; pago: number; aReceber: number }>();
+  for (const l of lanc.filter((x) => x.tipo === "entrada" && x.participante)) {
+    const k = `${l.participante.toLowerCase()}|${l.evento.toLowerCase()}`, x = pt.get(k) ?? { participante: l.participante, evento: l.evento, pago: 0, aReceber: 0 };
+    x[l.pendente ? "aReceber" : "pago"] += l.valor;
+    pt.set(k, x);
+  }
+  const participantes = [...pt.values()].sort((a, b) => b.aReceber - a.aReceber || b.pago - a.pago);
   return {
     entradas, despesas, totalEntradas: soma(entradas), totalDespesas: soma(despesas), resultado: soma(entradas) - soma(despesas), n: lanc.length,
     aReceber: pendente("entrada"), aPagar: pendente("despesa"), comparacao, temOrcamento: Object.values(orcamento).some((v) => v > 0),
+    porEvento, participantes,
   };
 }
 
@@ -724,7 +742,12 @@ export function montarDocumento(d: Diagnostico): string {
     fin.n || fin.temOrcamento ? [`Período: ${c.periodo.de || "…"} a ${c.periodo.ate || "…"} · ${fin.n} lançamentos.`, "", "| | Orçado | Real | Diferença |", "|---|---:|---:|---:|",
       ...fin.comparacao.map((x) => `| ${x.tipo === "entrada" ? "Entrada" : "Despesa"} · ${x.categoria} | ${x.orcado ? brl(x.orcado) : "—"} | ${brl(x.real)} | ${x.orcado ? `${x.diferenca > 0 ? "+" : ""}${brl(x.diferenca)}` : "—"} |`),
       `| **Resultado** | | **${brl(fin.resultado)}** | |`,
-      fin.aReceber || fin.aPagar ? `\nPendentes: ${brl(fin.aReceber)} a receber · ${brl(fin.aPagar)} a pagar.` : ""].join("\n") : "_Sem lançamentos registrados no período._",
+      fin.aReceber || fin.aPagar ? `\nPendentes: ${brl(fin.aReceber)} a receber · ${brl(fin.aPagar)} a pagar.` : "",
+      fin.porEvento.some((x) => x.evento) ? ["", "| Evento | Entradas | Despesas | Resultado | A receber |", "|---|---:|---:|---:|---:|",
+        ...fin.porEvento.map((x) => `| ${x.evento || "Sem evento"} | ${brl(x.entradas)} | ${brl(x.despesas)} | ${brl(x.resultado)} | ${brl(x.aReceber)} |`)].join("\n") : "",
+      fin.participantes.length ? ["", `Pagamentos dos participantes: ${fin.participantes.length} · ${fin.participantes.filter((x) => x.aReceber > 0).length} com saldo a receber.`, "",
+        "| Participante | Evento | Pago | A receber |", "|---|---|---:|---:|",
+        ...fin.participantes.map((x) => `| ${x.participante} | ${x.evento || "—"} | ${brl(x.pago)} | ${x.aReceber ? brl(x.aReceber) : "—"} |`)].join("\n") : ""].join("\n") : "_Sem lançamentos registrados no período._",
     respostas("financas"));
   partes.push("## 5. Plano de marketing", respostas("marketing"),
     c.calendario.entradas.length ? ["### Calendário", `Início do retiro: ${c.calendario.dataRetiro}`, "", "| Data | Ação | Responsável |", "|---|---|---|",
@@ -810,8 +833,8 @@ export function encerrarDiagnostico(d: Diagnostico, aberto: boolean) {
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/diagnostico.ts")) {
   let ok = 0;
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };
-  const L = (tipo: "entrada" | "despesa", valor: number, categoria: string, pendente = false): Lancamento =>
-    ({ id: "", file: "", data: "2026-10-01", tipo, valor, categoria, descricao: "", projeto: "", equipe: "", registradoPor: "", anulado: false, pendente });
+  const L = (tipo: "entrada" | "despesa", valor: number, categoria: string, pendente = false, evento = "", participante = ""): Lancamento =>
+    ({ id: "", file: "", data: "2026-10-01", tipo, valor, categoria, descricao: "", projeto: "", equipe: "", registradoPor: "", anulado: false, pendente, evento, participante });
   const r = resumoFinanceiro([L("entrada", 1000, "Cursos"), L("entrada", 300, "Cursos", true), L("despesa", 400, "Alimentação"), L("despesa", 50, "Alimentação", true)],
     { "Alimentação": 300, "Cursos": 1200, "Hospedagem e limpeza": 100 });
   assert(r.totalEntradas === 1000 && r.totalDespesas === 400 && r.resultado === 600, "pendentes ficam fora dos totais");
@@ -821,5 +844,11 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(cmp("Cursos").diferenca === -200 && cmp("Cursos").pior, "entrada abaixo do orçado = pior");
   assert(cmp("Hospedagem e limpeza").real === 0 && !cmp("Hospedagem e limpeza").pior, "orçado sem gasto aparece e não é pior");
   assert(r.comparacao[0].tipo === "entrada", "entradas primeiro");
+  const e = resumoFinanceiro([L("entrada", 2000, "Retiros e eventos", false, "Retiro", "Ana"), L("entrada", 500, "Retiros e eventos", true, "Retiro", "ana"),
+    L("entrada", 2500, "Retiros e eventos", false, "Dieta", "Bia"), L("despesa", 800, "Alimentação", false, "retiro"), L("despesa", 100, "Impostos e taxas")]);
+  const ret = e.porEvento.find((x) => x.evento === "Retiro")!;
+  assert(ret.entradas === 2000 && ret.despesas === 800 && ret.resultado === 1200 && ret.aReceber === 500, "evento soma pagos e a receber");
+  assert(e.porEvento[e.porEvento.length - 1].evento === "", "sem evento por último");
+  assert(e.participantes.length === 2 && e.participantes[0].participante === "Ana" && e.participantes[0].pago === 2000 && e.participantes[0].aReceber === 500, "mesmo participante (maiúsculas) junta; quem deve primeiro");
   console.log(`diagnostico: ${ok} ok`);
 }

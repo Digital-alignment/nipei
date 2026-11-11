@@ -797,6 +797,8 @@ export async function createLancamentoAction(form: FormData) {
     equipe: pick(form.get("equipe"), getEquipes().map((e) => e.id)),
     registradoPor: me.pessoa?.id ?? me.username,
     pendente: form.get("pendente") === "1",
+    evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+    participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
   });
   revalidatePath("/financas");
   redirect(`/financas?m=${data.slice(0, 7)}`);
