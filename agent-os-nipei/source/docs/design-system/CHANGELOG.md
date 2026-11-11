@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: pendentes, orçamento e CSV do período (10.25)
+
+- KPIs de `/financas` sem centavos e em `md:text-3xl` (antes cortavam em 2 colunas). Lançamento pode ser "a pagar / a receber" (Interruptor no formulário, BadgeEstado na lista, bloco Pendentes com "Pago"/"Recebido"); fora dos totais até quitar. Diagnóstico → Revisão financeira: Tabela 10.8 Orçado · Real · Diferença por categoria (campos de orçamento para quem edita), linha de pendentes e "Baixar CSV do período". Categorias novas: "Hospedagem e limpeza" e "Marketing e divulgação".
+
 ## 2026-11-11 — Revisão do plano de trabalho (10.24)
 
 - `Botao` aceita `download` (link comum para rotas que devolvem arquivo; antes o Next pré-carregava a exportação). Resumo sem avatares de iniciais (cortavam em 24 px; ficam os nomes), anel com rótulo acessível, resumo e Pedir respostas lado a lado a partir de 1024 px, linhas de Entregas com 44 px e respiro no hover, data do pedido sem dias passados.

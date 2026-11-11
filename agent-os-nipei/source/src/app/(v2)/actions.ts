@@ -12,14 +12,14 @@ import { decidirProposta, enfileirarPropostas, getPropostas, podeDecidir, propor
 import {
   criarTarefasLacunas, definirResponsavel, enviarAoConhecimento, getColetivo, getDiagnostico, participa, participantes, podeEditarSecao,
   rascunhoColetivoIA, rascunhoIA, salvarColetivo, salvarRespostas, type Resposta,
-  agendarReuniao, criarTarefasCalendario, criarTarefasItens, gerarCalendario, gerarPauta, itensSugeridos, salvarCalendario, salvarItens, salvarPeriodo, type Item,
+  agendarReuniao, criarTarefasCalendario, criarTarefasItens, gerarCalendario, gerarPauta, itensSugeridos, salvarCalendario, salvarItens, salvarPeriodo, salvarOrcamento, type Item,
   aceitarCodigo, gerarConsolidado, montarDocumento, publicarCodigo, rascunhoCodigo, salvarCodigo, traduzirDocumento,
   criarDiagnostico, encerrarDiagnostico,
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -776,13 +776,17 @@ export async function aplicarIAAction(form: FormData) {
   voltarTarefa(t.id);
 }
 
+/** Money typed in pt-BR: "1.234,56", "R$ 25.000" (dots = thousands) or "1234.56". NaN when it is not a number. */
+const numBR = (v: string) => {
+  v = v.replace(/\s|R\$/g, "");
+  return Number(v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : /^\d{1,3}(\.\d{3})+$/.test(v) ? v.replace(/\./g, "") : v);
+};
+
 export async function createLancamentoAction(form: FormData) {
   const me = await requireUser();
   if (!me.gestao) return;
   const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
-  // "1.234,56" (pt-BR) or "1234.56"
-  const raw = String(form.get("valor") ?? "").replace(/\s|R\$/g, "");
-  const valor = Number(raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw);
+  const valor = numBR(String(form.get("valor") ?? ""));
   const data = String(form.get("data") ?? "");
   if (!(valor > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
   createLancamento({
@@ -792,6 +796,7 @@ export async function createLancamentoAction(form: FormData) {
     projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
     equipe: pick(form.get("equipe"), getEquipes().map((e) => e.id)),
     registradoPor: me.pessoa?.id ?? me.username,
+    pendente: form.get("pendente") === "1",
   });
   revalidatePath("/financas");
   redirect(`/financas?m=${data.slice(0, 7)}`);
@@ -802,6 +807,14 @@ export async function anularLancamentoAction(form: FormData) {
   if (!me.gestao) return;
   anularLancamento(String(form.get("id")), me.pessoa?.id ?? me.username);
   revalidatePath("/financas");
+}
+
+export async function quitarLancamentoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  quitarLancamento(String(form.get("id")), me.pessoa?.id ?? me.username);
+  revalidatePath("/financas");
+  revalidatePath("/diagnosticos", "layout");
 }
 
 /** Form → validated Acervo fields; the same link twice (even with another ?usp=… suffix) is refused. */
@@ -1197,6 +1210,22 @@ export async function periodoAction(form: FormData) {
   const ok = await secaoEditavel(form);
   if (!ok) return;
   salvarPeriodo(ok.d, String(form.get("de") ?? ""), String(form.get("ate") ?? ""));
+  revalidatePath("/diagnosticos", "layout");
+}
+
+export async function orcamentoAction(form: FormData) {
+  const ok = await secaoEditavel(form);
+  if (!ok) return;
+  // fields "orc:<categoria>"; empty = no budget
+  const num = (v: string) => numBR(v) || 0;
+  // the Tabela renders each row twice (table + phone card), so every field comes twice: the edited copy is the one
+  // that differs from what is saved (only one of the two views is visible)
+  const salvo = getColetivo(ok.d.id).orcamento;
+  const chaves = [...new Set([...form.keys()].filter((k) => k.startsWith("orc:")))];
+  salvarOrcamento(ok.d, Object.fromEntries(chaves.map((k) => {
+    const cat = k.slice(4), vs = form.getAll(k).map((v) => num(String(v)));
+    return [cat, vs.find((v) => v !== (salvo[cat] ?? 0)) ?? salvo[cat] ?? 0];
+  })));
   revalidatePath("/diagnosticos", "layout");
 }
 

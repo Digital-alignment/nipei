@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { CAMPO_COMPACTO } from "@/components/ds/Campo";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import type { Pessoa, Tarefa } from "@/lib/v2/data";
+import Botao from "@/components/ds/Botao";
+import Tabela from "@/components/ds/padroes/Tabela";
+import { CATEGORIAS, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { lancamentosDoPeriodo, resumoFinanceiro, type Coletivo, type Diagnostico, type Pergunta } from "@/lib/v2/diagnostico";
 import type { Dict } from "@/lib/v2/i18n";
-import { calendarioAction, periodoAction, salvarItensAction } from "../../../actions";
+import { calendarioAction, orcamentoAction, periodoAction, salvarItensAction } from "../../../actions";
 
 // D3 panels of the collective page: improvement items (espaço), marketing calendar, finance period.
 
-const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+const brl = (v: number) => `${v < 0 ? "−" : ""}R$ ${Math.abs(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 
 type P = { d: Diagnostico; c: Coletivo; t: Dict; pode: boolean; pessoas: Pessoa[]; tarefas: Tarefa[] };
 
@@ -105,29 +107,48 @@ export function Calendario({ d, c, t, pode, pessoas, tarefas }: P) {
   );
 }
 
-/** Live totals of the ledger for the retreat/dieta period (also what the AI draft reads). */
+/** Finance period of the retreat/dieta (DS 10.25): budget vs real per category, what is still pending and the CSV.
+ *  Real = paid/received entries of the period (also what the AI draft and the final document read). */
 export function Financas({ d, c, t, pode }: P) {
-  const r = resumoFinanceiro(lancamentosDoPeriodo(d, c.periodo));
-  const Tabela = ({ titulo, linhas, total }: { titulo: string; linhas: [string, number][]; total: number }) => (
-    <div>
-      <p className="text-xs text-t2">{titulo} · {brl(total)}</p>
-      <ul className="text-sm">{linhas.map(([k, v]) => <li key={k} className="flex justify-between gap-3"><span>{k}</span><span className="tabular-nums">{brl(v)}</span></li>)}</ul>
-    </div>
-  );
+  const r = resumoFinanceiro(lancamentosDoPeriodo(d, c.periodo), c.orcamento);
+  // whoever edits sees every category (to plan the budget); readers only the ones with budget or movement
+  const linhas = pode
+    ? [...CATEGORIAS.entrada.map((k) => ["entrada", k] as const), ...CATEGORIAS.despesa.map((k) => ["despesa", k] as const)]
+      .map(([tipo, k]) => r.comparacao.find((x) => x.categoria === k) ?? { categoria: k, tipo, orcado: 0, real: 0, diferenca: 0, pior: false })
+      .concat(r.comparacao.filter((x) => !(CATEGORIAS.entrada as readonly string[]).includes(x.categoria) && !(CATEGORIAS.despesa as readonly string[]).includes(x.categoria)))
+    : r.comparacao;
+  const form = `orcamento-${d.id}`;
+  const dif = (x: (typeof linhas)[number]) => !x.orcado ? <span className="text-t3">—</span>
+    : <span className={x.pior ? "text-err" : x.diferenca ? "text-ok" : "text-t2"}>{x.diferenca > 0 ? "+" : ""}{brl(x.diferenca)}</span>;
   return (
-    <div className="rounded-interno p-3 mb-6">
-      <p className="rotulo-maiusculo text-t3 mb-2">{t.periodo}</p>
-      <form action={periodoAction} className="flex flex-wrap items-end gap-2 mb-3">
-        <Oculto d={d} secao="financas" />
-        <label className="grid gap-1 text-xs text-t2">{t.de}<input type="date" name="de" defaultValue={c.periodo.de} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} /></label>
-        <label className="grid gap-1 text-xs text-t2">{t.ate}<input type="date" name="ate" defaultValue={c.periodo.ate} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} /></label>
-        {pode && <BotaoEnviar enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvar}</BotaoEnviar>}
-      </form>
-      {r.n === 0 ? <p className="text-sm text-warn">{t.semLancPeriodo} <Link href="/financas" className="underline">{t.financas}</Link></p> : (
-        <div className="grid md:grid-cols-2 gap-4">
-          <Tabela titulo={t.entradas} linhas={r.entradas} total={r.totalEntradas} />
-          <Tabela titulo={t.despesas} linhas={r.despesas} total={r.totalDespesas} />
-          <p className="text-sm font-medium md:col-span-2">{t.resultado}: <span className={r.resultado < 0 ? "text-err" : "text-ok"}>{brl(r.resultado)}</span> · {r.n} {t.lancamentosPeriodo}</p>
+    <div className="mb-6 grid gap-4 rounded-interno p-3">
+      <div>
+        <p className="rotulo-maiusculo mb-2 text-t3">{t.periodo}</p>
+        <form action={periodoAction} className="flex flex-wrap items-end gap-2">
+          <Oculto d={d} secao="financas" />
+          <label className="grid gap-1 text-xs text-t2">{t.de}<input type="date" name="de" defaultValue={c.periodo.de} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} /></label>
+          <label className="grid gap-1 text-xs text-t2">{t.ate}<input type="date" name="ate" defaultValue={c.periodo.ate} disabled={!pode} className={`${CAMPO_COMPACTO} w-full`} /></label>
+          {pode && <BotaoEnviar enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvar}</BotaoEnviar>}
+        </form>
+      </div>
+      {r.n === 0 && <p className="text-sm text-warn">{t.semLancPeriodo} <Link href="/financas" className="underline">{t.financas}</Link></p>}
+      {linhas.length > 0 && (
+        <div>
+          <Tabela rotulo={t.orcado} colunas={[
+            { id: "cat", rotulo: t.categoria }, { id: "orc", rotulo: t.orcado, numero: true }, { id: "real", rotulo: t.real, numero: true }, { id: "dif", rotulo: t.diferenca, numero: true },
+          ]} linhas={linhas.map((x) => ({ id: x.categoria, celulas: {
+            cat: <span className="inline-flex flex-wrap items-center gap-2"><span className={`meta ${x.tipo === "entrada" ? "text-ok" : "text-err"}`}>{x.tipo === "entrada" ? t.entrada : t.despesa}</span>{x.categoria}</span>,
+            orc: pode ? <input form={form} name={`orc:${x.categoria}`} defaultValue={x.orcado ? x.orcado.toLocaleString("pt-BR") : ""} inputMode="decimal" placeholder="0" aria-label={`${t.orcado}: ${x.categoria}`} className={`${CAMPO_COMPACTO} w-28 text-right tabular-nums`} /> : x.orcado ? brl(x.orcado) : "—",
+            real: brl(x.real), dif: dif(x),
+          } }))} />
+          {pode && <form id={form} action={orcamentoAction} className="mt-3"><Oculto d={d} secao="financas" /><BotaoEnviar enviando={t.salvando} icone="confirmar" variante="tonal">{t.salvarOrcamento}</BotaoEnviar></form>}
+        </div>
+      )}
+      {r.n > 0 && (
+        <div className="grid gap-2">
+          <p className="text-sm font-medium">{t.entradas} {brl(r.totalEntradas)} · {t.despesas} {brl(r.totalDespesas)} · {t.resultado}: <span className={r.resultado < 0 ? "text-err" : "text-ok"}>{brl(r.resultado)}</span> · {r.n} {t.lancamentosPeriodo}</p>
+          {(r.aReceber > 0 || r.aPagar > 0) && <p className="meta text-t2">{t.pendentes}: {brl(r.aReceber)} {t.aReceber.toLowerCase()} · {brl(r.aPagar)} {t.aPagar.toLowerCase()}</p>}
+          {pode && <div><Botao href={`/diagnosticos/${d.id}/financas-csv`} download icone="baixar" variante="fantasma" tamanho="M">{t.baixarCsvPeriodo}</Botao></div>}
         </div>
       )}
     </div>

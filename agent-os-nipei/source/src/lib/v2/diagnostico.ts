@@ -5,7 +5,7 @@ import { requestSync } from "@/lib/tarefaNote";
 import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { chamarIA, chamarIATexto } from "./ia";
 import { buscarConhecimento, criarFonte, formatarConhecimento, processarFonte } from "./conhecimento";
-import { createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, noteText, slugify, today, vault, type Lancamento, type Me, type Pessoa } from "./data";
+import { CATEGORIAS, createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, noteText, slugify, today, vault, type Lancamento, type Me, type Pessoa } from "./data";
 import { getAlertas } from "./auditor";
 
 // Diagnósticos (D0/D1): a questionnaire template (Diagnosticos/_modelos/<id>.md, e.g. Lynn's
@@ -179,6 +179,7 @@ export type Coletivo = {
   itens: Record<string, Item[]>; // D3: improvement items per "espaco" question
   calendario: { dataRetiro: string; entradas: Entrada[] }; // D3: marketing calendar
   periodo: { de: string; ate: string }; // D3: finance period of the retreat/dieta
+  orcamento: Record<string, number>; // original budget per finance category, for the same period
   reunioes: Record<string, Reuniao>; // D3: team meetings #1 and #2
   consolidados: Record<string, { texto: string; geradoEm: string }>; // D4: "retiro", "matriz"
   codigo: Codigo; // D4: code of agreements
@@ -203,6 +204,7 @@ export function getColetivo(diagId: string): Coletivo {
       return { dataRetiro: s(c.dataRetiro), entradas: ((Array.isArray(c.entradas) ? c.entradas : []) as Record<string, unknown>[]).map((e) => ({ id: s(e.id), data: s(e.data), acao: s(e.acao), responsavel: s(e.responsavel), tarefa: s(e.tarefa) })) };
     })(),
     periodo: { de: s((fm.periodo as Record<string, unknown>)?.de), ate: s((fm.periodo as Record<string, unknown>)?.ate) },
+    orcamento: Object.fromEntries(Object.entries((fm.orcamento ?? {}) as Record<string, unknown>).map(([k, v]) => [k, Number(v) || 0] as [string, number]).filter(([, v]) => v > 0)),
     reunioes: Object.fromEntries(Object.entries((fm.reunioes ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => [k, { data: s(v?.data), evento: s(v?.evento), pauta: s(v?.pauta), geradaEm: s(v?.geradaEm) }])),
     consolidados: Object.fromEntries(Object.entries((fm.consolidados ?? {}) as Record<string, Record<string, unknown>>).map(([k, v]) => [k, { texto: s(v?.texto), geradoEm: s(v?.geradoEm) }])),
     codigo: (() => {
@@ -279,14 +281,15 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
   const base = buscarConhecimento(consulta, { origem: "diagnostico", projetos: d.projeto ? [d.projeto] : [], limite: 30, minimo: 0.12 });
   const rag = queryVaultGrounding(`${projeto?.nome ?? ""} retiro dieta ${sec.titulo}`.slice(0, 400));
   const tarefas = getTarefas().filter((t) => !d.projeto || t.projeto === d.projeto);
-  const lanc = secaoId === "financas" ? lancamentosDoPeriodo(d, getColetivo(d.id).periodo) : [];
+  const col = getColetivo(d.id);
+  const lanc = secaoId === "financas" ? lancamentosDoPeriodo(d, col.periodo) : [];
   const contexto = [
     `Hoje: ${today()} · Diagnóstico: ${d.titulo} · Evento: ${d.evento}`,
     projeto ? `Projeto: ${projeto.nome} — ${projeto.descricao}` : "",
     "## Base de conhecimento confirmada", base.length ? formatarConhecimento(base) : "(nada)",
     "## Notas do vault (não revisadas)", ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 6).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
     `## Tarefas do projeto (${tarefas.length})`, ...tarefas.slice(0, 80).map((t) => `- ${t.id}: ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
-    secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo} R$ ${l.valor} ${l.categoria}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}` : "",
+    secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo}${l.pendente ? (l.tipo === "entrada" ? " A RECEBER" : " A PAGAR") : ""} R$ ${l.valor} ${l.categoria}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}\n## Orçamento original por categoria\n${Object.entries(col.orcamento).map(([k, v]) => `- ${k}: R$ ${v}`).join("\n") || "(nenhum orçamento registrado)"}` : "",
     `## Perguntas (${sec.titulo})`, ...sec.perguntas.map((q) => `- ${q.id}: ${q.texto}\n  Guia: ${q.guia.join(" | ")}`),
   ].filter(Boolean).join("\n");
   const { o } = await chamarIA(SISTEMA_COLETIVO, [{ type: "text", text: contexto }], 6000, 150_000);
@@ -474,16 +477,40 @@ export function salvarPeriodo(d: Diagnostico, de: string, ate: string) {
   escreverColetivo(d, c);
 }
 
-/** Totals for the finance section: income and expenses by category, and the result. */
-export function resumoFinanceiro(lanc: Lancamento[]) {
+export function salvarOrcamento(d: Diagnostico, valores: Record<string, number>) {
+  const c = getColetivo(d.id);
+  c.orcamento = Object.fromEntries(Object.entries(valores).filter(([k, v]) => v > 0 && categoriaFinanceira(k)));
+  escreverColetivo(d, c);
+}
+
+const categoriaFinanceira = (k: string): "entrada" | "despesa" | "" =>
+  (CATEGORIAS.entrada as readonly string[]).includes(k) ? "entrada" : (CATEGORIAS.despesa as readonly string[]).includes(k) ? "despesa" : "";
+
+/** Totals for the finance section: what was really paid/received by category, the result, what is still pending,
+ *  and budget vs real per category (categories with a budget or movement). Pending entries stay out of the totals. */
+export function resumoFinanceiro(lanc: Lancamento[], orcamento: Record<string, number> = {}) {
+  const pagos = lanc.filter((l) => !l.pendente);
   const por = (tipo: "entrada" | "despesa") => {
     const m = new Map<string, number>();
-    for (const l of lanc.filter((x) => x.tipo === tipo)) m.set(l.categoria || "—", (m.get(l.categoria || "—") ?? 0) + l.valor);
+    for (const l of pagos.filter((x) => x.tipo === tipo)) m.set(l.categoria || "—", (m.get(l.categoria || "—") ?? 0) + l.valor);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   };
   const entradas = por("entrada"), despesas = por("despesa");
   const soma = (x: [string, number][]) => x.reduce((a, [, v]) => a + v, 0);
-  return { entradas, despesas, totalEntradas: soma(entradas), totalDespesas: soma(despesas), resultado: soma(entradas) - soma(despesas), n: lanc.length };
+  const pendente = (tipo: "entrada" | "despesa") => lanc.filter((l) => l.pendente && l.tipo === tipo).reduce((a, l) => a + l.valor, 0);
+  const real = new Map([...entradas, ...despesas]);
+  const tipoDe = (k: string) => categoriaFinanceira(k) || (entradas.some(([c]) => c === k) ? "entrada" : "despesa");
+  const comparacao = [...new Set([...Object.keys(orcamento).filter((k) => orcamento[k] > 0), ...real.keys()])]
+    .map((categoria) => {
+      const tipo = tipoDe(categoria), orcado = orcamento[categoria] ?? 0, r = real.get(categoria) ?? 0;
+      // "pior" = spent more than planned, or earned less: what Lynn asks to explain
+      return { categoria, tipo, orcado, real: r, diferenca: r - orcado, pior: orcado > 0 && (tipo === "despesa" ? r > orcado : r < orcado) };
+    })
+    .sort((a, b) => (a.tipo === b.tipo ? b.real + b.orcado - a.real - a.orcado : a.tipo === "entrada" ? -1 : 1));
+  return {
+    entradas, despesas, totalEntradas: soma(entradas), totalDespesas: soma(despesas), resultado: soma(entradas) - soma(despesas), n: lanc.length,
+    aReceber: pendente("entrada"), aPagar: pendente("despesa"), comparacao, temOrcamento: Object.values(orcamento).some((v) => v > 0),
+  };
 }
 
 // ---------------------------------------------------------------- D3: team meetings
@@ -640,7 +667,7 @@ export function codigoPendente(d: Diagnostico, pessoaId: string) {
 // ---------------------------------------------------------------- D4: final document (PT, then EN)
 
 const ARQ_DOC = (diagId: string, lang: "pt" | "en") => path.join(vault(), DIR, diagId, `documento-${lang}.md`);
-const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+const brl = (v: number) => `${v < 0 ? "−" : ""}R$ ${Math.abs(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
 /** Private answers stay out of the document (they reach it only anonymised, through the consolidated report). */
 const PRIVADAS = new Set(["compromisso.necessidades", "retiro.tensoes"]);
 
@@ -692,11 +719,12 @@ export function montarDocumento(d: Diagnostico): string {
     const r = c.respostas[q.id];
     return `**${q.texto}**\n${r?.texto || "_Sem resposta._"}${r?.status === "respondida" ? "" : r?.texto ? " _(rascunho)_" : ""}${r?.falta && r.status !== "respondida" ? `\n> Falta: ${r.falta}` : ""}`;
   }).join("\n\n");
-  const fin = resumoFinanceiro(lancamentosDoPeriodo(d, c.periodo));
+  const fin = resumoFinanceiro(lancamentosDoPeriodo(d, c.periodo), c.orcamento);
   partes.push("## 4. Revisão financeira",
-    fin.n ? [`Período: ${c.periodo.de || "…"} a ${c.periodo.ate || "…"} · ${fin.n} lançamentos.`, "", "| | Valor |", "|---|---:|",
-      ...fin.entradas.map(([k, v]) => `| Entrada · ${k} | ${brl(v)} |`), ...fin.despesas.map(([k, v]) => `| Despesa · ${k} | ${brl(v)} |`),
-      `| **Resultado** | **${brl(fin.resultado)}** |`].join("\n") : "_Sem lançamentos registrados no período._",
+    fin.n || fin.temOrcamento ? [`Período: ${c.periodo.de || "…"} a ${c.periodo.ate || "…"} · ${fin.n} lançamentos.`, "", "| | Orçado | Real | Diferença |", "|---|---:|---:|---:|",
+      ...fin.comparacao.map((x) => `| ${x.tipo === "entrada" ? "Entrada" : "Despesa"} · ${x.categoria} | ${x.orcado ? brl(x.orcado) : "—"} | ${brl(x.real)} | ${x.orcado ? `${x.diferenca > 0 ? "+" : ""}${brl(x.diferenca)}` : "—"} |`),
+      `| **Resultado** | | **${brl(fin.resultado)}** | |`,
+      fin.aReceber || fin.aPagar ? `\nPendentes: ${brl(fin.aReceber)} a receber · ${brl(fin.aPagar)} a pagar.` : ""].join("\n") : "_Sem lançamentos registrados no período._",
     respostas("financas"));
   partes.push("## 5. Plano de marketing", respostas("marketing"),
     c.calendario.entradas.length ? ["### Calendário", `Início do retiro: ${c.calendario.dataRetiro}`, "", "| Data | Ação | Responsável |", "|---|---|---|",
@@ -776,4 +804,22 @@ export function encerrarDiagnostico(d: Diagnostico, aberto: boolean) {
   const abs = path.join(vault(), DIR, d.id, "diagnostico.md");
   fs.writeFileSync(abs, fs.readFileSync(abs, "utf-8").replace(/^status: .*$/m, `status: ${aberto ? "aberto" : "encerrado"}`), "utf-8");
   requestSync(vault());
+}
+
+// self-check: VAULT_PATH=<vault> npx tsx src/lib/v2/diagnostico.ts
+if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/diagnostico.ts")) {
+  let ok = 0;
+  const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };
+  const L = (tipo: "entrada" | "despesa", valor: number, categoria: string, pendente = false): Lancamento =>
+    ({ id: "", file: "", data: "2026-10-01", tipo, valor, categoria, descricao: "", projeto: "", equipe: "", registradoPor: "", anulado: false, pendente });
+  const r = resumoFinanceiro([L("entrada", 1000, "Cursos"), L("entrada", 300, "Cursos", true), L("despesa", 400, "Alimentação"), L("despesa", 50, "Alimentação", true)],
+    { "Alimentação": 300, "Cursos": 1200, "Hospedagem e limpeza": 100 });
+  assert(r.totalEntradas === 1000 && r.totalDespesas === 400 && r.resultado === 600, "pendentes ficam fora dos totais");
+  assert(r.aReceber === 300 && r.aPagar === 50, "pendentes somados à parte");
+  const cmp = (k: string) => r.comparacao.find((x) => x.categoria === k)!;
+  assert(cmp("Alimentação").diferenca === 100 && cmp("Alimentação").pior, "despesa acima do orçado = pior");
+  assert(cmp("Cursos").diferenca === -200 && cmp("Cursos").pior, "entrada abaixo do orçado = pior");
+  assert(cmp("Hospedagem e limpeza").real === 0 && !cmp("Hospedagem e limpeza").pior, "orçado sem gasto aparece e não é pior");
+  assert(r.comparacao[0].tipo === "entrada", "entradas primeiro");
+  console.log(`diagnostico: ${ok} ok`);
 }

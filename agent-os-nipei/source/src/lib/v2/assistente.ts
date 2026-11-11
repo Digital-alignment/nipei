@@ -374,11 +374,12 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
   if (nome === "financas_resumo") {
     if (!me.gestao) return { erro: "só a gestão vê finanças" };
     const de = ISO.test(s(a.de)) ? s(a.de) : `${hoje.slice(0, 8)}01`, ate = ISO.test(s(a.ate)) ? s(a.ate) : hoje;
-    const ls = getLancamentos().filter((l) => !l.anulado && l.data >= de && l.data <= ate);
+    const todos = getLancamentos().filter((l) => !l.anulado && l.data >= de && l.data <= ate), ls = todos.filter((l) => !l.pendente);
     const somar = (f: (l: (typeof ls)[number]) => string) => ls.reduce<Record<string, number>>((acc, l) => { const k = `${l.tipo}:${f(l) || "-"}`; acc[k] = (acc[k] ?? 0) + l.valor; return acc; }, {});
     return {
       periodo: `${de} a ${ate}`, entradas: ls.filter((l) => l.tipo === "entrada").reduce((x, l) => x + l.valor, 0), despesas: ls.filter((l) => l.tipo === "despesa").reduce((x, l) => x + l.valor, 0),
-      por_categoria: somar((l) => l.categoria), por_projeto: somar((l) => l.projeto), lancamentos: ls.length,
+      por_categoria: somar((l) => l.categoria), por_projeto: somar((l) => l.projeto), lancamentos: todos.length,
+      pendentes: todos.filter((l) => l.pendente).map((l) => ({ data: l.data, tipo: l.tipo === "entrada" ? "a receber" : "a pagar", valor: l.valor, descricao: l.descricao || l.categoria })),
     };
   }
   return { erro: `ferramenta desconhecida: ${nome}` };

@@ -9,12 +9,16 @@ import Cartao from "@/components/ds/Cartao";
 import Campo from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import Tabela, { Sparkline } from "@/components/ds/padroes/Tabela";
+import { BadgeEstado } from "@/components/ds/Chip";
+import { Interruptor } from "@/components/ds/Controles";
 import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import ExportarGoogle from "@/components/v2/ExportarGoogle";
-import { anularLancamentoAction, createLancamentoAction } from "../actions";
+import { anularLancamentoAction, createLancamentoAction, quitarLancamentoAction } from "../actions";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// KPIs: whole reais, so the number never gets cut in 2 columns (cents stay in the list)
+const brl0 = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 const addMonths = (ym: string, n: number) => {
   const [y, m] = ym.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
@@ -38,7 +42,10 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const hoje = today();
   const mes = /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7);
   const todos = getLancamentos();
-  const validos = todos.filter((l) => !l.anulado);
+  // pending ("a pagar" / "a receber") entries stay out of every total until they are paid
+  const validos = todos.filter((l) => !l.anulado && !l.pendente);
+  const pendentes = todos.filter((l) => !l.anulado && l.pendente).sort((a, b) => a.data.localeCompare(b.data));
+  const rotPend = (tipo: string) => (tipo === "entrada" ? t.aReceber : t.aPagar);
   const soma = (ls: typeof validos, tipo: "entrada" | "despesa") => ls.filter((l) => l.tipo === tipo).reduce((a, l) => a + l.valor, 0);
   const doMes = validos.filter((l) => l.data.startsWith(mes));
   const entradas = soma(doMes, "entrada"), despesas = soma(doMes, "despesa");
@@ -72,15 +79,15 @@ export default async function Financas({ searchParams }: { searchParams: Promise
 
       <div className="mb-6 grid grid-cols-2 gap-2 lg:grid-cols-4">
         {/* valores em reais são longos: número display menor que o padrão do KPI para caber em 2 colunas no celular */}
-        {[[t.entradas, brl(entradas), "text-ok", meses.map((x) => x.e)], [t.despesas, brl(despesas), "text-err", meses.map((x) => x.d)], [t.saldoMes, brl(entradas - despesas), "text-t1", meses.map((x) => x.e - x.d)]].map(([rot, v, cor, pts]) => (
+        {[[t.entradas, brl0(entradas), "text-ok", meses.map((x) => x.e)], [t.despesas, brl0(despesas), "text-err", meses.map((x) => x.d)], [t.saldoMes, brl0(entradas - despesas), "text-t1", meses.map((x) => x.e - x.d)]].map(([rot, v, cor, pts]) => (
           <Cartao key={rot as string} variante="kpi">
             <span className="meta text-t2">{rot as string}</span>
-            <span className={`font-display text-2xl font-extralight leading-none tabular-nums md:text-4xl ${cor}`}>{v as string}</span>
+            <span className={`font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl ${cor}`}>{v as string}</span>
             <Sparkline pontos={pts as number[]} rotulo={rot as string} />
           </Cartao>
         ))}
         {/* o único destaque da tela: o saldo acumulado */}
-        <Cartao variante="destaque"><span className="meta opacity-80">{t.saldoTotal}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums md:text-4xl">{brl(saldoTotal)}</span></Cartao>
+        <Cartao variante="destaque"><span className="meta opacity-80">{t.saldoTotal}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl">{brl0(saldoTotal)}</span></Cartao>
       </div>
 
       <details className="mb-7 rounded-cartao bg-s1">
@@ -102,6 +109,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             <optgroup label={t.entradas}>{CATEGORIAS.entrada.map((c) => <option key={c}>{c}</option>)}</optgroup>
           </Campo>
           <Campo name="descricao" rotulo={t.descricao} maxLength={200} />
+          <label className="flex min-h-11 items-center justify-between gap-3 font-texto text-sm text-t1">{t.aindaNaoPago}<Interruptor name="pendente" rotulo={t.aindaNaoPago} /></label>
           <div className="grid grid-cols-2 gap-3">
             <Campo tipo="selecao" name="projeto" rotulo={t.projeto}><option value="">{t.geral}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
             <Campo tipo="selecao" name="equipe" rotulo={t.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
@@ -109,6 +117,21 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvar}</BotaoEnviar></div>
         </form>
       </details>
+
+      {pendentes.length > 0 && (
+        <Section title={t.pendentes} count={pendentes.length}>
+          <ul className="grid gap-2">
+            {pendentes.map((l) => (
+              <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-interno bg-s1 px-3 py-2">
+                <span className="meta tabular-nums text-t3">{fmtDate(l.data, lang)}</span>
+                <span className="corpo min-w-0 flex-1 text-t1">{l.descricao || l.categoria}</span>
+                <span className={`font-semibold tabular-nums ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>
+                <form action={quitarLancamentoAction}><input type="hidden" name="id" value={l.id} /><BotaoEnviar enviando="…" icone="confirmar" variante="tonal">{l.tipo === "entrada" ? t.recebido : t.pago}</BotaoEnviar></form>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
 
       {porCategoria.length > 0 && (
         <Section title={t.porCategoria}>
@@ -147,12 +170,12 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
-            desc: <span className={l.anulado ? "line-through" : ""}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</span>,
+            desc: <span className="inline-flex flex-wrap items-center gap-2"><span className={l.anulado ? "line-through" : ""}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</span>{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}</span>,
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,
           },
           acoes: !l.anulado && (
-            <form action={anularLancamentoAction}><input type="hidden" name="id" value={l.id} /><BotaoIcone type="submit" icone="fechar" aria-label={`${t.anular}: ${l.descricao || l.categoria}`} tamanho={40} variante="fantasma" /></form>
+            <form key={l.id} action={anularLancamentoAction}><input type="hidden" name="id" value={l.id} /><BotaoIcone type="submit" icone="fechar" aria-label={`${t.anular}: ${l.descricao || l.categoria}`} tamanho={40} variante="fantasma" /></form>
           ),
         }))} />
       </Section>

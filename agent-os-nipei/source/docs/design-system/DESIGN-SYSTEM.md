@@ -537,6 +537,11 @@ O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), com
 - **Pedir respostas** (Cartão, logo abaixo do resumo, só quando falta alguém): uma linha `meta` por pessoa com o que falta dela (nome em semibold; quem não recebe em `text-t3` com o motivo: acesso suspenso ou sem WhatsApp) · Campo data "Responder até" (padrão: daqui a 3 semanas) · Botão primário "Pedir respostas" (ícone enviar) que abre o Diálogo (não perigoso) com os nomes antes de enviar. Resultado em Toast.
 - Vazio (nenhum diagnóstico do modelo): Estado vazio 9.18 com selo olho.
 
+### 10.25 Finanças: pendentes, orçamento do período e exportação
+- **KPIs** de `/financas` mostram reais sem centavos (os centavos ficam na lista); número `text-2xl md:text-3xl` para nunca cortar em 2 colunas. Só contam lançamentos já pagos/recebidos.
+- **Pendente** = lançamento "a pagar" (despesa) ou "a receber" (entrada) ainda não quitado. No formulário: linha com Interruptor (9.14) "Ainda não pago / recebido". Na lista do mês: BadgeEstado `pendente` "A pagar" / "A receber" ao lado da descrição. Bloco **Pendentes** (Seção, antes de "Por categoria", só se houver; todos os meses): linha com data, descrição, valor colorido e Botão tonal M "Pago" / "Recebido" (ícone confirmar) que quita (o lançamento mantém a data dele, que é a do retiro; grava quem e quando quitou).
+- **Diagnóstico → Revisão financeira** (painel do período): abaixo das datas, Tabela 10.8 por categoria com colunas Orçado · Real · Diferença (diferença em `text-err` quando a despesa passou do orçado ou a entrada ficou abaixo; em `text-ok` no contrário); quem edita a seção vê Orçado como Campo compacto numérico e um Botão tonal "Salvar orçamento". Linhas: quem edita vê todas as categorias (para planejar); quem só lê vê as com orçamento ou movimento no período. A categoria leva antes o tipo em `meta` (Entrada em `text-ok`, Despesa em `text-err`). Abaixo: `meta` "Pendentes: R$ X a receber · R$ Y a pagar" e Botão fantasma M "Baixar CSV do período" (ícone baixar, `download`).
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
