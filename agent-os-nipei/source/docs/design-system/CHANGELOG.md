@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: registrar com o Pinu (10.25)
+
+- Ferramenta `registrar_lancamento` do Pinu (só gestão; painel, WhatsApp e MCP): o mesmo cartão de proposta, "Despesa R$ X: descrição" + data · categoria · evento · participante · a pagar/a receber · projeto; o link do cartão feito abre a ficha do lançamento, cujo histórico diz "(via Pinu/WhatsApp/<app>)".
+
 ## 2026-11-11 — Finanças: ficha do lançamento, editar e comprovante (10.25)
 
 - `/financas/[id]` (gestão): comprovante (foto em miniatura ou "Abrir PDF"; `Upload` com arquivo + foto), formulário de edição já preenchido, histórico em `LinhaDoTempo` (cada campo antes ▶ depois) e "Anular lançamento" com Diálogo; anulado = Aviso e nada editável. Na lista do mês e nos Pendentes a descrição é link para a ficha; ícone `imagem` quando tem comprovante. `Botao` com `target="_blank"` vira `<a>` comum (o `next/link` pré-carregava a rota do arquivo).

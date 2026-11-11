@@ -44,7 +44,7 @@ export default async function LancamentoPage({ params, searchParams }: { params:
     if (m) return { ...base, tipo: "estado", texto: m[1].toLowerCase(), antes: m[2], depois: m[3] };
     return { ...base, tipo: /pago|recebido/i.test(h.texto) ? "concluiu" : "outro", texto: h.texto.charAt(0).toLowerCase() + h.texto.slice(1) };
   });
-  if (l.registradoEm) itens.push({ dia: dia(l.registradoEm.slice(0, 10)), hora: l.registradoEm.slice(11, 16), tipo: "outro", quem: quemCriou, texto: l.importacao ? t.importouLanc : t.registrouLanc });
+  if (l.registradoEm) itens.push({ dia: dia(l.registradoEm.slice(0, 10)), hora: l.registradoEm.slice(11, 16), tipo: "outro", quem: quemCriou, texto: `${l.importacao ? t.importouLanc : t.registrouLanc}${l.registradoVia ? ` (via ${l.registradoVia})` : ""}` });
 
   return (
     <div className="mx-auto max-w-2xl">
