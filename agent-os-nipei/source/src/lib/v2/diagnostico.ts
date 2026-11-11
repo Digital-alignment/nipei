@@ -834,7 +834,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   let ok = 0;
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };
   const L = (tipo: "entrada" | "despesa", valor: number, categoria: string, pendente = false, evento = "", participante = ""): Lancamento =>
-    ({ id: "", file: "", data: "2026-10-01", tipo, valor, categoria, descricao: "", projeto: "", equipe: "", registradoPor: "", anulado: false, pendente, evento, participante, importacao: "" });
+    ({ id: "", file: "", data: "2026-10-01", tipo, valor, categoria, descricao: "", projeto: "", equipe: "", registradoPor: "", anulado: false, pendente, evento, participante, importacao: "", comprovante: "", registradoEm: "", anuladoEm: "", historico: [] });
   const r = resumoFinanceiro([L("entrada", 1000, "Cursos"), L("entrada", 300, "Cursos", true), L("despesa", 400, "Alimentação"), L("despesa", 50, "Alimentação", true)],
     { "Alimentação": 300, "Cursos": 1200, "Hospedagem e limpeza": 100 });
   assert(r.totalEntradas === 1000 && r.totalDespesas === 400 && r.resultado === 600, "pendentes ficam fora dos totais");

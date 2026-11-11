@@ -69,7 +69,8 @@ export default function Botao(props: ComoBotao | ComoLink) {
   if ("href" in resto && resto.href !== undefined) {
     const { href, target, rel, download } = resto as ComoLink;
     if (parado) return <span className={cls} aria-disabled="true">{conteudo}</span>;
-    if (download) return <a href={href} download className={cls}>{conteudo}</a>;
+    // files and new tabs: a plain <a> (next/link would prefetch the file route)
+    if (download || target === "_blank") return <a href={href} target={target} rel={rel} download={download || undefined} className={cls}>{conteudo}</a>;
     return <Link href={href} target={target} rel={rel} className={cls}>{conteudo}</Link>;
   }
   const { type = "button", ...attrs } = resto as Omit<ComoBotao, keyof Comum>;

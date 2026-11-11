@@ -47,8 +47,13 @@ const ehTeste = (f) => /^teste: true$/m.test(fs.readFileSync(path.join(dir, f), 
 function limpar() {
   if (!fs.existsSync(dir)) return 0;
   const fs_ = fs.readdirSync(dir).filter((f) => f.endsWith(".md") && ehTeste(f));
+  // receipts attached in the app to test entries go too (Financeiro/Comprovantes/<id>.<ext>)
+  const comp = path.join(dir, "..", "Comprovantes");
+  const ids = fs_.map((f) => fs.readFileSync(path.join(dir, f), "utf-8").match(/^id: "?([^"\r\n]+)"?/m)?.[1]).filter(Boolean);
+  if (fs.existsSync(comp)) for (const c of fs.readdirSync(comp)) if (ids.includes(c.replace(/\.[^.]+$/, ""))) fs.unlinkSync(path.join(comp, c));
   fs_.forEach((f) => fs.unlinkSync(path.join(dir, f)));
   if (!fs.readdirSync(dir).length) fs.rmdirSync(dir);
+  if (fs.existsSync(comp) && !fs.readdirSync(comp).length) fs.rmdirSync(comp);
   return fs_.length;
 }
 function carregar() {

@@ -152,7 +152,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             {pendentes.map((l) => (
               <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-interno bg-s1 px-3 py-2">
                 <span className="meta tabular-nums text-t3">{fmtDate(l.data, lang)}</span>
-                <span className="corpo min-w-0 flex-1 text-t1">{l.descricao || l.categoria}{l.participante && <span className="meta text-t3"> · {l.participante}</span>}{l.evento && <span className="meta text-t3"> · {l.evento}</span>}</span>
+                <span className="corpo min-w-0 flex-1 text-t1"><Link href={`/financas/${encodeURIComponent(l.id)}`} className="anel-foco rounded-interno hover:underline">{l.descricao || l.categoria}</Link>{l.participante && <span className="meta text-t3"> · {l.participante}</span>}{l.evento && <span className="meta text-t3"> · {l.evento}</span>}</span>
                 <span className={`font-semibold tabular-nums ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>
                 <form action={quitarLancamentoAction}><input type="hidden" name="id" value={l.id} /><BotaoEnviar enviando="…" icone="confirmar" variante="tonal">{l.tipo === "entrada" ? t.recebido : t.pago}</BotaoEnviar></form>
               </li>
@@ -210,7 +210,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
-            desc: <span className="inline-flex flex-wrap items-center gap-2"><span className={l.anulado ? "line-through" : ""}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</span>{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}</span>,
+            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}</span>,
             ev: l.evento,
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,

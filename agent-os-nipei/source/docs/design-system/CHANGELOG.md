@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: ficha do lançamento, editar e comprovante (10.25)
+
+- `/financas/[id]` (gestão): comprovante (foto em miniatura ou "Abrir PDF"; `Upload` com arquivo + foto), formulário de edição já preenchido, histórico em `LinhaDoTempo` (cada campo antes ▶ depois) e "Anular lançamento" com Diálogo; anulado = Aviso e nada editável. Na lista do mês e nos Pendentes a descrição é link para a ficha; ícone `imagem` quando tem comprovante. `Botao` com `target="_blank"` vira `<a>` comum (o `next/link` pré-carregava a rota do arquivo).
+
 ## 2026-11-11 — Finanças: importar planilha (10.25)
 
 - `/financas/importar`: `Upload` ganhou `soArquivo` (sem botão de câmera); prévia em Tabela 10.8 com BadgeEstado por linha (erro, repetido, aviso, a pagar/a receber), projeto e evento padrão, "Importar N" e "Cancelar"; categoria editável por linha (Campo compacto de seleção, também no cartão do celular). Em `/financas`, linha "Importação de <data>" com "Desfazer" (`EnviarComConfirmacao` ganhou `perigoso` e `variante`).

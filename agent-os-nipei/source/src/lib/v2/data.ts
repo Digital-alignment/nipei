@@ -6,7 +6,7 @@ import { defaultVault } from "@/lib/config";
 import { SESSION_COOKIE, lerToken, verifyToken } from "@/lib/auth";
 import { corteSessao } from "./seguranca";
 import { normalizeDueDate } from "@/lib/kanbanGrounding";
-import { createTarefaNote, parseTarefa, requestSync, writeTarefa, type ChecklistItem, type TarefaDoc } from "@/lib/tarefaNote";
+import { agora, createTarefaNote, parseTarefa, requestSync, writeTarefa, type ChecklistItem, type TarefaDoc } from "@/lib/tarefaNote";
 
 // v2 data layer: everything is read straight from the vault notes on each request.
 // Source of truth per concept: Equipes/, Projetos/, Objetivos/, Eventos/, Miembros/, Productivity/Tarefas/.
@@ -699,19 +699,25 @@ export type Lancamento = {
   evento: string; // free label shared by the entries of one retreat/dieta ("Retiro outubro 2026")
   participante: string; // who paid (registration income); guests are not Pessoas, so it is a name
   importacao: string; // id of the spreadsheet import that created it ("" = typed in the app)
+  comprovante: string; // vault-relative receipt file (Financeiro/Comprovantes/<id>.<ext>), "" = none
+  registradoEm: string; anuladoEm: string;
+  historico: { quando: string; quem: string; texto: string }[]; // "## Alterações" of the note, newest first
 };
 
 export function getLancamentos(): Lancamento[] {
   return readDir(LANC_DIR)
-    .map(({ fm, file }) => ({
+    .map(({ fm, file, body }) => ({
       id: s(fm.id), file, data: s(fm.data), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Lancamento["tipo"],
       valor: Number(fm.valor) || 0, categoria: s(fm.categoria), descricao: s(fm.descricao), projeto: s(fm.projeto),
       equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante), importacao: s(fm.importacao),
+      comprovante: s(fm.comprovante), registradoEm: s(fm.registrado_em), anuladoEm: s(fm.anulado_em),
+      historico: (body.split(/^## Alterações\s*$/m)[1] ?? "").split(/^## /m)[0].split(/\r?\n/)
+        .map((x) => x.match(/^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) · (.+?) · (.+)$/)).filter((m) => !!m).map((m) => ({ quando: m[1], quem: m[2], texto: m[3] })),
     }))
     .sort((a, b) => b.data.localeCompare(a.data) || b.id.localeCompare(a.id));
 }
 
-export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string }) {
+export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "comprovante" | "registradoEm" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string }) {
   const dir = path.join(vault(), LANC_DIR);
   fs.mkdirSync(dir, { recursive: true });
   // time + random: an import creates many entries in the same millisecond (ids must stay unique; "anular" looks them up)
@@ -719,24 +725,64 @@ export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulad
   const fm: Record<string, FmValue> = {
     id, type: "lancamento", data: input.data, tipo: input.tipo, valor: Math.round(input.valor * 100) / 100, categoria: input.categoria,
     descricao: input.descricao, projeto: input.projeto, equipe: input.equipe, registrado_por: input.registradoPor,
-    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), updated_at: new Date().toISOString(),
+    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), registrado_em: agora(), updated_at: new Date().toISOString(),
   };
   const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
   fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });
   requestSync(vault());
 }
 
-export function anularLancamento(id: string, por: string) {
+export function anularLancamento(id: string, por: string, quem = por) {
   const l = getLancamentos().find((x) => x.id === id);
   if (!l) throw new Error("Lançamento não encontrado");
-  updateNote(l.file, { anulado: true, anulado_por: por, anulado_em: new Date().toISOString().slice(0, 10) });
+  alterarLancamento(l, { anulado: true, anulado_por: por, anulado_em: today() }, quem, ["Anulou o lançamento"]);
 }
 
 /** Paid / received today: the entry joins the totals on its own date. */
-export function quitarLancamento(id: string, por: string) {
+export function quitarLancamento(id: string, por: string, quem = por) {
   const l = getLancamentos().find((x) => x.id === id);
   if (!l) throw new Error("Lançamento não encontrado");
-  updateNote(l.file, { pendente: false, quitado_por: por, quitado_em: today() });
+  alterarLancamento(l, { pendente: false, quitado_por: por, quitado_em: today() }, quem, [l.tipo === "entrada" ? "Marcou como recebido" : "Marcou como pago"]);
+}
+
+/** Frontmatter + lines on top of "## Alterações" ("- AAAA-MM-DD HH:MM · quem · texto"), in one write. */
+export function alterarLancamento(l: Lancamento, items: Record<string, FmValue>, quem: string, linhas: string[]) {
+  const full = path.join(vault(), l.file);
+  let text = setFrontmatter(fs.readFileSync(full, "utf-8"), { ...items, updated_at: new Date().toISOString() });
+  const nl = text.includes("\r\n") ? "\r\n" : "\n";
+  const novas = linhas.map((x) => `- ${agora()} · ${quem.replace(/ · /g, " ")} · ${x.replace(/\r?\n/g, " ")}`).join(nl);
+  text = /^## Alterações[ \t]*\r?$/m.test(text) ? text.replace(/^## Alterações[ \t]*\r?$/m, (h) => `${h.replace(/\r$/, "")}${nl}${novas}`) : `${text.replace(/\s*$/, "")}${nl}${nl}## Alterações${nl}${novas}${nl}`;
+  if (items.descricao !== undefined || items.tipo !== undefined) {
+    const tipo = String(items.tipo ?? l.tipo), desc = String(items.descricao ?? l.descricao) || String(items.categoria ?? l.categoria);
+    text = text.replace(/^# .*$/m, () => `# ${tipo === "entrada" ? "Entrada" : "Despesa"}: ${desc}`);
+  }
+  fs.writeFileSync(full, text, "utf-8");
+  requestSync(vault());
+}
+
+const brlLog = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Edit: only the fields that changed are written; each one becomes "Campo: antes → depois" in the history. */
+export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "descricao" | "projeto" | "equipe" | "pendente" | "evento" | "participante">, quem: string) {
+  const l = getLancamentos().find((x) => x.id === id);
+  if (!l || l.anulado) throw new Error("Lançamento não encontrado");
+  const nomeProj = (p: string) => getProjetos().find((x) => x.id === p)?.nome ?? (p || "Geral");
+  const nomeEq = (e: string) => getEquipes().find((x) => x.id === e)?.nome ?? (e || "Nenhuma");
+  const campos: [keyof typeof novo, string, (v: never) => string][] = [
+    ["tipo", "Tipo", (v: string) => (v === "entrada" ? "Entrada" : "Despesa")], ["data", "Data", (v: string) => v.split("-").reverse().join("/")],
+    ["valor", "Valor", brlLog], ["categoria", "Categoria", String], ["descricao", "Descrição", (v: string) => v || "—"],
+    ["evento", "Evento", (v: string) => v || "—"], ["participante", "Participante", (v: string) => v || "—"],
+    ["pendente", "Situação", (v: boolean) => (v ? "pendente" : "pago")], ["projeto", "Projeto", nomeProj], ["equipe", "Equipe", nomeEq],
+  ];
+  const items: Record<string, FmValue> = {}, linhas: string[] = [];
+  for (const [k, rot, fmt] of campos) {
+    const antes = l[k], depois = k === "valor" ? Math.round((novo.valor) * 100) / 100 : novo[k];
+    if (antes === depois) continue;
+    items[k] = depois;
+    linhas.push(`${rot}: ${fmt(antes as never)} → ${fmt(depois as never)}`);
+  }
+  if (linhas.length) alterarLancamento(l, items, quem, linhas);
+  return linhas.length;
 }
 
 // ---------------------------------------------------------------- acervo (links to Drive folders/files)

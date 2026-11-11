@@ -18,9 +18,10 @@ import {
 } from "@/lib/v2/diagnostico";
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib/v2/importarFinancas";
+import { salvarComprovante } from "@/lib/v2/comprovantes";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, getLancamentos, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, editarLancamento, getLancamentos, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -802,8 +803,49 @@ export async function createLancamentoAction(form: FormData) {
 export async function anularLancamentoAction(form: FormData) {
   const me = await requireUser();
   if (!me.gestao) return;
-  anularLancamento(String(form.get("id")), me.pessoa?.id ?? me.username);
-  revalidatePath("/financas");
+  anularLancamento(String(form.get("id")), me.pessoa?.id ?? me.username, actorName(me));
+  revalidatePath("/financas", "layout");
+}
+
+/** Ficha do lançamento (DS 10.25): only what changed is written, each change goes to "## Alterações". */
+export async function editarLancamentoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const id = String(form.get("id") ?? "");
+  const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
+  const valor = Math.abs(numBR(String(form.get("valor") ?? "")));
+  const data = String(form.get("data") ?? "");
+  if (!(valor > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) redirect(`/financas/${encodeURIComponent(id)}?erro=${encodeURIComponent("Confira a data e o valor")}`);
+  let n = 0;
+  await tentar(async () => {
+    n = editarLancamento(id, {
+      tipo, valor, data,
+      categoria: pick(form.get("categoria"), [...CATEGORIAS[tipo]]) || CATEGORIAS[tipo][CATEGORIAS[tipo].length - 1],
+      descricao: String(form.get("descricao") ?? "").trim().slice(0, 200),
+      projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
+      equipe: pick(form.get("equipe"), getEquipes().map((e) => e.id)),
+      pendente: form.get("pendente") === "1",
+      evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+      participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+    }, actorName(me));
+  });
+  revalidatePath("/financas", "layout");
+  revalidatePath("/diagnosticos", "layout");
+  redirect(`/financas/${encodeURIComponent(id)}?ok=${encodeURIComponent(n ? "Alterações salvas" : "Nada mudou")}`);
+}
+
+export async function comprovanteAction(form: FormData): Promise<{ error?: string }> {
+  const me = await requireUser();
+  if (!me.gestao) return { error: "Só a gestão" };
+  const f = form.get("arquivo"), id = String(form.get("id") ?? "");
+  if (!(f instanceof File) || !f.size) return { error: "Escolha um arquivo" };
+  try {
+    await salvarComprovante(id, Buffer.from(await f.arrayBuffer()), actorName(me));
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  revalidatePath("/financas", "layout");
+  return {};
 }
 
 // ---- Importar planilha (DS 10.25): upload → preview in .jobs → confirm → entries with `importacao`
@@ -858,7 +900,7 @@ export async function desfazerImportacaoAction(form: FormData) {
   if (!me.gestao) return;
   const id = String(form.get("importacao") ?? "");
   const ls = id ? getLancamentos().filter((l) => l.importacao === id && !l.anulado) : [];
-  for (const l of ls) anularLancamento(l.id, me.pessoa?.id ?? me.username);
+  for (const l of ls) anularLancamento(l.id, me.pessoa?.id ?? me.username, actorName(me));
   revalidatePath("/financas");
   redirect(`/financas?ok=${encodeURIComponent(`Importação desfeita: ${ls.length} lançamentos anulados`)}`);
 }
@@ -866,8 +908,8 @@ export async function desfazerImportacaoAction(form: FormData) {
 export async function quitarLancamentoAction(form: FormData) {
   const me = await requireUser();
   if (!me.gestao) return;
-  quitarLancamento(String(form.get("id")), me.pessoa?.id ?? me.username);
-  revalidatePath("/financas");
+  quitarLancamento(String(form.get("id")), me.pessoa?.id ?? me.username, actorName(me));
+  revalidatePath("/financas", "layout");
   revalidatePath("/diagnosticos", "layout");
 }
 
