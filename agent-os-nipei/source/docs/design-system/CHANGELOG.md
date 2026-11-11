@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Plano de trabalho no Acervo (10.24)
+
+- Acervo ganha abas (Arquivos / Agenda work plan); a segunda, só gestão, mostra o diagnóstico da Lynn como checklist: anel do % geral, seções recolhíveis com barra e uma linha por pergunta (BadgeEstado + quem falta), entregas, exportar CSV e Markdown (EN). Só componentes existentes.
+
 ## 2026-11-05 — Pessoas: papel, referente, responsabilidades e "Completar fichas" (10.23)
 
 - Ficha → Resumo começa pelo cartão Responsabilidades (papel, referente em Chips, coordena, lidera, objetivos com ritmo, procedimentos, presença da semana) com edição de papel e referente.

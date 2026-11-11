@@ -528,6 +528,13 @@ Um objetivo é um **resultado com prazo**: título como resultado, **responsáve
 - **Ficha → Resumo**: Cartão **Responsabilidades** primeiro: papel (`titulo-cartao`), "Referente de" (Chips), e linhas `corpo` com link para o que a pessoa coordena (equipes), lidera (projetos), é responsável (objetivos ativos, com BadgeEstado do ritmo) e cuida (procedimentos); "Esta semana" com a presença (10.18, só leitura). Gestão e a própria pessoa veem "Editar" (fantasma) que abre, no próprio cartão, Campo papel + Campo "Referente de" (separado por vírgulas) + Primário "Salvar".
 - **Completar fichas** (`/pessoas/completar`, gestão): números do que falta no topo (Chips de filtro: Sem papel · Sem equipe · Sem WhatsApp · Sem referente, com contagem); uma linha por pessoa (Cartão no celular, linha densa no computador): Avatar 24 + nome (link) · equipes em Chip · Campos compactos papel, equipe (só para quem não tem: "Adicionar à equipe…"), WhatsApp, e-mail, referente de. "Sugerir com o Pinu" (cartão `pinu`) pré-preenche só os campos vazios com Chip `pinu` "sugerido"; nada é gravado até "Salvar fichas" (primário, fixo no pé). Contatos de Pontes e externos não aparecem.
 
+### 10.24 Plano de trabalho (Acervo → "Agenda work plan", só gestão)
+O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), como checklist visual. Abas no cabeçalho do Acervo (9.11): "Arquivos" e "Agenda work plan" (esta aba só existe para a gestão).
+- **Resumo** (Cartão padrão): AnelProgresso 72 com o % geral · linha `corpo` "N de M respostas e entregas" · `meta` com rascunhos e quem responde (Avatares 24 + nomes) · ações: Botão tonal "Exportar CSV" e fantasma "Exportar (EN)", ambos com ícone; "Abrir diagnóstico" (fantasma) leva ao `/diagnosticos/[id]`.
+- **Seções** na ordem do documento original, cada uma uma Seção recolhível (9.12) em cartão: título "N. Seção" + contagem "feitas/total"; o resumo fechado mostra a BarraProgresso (sólido = feito; rascunhos não contam). Dentro, uma linha por pergunta: BadgeEstado (Feita = todas respondidas · Em andamento = alguém respondeu ou há rascunho · Pendente = ninguém, hachurado) · texto da pergunta (`corpo`) · `meta`: individual "3/6 · faltam: PPR, Rodrigo"; coletiva "Responsável: X" ou "Sem responsável" + a lacuna escrita. Nunca o texto das respostas.
+- **Entregas** (Cartão): mesma linha com BadgeEstado + nome da entrega + detalhe em `meta` (período, nº de itens, versão e aceites, PT/EN); cada linha abre a página onde se faz.
+- Vazio (nenhum diagnóstico do modelo): Estado vazio 9.18 com selo olho.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

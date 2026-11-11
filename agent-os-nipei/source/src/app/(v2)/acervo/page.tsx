@@ -18,6 +18,8 @@ import Chip from "@/components/ds/Chip";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import { BotaoIcone } from "@/components/ds/Botao";
 import { MiniAnelPinu } from "@/components/ds/Pinu";
+import { AbasLinks } from "@/components/v2/VistaLinks";
+import PlanoTrabalho from "./PlanoTrabalho";
 
 // tipo = ícone + texto (nunca só a cor). TODO(ícones): vídeo, áudio, pasta, documento, marca (pedidos em ICONES.md)
 const ICONE: Record<string, NomeIcone> = { fotos: "imagem", videos: "imagem", audios: "microfone", cursos: "sucesso", documentos: "tarefa", marca: "editar", outros: "abrir-fora" };
@@ -29,10 +31,22 @@ const CONTA = "rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-
 // sort selects; with no filter the list is grouped by type. Add/edit with link detection (lib/v2/acervoLinks.ts);
 // "remove" hides the item (arquivado) without touching Drive. Add: gestão or coordination; edit/remove:
 // gestão or whoever added it (podeEditarAcervo).
-export default async function Acervo({ searchParams }: { searchParams: Promise<{ tipo?: string; projeto?: string; ano?: string; ordem?: string; q?: string; ok?: string; erro?: string }> }) {
+export default async function Acervo({ searchParams }: { searchParams: Promise<{ aba?: string; tipo?: string; projeto?: string; ano?: string; ordem?: string; q?: string; ok?: string; erro?: string }> }) {
   const q = await searchParams;
   const { t, lang } = await getT();
   const me = (await currentUser())!;
+  // "Agenda work plan" (DS 10.24): only gestão (Equipe 1) sees the tab and its content
+  const plano = me.gestao && q.aba === "plano";
+  const abas = me.gestao && <AbasLinks rotulo={t.acervo} ativa={plano ? "plano" : "arquivos"} itens={[
+    { id: "arquivos", rotulo: "Arquivos", icone: "imagem", href: "/acervo" },
+    { id: "plano", rotulo: "Agenda work plan", icone: "tarefa", href: "/acervo?aba=plano" },
+  ]} />;
+  if (plano) return (
+    <>
+      <CabecalhoPagina selo="quadrados" rotulo="Lynn · equipe" titulo={t.acervo} subtitulo="O que a equipe tem de entregar à Lynn: o que já respondemos, o que está em rascunho e o que falta." abas={abas} />
+      <PlanoTrabalho en={lang === "en"} />
+    </>
+  );
   const projetos = projetosVisiveis(me), pessoas = getPessoas(), todos = getAcervo();
   const podeAdicionar = me.gestao || me.coordena.length > 0;
   const ordem = (ORDENS as readonly string[]).includes(q.ordem ?? "") ? q.ordem! : "ano";
@@ -105,6 +119,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <CabecalhoPagina selo="quadrados" rotulo={`${todos.length} ${t.itensN}`} titulo={t.acervo} subtitulo={t.acervoIntro}
+        abas={abas}
         acoes={podeAdicionar && <BotaoSecao id="novo" className="anel-foco forma-folha inline-flex h-14 items-center gap-2 bg-ac px-6 font-texto text-base font-semibold text-ac-ink hover:brightness-[.94]"><Icone nome="mais" tamanho={22} />{t.adicionar}</BotaoSecao>}
         filtros={<>
           <Chip href={link({ tipo: undefined })} ativo={!q.tipo} contagem={semTipo.length}>{t.todas}</Chip>
