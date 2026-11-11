@@ -71,6 +71,23 @@ export async function transcrever(base64: string, mime: string, pessoa?: string)
   return String(j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "").trim();
 }
 
+/** Receipt photo/PDF → what it says (the platform AI, lib/v2/ia.ts, which reads images and PDFs). The text only helps the
+ *  Pinu propose: the person still confirms the card, so a misread value is caught there. null when it is not a receipt. */
+export type ReciboLido = { valor: number; data: string; estabelecimento: string; itens: string; tipo: "despesa" | "entrada" };
+export async function lerRecibo(base64: string, mime: string): Promise<ReciboLido | null> {
+  const { chamarIA } = await import("./ia");
+  const anexo = mime === "application/pdf"
+    ? { type: "file" as const, file: { filename: "recibo.pdf", file_data: `data:application/pdf;base64,${base64}` } }
+    : { type: "image_url" as const, image_url: { url: `data:${mime};base64,${base64}` } };
+  const { o } = await chamarIA(
+    'Você lê comprovantes. Responda só JSON: {"recibo": true|false, "valor": número total em reais (ex. 87.4) ou null, "data": "AAAA-MM-DD" ou null, "estabelecimento": "quem recebeu ou vendeu", "itens": "o que foi comprado/pago, curto", "tipo": "despesa" ou "entrada"}. "recibo" = true só para recibo, nota fiscal, cupom, boleto pago ou comprovante de pagamento/Pix. "tipo" = "entrada" só se for um Pix/transferência RECEBIDO. Não invente: o que não estiver legível fica null ou "".',
+    [{ type: "text", text: "O que diz este comprovante?" }, anexo], 400, 60_000);
+  const valor = Math.round(Number(o.valor) * 100) / 100;
+  if (o.recibo !== true || !(valor > 0)) return null;
+  return { valor, data: /^\d{4}-\d{2}-\d{2}$/.test(String(o.data)) ? String(o.data) : "", estabelecimento: String(o.estabelecimento ?? "").slice(0, 100), itens: String(o.itens ?? "").slice(0, 200), tipo: o.tipo === "entrada" ? "entrada" : "despesa" };
+}
+const descreverLido = (l: ReciboLido) => `[lido do comprovante pela IA: ${l.tipo === "entrada" ? "recebimento" : "pagamento"} de R$ ${l.valor.toFixed(2).replace(".", ",")}${l.data ? `, data ${l.data}` : ""}${l.estabelecimento ? `, ${l.estabelecimento}` : ""}${l.itens ? `, ${l.itens}` : ""}. Use estes dados; o evento só se a pessoa disser]`;
+
 const resumoCartoes = (m: MsgSalva) => (m.cartoes ?? []).map((c, i) => ({ c, i })).filter(({ c }) => c.estado === "pendente");
 const paraWhats = (s: string) => s.replace(/\*\*(.+?)\*\*/g, "*$1*").replace(/^#+\s*/gm, "").replace(/^\s*[-*]\s+/gm, "• ").trim();
 
@@ -231,20 +248,26 @@ export async function processarEntrada(d: Dados): Promise<void> {
     const oferta = lerOferta(dono), sn = !midia ? lerDecisao(texto) : null;
     const recibos = pinu && me.gestao;
     const arquivoOk = (x: Midia | null | undefined) => !!x && (x.mime === "application/pdf" || x.mime.startsWith("image/"));
-    if (recibos && midia && arquivoOk(midia) && !encaminhado && !PALAVRA.test(texto) && SO_RECIBO.test(texto)) {
+    const candidato = recibos && !!midia && arquivoOk(midia) && !encaminhado && !PALAVRA.test(texto);
+    if (candidato && SO_RECIBO.test(texto)) {
       const l = ultimoSemComprovante(p.id);
       if (l) {
         await salvarComprovante(l.id, Buffer.from(midia.base64, "base64"), quem);
         registrarEvento(dono, "anexou comprovante", "pelo WhatsApp", "whatsapp");
         await enviarWhatsApp(fone, `📎 Comprovante anexado a *${l.descricao || l.categoria}* (${l.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}).\nhttps://os.nipeihu.app/financas/${l.id}`); return;
       }
-      guardarReciboPendente(dono, midia.base64, midia.mime);
-      await enviarWhatsApp(fone, "Guardei o comprovante. De qual gasto é? Escreva como contaria (ex.: *gasolina 120 para o retiro*) e eu proponho o lançamento com ele anexado."); return;
     }
     let recibo = false;
-    if (recibos && midia && arquivoOk(midia) && !encaminhado && !PALAVRA.test(texto) && DINHEIRO.test(texto)) {
-      guardarReciboPendente(dono, midia.base64, midia.mime);
-      texto += DICA_RECIBO; recibo = true;
+    // the AI reads every photo/PDF of the gestão: a receipt goes to the Pinu with what it says; anything else follows as before
+    const lido = candidato ? await lerRecibo(midia!.base64, midia!.mime).catch((e) => { console.warn("[recibo]", (e as Error).message); return null; }) : null;
+    if (candidato && (lido || DINHEIRO.test(texto) || SO_RECIBO.test(texto))) {
+      guardarReciboPendente(dono, midia!.base64, midia!.mime);
+      if (!lido && !DINHEIRO.test(texto)) {
+        await enviarWhatsApp(fone, "Guardei o comprovante, mas não consegui ler o valor. De qual gasto é? Escreva como contaria (ex.: *gasolina 120 para o retiro*) e eu proponho o lançamento com ele anexado."); return;
+      }
+      registrarEvento(dono, "mandou comprovante", lido ? "lido pela IA" : "com legenda", "whatsapp");
+      const legenda = SO_RECIBO.test(texto) ? "" : texto;
+      texto = [legenda || "Registre o lançamento deste comprovante.", lido ? descreverLido(lido) : ""].filter(Boolean).join("\n") + DICA_RECIBO; recibo = true;
     } else if (recibos && !midia && oferta?.midia && arquivoOk(oferta.midia) && sn === null && /\d/.test(texto)) {
       // the answer to "Guardo no Conhecimento?" was the expense of the photo
       guardarReciboPendente(dono, oferta.midia.base64, oferta.midia.mime);

@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: a IA lê o recibo e lembrete semanal de pendentes (10.25)
+
+- Foto/PDF de recibo mandado pela gestão ao WhatsApp é lido pela IA (valor, data, estabelecimento, itens) e vira proposta do Pinu com o comprovante anexado, sem precisar escrever o valor. Segunda-feira, WhatsApp à gestão com o que está a pagar e a receber. Só mensagens de texto, sem componente novo.
+
 ## 2026-11-11 — Finanças: comprovante pelo WhatsApp (10.25)
 
 - Gestão manda a foto/PDF do recibo ao número do Nipëi: com legenda de gasto vai ao Pinu e vira o comprovante do lançamento confirmado; sem legenda, a pergunta do Conhecimento ganha "se for um comprovante, responda com o gasto"; "recibo"/"comprovante" sozinho anexa ao último lançamento sem comprovante das últimas 2 h. Respostas de texto no WhatsApp ("📎 Comprovante anexado…"), sem componente novo.
