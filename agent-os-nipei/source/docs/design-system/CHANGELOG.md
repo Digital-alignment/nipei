@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: comprovante pelo WhatsApp (10.25)
+
+- Gestão manda a foto/PDF do recibo ao número do Nipëi: com legenda de gasto vai ao Pinu e vira o comprovante do lançamento confirmado; sem legenda, a pergunta do Conhecimento ganha "se for um comprovante, responda com o gasto"; "recibo"/"comprovante" sozinho anexa ao último lançamento sem comprovante das últimas 2 h. Respostas de texto no WhatsApp ("📎 Comprovante anexado…"), sem componente novo.
+
 ## 2026-11-11 — Finanças: registrar com o Pinu (10.25)
 
 - Ferramenta `registrar_lancamento` do Pinu (só gestão; painel, WhatsApp e MCP): o mesmo cartão de proposta, "Despesa R$ X: descrição" + data · categoria · evento · participante · a pagar/a receber · projeto; o link do cartão feito abre a ficha do lançamento, cujo histórico diz "(via Pinu/WhatsApp/<app>)".

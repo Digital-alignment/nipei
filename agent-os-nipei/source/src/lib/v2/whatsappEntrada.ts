@@ -10,6 +10,7 @@ import { enviarWhatsApp } from "./whatsapp";
 import { registrarEvento } from "./eventos";
 import { registrarCustoIA } from "./custosIA";
 import { funcaoLigada } from "./funcoes";
+import { guardarReciboPendente, salvarComprovante, temReciboPendente, ultimoSemComprovante } from "./comprovantes";
 
 // "Encaminhar para o Nipëi": a person writes or forwards a text or voice note to the Nipëi WhatsApp number.
 // Same assistant, same conversation and memory as the panel; proposals come back numbered and are confirmed
@@ -87,6 +88,7 @@ async function decidir(me: Me, dono: string, quem: string, escolha: "todas" | "n
   const ultima = [...msgs].reverse().find((m) => m.role === "assistant");
   const pend = ultima ? resumoCartoes(ultima) : [];
   const linhas: string[] = [];
+  const recibo = temReciboPendente(dono);
   for (const [n, { c }] of pend.entries()) {
     const quer = escolha === "todas" || (Array.isArray(escolha) && escolha.includes(n + 1));
     if (!quer) { c.estado = "cancelado"; continue; }
@@ -94,6 +96,7 @@ async function decidir(me: Me, dono: string, quem: string, escolha: "todas" | "n
     catch (e) { c.estado = "erro"; c.erro = (e as Error).message; linhas.push(`⚠️ ${c.resumo}: ${c.erro}`); }
   }
   salvarConversa(dono, msgs);
+  if (recibo && !temReciboPendente(dono)) linhas.push("📎 Comprovante anexado ao lançamento.");
   return escolha === "nenhuma" ? "Ok, cancelei as propostas." : linhas.join("\n\n") || "Nada para confirmar.";
 }
 
@@ -113,6 +116,10 @@ function gravarOferta(pessoa: string, o: Oferta | null) {
   fs.mkdirSync(path.dirname(arqOferta(pessoa)), { recursive: true });
   fs.writeFileSync(arqOferta(pessoa), JSON.stringify(o));
 }
+// receipts (gestão): a caption that talks about money, or just "recibo"/"comprovante"
+const DINHEIRO = /R\$\s*\d|\d+[.,]\d{2}\b|\b\d+(?:[.,]\d+)?\s*(?:reais|real)\b|\b(?:gastei|gasto|paguei|pago|comprei|recebi|recibo|comprovante|nota fiscal|cupom)\b/i;
+const SO_RECIBO = /^\s*(?:o\s+|a\s+)?(?:recibo|comprovante|nota(?: fiscal)?|cupom)\s*[.!]?\s*$/i;
+const DICA_RECIBO = "\n[anexou um comprovante (foto/PDF): ele fica anexado ao lançamento que a pessoa confirmar]";
 const ajudaDada = new Map<string, string>(); // person → day the "how to send" help went out (once a day)
 
 /** WhatsApp wraps some messages (document with caption, disappearing, view once): the inner one. */
@@ -220,9 +227,36 @@ export async function processarEntrada(d: Dados): Promise<void> {
     const encaminhado = foiEncaminhado(m);
     if (!texto && !midia) { await enviarWhatsApp(fone, "Por enquanto eu entendo texto, áudio, foto e PDF."); return; }
 
-    // 1) the answer to "Guardo no Conhecimento?"
+    // 0) receipts (gestão with the Pinu): photo/PDF + money caption → the Pinu proposes the entry, the file waits for it
     const oferta = lerOferta(dono), sn = !midia ? lerDecisao(texto) : null;
-    if (oferta && (sn === "todas" || sn === "nenhuma")) {
+    const recibos = pinu && me.gestao;
+    const arquivoOk = (x: Midia | null | undefined) => !!x && (x.mime === "application/pdf" || x.mime.startsWith("image/"));
+    if (recibos && midia && arquivoOk(midia) && !encaminhado && !PALAVRA.test(texto) && SO_RECIBO.test(texto)) {
+      const l = ultimoSemComprovante(p.id);
+      if (l) {
+        await salvarComprovante(l.id, Buffer.from(midia.base64, "base64"), quem);
+        registrarEvento(dono, "anexou comprovante", "pelo WhatsApp", "whatsapp");
+        await enviarWhatsApp(fone, `📎 Comprovante anexado a *${l.descricao || l.categoria}* (${l.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}).\nhttps://os.nipeihu.app/financas/${l.id}`); return;
+      }
+      guardarReciboPendente(dono, midia.base64, midia.mime);
+      await enviarWhatsApp(fone, "Guardei o comprovante. De qual gasto é? Escreva como contaria (ex.: *gasolina 120 para o retiro*) e eu proponho o lançamento com ele anexado."); return;
+    }
+    let recibo = false;
+    if (recibos && midia && arquivoOk(midia) && !encaminhado && !PALAVRA.test(texto) && DINHEIRO.test(texto)) {
+      guardarReciboPendente(dono, midia.base64, midia.mime);
+      texto += DICA_RECIBO; recibo = true;
+    } else if (recibos && !midia && oferta?.midia && arquivoOk(oferta.midia) && sn === null && /\d/.test(texto)) {
+      // the answer to "Guardo no Conhecimento?" was the expense of the photo
+      guardarReciboPendente(dono, oferta.midia.base64, oferta.midia.mime);
+      gravarOferta(dono, null);
+      texto += DICA_RECIBO; recibo = true;
+    } else if (!midia && sn === null && temReciboPendente(dono) && /\d/.test(texto)) {
+      texto += DICA_RECIBO; recibo = true; // the expense of a receipt sent alone a moment ago
+    }
+
+    // 1) the answer to "Guardo no Conhecimento?"
+    if (recibo) { /* straight to the Pinu below */ }
+    else if (oferta && (sn === "todas" || sn === "nenhuma")) {
       gravarOferta(dono, null);
       if (sn === "todas") {
         const r = guardar(p, oferta);
@@ -250,7 +284,7 @@ export async function processarEntrada(d: Dados): Promise<void> {
           if (!pinu) { await enviarWhatsApp(fone, "Mensagem curta demais para o Conhecimento."); return; }
         } else {
           gravarOferta(dono, { em: new Date().toISOString(), texto, titulo, midia: midia ?? undefined, paraPinu: !midia });
-          await enviarWhatsApp(fone, `${audio ? `🎤 _${texto.slice(0, 300)}${texto.length > 300 ? "…" : ""}_\n\n` : ""}Guardo isso no Conhecimento? Responda *sim* ou *não*.${pinu && !midia ? " (Se não, eu respondo como uma pergunta.)" : ""}`);
+          await enviarWhatsApp(fone, `${audio ? `🎤 _${texto.slice(0, 300)}${texto.length > 300 ? "…" : ""}_\n\n` : ""}Guardo isso no Conhecimento? Responda *sim* ou *não*.${pinu && !midia ? " (Se não, eu respondo como uma pergunta.)" : ""}${recibos && arquivoOk(midia) && !encaminhado ? "\nSe for um comprovante de gasto, responda com o gasto (ex.: *gasolina 120 para o retiro*)." : ""}`);
           return;
         }
       }
