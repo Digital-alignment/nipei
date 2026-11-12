@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: simulador de preço por retiro (10.25)
+
+- `/financas/simulador`: base em um evento (`FiltroAuto` num formulário próprio, para trocar a base reencher os números), formulário GET (Botao `type="submit"`), 4 Cartões kpi + o Cartão destaque do preço sugerido, Aviso de prejuízo e Tabela "Cenários" (linha simulada em negrito, marca de equilíbrio); "Custos do evento-base" num `<details>`. Entrada: Botão "Simular preço" na Seção "Por evento" de `/financas` e o nome de cada evento vira link para simular a partir dele.
+
 ## 2026-11-11 — Finanças: contas, conciliação e relatório mensal (10.25)
 
 - `/financas/contas` (Tabela com saldo hoje e "conciliado até", Conciliar, Arquivar/Reativar, formulário em Cartão); Campo "Conta" em todo formulário de lançamento, nos fixos e na importação; Seção "Contas" em `/financas`. Importação com "Conta do extrato" (`FiltroAuto`, `?conta=`): BadgeEstado `feita` "já registrado" com link, `pendente` "pendente → pago", lista "No sistema, mas não no extrato" e a linha de saldo antes/depois. `/financas/relatorio?m=`: markdown (`Md`) imprimível + Google Docs; botão "Relatório do mês" ao lado do mês. Ícones provisórios: Contas = `abrir`, Relatório = `baixar` (ICONES.md).

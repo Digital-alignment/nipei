@@ -203,11 +203,12 @@ export default async function Financas({ searchParams }: { searchParams: Promise
 
       {porEvento.length > 0 && (
         <Section title={t.porEvento} count={porEvento.length}>
+          <div><Botao href="/financas/simulador" icone="gerar-outra" variante="fantasma" tamanho="M">{t.simularPreco}</Botao></div>
           <Tabela rotulo={t.porEvento} colunas={[
             { id: "ev", rotulo: t.eventoFin }, { id: "e", rotulo: t.entradas, numero: true }, { id: "d", rotulo: t.despesas, numero: true },
             { id: "r", rotulo: t.resultado, numero: true }, { id: "p", rotulo: t.aReceber, numero: true },
           ]} linhas={porEvento.map((x) => ({ id: x.evento, celulas: {
-            ev: x.evento, e: <span className="text-ok">{brl0(x.entradas)}</span>, d: <span className="text-err">{brl0(x.despesas)}</span>,
+            ev: <Link href={`/financas/simulador?base=${encodeURIComponent(x.evento)}`} className="anel-foco rounded-interno hover:underline" title={t.simularPreco}>{x.evento}</Link>, e: <span className="text-ok">{brl0(x.entradas)}</span>, d: <span className="text-err">{brl0(x.despesas)}</span>,
             r: <span className={x.resultado < 0 ? "text-err" : "text-t1"}>{brl0(x.resultado)}</span>, p: x.aReceber ? <span className="text-warn">{brl0(x.aReceber)}</span> : "—",
           } }))} />
         </Section>
