@@ -49,6 +49,7 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | ver / ocultar senha | — (pedido; provisório: `informacao` / `cadeado`) | P2 |
 | sem conexão (offline) | — (pedido; provisório: `atencao`) | P2 |
 | documento · planilha · apresentação · vídeo · áudio · pasta | — (pedidos; provisórios no Acervo e no Exportar) | P2 |
+| carteira (conta bancária) | — (Finanças → Contas; provisório `abrir`. O Relatório do mês usa `baixar` enquanto falta documento) | P2 |
 | mais opções ⋯ | — (novo) | P1 |
 | selecionar em lote | CheckSquare, Square | P3 |
 

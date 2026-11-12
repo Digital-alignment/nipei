@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: contas, conciliação e relatório mensal (10.25)
+
+- `/financas/contas` (Tabela com saldo hoje e "conciliado até", Conciliar, Arquivar/Reativar, formulário em Cartão); Campo "Conta" em todo formulário de lançamento, nos fixos e na importação; Seção "Contas" em `/financas`. Importação com "Conta do extrato" (`FiltroAuto`, `?conta=`): BadgeEstado `feita` "já registrado" com link, `pendente` "pendente → pago", lista "No sistema, mas não no extrato" e a linha de saldo antes/depois. `/financas/relatorio?m=`: markdown (`Md`) imprimível + Google Docs; botão "Relatório do mês" ao lado do mês. Ícones provisórios: Contas = `abrir`, Relatório = `baixar` (ICONES.md).
+
 ## 2026-11-11 — Finanças: gastos fixos e previsão de caixa (10.25)
 
 - `/financas/fixos`: Tabela dos gastos fixos (pausado = BadgeEstado `interna`, linha apagada), editar por `?editar=`, Pausar/Reativar e formulário em Cartão; custo fixo mensal no subtítulo. Em `/financas`: Botão "Gastos fixos" (ícone calendario), Seção "Previsão de caixa" com 3 Cartões kpi (Hoje, Em 30 dias, Em 60 dias; negativo em `text-err`) e Aviso `atencao` com o primeiro dia negativo; BadgeEstado `interna` "fixo" nos lançamentos gerados.

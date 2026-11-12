@@ -8,7 +8,7 @@ import { BadgeEstado } from "@/components/ds/Chip";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import Tabela from "@/components/ds/padroes/Tabela";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { CATEGORIAS, currentUser, getProjetos, today } from "@/lib/v2/data";
+import { CATEGORIAS, currentUser, getContas, getProjetos, today } from "@/lib/v2/data";
 import { custoFixo, getFixos } from "@/lib/v2/fixos";
 import { getT } from "@/lib/v2/i18n";
 import { fixoAtivoAction, salvarFixoAction } from "../../actions";
@@ -26,6 +26,7 @@ export default async function GastosFixos({ searchParams }: { searchParams: Prom
   const { t } = await getT();
   const fixos = getFixos(), projetos = getProjetos();
   const ed = fixos.find((f) => f.id === q.editar);
+  const contasAtivas = getContas().filter((c) => c.ativa || c.id === ed?.conta);
   const custo = custoFixo(fixos);
 
   return (
@@ -78,6 +79,7 @@ export default async function GastosFixos({ searchParams }: { searchParams: Prom
             <Campo tipo="selecao" name="projeto" rotulo={t.projeto} defaultValue={ed?.projeto ?? "santuario"}><option value="">{t.geral}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
             <Campo name="inicio" rotulo={t.comecaEm} type="month" placeholder="AAAA-MM" defaultValue={ed?.inicio ?? today().slice(0, 7)} required />
           </div>
+          {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={ed?.conta ?? ""}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
           <div className="flex flex-wrap gap-2">
             <BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvar}</BotaoEnviar>
             {ed && <Botao href="/financas/fixos" variante="fantasma" tamanho="M" icone="fechar">{t.cancelar}</Botao>}

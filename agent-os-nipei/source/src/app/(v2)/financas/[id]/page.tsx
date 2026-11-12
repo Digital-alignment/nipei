@@ -11,7 +11,8 @@ import LinhaDoTempo, { type ItemTempo } from "@/components/ds/padroes/LinhaDoTem
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
 import Upload from "@/components/v2/Upload";
-import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getProjetos } from "@/lib/v2/data";
+import { CATEGORIAS, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos } from "@/lib/v2/data";
+import { BadgeEstado } from "@/components/ds/Chip";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { anularLancamentoAction, comprovanteAction, editarLancamentoAction } from "../../actions";
 
@@ -30,6 +31,7 @@ export default async function LancamentoPage({ params, searchParams }: { params:
   if (!l) notFound();
   const { t, lang } = await getT();
   const projetos = getProjetos(), equipes = getEquipes();
+  const contasAtivas = getContas().filter((c) => c.ativa || c.id === l.conta);
   const eventos = [...new Set(todos.filter((x) => x.evento && !x.anulado).map((x) => x.evento))];
   const dia = (iso: string) => fmtDate(iso, lang);
   const quemCriou = getPessoas().find((p) => p.id === l.registradoPor)?.name.split(" (")[0] ?? l.registradoPor;
@@ -49,7 +51,7 @@ export default async function LancamentoPage({ params, searchParams }: { params:
   return (
     <div className="mx-auto max-w-2xl">
       <CabecalhoPagina selo="semente" rotulo={<>{t.gestaoLbl} · {t.financas}</>} titulo={titulo}
-        subtitulo={<>{l.tipo === "entrada" ? t.entrada : t.despesa} · <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span> · {dia(l.data)}</>}
+        subtitulo={<>{l.tipo === "entrada" ? t.entrada : t.despesa} · <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span> · {dia(l.data)}{l.conciliado && <> <BadgeEstado estado="feita">{t.conciliadoLbl}</BadgeEstado></>}</>}
         acoes={<Botao href={`/financas?m=${l.data.slice(0, 7)}`} icone="voltar" variante="fantasma" tamanho="M">{t.financas}</Botao>} />
       <ToastAoAbrir texto={q.ok} />
       {l.anulado && <Aviso estado="atencao" titulo={`${t.anuladoTitulo}${l.anuladoEm ? ` · ${dia(l.anuladoEm)}` : ""}`} mensagem={t.anuladoExplica} className="mb-6" />}
@@ -101,6 +103,7 @@ export default async function LancamentoPage({ params, searchParams }: { params:
               <Campo tipo="selecao" name="projeto" rotulo={t.projeto} defaultValue={l.projeto}><option value="">{t.geral}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
               <Campo tipo="selecao" name="equipe" rotulo={t.equipe} defaultValue={l.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
             </div>
+            {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={l.conta}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
             <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvarAlteracoes}</BotaoEnviar></div>
           </form>
         </section>

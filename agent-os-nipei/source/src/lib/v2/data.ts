@@ -699,6 +699,8 @@ export type Lancamento = {
   evento: string; // free label shared by the entries of one retreat/dieta ("Retiro outubro 2026")
   participante: string; // who paid (registration income); guests are not Pessoas, so it is a name
   importacao: string; // id of the spreadsheet import that created it ("" = typed in the app)
+  conta: string; // id of the account (Financeiro/Contas), "" = none
+  conciliado: string; // day it was matched with a bank statement, "" = not yet
   fixo: string; // "<fixo id>|AAAA-MM" when generated from a gasto fixo (lib/v2/fixos.ts), "" otherwise
   comprovante: string; // vault-relative receipt file (Financeiro/Comprovantes/<id>.<ext>), "" = none
   registradoEm: string; registradoVia: string; anuladoEm: string;
@@ -710,7 +712,7 @@ export function getLancamentos(): Lancamento[] {
     .map(({ fm, file, body }) => ({
       id: s(fm.id), file, data: s(fm.data), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Lancamento["tipo"],
       valor: Number(fm.valor) || 0, categoria: s(fm.categoria), descricao: s(fm.descricao), projeto: s(fm.projeto),
-      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante), importacao: s(fm.importacao), fixo: s(fm.fixo),
+      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante), importacao: s(fm.importacao), fixo: s(fm.fixo), conta: s(fm.conta), conciliado: s(fm.conciliado),
       comprovante: s(fm.comprovante), registradoEm: s(fm.registrado_em), registradoVia: s(fm.registrado_via), anuladoEm: s(fm.anulado_em),
       historico: (body.split(/^## Alterações\s*$/m)[1] ?? "").split(/^## /m)[0].split(/\r?\n/)
         .map((x) => x.match(/^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) · (.+?) · (.+)$/)).filter((m) => !!m).map((m) => ({ quando: m[1], quem: m[2], texto: m[3] })),
@@ -718,7 +720,7 @@ export function getLancamentos(): Lancamento[] {
     .sort((a, b) => b.data.localeCompare(a.data) || b.id.localeCompare(a.id));
 }
 
-export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "fixo" | "comprovante" | "registradoEm" | "registradoVia" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string; via?: string; fixo?: string }): string {
+export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "fixo" | "conta" | "conciliado" | "comprovante" | "registradoEm" | "registradoVia" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string; via?: string; fixo?: string; conta?: string }): string {
   const dir = path.join(vault(), LANC_DIR);
   fs.mkdirSync(dir, { recursive: true });
   // time + random: an import creates many entries in the same millisecond (ids must stay unique; "anular" looks them up)
@@ -726,7 +728,7 @@ export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulad
   const fm: Record<string, FmValue> = {
     id, type: "lancamento", data: input.data, tipo: input.tipo, valor: Math.round(input.valor * 100) / 100, categoria: input.categoria,
     descricao: input.descricao, projeto: input.projeto, equipe: input.equipe, registrado_por: input.registradoPor,
-    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), ...(input.fixo ? { fixo: input.fixo } : {}), registrado_em: agora(), ...(input.via ? { registrado_via: input.via } : {}), updated_at: new Date().toISOString(),
+    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), ...(input.fixo ? { fixo: input.fixo } : {}), ...(input.conta ? { conta: input.conta } : {}), registrado_em: agora(), ...(input.via ? { registrado_via: input.via } : {}), updated_at: new Date().toISOString(),
   };
   const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
   fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });
@@ -762,10 +764,19 @@ export function alterarLancamento(l: Lancamento, items: Record<string, FmValue>,
   requestSync(vault());
 }
 
+// Accounts (bank, cash, Pix): one note each in Financeiro/Contas/ (lib/v2/contas.ts writes them; read here so the entry history shows names)
+export type Conta = { id: string; file: string; nome: string; tipo: "banco" | "dinheiro" | "pix" | "outro"; saldoInicial: number; desde: string; ativa: boolean };
+export function getContas(): Conta[] {
+  return readDir(path.join("Financeiro", "Contas")).map(({ fm, file }) => ({
+    id: s(fm.id), file, nome: s(fm.nome), tipo: (["banco", "dinheiro", "pix"].includes(s(fm.tipo)) ? s(fm.tipo) : "outro") as Conta["tipo"],
+    saldoInicial: Number(fm.saldo_inicial) || 0, desde: /^\d{4}-\d{2}-\d{2}$/.test(s(fm.desde)) ? s(fm.desde) : "2000-01-01", ativa: fm.ativa !== false,
+  })).filter((c) => c.id).sort((a, b) => Number(b.ativa) - Number(a.ativa) || a.nome.localeCompare(b.nome));
+}
+
 const brlLog = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Edit: only the fields that changed are written; each one becomes "Campo: antes → depois" in the history. */
-export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "descricao" | "projeto" | "equipe" | "pendente" | "evento" | "participante">, quem: string) {
+export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "descricao" | "projeto" | "equipe" | "pendente" | "evento" | "participante" | "conta">, quem: string) {
   const l = getLancamentos().find((x) => x.id === id);
   if (!l || l.anulado) throw new Error("Lançamento não encontrado");
   const nomeProj = (p: string) => getProjetos().find((x) => x.id === p)?.nome ?? (p || "Geral");
@@ -775,6 +786,7 @@ export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "ti
     ["valor", "Valor", brlLog], ["categoria", "Categoria", String], ["descricao", "Descrição", (v: string) => v || "—"],
     ["evento", "Evento", (v: string) => v || "—"], ["participante", "Participante", (v: string) => v || "—"],
     ["pendente", "Situação", (v: boolean) => (v ? "pendente" : "pago")], ["projeto", "Projeto", nomeProj], ["equipe", "Equipe", nomeEq],
+    ["conta", "Conta", (v: string) => getContas().find((c) => c.id === v)?.nome ?? (v || "—")],
   ];
   const items: Record<string, FmValue> = {}, linhas: string[] = [];
   for (const [k, rot, fmt] of campos) {

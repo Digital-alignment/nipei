@@ -21,7 +21,7 @@ import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib
 import { salvarComprovante } from "@/lib/v2/comprovantes";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, anularLancamento, editarLancamento, getLancamentos, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, getContas, getLancamentos, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -38,6 +38,8 @@ const pick = (v: FormDataEntryValue | null, allowed: string[]) => {
   const s = String(v ?? "");
   return allowed.includes(s) ? s : "";
 };
+/** Finanças: the account field (any existing account, archived ones included, so editing an old entry keeps it). */
+const contaDe = (form: FormData) => pick(form.get("conta"), getContas().map((c) => c.id));
 const recorrencia = (form: FormData) => pick(form.get("recorrencia"), [...RECORRENCIAS]);
 
 const safeBack = (v: FormDataEntryValue | null) => {
@@ -795,6 +797,7 @@ export async function createLancamentoAction(form: FormData) {
     pendente: form.get("pendente") === "1",
     evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
     participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+    conta: contaDe(form),
   });
   revalidatePath("/financas");
   redirect(`/financas?m=${data.slice(0, 7)}`);
@@ -827,11 +830,37 @@ export async function editarLancamentoAction(form: FormData) {
       pendente: form.get("pendente") === "1",
       evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
       participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
+      conta: contaDe(form),
     }, actorName(me));
   });
   revalidatePath("/financas", "layout");
   revalidatePath("/diagnosticos", "layout");
   redirect(`/financas/${encodeURIComponent(id)}?ok=${encodeURIComponent(n ? "Alterações salvas" : "Nada mudou")}`);
+}
+
+// ---- Contas (DS 10.25)
+export async function salvarContaAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { salvarConta, TIPOS_CONTA } = await import("@/lib/v2/contas");
+  const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
+  const saldo = numBR(String(form.get("saldo") ?? "0") || "0");
+  const desde = String(form.get("desde") ?? "");
+  const id = String(form.get("id") ?? "") || undefined;
+  if (!nome || !Number.isFinite(saldo) || !/^\d{4}-\d{2}-\d{2}$/.test(desde)) redirect(`/financas/contas?${id ? `editar=${encodeURIComponent(id)}&` : ""}erro=${encodeURIComponent("Confira o nome, o saldo inicial e a data")}`);
+  await tentar(async () => {
+    salvarConta({ nome, tipo: (pick(form.get("tipo"), [...TIPOS_CONTA]) || "outro") as (typeof TIPOS_CONTA)[number], saldoInicial: saldo, desde }, me.pessoa?.id ?? me.username, id);
+  });
+  revalidatePath("/financas", "layout");
+  redirect(`/financas/contas?ok=${encodeURIComponent(id ? "Conta atualizada" : "Conta criada")}`);
+}
+
+export async function contaAtivaAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { setContaAtiva } = await import("@/lib/v2/contas");
+  await tentar(async () => setContaAtiva(String(form.get("id") ?? ""), form.get("ativa") === "1"));
+  revalidatePath("/financas", "layout");
 }
 
 // ---- Gastos fixos (DS 10.25)
@@ -851,7 +880,7 @@ export async function salvarFixoAction(form: FormData) {
     salvarFixo({
       tipo, valor, dia, descricao, inicio,
       categoria: pick(form.get("categoria"), [...CATEGORIAS[tipo]]) || CATEGORIAS[tipo][CATEGORIAS[tipo].length - 1],
-      projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
+      projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)), conta: contaDe(form),
     }, me.pessoa?.id ?? me.username, id);
     gerarFixos(true); // this month's entry right away
   });
@@ -896,7 +925,8 @@ export async function lerPlanilhaAction(form: FormData): Promise<{ error?: strin
   if (texto.includes("\uFFFD")) texto = new TextDecoder("windows-1252").decode(buf);
   const r = salvarPrevia(me.pessoa?.id ?? me.username, f.name, texto);
   if (r.erro) return { error: r.erro };
-  redirect("/financas/importar");
+  const conta = contaDe(form); // "Conciliar" from an account: the preview opens already reconciling with it
+  redirect(`/financas/importar${conta ? `?conta=${conta}` : ""}`);
 }
 
 export async function importarPlanilhaAction(form: FormData) {
@@ -906,7 +936,12 @@ export async function importarPlanilhaAction(form: FormData) {
   if (!p) redirect("/financas/importar");
   const projeto = pick(form.get("projeto"), getProjetos().map((x) => x.id));
   const evento = String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
-  const linhas = importaveis(p);
+  const conta = contaDe(form);
+  // conciliação: rows that match an existing entry are not imported; the entry gets the account, "conciliado" and,
+  // if it was pending, is paid (the statement says the money moved)
+  const { conciliar } = await import("@/lib/v2/importarFinancas");
+  const { par } = conta ? conciliar(p.linhas, getLancamentos(), conta) : { par: new Map<number, string>() };
+  const linhas = importaveis(p).filter((l) => !par.has(l.linha));
   // category chosen in the preview: the Tabela renders each row twice (table + phone card), so the field comes twice;
   // the edited copy is the one that differs from what was read. Only categories of the row's own type are accepted.
   const categoria = (l: (typeof linhas)[number]) => {
@@ -915,11 +950,20 @@ export async function importarPlanilhaAction(form: FormData) {
   };
   for (const l of linhas) createLancamento({
     data: l.data, tipo: l.tipo, valor: l.valor, categoria: categoria(l), descricao: l.descricao, projeto, equipe: "",
-    registradoPor: quem, pendente: l.pendente, evento: l.evento || evento, participante: l.participante, importacao: p.id,
+    registradoPor: quem, pendente: conta ? false : l.pendente, evento: l.evento || evento, participante: l.participante, importacao: p.id, conta,
+    ...(conta ? { via: "extrato" } : {}),
   });
+  const todos = getLancamentos(), hoje = today();
+  for (const id of par.values()) {
+    const e = todos.find((x) => x.id === id);
+    if (!e) continue;
+    alterarLancamento(e, { conta, conciliado: hoje, ...(e.pendente ? { pendente: false, quitado_por: quem, quitado_em: hoje } : {}) }, actorName(me),
+      [`Conciliado com o extrato ${p.arquivo}${e.pendente ? " (estava pendente: marcado como pago)" : ""}`]);
+  }
   apagarPrevia(quem);
-  revalidatePath("/financas");
-  redirect(`/financas?ok=${encodeURIComponent(`${linhas.length} ${linhas.length === 1 ? "lançamento importado" : "lançamentos importados"}`)}`);
+  revalidatePath("/financas", "layout");
+  const txt = `${linhas.length} ${linhas.length === 1 ? "lançamento importado" : "lançamentos importados"}${par.size ? ` · ${par.size} conciliado${par.size === 1 ? "" : "s"}` : ""}`;
+  redirect(`/financas?ok=${encodeURIComponent(txt)}`);
 }
 
 export async function cancelarImportacaoAction() {
@@ -1780,6 +1824,11 @@ export async function exportarGoogleAction(form: FormData) {
       const nome = (pid: string) => getPessoas().find((p) => p.id === pid)?.name ?? pid;
       const md = `# Reunião · ${e.nome} · ${a.data}\n\nAta por ${a.por}. Presentes: ${a.presentes.map(nome).join(", ") || "-"}\n\n## Decisões\n\n${a.decisoes || "-"}\n\n## Encaminhamentos\n\n${a.encaminhamentos.map((x) => `- ${x.texto}`).join("\n") || "-"}\n`;
       link = (await g.salvarArquivo(pessoaId, { nome: `Reunião ${e.nome} · ${a.data}`, conteudo: md, tipo: "text/markdown", converter: true })).link;
+    } else if (tipo === "relatorio") {
+      if (!me.gestao) throw new Error("Só a gestão exporta as finanças");
+      if (!/^\d{4}-\d{2}$/.test(id)) throw new Error("Mês inválido");
+      const { relatorioMensal, nomeMes } = await import("@/lib/v2/relatorioFinancas");
+      link = (await g.salvarArquivo(pessoaId, { nome: `Relatório financeiro · ${nomeMes(id)}`, conteudo: relatorioMensal(id), tipo: "text/markdown", converter: true })).link;
     } else if (tipo === "financas") {
       if (!me.gestao) throw new Error("Só a gestão exporta as finanças");
       const { getLancamentos } = await import("@/lib/v2/data");

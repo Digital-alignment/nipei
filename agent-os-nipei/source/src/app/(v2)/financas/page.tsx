@@ -11,7 +11,8 @@ import { BotaoIcone } from "@/components/ds/Botao";
 import Tabela, { Sparkline } from "@/components/ds/padroes/Tabela";
 import { BadgeEstado } from "@/components/ds/Chip";
 import { Interruptor } from "@/components/ds/Controles";
-import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
+import { CATEGORIAS, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
+import { resumoContas } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { resumoFinanceiro } from "@/lib/v2/diagnostico";
 import { quandoImportacao } from "@/lib/v2/importarFinancas";
@@ -51,6 +52,9 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   gerarFixos(); // this month's fixed costs as pending entries (once a day)
   const todos = getLancamentos();
   const prev = previsaoCaixa(todos, getFixos(), hoje);
+  const contas = getContas(), contasAtivas = contas.filter((c) => c.ativa);
+  const saldos = resumoContas(contasAtivas, todos, hoje).contas;
+  const nomeConta = (id: string) => contas.find((c) => c.id === id)?.nome ?? "";
   // pending ("a pagar" / "a receber") entries stay out of every total until they are paid
   const validos = todos.filter((l) => !l.anulado && !l.pendente);
   const pendentes = todos.filter((l) => !l.anulado && l.pendente).sort((a, b) => a.data.localeCompare(b.data));
@@ -84,7 +88,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   return (
     <>
       <CabecalhoPagina selo="semente" rotulo={t.gestaoLbl} titulo={t.financas}
-        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="M">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /></div>} />
+        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/contas" icone="abrir" variante="fantasma" tamanho="M">{t.contas}</Botao><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="M">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /></div>} />
       <ToastAoAbrir texto={q.ok} />
       {importacoes.length > 0 && (
         <ul className="mb-4 grid gap-1">
@@ -100,7 +104,10 @@ export default async function Financas({ searchParams }: { searchParams: Promise
       )}
       <div className="mb-4 flex items-center justify-between">
         <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, -1)}`} />
-        <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
+          <Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="M">{t.relatorioMes}</Botao>
+        </div>
         <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, 1)}`} />
       </div>
 
@@ -131,6 +138,20 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         </div>
       </Section>
 
+      {saldos.length > 0 && (
+        <Section title={t.contas}>
+          <ul className="grid gap-1">
+            {saldos.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 rounded-interno bg-s1 px-3 py-2">
+                <span className="corpo text-t1">{c.nome} <span className="meta text-t3">· {t.tiposConta[c.tipo]}</span></span>
+                <span className={`font-semibold tabular-nums ${c.saldo < 0 ? "text-err" : "text-t1"}`}>{brl(c.saldo)}</span>
+              </li>
+            ))}
+          </ul>
+          <Link href="/financas/contas" className="meta mt-2 inline-block text-t2 underline">{t.gerenciarContas}</Link>
+        </Section>
+      )}
+
       <details className="mb-7 rounded-cartao bg-s1">
         <summary className="anel-foco flex min-h-12 cursor-pointer list-none items-center gap-2 rounded-cartao px-4 font-texto text-[15px] font-semibold"><Icone nome="mais" tamanho={18} />{t.novoLancamento}</summary>
         <form action={createLancamentoAction} className="grid gap-3 px-4 pb-4">
@@ -160,6 +181,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             <Campo tipo="selecao" name="projeto" rotulo={t.projeto}><option value="">{t.geral}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
             <Campo tipo="selecao" name="equipe" rotulo={t.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
           </div>
+          {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={""}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
           <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvar}</BotaoEnviar></div>
         </form>
       </details>
@@ -223,13 +245,13 @@ export default async function Financas({ searchParams }: { searchParams: Promise
       <Section title={t.lancamentos} count={lista.length}>
         <Tabela rotulo={t.lancamentos} vazio={<EstadoVazio compacto titulo={<>{t.semLancamentos}</>} />} ordemInicial={{ id: "data", desc: true }} colunas={[
           { id: "desc", rotulo: t.descricao, ordenavel: true }, { id: "data", rotulo: t.data, ordenavel: true }, { id: "cat", rotulo: t.categoria, ordenavel: true },
-          { id: "ev", rotulo: t.eventoFin, soComputador: true }, { id: "proj", rotulo: t.projeto, soComputador: true }, { id: "por", rotulo: t.registradoPorLbl, soComputador: true }, { id: "valor", rotulo: t.valor, numero: true, ordenavel: true },
+          { id: "ev", rotulo: t.eventoFin, soComputador: true }, { id: "conta", rotulo: t.contaLbl, soComputador: true }, { id: "proj", rotulo: t.projeto, soComputador: true }, { id: "por", rotulo: t.registradoPorLbl, soComputador: true }, { id: "valor", rotulo: t.valor, numero: true, ordenavel: true },
         ]} linhas={lista.map((l) => ({
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
             desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}{l.fixo && <BadgeEstado estado="interna">{t.fixoLbl}</BadgeEstado>}</span>,
-            ev: l.evento,
+            ev: l.evento, conta: nomeConta(l.conta),
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,
           },

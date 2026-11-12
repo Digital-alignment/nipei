@@ -144,6 +144,26 @@ export function getPrevia(pessoa: string): Previa | null {
 export function apagarPrevia(pessoa: string) { fs.rmSync(arquivoPrevia(pessoa), { force: true }); }
 
 export const importaveis = (p: Previa) => p.linhas.filter((l) => !l.erro && !l.repetido);
+type LC = Pick<Lancamento, "id" | "data" | "tipo" | "valor" | "anulado" | "pendente" | "conta">;
+const diasEntre = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) / 86_400_000;
+/**
+ * Conciliação (pure): each statement row finds an existing entry with the same type and value, at most 3 days apart,
+ * of this account or without one (same account first, then the closest date); one entry answers one row only.
+ * `fora` = paid entries of the account inside the statement dates that no row found (to check by hand).
+ */
+export function conciliar(linhas: LinhaImport[], lanc: LC[], conta: string) {
+  const usados = new Set<string>(), par = new Map<number, string>();
+  const boas = linhas.filter((l) => !l.erro).sort((a, b) => a.data.localeCompare(b.data));
+  for (const l of boas) {
+    const c = lanc.filter((e) => !e.anulado && !usados.has(e.id) && e.tipo === l.tipo && Math.abs(e.valor - l.valor) < 0.005 && (e.conta === conta || !e.conta) && diasEntre(e.data, l.data) <= 3)
+      .sort((a, b) => Number(b.conta === conta) - Number(a.conta === conta) || diasEntre(a.data, l.data) - diasEntre(b.data, l.data))[0];
+    if (c) { usados.add(c.id); par.set(l.linha, c.id); }
+  }
+  const de = boas[0]?.data ?? "", ate = boas.at(-1)?.data ?? "";
+  const fora = de ? lanc.filter((e) => e.conta === conta && !e.anulado && !e.pendente && e.data >= de && e.data <= ate && !usados.has(e.id)).map((e) => e.id) : [];
+  return { par, fora, ate };
+}
+
 /** When an import happened, from its id (imp_<base36 ms>). */
 export const quandoImportacao = (id: string) => new Date(parseInt(id.slice(4), 36) || 0).toISOString();
 
@@ -182,5 +202,13 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(ext[0].tipo === "entrada" && ext[0].valor === 500 && ext[1].tipo === "despesa" && ext[1].valor === 12.9 && !ext[0].avisos.length, "extrato crédito/débito");
   assert(lerPlanilha("descricao;valor\nx;1").erro.includes("data"), "sem coluna data");
   assert(lerPlanilha(MODELO).linhas.every((l) => !l.erro && !l.avisos.length), "o modelo importa sem avisos");
+  const ex = lerPlanilha("Data;Histórico;Valor\n10/10/2026;Pix Maria;600,00\n11/10/2026;Posto;-120,00\n12/10/2026;Feira;-87,40\n13/10/2026;Tarifa;-12,90").linhas;
+  const E = (id: string, data: string, tipo: "entrada" | "despesa", valor: number, conta = "", pendente = false) => ({ id, data, tipo, valor, anulado: false, pendente, conta });
+  const cc = conciliar(ex, [E("a", "2026-10-08", "entrada", 600, "", true), E("b", "2026-10-11", "despesa", 120, "outra"), E("c", "2026-10-15", "despesa", 87.4, "bb"),
+    E("d", "2026-10-11", "despesa", 120, "bb"), E("e", "2026-10-12", "despesa", 55, "bb"), E("f", "2026-09-01", "despesa", 12.9, "bb")], "bb");
+  assert(cc.par.get(2) === "a", "pendente sem conta, 2 dias antes = conciliado");
+  assert(cc.par.get(3) === "d", "a mesma conta primeiro (não a de outra conta)");
+  assert(cc.par.get(4) === "c" && !cc.par.has(5), "até 3 dias; tarifa sem par fica para importar");
+  assert(cc.fora.join() === "e" && cc.ate === "2026-10-13", "no sistema mas não no extrato, só dentro das datas");
   console.log(`importarFinancas: ${ok} ok`);
 }

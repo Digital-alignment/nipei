@@ -10,7 +10,7 @@ import { createLancamento, getLancamentos, noteText, readDir, slugify, today, up
 const DIR = path.join("Financeiro", "Fixos");
 export type Fixo = {
   id: string; file: string; descricao: string; tipo: "entrada" | "despesa"; valor: number; dia: number; categoria: string;
-  projeto: string; inicio: string; ativo: boolean; criadoPor: string;
+  projeto: string; conta: string; inicio: string; ativo: boolean; criadoPor: string;
 };
 export type DadosFixo = Omit<Fixo, "id" | "file" | "ativo" | "criadoPor">;
 
@@ -19,13 +19,13 @@ const s = (v: unknown) => (v == null ? "" : String(v).trim());
 export function getFixos(): Fixo[] {
   return readDir(DIR).map(({ fm, file }) => ({
     id: s(fm.id), file, descricao: s(fm.descricao), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Fixo["tipo"],
-    valor: Number(fm.valor) || 0, dia: Math.min(28, Math.max(1, Number(fm.dia) || 1)), categoria: s(fm.categoria), projeto: s(fm.projeto),
+    valor: Number(fm.valor) || 0, dia: Math.min(28, Math.max(1, Number(fm.dia) || 1)), categoria: s(fm.categoria), projeto: s(fm.projeto), conta: s(fm.conta),
     inicio: /^\d{4}-\d{2}$/.test(s(fm.inicio)) ? s(fm.inicio) : "2000-01", ativo: fm.ativo !== false, criadoPor: s(fm.criado_por),
   })).filter((f) => f.id).sort((a, b) => Number(b.ativo) - Number(a.ativo) || a.dia - b.dia || a.descricao.localeCompare(b.descricao));
 }
 
 export function salvarFixo(d: DadosFixo, por: string, id?: string) {
-  const campos = { descricao: d.descricao, tipo: d.tipo, valor: Math.round(d.valor * 100) / 100, dia: d.dia, categoria: d.categoria, projeto: d.projeto, inicio: d.inicio };
+  const campos = { descricao: d.descricao, tipo: d.tipo, valor: Math.round(d.valor * 100) / 100, dia: d.dia, categoria: d.categoria, projeto: d.projeto, conta: d.conta, inicio: d.inicio };
   if (id) {
     const f = getFixos().find((x) => x.id === id);
     if (!f) throw new Error("Gasto fixo não encontrado");
@@ -72,7 +72,7 @@ export function gerarFixos(forcar = false) {
     for (const { id, mes } of faltam) {
       const f = fixos.find((x) => x.id === id)!;
       createLancamento({ data: diaDe(mes, f.dia), tipo: f.tipo, valor: f.valor, categoria: f.categoria, descricao: f.descricao, projeto: f.projeto, equipe: "",
-        registradoPor: f.criadoPor, pendente: true, fixo: `${id}|${mes}`, via: "gasto fixo" });
+        registradoPor: f.criadoPor, pendente: true, fixo: `${id}|${mes}`, via: "gasto fixo", conta: f.conta });
     }
     return faltam.length;
   } catch (e) {

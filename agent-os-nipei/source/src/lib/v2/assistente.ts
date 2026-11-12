@@ -16,7 +16,7 @@ import { criarEventoGoogle, eventosGoogle, gmailBuscar, gmailEnviar, gmailLer, g
 import { getNotas, podeNotasInternas } from "./notasInternas";
 import { numBR } from "./importarFinancas";
 import { custoFixo, getFixos, previsaoCaixa } from "./fixos";
-import { CATEGORIAS as CATEGORIAS_FIN, createLancamento } from "./data";
+import { CATEGORIAS as CATEGORIAS_FIN, createLancamento, getContas } from "./data";
 import { STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault, type Me, type Status, type Tarefa, podeVerProjeto, projetosVisiveis } from "./data";
 
 // The Nipëi assistant (Equipe 1): one OpenRouter tool-calling loop over the platform's own getters
@@ -45,7 +45,7 @@ export type Acao =
   | { tipo: "esquecer"; id: string }
   | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string }
   | { tipo: "pedir_equipe"; equipe: string; titulo: string; descricao?: string; prazo?: string }
-  | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string };
+  | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string; conta?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
 export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[] };
@@ -232,7 +232,7 @@ const TOOLS = [
     categoria: { type: "string", enum: [...CATEGORIAS_FIN.despesa, ...CATEGORIAS_FIN.entrada], description: "uma da lista, do mesmo tipo" },
     descricao: { type: "string", description: "curta, com as palavras da pessoa" }, evento: { type: "string", description: "retiro/dieta a que pertence; prefira um dos eventos já usados" },
     participante: { type: "string", description: "quem pagou (inscrição de retiro)" }, pendente: { type: "boolean", description: "true = ainda não foi pago/recebido (a pagar / a receber)" },
-    projeto: { type: "string" },
+    projeto: { type: "string" }, conta: { type: "string", description: "conta de onde saiu/entrou o dinheiro (banco, dinheiro, Pix…), se a pessoa disser" },
   }, ["tipo", "valor", "categoria"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
@@ -460,14 +460,16 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     const evento = getLancamentos().find((l) => l.evento && n(l.evento) === n(evInf))?.evento ?? evInf;
     const participante = s(a.participante).replace(/\s+/g, " ").slice(0, 80), descricao = s(a.descricao).slice(0, 200);
     const pr = s(a.projeto) ? acharProjeto(s(a.projeto)) : undefined, pendente = a.pendente === true;
+    const ct = s(a.conta) ? getContas().find((c) => c.id === s(a.conta) || n(c.nome).includes(n(s(a.conta)))) : undefined;
+    if (s(a.conta) && !ct) return { erro: `conta "${s(a.conta)}" não existe; contas: ${getContas().filter((c) => c.ativa).map((c) => c.nome).join(", ") || "nenhuma cadastrada"}` };
     const valorTxt = valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     // the same entry twice (a re-proposal from an earlier message, or "sim" sent twice) is refused
     if (getLancamentos().some((l) => !l.anulado && l.data === data && l.tipo === tipo && l.valor === valor && n(l.descricao) === n(descricao)))
       return { erro: `já registrado: ${tipo === "entrada" ? "entrada" : "despesa"} de ${valorTxt} em ${dm(data)} (${descricao || categoria}). Não proponha de novo.` };
     return {
-      tipo: "registrar_lancamento", lancTipo: tipo, valor, data, categoria, descricao: descricao || undefined, evento: evento || undefined, participante: participante || undefined, pendente, projeto: pr?.id,
+      tipo: "registrar_lancamento", lancTipo: tipo, valor, data, categoria, descricao: descricao || undefined, evento: evento || undefined, participante: participante || undefined, pendente, projeto: pr?.id, conta: ct?.id,
       resumo: `${tipo === "entrada" ? "Entrada" : "Despesa"} ${valorTxt}: ${descricao || categoria}`,
-      detalhe: [dm(data), categoria, evento, participante, pendente && (tipo === "entrada" ? "a receber" : "a pagar"), pr?.nome].filter(Boolean).join(" · "),
+      detalhe: [dm(data), categoria, evento, participante, pendente && (tipo === "entrada" ? "a receber" : "a pagar"), pr?.nome, ct?.nome].filter(Boolean).join(" · "),
     };
   }
   if (nome === "registrar_conversa") {
@@ -598,7 +600,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
   if (v.tipo === "registrar_lancamento") {
     const via = quem.match(/\(via ([^)]+)\)/)?.[1] ?? "Pinu";
     const id = createLancamento({ tipo: v.lancTipo, valor: v.valor, data: v.data, categoria: v.categoria, descricao: v.descricao ?? "", projeto: v.projeto ?? "", equipe: "",
-      registradoPor: me.pessoa?.id ?? me.username, pendente: v.pendente, evento: v.evento, participante: v.participante, via: /assistente/i.test(via) ? "Pinu" : via });
+      registradoPor: me.pessoa?.id ?? me.username, pendente: v.pendente, evento: v.evento, participante: v.participante, conta: v.conta, via: /assistente/i.test(via) ? "Pinu" : via });
     // a receipt photo sent by WhatsApp waits for this entry (only for entries confirmed by WhatsApp, never by an MCP app)
     if (me.pessoa && /\(via (WhatsApp|assistente)\)/.test(quem)) {
       const { usarReciboPendente } = await import("./comprovantes");
