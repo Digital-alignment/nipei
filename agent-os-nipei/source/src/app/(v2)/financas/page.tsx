@@ -15,6 +15,8 @@ import { CATEGORIAS, currentUser, getEquipes, getLancamentos, getPessoas, getPro
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { resumoFinanceiro } from "@/lib/v2/diagnostico";
 import { quandoImportacao } from "@/lib/v2/importarFinancas";
+import { gerarFixos, getFixos, previsaoCaixa } from "@/lib/v2/fixos";
+import Aviso from "@/components/ds/Aviso";
 import Botao from "@/components/ds/Botao";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
@@ -46,7 +48,9 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const { t, lang } = await getT();
   const hoje = today();
   const mes = /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : hoje.slice(0, 7);
+  gerarFixos(); // this month's fixed costs as pending entries (once a day)
   const todos = getLancamentos();
+  const prev = previsaoCaixa(todos, getFixos(), hoje);
   // pending ("a pagar" / "a receber") entries stay out of every total until they are paid
   const validos = todos.filter((l) => !l.anulado && !l.pendente);
   const pendentes = todos.filter((l) => !l.anulado && l.pendente).sort((a, b) => a.data.localeCompare(b.data));
@@ -80,7 +84,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   return (
     <>
       <CabecalhoPagina selo="semente" rotulo={t.gestaoLbl} titulo={t.financas}
-        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /></div>} />
+        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="M">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /></div>} />
       <ToastAoAbrir texto={q.ok} />
       {importacoes.length > 0 && (
         <ul className="mb-4 grid gap-1">
@@ -112,6 +116,20 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         {/* o único destaque da tela: o saldo acumulado */}
         <Cartao variante="destaque"><span className="meta opacity-80">{t.saldoTotal}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl">{brl0(saldoTotal)}</span></Cartao>
       </div>
+
+      <Section title={t.previsaoCaixa}>
+        {prev.negativo && <Aviso estado="atencao" className="mb-3" titulo={`${t.caixaNegativo} ${fmtDate(prev.negativo.data, lang)} (${brl0(prev.negativo.saldo)})`} />}
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
+          <Cartao variante="kpi"><span className="meta text-t2">{t.hojeLbl}</span><span className={`font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl ${prev.hoje < 0 ? "text-err" : ""}`}>{brl0(prev.hoje)}</span></Cartao>
+          {prev.temFuturo && prev.janelas.map((j) => (
+            <Cartao key={j.dias} variante="kpi">
+              <span className="meta text-t2">{j.dias === 30 ? t.em30 : t.em60}</span>
+              <span className={`font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl ${j.saldo < 0 ? "text-err" : ""}`}>{brl0(j.saldo)}</span>
+              <span className="meta text-t3">+{brl0(j.aReceber)} {t.aReceberMin} · −{brl0(j.aPagar)} {t.aPagarMin} · −{brl0(j.fixos)} {t.fixosMin}</span>
+            </Cartao>
+          ))}
+        </div>
+      </Section>
 
       <details className="mb-7 rounded-cartao bg-s1">
         <summary className="anel-foco flex min-h-12 cursor-pointer list-none items-center gap-2 rounded-cartao px-4 font-texto text-[15px] font-semibold"><Icone nome="mais" tamanho={18} />{t.novoLancamento}</summary>
@@ -210,7 +228,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
-            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}</span>,
+            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}{l.fixo && <BadgeEstado estado="interna">{t.fixoLbl}</BadgeEstado>}</span>,
             ev: l.evento,
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,

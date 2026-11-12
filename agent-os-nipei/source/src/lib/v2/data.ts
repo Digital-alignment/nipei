@@ -699,6 +699,7 @@ export type Lancamento = {
   evento: string; // free label shared by the entries of one retreat/dieta ("Retiro outubro 2026")
   participante: string; // who paid (registration income); guests are not Pessoas, so it is a name
   importacao: string; // id of the spreadsheet import that created it ("" = typed in the app)
+  fixo: string; // "<fixo id>|AAAA-MM" when generated from a gasto fixo (lib/v2/fixos.ts), "" otherwise
   comprovante: string; // vault-relative receipt file (Financeiro/Comprovantes/<id>.<ext>), "" = none
   registradoEm: string; registradoVia: string; anuladoEm: string;
   historico: { quando: string; quem: string; texto: string }[]; // "## Alterações" of the note, newest first
@@ -709,7 +710,7 @@ export function getLancamentos(): Lancamento[] {
     .map(({ fm, file, body }) => ({
       id: s(fm.id), file, data: s(fm.data), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Lancamento["tipo"],
       valor: Number(fm.valor) || 0, categoria: s(fm.categoria), descricao: s(fm.descricao), projeto: s(fm.projeto),
-      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante), importacao: s(fm.importacao),
+      equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante), importacao: s(fm.importacao), fixo: s(fm.fixo),
       comprovante: s(fm.comprovante), registradoEm: s(fm.registrado_em), registradoVia: s(fm.registrado_via), anuladoEm: s(fm.anulado_em),
       historico: (body.split(/^## Alterações\s*$/m)[1] ?? "").split(/^## /m)[0].split(/\r?\n/)
         .map((x) => x.match(/^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) · (.+?) · (.+)$/)).filter((m) => !!m).map((m) => ({ quando: m[1], quem: m[2], texto: m[3] })),
@@ -717,7 +718,7 @@ export function getLancamentos(): Lancamento[] {
     .sort((a, b) => b.data.localeCompare(a.data) || b.id.localeCompare(a.id));
 }
 
-export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "comprovante" | "registradoEm" | "registradoVia" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string; via?: string }): string {
+export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "fixo" | "comprovante" | "registradoEm" | "registradoVia" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string; via?: string; fixo?: string }): string {
   const dir = path.join(vault(), LANC_DIR);
   fs.mkdirSync(dir, { recursive: true });
   // time + random: an import creates many entries in the same millisecond (ids must stay unique; "anular" looks them up)
@@ -725,7 +726,7 @@ export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulad
   const fm: Record<string, FmValue> = {
     id, type: "lancamento", data: input.data, tipo: input.tipo, valor: Math.round(input.valor * 100) / 100, categoria: input.categoria,
     descricao: input.descricao, projeto: input.projeto, equipe: input.equipe, registrado_por: input.registradoPor,
-    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), registrado_em: agora(), ...(input.via ? { registrado_via: input.via } : {}), updated_at: new Date().toISOString(),
+    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), ...(input.fixo ? { fixo: input.fixo } : {}), registrado_em: agora(), ...(input.via ? { registrado_via: input.via } : {}), updated_at: new Date().toISOString(),
   };
   const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
   fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });

@@ -834,6 +834,40 @@ export async function editarLancamentoAction(form: FormData) {
   redirect(`/financas/${encodeURIComponent(id)}?ok=${encodeURIComponent(n ? "Alterações salvas" : "Nada mudou")}`);
 }
 
+// ---- Gastos fixos (DS 10.25)
+export async function salvarFixoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
+  const valor = Math.abs(numBR(String(form.get("valor") ?? "")));
+  const dia = Math.trunc(Number(form.get("dia")));
+  const descricao = String(form.get("descricao") ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+  const inicio = String(form.get("inicio") ?? "");
+  const id = String(form.get("id") ?? "") || undefined;
+  const volta = `/financas/fixos${id ? `?editar=${encodeURIComponent(id)}` : ""}`;
+  if (!descricao || !(valor > 0) || !(dia >= 1 && dia <= 28) || !/^\d{4}-\d{2}$/.test(inicio)) redirect(`${volta}${id ? "&" : "?"}erro=${encodeURIComponent("Confira descrição, valor, dia (1 a 28) e mês de início")}`);
+  await tentar(async () => {
+    const { salvarFixo, gerarFixos } = await import("@/lib/v2/fixos");
+    salvarFixo({
+      tipo, valor, dia, descricao, inicio,
+      categoria: pick(form.get("categoria"), [...CATEGORIAS[tipo]]) || CATEGORIAS[tipo][CATEGORIAS[tipo].length - 1],
+      projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
+    }, me.pessoa?.id ?? me.username, id);
+    gerarFixos(true); // this month's entry right away
+  });
+  revalidatePath("/financas", "layout");
+  redirect(`/financas/fixos?ok=${encodeURIComponent(id ? "Gasto fixo atualizado" : "Gasto fixo criado; o deste mês já está em Pendentes")}`);
+}
+
+export async function fixoAtivoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { setFixoAtivo, gerarFixos } = await import("@/lib/v2/fixos");
+  const ativo = form.get("ativo") === "1";
+  await tentar(async () => { setFixoAtivo(String(form.get("id") ?? ""), ativo); if (ativo) gerarFixos(true); });
+  revalidatePath("/financas", "layout");
+}
+
 export async function comprovanteAction(form: FormData): Promise<{ error?: string }> {
   const me = await requireUser();
   if (!me.gestao) return { error: "Só a gestão" };

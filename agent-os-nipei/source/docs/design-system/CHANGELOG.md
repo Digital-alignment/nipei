@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-11 — Finanças: gastos fixos e previsão de caixa (10.25)
+
+- `/financas/fixos`: Tabela dos gastos fixos (pausado = BadgeEstado `interna`, linha apagada), editar por `?editar=`, Pausar/Reativar e formulário em Cartão; custo fixo mensal no subtítulo. Em `/financas`: Botão "Gastos fixos" (ícone calendario), Seção "Previsão de caixa" com 3 Cartões kpi (Hoje, Em 30 dias, Em 60 dias; negativo em `text-err`) e Aviso `atencao` com o primeiro dia negativo; BadgeEstado `interna` "fixo" nos lançamentos gerados.
+
 ## 2026-11-11 — Finanças: a IA lê o recibo e lembrete semanal de pendentes (10.25)
 
 - Foto/PDF de recibo mandado pela gestão ao WhatsApp é lido pela IA (valor, data, estabelecimento, itens) e vira proposta do Pinu com o comprovante anexado, sem precisar escrever o valor. Segunda-feira, WhatsApp à gestão com o que está a pagar e a receber. Só mensagens de texto, sem componente novo.

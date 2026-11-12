@@ -19,6 +19,7 @@ import { backupsPendentes } from "@/lib/v2/backup";
 import { esvaziarFilaPropostas } from "@/lib/v2/propostas";
 import { lembreteRevisao } from "@/lib/v2/lembreteRevisao";
 import { lembreteFinancas } from "@/lib/v2/lembreteFinancas";
+import { gerarFixos } from "@/lib/v2/fixos";
 import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
@@ -43,6 +44,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   void esvaziarFilaPropostas(); // confirmed facts waiting for proposals: sent once 30 min old (lib/v2/propostas.ts)
   vigiarSaude(); // health alerts on the admins' WhatsApp (background, at most every 10 min)
   lembreteRevisao(); // weekly WhatsApp to whoever has facts to review (lib/v2/lembreteRevisao.ts)
+  gerarFixos(); // this month's fixed costs as pending entries, once a day (lib/v2/fixos.ts)
   lembreteFinancas(); // weekly WhatsApp to the gestão with what is a pagar / a receber (lib/v2/lembreteFinancas.ts)
   void rodarProcedimentos(); void lembreteReuniao(); // team routines (lib/v2/rotinas.ts): procedures → tasks, fixed-meeting reminder; production only
   const { t, lang } = await getT();
