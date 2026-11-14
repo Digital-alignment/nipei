@@ -45,7 +45,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arr
     <LinhaTarefa href={`/tarefas/${t.id}`} titulo={t.title} equipe={eq?.id} nomeEquipe={chaveEquipe(eq?.id) ? undefined : eq?.nome}
       prazo={feita && t.concluidoEm ? { texto: `${en ? "Done" : "Concluída em"} ${fmtDate(t.concluidoEm.slice(0, 10), lang)}` } : t.prazo ? { texto: fmtDate(t.prazo, lang), vencido } : undefined}
       prioridade={t.priority === "urgente" || t.priority === "alta" ? { nivel: t.priority, rotulo: t.priority === "urgente" ? (en ? "Urgent" : "Urgente") : (en ? "High" : "Alta") } : undefined}
-      metadados={metadados} pessoas={ids.map(pessoa)} feita={feita}
+      metadados={metadados} pessoas={ids.map(pessoa)} pessoasSoComputador={minha} feita={feita}
       estado={feita ? "feita" : vencido ? "atrasada" : t.status === "doing" ? "andamento" : undefined}
       concluir={editar ? <StatusBotao id={t.id} status={t.status} />
         // read-only: not yours and not your team's to coordinate (dashed = can't change here)

@@ -13,7 +13,7 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, pulso } from "@/lib/v2/hoje";
-import { can, currentUser, esperandoPor, getEquipes, getEventos, getObjetivos, getPessoas, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
+import { aReembolsar, can, currentUser, esperandoPor, getLancamentos, getEquipes, getEventos, getObjetivos, getPessoas, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
@@ -36,6 +36,9 @@ import Cartao from "@/components/ds/Cartao";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import Botao from "@/components/ds/Botao";
 import MenuAcoes from "@/components/ds/MenuAcoes";
+import { podeFinancas } from "@/lib/v2/funcoes";
+import { getFixos, previsaoCaixa } from "@/lib/v2/fixos";
+import { compararAnual, getOrcamentoAnual } from "@/lib/v2/orcamentoAnual";
 import { AnelProgresso, BarraProgresso } from "@/components/ds/Progresso";
 import { GrupoTarefas } from "@/components/ds/padroes/LinhaTarefa";
 
@@ -125,7 +128,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const { hoje: eventosHoje, proximos } = agendaDoDia(user);
 
   // pending items as small pills (each opens its page)
-  type Pilula = { href: string; icone: NomeIcone; texto: string; titulo: string };
+  // grupo: "voce" (my own things, by urgency) or "equipe" (team and management); ordem: lower = more urgent
+  type Pilula = { href: string; icone: NomeIcone; texto: string; titulo: string; grupo?: "equipe"; ordem?: number; alerta?: boolean };
   const pilulas: Pilula[] = [];
   const passos = primeirosPassos(user);
   const comPassos = passos.some((x) => !x.feito);
@@ -134,39 +138,52 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const missao = missaoDaSemana(user);
   const org = user.gestao ? organizacao() : null;
   const mostrarOrg = !!org && (org.semEquipe.length > 0 || org.semCoordenacao.length > 0 || org.semFuncao.length > 0);
-  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "pessoa", texto: t.meuPerfil, titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar });
+  if (me && perfilPendente(me) && !comPassos) pilulas.push({ href: `/pessoas/${me.id}/editar`, icone: "pessoa", texto: t.meuPerfil, titulo: perfilPendente(me) === "verificar" ? t.bannerVerificar : t.bannerConfirmar, ordem: 5 });
   for (const d of me ? diagnosticosAbertos(me) : []) {
     const pr = progresso(d, me!.id);
-    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "tarefa", texto: `${t.diagnostico} ${pr.respondidas}/${pr.total}`, titulo: t.bannerDiag });
-    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "mensagem", texto: t.codigoAcordos, titulo: t.bannerCodigo });
+    if (pr.respondidas < pr.total && !comPassos) pilulas.push({ href: `/pessoas/${me!.id}/respostas?d=${d.id}`, icone: "tarefa", texto: `${t.diagnostico} ${pr.respondidas}/${pr.total}`, titulo: t.bannerDiag, ordem: 2 });
+    if (codigoPendente(d, me!.id)) pilulas.push({ href: `/diagnosticos/${d.id}/codigo`, icone: "mensagem", texto: t.codigoAcordos, titulo: t.bannerCodigo, ordem: 2 });
     const c = getColetivo(d.id);
     for (const x of secoesColetivas(d).filter((x) => c.responsaveis[x.id] === me!.id)) {
       const feitas = x.perguntas.filter((q) => c.respostas[q.id]?.status === "respondida").length;
-      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "tarefa", texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, titulo: t.parteColetiva });
+      if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "tarefa", texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, titulo: t.parteColetiva, ordem: 2 });
     }
   }
-  if (comPassos && !passosEmCartao) for (const x of passosFaltam) pilulas.push({ href: x.href, icone: "tarefa", texto: t.passos[x.id], titulo: t.primeirosPassos });
+  if (comPassos && !passosEmCartao) for (const x of passosFaltam) pilulas.push({ href: x.href, icone: "tarefa", texto: t.passos[x.id], titulo: t.primeirosPassos, ordem: 6 });
   const fatos = getFatos();
   const revisar = fatos.filter((f) => f.status === "proposto" && podeRevisar(user, f)).length;
   const alertas = getAlertas().filter((a) => {
     const f = fatos.find((x) => x.id === a.fato);
     return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
   }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
-  if (revisar) pilulas.push({ href: "/conhecimento/revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento });
-  if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento });
-  if (esperando.length) pilulas.push({ href: "/hoje?aba=esperando", icone: "mensagem", texto: `${esperando.length} ${t.esperandoVoce}`, titulo: t.esperandoTitulo });
-  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA });
+  if (revisar) pilulas.push({ href: "/conhecimento/revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento, ordem: 4 });
+  if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento, grupo: "equipe", ordem: 3 });
+  if (esperando.length) pilulas.push({ href: "/hoje?aba=esperando", icone: "mensagem", texto: `${esperando.length} ${t.esperandoVoce}`, titulo: t.esperandoTitulo, ordem: 1 });
+  if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA, ordem: 8 });
   // Pontes: contacts this person should reconnect with (link person; no link = Pontes coordination), oldest first, max 3
   if (me) for (const c of getPessoas().filter((x) => x.contato && (reconectarEm(x) || "9") <= hoje && reconectarPor(x, equipes).includes(me.id))
     .sort((a, b) => reconectarEm(a).localeCompare(reconectarEm(b))).slice(0, 3))
-    pilulas.push({ href: `/pessoas/${c.id}`, icone: "pessoa", texto: `${t.ponte.reconectarCom} ${c.name.split(" ")[0]}`, titulo: t.ponte.contatos });
+    pilulas.push({ href: `/pessoas/${c.id}`, icone: "pessoa", texto: `${t.ponte.reconectarCom} ${c.name.split(" ")[0]}`, titulo: t.ponte.contatos, ordem: 7 });
   // DS 10.22: weekly check-in of the objectives I own
   if (me) for (const o of getObjetivos().filter((x) => x.responsavel === me.id && checkinPendente(x, hoje)).slice(0, 2))
-    pilulas.push({ href: `/objetivos/${o.id}`, icone: "confirmar", texto: `${t.ob.checkinDe}: ${o.titulo.length > 36 ? `${o.titulo.slice(0, 34)}…` : o.titulo}`, titulo: t.objetivos });
+    pilulas.push({ href: `/objetivos/${o.id}`, icone: "confirmar", texto: `${t.ob.checkinDe}: ${o.titulo.length > 36 ? `${o.titulo.slice(0, 34)}…` : o.titulo}`, titulo: t.objetivos, ordem: 3 });
   // DS 10.14: requests waiting for an owner in the teams I coordinate
   const pedidos = user.coordena.flatMap((e) => pedidosNovos(getTarefas(), e)).length;
-  if (pedidos) pilulas.push({ href: "/pedidos", icone: "enviar", texto: `${pedidos} ${pedidos === 1 ? t.eq.pedidoNovo : t.eq.pedidosNovos}`, titulo: t.eq.pedidos });
+  if (pedidos) pilulas.push({ href: "/pedidos", icone: "enviar", texto: `${pedidos} ${pedidos === 1 ? t.eq.pedidoNovo : t.eq.pedidosNovos}`, titulo: t.eq.pedidos, grupo: "equipe", ordem: 1 });
   const p = user.gestao ? pulso() : null;
+  if (p && (p.atrasadas > 0 || p.semDono > 0)) pilulas.push({ href: "/pulso", icone: "atencao", texto: `${p.atrasadas} ${t.atrasadasLbl} · ${p.semDono} ${t.semDonoLbl}`, titulo: t.pulso, grupo: "equipe", ordem: 4 });
+  if (podeFinancas(user)) {
+    const ls = getLancamentos().filter((l) => !l.anulado && !/^\[TESTE\]/i.test(l.descricao));
+    const aPagar = ls.filter((l) => l.pendente && l.tipo === "despesa" && l.data <= dia(7)).length, reemb = ls.filter(aReembolsar).length;
+    const neg = previsaoCaixa(ls, getFixos(), hoje).negativo;
+    const acima = compararAnual(getOrcamentoAnual(hoje.slice(0, 4))?.linhas ?? [], ls, hoje.slice(0, 4), hoje).alertas.length;
+    if (neg) pilulas.push({ href: "/financas", icone: "atencao", texto: `${t.hj.caixaNegativo} ${fmtDate(neg.data, lang)}`, titulo: t.financas, grupo: "equipe", ordem: 0 });
+    if (aPagar) pilulas.push({ href: "/financas", icone: "prazo", texto: `${aPagar} ${t.hj.aPagar7}`, titulo: t.financas, grupo: "equipe", ordem: 2 });
+    if (reemb) pilulas.push({ href: "/financas", icone: "pessoa", texto: `${reemb} ${reemb === 1 ? t.hj.reembolso : t.hj.reembolsos}`, titulo: t.financas, grupo: "equipe", ordem: 5 });
+    if (acima) pilulas.push({ href: `/financas/orcamento?a=${hoje.slice(0, 4)}`, icone: "atencao", texto: `${acima} ${t.hj.acima90}`, titulo: t.financas, grupo: "equipe", ordem: 6 });
+  }
+  const porUrgencia = (a: Pilula, b: Pilula) => (a.ordem ?? 9) - (b.ordem ?? 9);
+  const paraVoce = pilulas.filter((x) => !x.grupo).sort(porUrgencia), daEquipe = pilulas.filter((x) => x.grupo === "equipe").sort(porUrgencia);
 
   const linha = (x: Tarefa, grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
     <TaskRow key={x.id} t={x} {...props} extra={comPrazo(grupo)} selos={selos && legiveis(selos)[x.id]} />;
@@ -199,7 +216,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   );
   const nome = (me?.name ?? user.username).split(/[\s(]/)[0];
   const passosFeitos = passos.filter((x) => x.feito).length;
-  const comPulso = !!p && (p.atrasadas > 0 || p.semDono > 0);
 
   return (
     <>
@@ -209,15 +225,29 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           <span className="text-t1">{t.ola}, {nome}.</span>{" "}
           <span className="text-t3">{new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bahia" })}</span>
         </h1>
-        {(eventosHoje.length > 0 || googleEvs.some((e) => e.dia === hoje) || proximos.length > 0 || pilulas.length > 0 || comPulso) && (
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
-            {eventosHoje.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>)}
-            {googleEvs.filter((e) => e.dia === hoje).map(chipGoogle)}
-            {proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>)}
-            {pilulas.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)}
-            {comPulso && <Chip href="/pulso" icone="atencao">{p!.atrasadas} {t.atrasadasLbl} · {p!.semDono} {t.semDonoLbl}</Chip>}
-          </div>
-        )}
+        {/* the day in one line: only the parts that are not zero */}
+        {me && (() => {
+          const nHoje = agora.length - atrasadas, nEv = eventosHoje.length + googleEvs.filter((e) => e.dia === hoje).length;
+          const partes = [
+            atrasadas > 0 && <span key="a" className="text-err">{atrasadas} {atrasadas === 1 ? t.hj.resumoAtrasada : t.hj.resumoAtrasadas}</span>,
+            nHoje > 0 && <span key="h">{nHoje} {t.hj.resumoHoje}</span>,
+            nEv > 0 && <span key="e">{nEv} {nEv === 1 ? t.hj.resumoEvento : t.hj.resumoEventos}</span>,
+          ].filter(Boolean);
+          return <p className="corpo text-t2">{partes.length ? partes.map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>) : t.hj.nadaHoje}</p>;
+        })()}
+        {/* pending items in two groups (DS 10.5.1): for you (events first, then by urgency) and team/management */}
+        {([["voce", t.hj.paraVoce, [
+          ...eventosHoje.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>),
+          ...googleEvs.filter((e) => e.dia === hoje).map(chipGoogle),
+          ...proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>),
+          ...paraVoce.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>),
+        ]], ["equipe", t.hj.equipeGestao, daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)]] as const)
+          .filter(([, , chips]) => chips.length > 0).map(([id, rotulo, chips]) => (
+            <div key={id} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
+              <span className="rotulo-maiusculo shrink-0 text-t3">{rotulo}</span>
+              {chips}
+            </div>
+          ))}
       </header>
 
       {missao && (

@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Hoje: resumo do dia, pendências em dois grupos e sinais de Finanças (10.5.1, 10.3)
+
+- Abaixo da saudação, uma linha "N atrasadas · N para hoje · N eventos hoje" (ou "Nada pendente para hoje.").
+- A fila única de Chips virou dois grupos com rótulo: **Para você** (eventos, depois por urgência) e **Equipe e gestão** (pedidos, alertas, Pulso e sinais de Finanças: caixa negativo, a pagar em 7 dias, reembolsos, categorias acima de 90%).
+- `LinhaTarefa`: `pessoasSoComputador` — nas minhas tarefas, os Avatares dos outros responsáveis só aparecem a partir de `sm`.
+
 ## 2026-11-14 — Hoje mais direto (10.5.1)
 
 - Ordem: as tarefas (semana, foco, abas) vêm logo depois das pendências e da missão; Primeiros passos, Onde estou e Organizar equipes foram para o fim. No celular a lista de tarefas começava a ~2.100 px e agora a ~360 px; a página caiu de ~2.800 para ~1.100 px.

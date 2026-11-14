@@ -13,7 +13,7 @@ import { EQUIPES_DS, chaveEquipe } from "../equipes";
 
 export type MetadadoTarefa = { icone?: NomeIcone; texto: ReactNode; rotulo?: string };
 
-export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, prioridade, metadados = [], pessoas = [], estado, feita, concluir, acoes, extra, antes, ...li }: {
+export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, prioridade, metadados = [], pessoas = [], pessoasSoComputador, estado, feita, concluir, acoes, extra, antes, ...li }: {
   href: string; titulo: ReactNode;
   /** Chave, id do vault ou cor antiga: desenha a barra e o selo. Sem uma das 4 equipes, só o nome. */
   equipe?: string; nomeEquipe?: string;
@@ -22,6 +22,8 @@ export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, p
   prioridade?: { nivel: "alta" | "urgente"; rotulo: string };
   metadados?: MetadadoTarefa[];
   pessoas?: { nome: string; foto?: string }[];
+  /** Avatares só a partir de `sm` (nas minhas tarefas, para o título caber no celular). */
+  pessoasSoComputador?: boolean;
   estado?: EstadoBadge; feita?: boolean;
   /** O círculo de concluir (ex.: <StatusBotao>, que funciona sem sinal). */
   concluir: ReactNode;
@@ -62,7 +64,7 @@ export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, p
           ))}
         </span>
       )}
-      {pessoas.length > 0 && <span className={feita ? "opacity-50" : ""}><GrupoAvatares pessoas={pessoas} tamanho={24} anel="s1" /></span>}
+      {pessoas.length > 0 && <span className={`${feita ? "opacity-50" : ""} ${pessoasSoComputador ? "hidden sm:inline-flex" : ""}`}><GrupoAvatares pessoas={pessoas} tamanho={24} anel="s1" /></span>}
       {estado && <span className="hidden md:inline-flex"><BadgeEstado estado={estado} /></span>}
       {extra}
       {acoes && acoes.length > 0 && <MenuAcoes itens={acoes} />}
