@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Barra do celular: rótulos e indicador suave (10.10)
+
+- `components/v2/Nav.tsx` (barra do celular): cada item = ícone 22 px num indicador em pílula 56×32 + rótulo de 12 px; ativo = `ac-soft` + `ac-text` (antes: círculo de 56 px cheio de acento); orbe 64 → 56 px, círculo 84 → 76 px, pílula 72 → 68 px, sombra mais suave. Decisão em DECISOES.md; pendente "ampliar/melhorar" (§14) resolvido. Verificado a 390 px, escuro e claro.
+- `next.config.ts`: o indicador de desenvolvimento do Next foi para o canto superior direito (em baixo ficava sobre a barra; produção não muda).
+
 ## 2026-11-14 — Hoje: resumo do dia, pendências em dois grupos e sinais de Finanças (10.5.1, 10.3)
 
 - Abaixo da saudação, uma linha "N atrasadas · N para hoje · N eventos hoje" (ou "Nada pendente para hoje.").

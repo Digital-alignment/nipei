@@ -4,6 +4,8 @@ import path from "path";
 const nextConfig: NextConfig = {
   // Docker image ships only .next/standalone (see Dockerfile); the tracing root keeps the repo-root lockfile out.
   output: "standalone",
+  // dev only: the Next.js badge sat bottom-left, on top of the phone menu bar
+  devIndicators: { position: "top-right" },
   outputFileTracingRoot: path.resolve(__dirname),
   turbopack: {
     root: path.resolve(__dirname),

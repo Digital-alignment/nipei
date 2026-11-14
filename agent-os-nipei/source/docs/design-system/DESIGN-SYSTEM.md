@@ -456,7 +456,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
   - Um só nível.
   - **Nunca sai da barra**: a altura de cada item (e de Configurações) é o token `--altura-item-menu` = `clamp(28px, 4.6dvh, 44px)` — 44 px em telas altas, encolhe com a altura da janela (zoom do navegador incluído) para caber até em 600 px.
   - Topo do conteúdo: campo **"Pergunte ao Pinu ou busque…"** (mini-anel + microfone) · notificações com contagem · avatar.
-- **Celular**: barra inferior flutuante em pílula com **o orbe do Pinu no centro**, ligado à pílula por **ponte líquida**. Item ativo = círculo preenchido em acento. O "+" abre um menu radial com o fundo escurecido. (A barra deve crescer no futuro.)
+- **Celular**: barra inferior flutuante em pílula (68 px) com **o orbe do Pinu no centro** (56 px num círculo de 76 px), ligado à pílula por **ponte líquida**; 2 itens de cada lado. Cada item = ícone 22 px dentro de um **indicador em pílula 56×32** + **rótulo de 12 px** embaixo. Ativo = indicador `ac-soft` com ícone `ac-text` e rótulo `t1` semibold; inativo = ícone `t2`, rótulo `t3`, sem fundo. Toque: `active:scale-95`. As outras seções ficam no painel do avatar. O "+" abre um menu radial com o fundo escurecido.
 
 ### 10.11 Pinu
 - **Orbe**: forma orgânica com gradiente `#042608 → #2A5C0B → #808F12 → #C3D14A`, brilho leve, 4 estados (seção 8). **Mini-anel** = avatar do Pinu em mensagens, campos e chips.
@@ -670,7 +670,6 @@ Situação em 2026-10-26: todas as linhas acima foram cumpridas na v2 (`src/app/
 - Uso de cada padrão em cada página (ex.: onde entra o painel direito de 3 colunas no computador).
 - Pinu: modo voz em tela cheia, o que abre primeiro, curvas de nível, lista de capacidades, deslizar para confirmar.
 - Ícones P2/P3 restantes (`ICONES.md`): `quadro`, `grade`, `semana`, `mes`, `copiar`, `ver`/`ocultar`, `sem-conexao`, `documento`, `planilha`, `apresentacao`, `video`, `audio`, `pasta`. No código estão com um provisório e `TODO(ícones)`.
-- Barra do celular: ampliar/melhorar.
 - Pulso: o ponto de cada equipe ainda usa a cor gravada no vault (`cor` da equipe), não o token `eq-*`.
 - Sugestão do Pinu na Nova tarefa: o slot (`SugestaoPinu`) existe, falta o endpoint.
 - Pinu ainda não recebe arquivos (sem "+"/imagem no campo).

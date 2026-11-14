@@ -133,14 +133,14 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
       </div>
 
       <nav aria-label="Menu" className="print:hidden pointer-events-none fixed inset-x-0 bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 flex justify-center px-4 md:hidden">
-        <div className="pointer-events-auto relative h-[84px] w-full max-w-[400px]">
+        <div className="pointer-events-auto relative h-[76px] w-full max-w-[400px]">
           {/* ponte líquida: pílula + círculo do orbe fundidos (blur + contraste no alfa) */}
           <svg aria-hidden="true" width="0" height="0" className="absolute">
             <filter id="ponte-liquida"><feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b" /><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -9" result="g" /><feComposite in="SourceGraphic" in2="g" operator="atop" /></filter>
           </svg>
-          <div aria-hidden="true" className="absolute inset-0 [filter:url(#ponte-liquida)_drop-shadow(0_0_1px_var(--s4))_drop-shadow(0_6px_16px_var(--bg))]">
-            <span className="absolute inset-x-0 top-1.5 h-[72px] rounded-pilula bg-s2" />
-            {pinu && <span className="absolute left-1/2 top-0 size-[84px] -translate-x-1/2 rounded-pilula bg-s2" />}
+          <div aria-hidden="true" className="absolute inset-0 [filter:url(#ponte-liquida)_drop-shadow(0_0_1px_var(--s4))_drop-shadow(0_4px_12px_var(--bg))]">
+            <span className="absolute inset-x-0 top-2 h-[68px] rounded-pilula bg-s2" />
+            {pinu && <span className="absolute left-1/2 top-0 size-[76px] -translate-x-1/2 rounded-pilula bg-s2" />}
           </div>
           <ul className="relative flex h-full items-center justify-around px-2">
             {BARRA.map((chave, i) => {
@@ -148,16 +148,20 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
               const on = destino ? destino === item.href : em(item.href);
               return [
                 ...(pinu && i === 2 ? [(
-                  <li key="pinu" className="grid w-[84px] shrink-0 place-items-center">
+                  <li key="pinu" className="grid w-[76px] shrink-0 place-items-center">
                     <button type="button" onClick={() => abrirPinu()} aria-label={rotulos.falarPinu} className="anel-foco grid rounded-pilula touch-manipulation [-webkit-tap-highlight-color:transparent]">
-                      <OrbePinu tamanho={64} />
+                      <OrbePinu tamanho={56} />
                     </button>
                   </li>
                 )] : []),
                 <li key={item.href}>
-                  <Link href={item.href} aria-label={rotulos[chave]} aria-current={on ? "page" : undefined} onClick={() => { if (path !== item.href) setDestino(item.href); }}
-                    className={`anel-foco grid size-14 place-items-center rounded-pilula transition-[background-color,transform] duration-150 touch-manipulation select-none active:scale-90 [-webkit-tap-highlight-color:transparent] ${on ? "bg-ac text-ac-ink" : "text-t2"}`}>
-                    <Simbolo item={item} tamanho={24} />
+                  {/* DS 10.10: icon in a 56×32 indicator + 12 px label; active = soft accent (no full accent circle) */}
+                  <Link href={item.href} aria-current={on ? "page" : undefined} onClick={() => { if (path !== item.href) setDestino(item.href); }}
+                    className="anel-foco group/item flex w-16 flex-col items-center gap-1 rounded-interno py-1 touch-manipulation select-none transition-transform duration-150 active:scale-95 [-webkit-tap-highlight-color:transparent]">
+                    <span className={`grid h-8 w-14 place-items-center rounded-pilula transition-colors duration-200 ${on ? "bg-ac-soft text-ac-text" : "text-t2 group-hover/item:text-t1"}`}>
+                      <Simbolo item={item} tamanho={22} />
+                    </span>
+                    <span className={`text-xs leading-none ${on ? "font-semibold text-t1" : "font-medium text-t3"}`}>{rotulos[chave]}</span>
                   </Link>
                 </li>,
               ];

@@ -807,3 +807,8 @@ Ashuan aprovou trocar os 13 objetivos-área por 14 resultados (fim de 2026 e 1º
 ## 2026-11-05 — Pessoas: papel unificado, "referente de" e "Completar fichas" (§10.23)
 
 Diagnóstico (05/11): 58 pessoas, 50 sem função, 25 sem equipe, 45 sem WhatsApp, só 2 com perfil confirmado; "função" e "área" misturadas. Ashuan aprovou: um campo "Papel" (área migrada), "Referente de" para o Pinu saber a quem levar uma pergunta, responsabilidades na ficha e uma tela de gestão para completar as fichas em lote, com sugestão do Pinu (nada gravado sem "Salvar").
+
+## 2026-11-14 — Barra do celular: rótulos e indicador suave (§10.10)
+
+Pedido do Ashuan ("mais moderna, mais elegante"), com captura do celular. Problemas: o item ativo era um círculo de 56 px cheio de acento que quase encostava na borda da pílula e pesava mais que o próprio orbe; os itens não tinham nome (só ícone), o que vai contra o "mais intuitivo" pedido para Hoje; o orbe de 64 px num círculo de 84 px dominava a barra. Decisão: cada item = ícone dentro de um indicador em pílula 56×32 + rótulo de 12 px embaixo; ativo = indicador `ac-soft` com ícone `ac-text` e rótulo `t1` semibold (acento com economia, regra 5); inativos = ícone `t2`, rótulo `t3`. Orbe 56 px num círculo de 76 px, pílula de 68 px, sombra mais suave. Mantidos: ponte líquida, 4 itens + orbe, painel do avatar para o resto. Substitui "Item ativo = círculo preenchido em acento" (§10.10) e resolve o pendente "Barra do celular: ampliar/melhorar" (§14).
+
