@@ -6,6 +6,8 @@ import { Section } from "@/components/v2/ui";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Cartao from "@/components/ds/Cartao";
+import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import Campo from "@/components/ds/Campo";
 import { BotaoIcone } from "@/components/ds/Botao";
 import Tabela, { Sparkline } from "@/components/ds/padroes/Tabela";
@@ -96,6 +98,16 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const orcamentos = getOrcamentosEvento();
   const cpfMes = contaPessoalNoPeriodo(todos, contas, `${mes}-01`, fimDoMes(mes));
   const recursos = resumoRecursos(todos);
+  // getting started (DS 10.25): 4 steps that tick themselves from what exists; gone when all are done
+  const anoAtual = hoje.slice(0, 4);
+  const passosFin = [
+    { id: "contas" as const, feito: contasAtivas.length > 0, href: "/financas/contas" },
+    { id: "fixos" as const, feito: getFixos().length > 0, href: "/financas/fixos" },
+    { id: "orcamento" as const, feito: !!getOrcamentoAnual(anoAtual)?.linhas.length, href: `/financas/orcamento?a=${anoAtual}` },
+    { id: "extrato" as const, feito: todos.some((l) => !!l.conciliado), href: "/financas/importar" },
+  ];
+  const passosFeitos = passosFin.filter((x) => x.feito).length;
+  const nTeste = todos.filter((l) => !l.anulado && /^\[TESTE\]/i.test(l.descricao)).length;
   // categories above 90% of this year's budget (general budget)
   const alertasOrc = compararAnual(getOrcamentoAnual(hoje.slice(0, 4))?.linhas ?? [], todos, hoje.slice(0, 4), hoje).alertas;
 
@@ -104,6 +116,29 @@ export default async function Financas({ searchParams }: { searchParams: Promise
       <CabecalhoPagina selo="semente" rotulo={t.gestaoLbl} titulo={t.financas}
         acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/contas" icone="abrir" variante="fantasma" tamanho="P">{t.contas}</Botao><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="P">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="P">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /><Botao desativado icone="baixar" type="button" variante="fantasma" tamanho="P">{t.exportarContador}</Botao></div>} />
       <ToastAoAbrir texto={q.ok} />
+      {passosFeitos < passosFin.length && (
+        <Cartao className="mb-6">
+          <SecaoRecolhivel id="financas-passos" emCartao titulo={t.fp.titulo} contagem={`${passosFeitos}/${passosFin.length}`}
+            resumo={<BarraProgresso valor={passosFeitos} max={passosFin.length} planejado rotuloAcessivel={t.fp.titulo} />}>
+            <ul className="grid gap-x-4 sm:grid-cols-2">
+              {passosFin.map((x) => (
+                <li key={x.id}>
+                  <Link href={x.href} className={`anel-foco flex min-h-11 items-center gap-3 rounded-interno text-[15px] ${x.feito ? "text-t3" : "text-t1 hover:underline"}`}>
+                    <span className={`grid size-[26px] shrink-0 place-items-center rounded-pilula ${x.feito ? "bg-ac text-ac-ink" : "hachurado shadow-[inset_0_0_0_2px_var(--s4)]"}`}>{x.feito && <Icone nome="confirmar" tamanho={15} />}</span>
+                    <span className={`min-w-0 flex-1 ${x.feito ? "line-through" : ""}`}>{t.fp.passos[x.id]}</span>
+                    {!x.feito && <Icone nome="avancar" tamanho={16} className="shrink-0 text-t3" />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {nTeste > 0 && <p className="meta text-warn">{t.fp.teste.replace("{n}", String(nTeste))}</p>}
+            <details className="group rounded-interno bg-s2">
+              <summary className="anel-foco flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-interno px-3 font-texto text-sm font-semibold"><Icone nome="avancar" tamanho={16} className="transition-transform duration-150 group-open:rotate-90" />{t.fp.reunir}</summary>
+              <ul className="corpo grid list-disc gap-1 pb-3 pl-9 pr-3 text-t2">{t.fp.itens.map((x) => <li key={x}>{x}</li>)}</ul>
+            </details>
+          </SecaoRecolhivel>
+        </Cartao>
+      )}
       {importacoes.length > 0 && (
         <ul className="mb-4 grid gap-1">
           {importacoes.map(([id, n]) => (

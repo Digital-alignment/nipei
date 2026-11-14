@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Finanças: primeiros passos (10.25)
+
+- `/financas`: Cartão "Primeiros passos de Finanças" (`SecaoRecolhivel` em cartão + `BarraProgresso`) com 4 passos que se marcam sozinhos (contas, gastos fixos, orçamento do ano, primeiro extrato conciliado), aviso dos lançamentos de teste e "O que reunir antes"; some quando os 4 estão feitos.
+
 ## 2026-11-14 — Agenda e Tarefas no celular (10.1, 10.6, 10.6.1)
 
 - Agenda, vista Dia: só as horas úteis e trechos vazios compactados ("10:00 – 22:00 · livre"), com "Ver o dia inteiro"; no celular o Botão "Novo evento" saiu (fica no "+").
