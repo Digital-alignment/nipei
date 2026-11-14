@@ -8,7 +8,7 @@ import { BadgeEstado } from "@/components/ds/Chip";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import Tabela from "@/components/ds/padroes/Tabela";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { currentUser, getContas, getLancamentos, today } from "@/lib/v2/data";
+import { UNIDADES, currentUser, getContas, getLancamentos, getPessoas, pessoasReembolso, today } from "@/lib/v2/data";
 import { TIPOS_CONTA, resumoContas } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { contaAtivaAction, salvarContaAction } from "../../actions";
@@ -29,6 +29,9 @@ export default async function Contas({ searchParams }: { searchParams: Promise<{
   const r = resumoContas(getContas(), getLancamentos(), hoje);
   const ed = r.contas.find((c) => c.id === q.editar);
   const total = r.contas.filter((c) => c.ativa).reduce((a, c) => a + c.saldo, 0);
+  const pessoas = getPessoas(), nomeP = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? id;
+  // account holders: team people, plus the current holder even if they left the teams
+  const titulares = [...pessoasReembolso(), ...pessoas.filter((p) => p.id === ed?.titularPessoa && !pessoasReembolso().some((x) => x.id === p.id))];
 
   return (
     <>
@@ -43,7 +46,7 @@ export default async function Contas({ searchParams }: { searchParams: Promise<{
       ]} linhas={r.contas.map((c) => ({
         id: c.id, apagada: !c.ativa,
         celulas: {
-          nome: <span className="inline-flex flex-wrap items-center gap-2">{c.nome}{!c.ativa && <BadgeEstado estado="interna">{t.contaArquivada}</BadgeEstado>}</span>,
+          nome: <span className="inline-flex flex-wrap items-center gap-2">{c.nome}{c.titular === "cpf" && <BadgeEstado estado="aviso">{t.cpfDe} {nomeP(c.titularPessoa)}</BadgeEstado>}{c.unidade && <span className="meta text-t3">{UNIDADES[c.unidade as keyof typeof UNIDADES] ?? c.unidade}</span>}{!c.ativa && <BadgeEstado estado="interna">{t.contaArquivada}</BadgeEstado>}</span>,
           tipo: t.tiposConta[c.tipo], saldo: <span className={`font-semibold tabular-nums ${c.saldo < 0 ? "text-err" : "text-t1"}`}>{brl(c.saldo)}</span>,
           conc: c.conciliadoAte ? fmtDate(c.conciliadoAte, lang) : "—",
         },
@@ -71,6 +74,10 @@ export default async function Contas({ searchParams }: { searchParams: Promise<{
           <div className="grid grid-cols-2 gap-3">
             <Campo name="saldo" rotulo={t.saldoInicial} inputMode="decimal" placeholder="0,00" defaultValue={ed ? valorBR(ed.saldoInicial) : undefined} />
             <Campo tipo="data" name="desde" rotulo={t.saldoEm} defaultValue={ed?.desde ?? hoje} required />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Campo tipo="selecao" name="titular" rotulo={t.titularLbl} defaultValue={ed?.titular === "cpf" ? ed.titularPessoa : ""}><option value="">{t.titularPJ}</option>{titulares.map((p) => <option key={p.id} value={p.id}>{t.cpfDe} {p.name.split(" (")[0]}</option>)}</Campo>
+            <Campo tipo="selecao" name="unidade" rotulo={t.unidadePadrao} defaultValue={ed?.unidade ?? ""}><option value="">{t.unidadeGeral}</option>{Object.entries(UNIDADES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Campo>
           </div>
           <div className="flex flex-wrap gap-2">
             <BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvar}</BotaoEnviar>

@@ -4,12 +4,14 @@ import Cartao from "@/components/ds/Cartao";
 import Campo from "@/components/ds/Campo";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Icone from "@/components/ds/Icone";
+import Chip from "@/components/ds/Chip";
 import Tabela from "@/components/ds/padroes/Tabela";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import { Section } from "@/components/v2/ui";
-import { currentUser, getLancamentos, today } from "@/lib/v2/data";
+import { UNIDADES, currentUser, getContas, getLancamentos, today, unidadeDe } from "@/lib/v2/data";
+import { contaPessoalNoPeriodo } from "@/lib/v2/separacoes";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { NATUREZAS, dreMes, getNaturezas, type DRE, type Grupo } from "@/lib/v2/dre";
+import { NATUREZAS, dreMes, fimDoMes, getNaturezas, type DRE, type Grupo } from "@/lib/v2/dre";
 import { podeFinancas } from "@/lib/v2/funcoes";
 import { salvarNaturezasAction } from "../../actions";
 
@@ -19,14 +21,20 @@ export const dynamic = "force-dynamic";
 const brl0 = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}`;
 const addMes = (ym: string, n: number) => { const [y, m] = ym.split("-").map(Number); return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7); };
 
-export default async function Resultado({ searchParams }: { searchParams: Promise<{ m?: string; ok?: string }> }) {
+export default async function Resultado({ searchParams }: { searchParams: Promise<{ m?: string; ok?: string; u?: string }> }) {
   const me = (await currentUser())!;
   if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t, lang } = await getT();
   const mes = /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : today().slice(0, 7);
   const nat = getNaturezas();
-  const d = dreMes(getLancamentos(), nat, mes);
+  const todos = getLancamentos(), contas = getContas();
+  // per business unit (?u=): "geral" = entries with no unit of their own or of their account
+  const unidades = [...new Set(todos.filter((l) => !l.anulado && l.data.startsWith(mes.slice(0, 4))).map((l) => unidadeDe(l, contas) || "geral"))];
+  const u = q.u && unidades.includes(q.u) ? q.u : "";
+  const d = dreMes(u ? todos.filter((l) => (unidadeDe(l, contas) || "geral") === u) : todos, nat, mes);
+  const cpf = contaPessoalNoPeriodo(todos, contas, `${mes}-01`, fimDoMes(mes));
+  const link = (x: string) => `/financas/resultado?m=${mes}${x ? `&u=${x}` : ""}`;
   const pct = d.mes.margemPct == null ? "" : `${d.mes.margemPct < 0 ? "−" : ""}${Math.abs(Math.round(d.mes.margemPct * 100))}% ${t.daReceita}`;
   const cor = (v: number) => (v < 0 ? "text-err" : "");
 
@@ -51,10 +59,17 @@ export default async function Resultado({ searchParams }: { searchParams: Promis
       <CabecalhoPagina selo="semente" rotulo={<>{t.gestaoLbl} · {t.financas}</>} titulo={<>{t.resultadoTitulo} · <span className="first-letter:uppercase">{fmtDate(mes, lang)}</span></>}
         acoes={<div className="flex flex-wrap items-center gap-2">
           <Botao href={`/financas?m=${mes}`} icone="voltar" variante="fantasma" tamanho="M">{t.financas}</Botao>
-          <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas/resultado?m=${addMes(mes, -1)}`} />
-          <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={`/financas/resultado?m=${addMes(mes, 1)}`} />
+          <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas/resultado?m=${addMes(mes, -1)}${u ? `&u=${u}` : ""}`} />
+          <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={`/financas/resultado?m=${addMes(mes, 1)}${u ? `&u=${u}` : ""}`} />
         </div>} />
       <ToastAoAbrir texto={q.ok} />
+      {unidades.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Chip href={link("")} ativo={!u}>{t.todasUnidades}</Chip>
+          {unidades.filter((x) => x !== "geral").map((x) => <Chip key={x} href={link(x)} ativo={u === x}>{UNIDADES[x as keyof typeof UNIDADES] ?? x}</Chip>)}
+          {unidades.includes("geral") && <Chip href={link("geral")} ativo={u === "geral"}>{t.unidadeGeral}</Chip>}
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-2 lg:grid-cols-4">
         <Cartao variante="kpi"><span className="meta text-t2">{t.receitaOp}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums">{brl0(d.mes.receita.total)}</span></Cartao>
@@ -70,6 +85,7 @@ export default async function Resultado({ searchParams }: { searchParams: Promis
           } }))} />
         <div className="mt-2 grid gap-1">
           {d.mes.equilibrio != null && <p className="meta text-t2">{t.equilibrioDre} {brl0(d.mes.equilibrio)}.</p>}
+          {cpf.n > 0 && <p className="meta text-warn">{t.passouCPF} {brl0(cpf.total)} {t.emLanc} {cpf.n} {cpf.n === 1 ? t.lancamentoMin : t.lancamentosMin}</p>}
           {(d.mes.aReceber > 0 || d.mes.aPagar > 0) && <p className="meta text-t3">{t.pendentesFora} +{brl0(d.mes.aReceber)} {t.aReceberMin} · −{brl0(d.mes.aPagar)} {t.aPagarMin}</p>}
         </div>
       </Section>

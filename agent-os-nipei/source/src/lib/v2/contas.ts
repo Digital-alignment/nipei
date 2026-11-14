@@ -6,10 +6,10 @@ import { aReembolsar, getContas, noteText, slugify, today, updateNote, vault, ty
 // opening balance on `desde` plus every paid/received entry of the account from that day until today.
 
 export const TIPOS_CONTA = ["banco", "dinheiro", "pix", "outro"] as const;
-export type DadosConta = Pick<Conta, "nome" | "tipo" | "saldoInicial" | "desde">;
+export type DadosConta = Pick<Conta, "nome" | "tipo" | "saldoInicial" | "desde" | "titular" | "titularPessoa" | "unidade">;
 
 export function salvarConta(d: DadosConta, por: string, id?: string) {
-  const campos = { nome: d.nome, tipo: d.tipo, saldo_inicial: Math.round(d.saldoInicial * 100) / 100, desde: d.desde };
+  const campos = { nome: d.nome, tipo: d.tipo, saldo_inicial: Math.round(d.saldoInicial * 100) / 100, desde: d.desde, titular: d.titular, titular_pessoa: d.titular === "cpf" ? d.titularPessoa : "", unidade: d.unidade };
   if (id) {
     const c = getContas().find((x) => x.id === id);
     if (!c) throw new Error("Conta não encontrada");
@@ -61,7 +61,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(saldoConta(c, ls, "2026-11-11") === 850.5, `saldo ${saldoConta(c, ls, "2026-11-11")}`);
   assert(saldoConta(c, ls, "2026-10-06") === 800, "até um dia");
   assert(saldoConta(c, [x("2026-10-05", "despesa", 40, "bb", { reembolsar: "ana" }), x("2026-10-06", "despesa", 10, "bb", { reembolsar: "ana", reembolsado: "2026-10-07" })], "2026-11-11") === 990, "reembolso a fazer não sai da conta");
-  const r = resumoContas([{ ...c, file: "", nome: "BB", tipo: "banco", ativa: true }], [...ls, x("2026-10-01", "despesa", 1, "")], "2026-11-11");
+  const r = resumoContas([{ ...c, file: "", nome: "BB", tipo: "banco", ativa: true, titular: "pj", titularPessoa: "", unidade: "" }], [...ls, x("2026-10-01", "despesa", 1, "")], "2026-11-11");
   assert(r.contas[0].conciliadoAte === "2026-10-10" && r.semConta === 1, "conciliado até e sem conta");
   console.log(`contas: ${ok} ok`);
 }

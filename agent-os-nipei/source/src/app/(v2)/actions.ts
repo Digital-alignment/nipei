@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE, getT } from "@/lib/v2/i18n";
 import { podeFinancas } from "@/lib/v2/funcoes";
+import { NATUREZAS } from "@/lib/v2/dre";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { chaveTrecho, corrigirFato, criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, responderComFatos, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
@@ -22,7 +23,7 @@ import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib
 import { salvarComprovante } from "@/lib/v2/comprovantes";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, getContas, getLancamentos, pessoasReembolso, reembolsarLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, UNIDADES, getContas, getLancamentos, pessoasReembolso, reembolsarLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -41,6 +42,9 @@ const pick = (v: FormDataEntryValue | null, allowed: string[]) => {
 };
 /** Finanças: the account field (any existing account, archived ones included, so editing an old entry keeps it). */
 const contaDe = (form: FormData) => pick(form.get("conta"), getContas().map((c) => c.id));
+// separações (plano financas fase 3): business unit, restricted fund, DRE natureza of the entry
+const unidadeForm = (form: FormData) => pick(form.get("unidade"), Object.keys(UNIDADES));
+const recursoForm = (form: FormData) => String(form.get("recurso") ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
 // "Pago com dinheiro de" (DS 10.25): only expenses can be reimbursed
 const reembolsoDe = (form: FormData, tipo: string, atual = "") => (tipo === "despesa" ? pick(form.get("reembolsar"), [...pessoasReembolso().map((p) => p.id), ...(atual ? [atual] : [])]) : ""); // atual: keep who is owed even if they left the teams
 const recorrencia = (form: FormData) => pick(form.get("recorrencia"), [...RECORRENCIAS]);
@@ -800,7 +804,7 @@ export async function createLancamentoAction(form: FormData) {
     pendente: form.get("pendente") === "1",
     evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
     participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
-    conta: contaDe(form), reembolsar: reembolsoDe(form, tipo),
+    conta: contaDe(form), reembolsar: reembolsoDe(form, tipo), unidade: unidadeForm(form), recurso: recursoForm(form),
   });
   revalidatePath("/financas");
   redirect(`/financas?m=${data.slice(0, 7)}`);
@@ -834,6 +838,7 @@ export async function editarLancamentoAction(form: FormData) {
       evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
       participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
       conta: contaDe(form), reembolsar: reembolsoDe(form, tipo, getLancamentos().find((x) => x.id === id)?.reembolsar),
+      unidade: unidadeForm(form), recurso: recursoForm(form), natureza: pick(form.get("natureza"), [...NATUREZAS]),
     }, actorName(me));
   });
   revalidatePath("/financas", "layout");
@@ -852,7 +857,9 @@ export async function salvarContaAction(form: FormData) {
   const id = String(form.get("id") ?? "") || undefined;
   if (!nome || !Number.isFinite(saldo) || !/^\d{4}-\d{2}-\d{2}$/.test(desde)) redirect(`/financas/contas?${id ? `editar=${encodeURIComponent(id)}&` : ""}erro=${encodeURIComponent("Confira o nome, o saldo inicial e a data")}`);
   await tentar(async () => {
-    salvarConta({ nome, tipo: (pick(form.get("tipo"), [...TIPOS_CONTA]) || "outro") as (typeof TIPOS_CONTA)[number], saldoInicial: saldo, desde }, me.pessoa?.id ?? me.username, id);
+    const atualTit = id ? getContas().find((c) => c.id === id)?.titularPessoa : ""; // keep the holder even if they left the teams
+    const titularPessoa = pick(form.get("titular"), [...pessoasReembolso().map((p) => p.id), ...(atualTit ? [atualTit] : [])]); // "" = the Santuário (PJ)
+    salvarConta({ nome, tipo: (pick(form.get("tipo"), [...TIPOS_CONTA]) || "outro") as (typeof TIPOS_CONTA)[number], saldoInicial: saldo, desde, titular: titularPessoa ? "cpf" : "pj", titularPessoa, unidade: unidadeForm(form) }, me.pessoa?.id ?? me.username, id);
   });
   revalidatePath("/financas", "layout");
   redirect(`/financas/contas?ok=${encodeURIComponent(id ? "Conta atualizada" : "Conta criada")}`);

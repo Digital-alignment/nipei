@@ -2,6 +2,13 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Finanças: separações (titular PJ/CPF, unidade, recurso com destino, natureza do lançamento) (10.25)
+
+- Contas: Campos "Titular" e "Unidade padrão"; BadgeEstado `aviso` "CPF de X" na tabela.
+- Lançamento (novo e ficha): Campos "Unidade" e "Recurso com destino"; na ficha, "Natureza no resultado". Lista: BadgeEstado `aviso` "conta pessoal".
+- `/financas`: `meta text-warn` do que passou por contas de CPF no mês; Seção "Recursos com destino" (Tabela recebido · usado · saldo).
+- Resultado: Chips de filtro por unidade (`?u=`) e a linha de CPF.
+
 ## 2026-11-14 — Finanças: resultado gerencial / DRE (10.25)
 
 - `/financas/resultado?m=`: 3 Cartões `kpi` + Cartão `destaque` (resultado do período), Tabela "Demonstrativo" (este mês · mês anterior · acumulado do ano; totais em `font-semibold`, categorias recuadas em `meta`), `meta` com o ponto de equilíbrio e os pendentes, `<details>` "Natureza das categorias" com um Campo seleção por categoria. Entrada: Botão fantasma "Resultado" (ícone `tarefa`) ao lado de "Relatório do mês".

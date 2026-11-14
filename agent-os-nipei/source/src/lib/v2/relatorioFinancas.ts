@@ -1,6 +1,7 @@
 import { getContas, getLancamentos, getPessoas, getProjetos, today, type Conta, type Lancamento } from "./data";
 import { getFixos, previsaoCaixa, type Fixo } from "./fixos";
 import { saldoConta } from "./contas";
+import { contaPessoalNoPeriodo, resumoRecursos } from "./separacoes";
 import { dreMarkdown, dreMes, getNaturezas, NATUREZA_PADRAO, type Natureza } from "./dre";
 
 // Relatório mensal (DS 10.25): one markdown for the page (printable to PDF) and for Google Docs — the same text,
@@ -55,7 +56,13 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
     const semConta = doMes.filter((l) => !l.conta).length;
     out.push(`## Contas (saldo em ${dm(fim)})`, "", "| Conta | Saldo |", "|---|---:|", ...ativas.map((c) => `| ${cel(c.nome)} | ${brl(saldoConta(c, lanc, fim))} |`), "");
     if (semConta) out.push(`${semConta} lançamento(s) do mês sem conta (entram nos totais, não nos saldos das contas).`, "");
+    const cpf = contaPessoalNoPeriodo(lanc, contas, `${mes}-01`, fim);
+    if (cpf.n) out.push(`**Atenção:** ${brl(cpf.total)} em ${cpf.n} lançamento(s) passaram por contas pessoais (CPF) neste mês.`, "");
   }
+
+  const recs = resumoRecursos(lanc.filter((l) => l.data <= fim));
+  if (recs.length) out.push("## Recursos com destino (até o fim do mês)", "", "| Recurso | Recebido | Usado | Saldo |", "|---|---:|---:|---:|",
+    ...recs.map((r) => `| ${cel(r.recurso)} | ${brl(r.recebido)} | ${brl(r.usado)} | ${brl(r.saldo)} |`), "");
 
   const fixosMes = validos.filter((l) => l.fixo.endsWith(`|${mes}`));
   if (fixosMes.length) out.push("## Gastos fixos do mês", "", "| Dia | Descrição | Valor | Situação |", "|---|---|---:|---|",
@@ -97,10 +104,10 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };
   const L = (data: string, tipo: "entrada" | "despesa", valor: number, extra: Partial<Lancamento> = {}): Lancamento => ({
     id: data + valor, file: "", data, tipo, valor, categoria: tipo === "entrada" ? "Cursos" : "Alimentação", descricao: "x", projeto: "", equipe: "", registradoPor: "",
-    anulado: false, pendente: false, evento: "", participante: "", importacao: "", fixo: "", conta: "", conciliado: "", reembolsar: "", reembolsado: "", comprovante: "", registradoEm: "", registradoVia: "", anuladoEm: "", historico: [], ...extra });
+    anulado: false, pendente: false, evento: "", participante: "", importacao: "", fixo: "", conta: "", conciliado: "", reembolsar: "", reembolsado: "", unidade: "", recurso: "", natureza: "", comprovante: "", registradoEm: "", registradoVia: "", anuladoEm: "", historico: [], ...extra });
   const md = montarRelatorio("2026-11", [L("2026-11-02", "entrada", 1000, { conta: "bb" }), L("2026-11-03", "despesa", 300, { comprovante: "x.jpg", descricao: "a|b" }), L("2026-10-03", "despesa", 200),
     L("2026-11-20", "despesa", 450, { pendente: true, fixo: "f|2026-11" }), L("2026-11-04", "despesa", 9, { anulado: true })],
-    [{ id: "bb", file: "", nome: "Banco", tipo: "banco", saldoInicial: 100, desde: "2026-01-01", ativa: true }], [], [], "2026-11-11");
+    [{ id: "bb", file: "", nome: "Banco", tipo: "banco", saldoInicial: 100, desde: "2026-01-01", ativa: true, titular: "pj", titularPessoa: "", unidade: "" }], [], [], "2026-11-11");
   assert(md.includes("# Relatório financeiro · novembro de 2026"), "título");
   assert(md.includes("| Despesas | R$ 300,00 | R$ 200,00 | +50% |"), "variação");
   assert(md.includes("| Banco | R$ 1.100,00 |") && md.includes("1 lançamento(s) do mês sem conta"), "contas");
@@ -109,6 +116,9 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(md.includes("1 lançamento(s) anulado(s)") && md.includes("## Previsão de caixa"), "anulados e previsão no mês atual");
   assert(!montarRelatorio("2026-10", [], [], [], [], "2026-11-11").includes("Previsão"), "previsão só no mês atual");
   const rb = montarRelatorio("2026-11", [L("2026-11-05", "despesa", 80, { reembolsar: "ana", descricao: "Gasolina" }), L("2026-11-06", "despesa", 20, { reembolsar: "ana", reembolsado: "2026-11-07" })], [], [], [], "2026-11-11", [{ id: "ana", name: "Ana Souza" }]);
+  const sep = montarRelatorio("2026-11", [L("2026-11-02", "entrada", 900, { conta: "nu", recurso: "Grant" }), L("2026-11-03", "despesa", 200, { recurso: "grant" })],
+    [{ id: "nu", file: "", nome: "Nubank Ana", tipo: "banco", saldoInicial: 0, desde: "2026-01-01", ativa: true, titular: "cpf", titularPessoa: "ana", unidade: "" }], [], [], "2026-11-11");
+  assert(sep.includes("R$ 900,00 em 1 lançamento(s) passaram por contas pessoais") && sep.includes("| Grant | R$ 900,00 | R$ 200,00 | R$ 700,00 |"), "CPF e recursos com destino");
   assert(md.includes("## Resultado gerencial") && md.includes("**= Margem de contribuição**"), "DRE no relatório");
   assert(rb.includes("## Reembolsos a fazer") && rb.includes("| 05/11 | Ana Souza | Gasolina | R$ 80,00 |") && !rb.includes("| 06/11 | Ana"), "reembolsos a fazer");
   console.log(`relatorioFinancas: ${ok} ok`);

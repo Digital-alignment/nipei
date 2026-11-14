@@ -692,6 +692,10 @@ export const CATEGORIAS = {
     "Ajudas de custo / equipe", "Impostos e taxas", "Comunicação e internet", "Outras despesas"],
 } as const;
 
+// Business units (plano financas fase 3): the DRE can be read per unit. "" = Geral.
+export const UNIDADES = { santuario: "Santuário · retiros e dietas", inirau: "Inî Rau / loja", casa_cura: "Casa de cura", aluguel: "Aluguel do espaço" } as const;
+export type Unidade = keyof typeof UNIDADES;
+
 export type Lancamento = {
   id: string; file: string; data: string; tipo: "entrada" | "despesa"; valor: number; categoria: string; descricao: string;
   projeto: string; equipe: string; registradoPor: string; anulado: boolean;
@@ -702,6 +706,9 @@ export type Lancamento = {
   conta: string; // id of the account (Financeiro/Contas), "" = none
   conciliado: string; // day it was matched with a bank statement, "" = not yet
   fixo: string; // "<fixo id>|AAAA-MM" when generated from a gasto fixo (lib/v2/fixos.ts), "" otherwise
+  unidade: string; // business unit (UNIDADES), "" = the account's default unit, else Geral (see unidadeDe)
+  recurso: string; // "recurso com destino" (restricted donation/grant): income received for it, expenses that use it
+  natureza: string; // DRE natureza of this entry ("" = the category's; lib/v2/dre.ts)
   reembolsar: string; // pessoa id of who paid this expense with their own money ("" = paid by the Santuário)
   reembolsado: string; // day the person was paid back ("" = still owed, when reembolsar is set)
   comprovante: string; // vault-relative receipt file (Financeiro/Comprovantes/<id>.<ext>), "" = none
@@ -715,7 +722,7 @@ export function getLancamentos(): Lancamento[] {
       id: s(fm.id), file, data: s(fm.data), tipo: (s(fm.tipo) === "entrada" ? "entrada" : "despesa") as Lancamento["tipo"],
       valor: Number(fm.valor) || 0, categoria: s(fm.categoria), descricao: s(fm.descricao), projeto: s(fm.projeto),
       equipe: s(fm.equipe), registradoPor: s(fm.registrado_por), anulado: fm.anulado === true, pendente: fm.pendente === true, evento: s(fm.evento), participante: s(fm.participante), importacao: s(fm.importacao), fixo: s(fm.fixo), conta: s(fm.conta), conciliado: s(fm.conciliado),
-      reembolsar: s(fm.reembolsar), reembolsado: s(fm.reembolsado),
+      reembolsar: s(fm.reembolsar), reembolsado: s(fm.reembolsado), unidade: s(fm.unidade), recurso: s(fm.recurso), natureza: s(fm.natureza),
       comprovante: s(fm.comprovante), registradoEm: s(fm.registrado_em), registradoVia: s(fm.registrado_via), anuladoEm: s(fm.anulado_em),
       historico: (body.split(/^## Alterações\s*$/m)[1] ?? "").split(/^## /m)[0].split(/\r?\n/)
         .map((x) => x.match(/^- (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) · (.+?) · (.+)$/)).filter((m) => !!m).map((m) => ({ quando: m[1], quem: m[2], texto: m[3] })),
@@ -723,7 +730,7 @@ export function getLancamentos(): Lancamento[] {
     .sort((a, b) => b.data.localeCompare(a.data) || b.id.localeCompare(a.id));
 }
 
-export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "fixo" | "conta" | "conciliado" | "reembolsar" | "reembolsado" | "comprovante" | "registradoEm" | "registradoVia" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string; via?: string; fixo?: string; conta?: string; reembolsar?: string }): string {
+export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulado" | "pendente" | "evento" | "participante" | "importacao" | "fixo" | "conta" | "conciliado" | "reembolsar" | "reembolsado" | "unidade" | "recurso" | "natureza" | "comprovante" | "registradoEm" | "registradoVia" | "anuladoEm" | "historico"> & { pendente?: boolean; evento?: string; participante?: string; importacao?: string; via?: string; fixo?: string; conta?: string; reembolsar?: string; unidade?: string; recurso?: string; natureza?: string }): string {
   const dir = path.join(vault(), LANC_DIR);
   fs.mkdirSync(dir, { recursive: true });
   // time + random: an import creates many entries in the same millisecond (ids must stay unique; "anular" looks them up)
@@ -731,7 +738,7 @@ export function createLancamento(input: Omit<Lancamento, "id" | "file" | "anulad
   const fm: Record<string, FmValue> = {
     id, type: "lancamento", data: input.data, tipo: input.tipo, valor: Math.round(input.valor * 100) / 100, categoria: input.categoria,
     descricao: input.descricao, projeto: input.projeto, equipe: input.equipe, registrado_por: input.registradoPor,
-    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), ...(input.fixo ? { fixo: input.fixo } : {}), ...(input.conta ? { conta: input.conta } : {}), ...(input.reembolsar && input.tipo === "despesa" ? { reembolsar: input.reembolsar } : {}), registrado_em: agora(), ...(input.via ? { registrado_via: input.via } : {}), updated_at: new Date().toISOString(),
+    anulado: false, pendente: !!input.pendente, evento: input.evento ?? "", participante: input.participante ?? "", ...(input.importacao ? { importacao: input.importacao } : {}), ...(input.fixo ? { fixo: input.fixo } : {}), ...(input.conta ? { conta: input.conta } : {}), ...(input.reembolsar && input.tipo === "despesa" ? { reembolsar: input.reembolsar } : {}), ...(input.unidade ? { unidade: input.unidade } : {}), ...(input.recurso ? { recurso: input.recurso } : {}), ...(input.natureza ? { natureza: input.natureza } : {}), registrado_em: agora(), ...(input.via ? { registrado_via: input.via } : {}), updated_at: new Date().toISOString(),
   };
   const titulo = `${input.tipo === "entrada" ? "Entrada" : "Despesa"}: ${input.descricao || input.categoria}`;
   fs.writeFileSync(path.join(dir, `${input.data}_${slugify(input.descricao || input.categoria) || "lancamento"}_${id.slice(5)}.md`), noteText(fm, `# ${titulo}`), { encoding: "utf-8", flag: "wx" });
@@ -754,6 +761,11 @@ export function quitarLancamento(id: string, por: string, quem = por) {
 
 /** Paid with someone's own money and not paid back yet: a real cost (in the totals on its date) that has not left the cash. */
 export const aReembolsar = (l: Pick<Lancamento, "anulado" | "tipo"> & Partial<Pick<Lancamento, "reembolsar" | "reembolsado">>) => l.tipo === "despesa" && !!l.reembolsar && !l.reembolsado && !l.anulado;
+
+/** The entry's business unit: its own, else its account's default, else "" (Geral). */
+export const unidadeDe = (l: Pick<Lancamento, "unidade" | "conta">, contas: Pick<Conta, "id" | "unidade">[]) => l.unidade || contas.find((c) => c.id === l.conta)?.unidade || "";
+/** Money that went through someone's own CPF account (fiscal exposure). */
+export const emContaPessoal = (l: Pick<Lancamento, "conta">, contas: Pick<Conta, "id" | "titular">[]) => !!l.conta && contas.find((c) => c.id === l.conta)?.titular === "cpf";
 
 /** Who can pay an expense with their own money: people in a team (no outside contacts). */
 export const pessoasReembolso = () => getPessoas().filter((p) => !p.externo && !p.contato && p.equipes.length > 0).sort((a, b) => a.name.localeCompare(b.name, "pt"));
@@ -783,18 +795,20 @@ export function alterarLancamento(l: Lancamento, items: Record<string, FmValue>,
 }
 
 // Accounts (bank, cash, Pix): one note each in Financeiro/Contas/ (lib/v2/contas.ts writes them; read here so the entry history shows names)
-export type Conta = { id: string; file: string; nome: string; tipo: "banco" | "dinheiro" | "pix" | "outro"; saldoInicial: number; desde: string; ativa: boolean };
+// titular: whose account it is — the Santuário (pj) or someone's own CPF (fiscal exposure, plano financas fase 3)
+export type Conta = { id: string; file: string; nome: string; tipo: "banco" | "dinheiro" | "pix" | "outro"; saldoInicial: number; desde: string; ativa: boolean; titular: "pj" | "cpf"; titularPessoa: string; unidade: string };
 export function getContas(): Conta[] {
   return readDir(path.join("Financeiro", "Contas")).map(({ fm, file }) => ({
     id: s(fm.id), file, nome: s(fm.nome), tipo: (["banco", "dinheiro", "pix"].includes(s(fm.tipo)) ? s(fm.tipo) : "outro") as Conta["tipo"],
     saldoInicial: Number(fm.saldo_inicial) || 0, desde: /^\d{4}-\d{2}-\d{2}$/.test(s(fm.desde)) ? s(fm.desde) : "2000-01-01", ativa: fm.ativa !== false,
+    titular: (s(fm.titular) === "cpf" ? "cpf" : "pj") as Conta["titular"], titularPessoa: s(fm.titular_pessoa), unidade: s(fm.unidade),
   })).filter((c) => c.id).sort((a, b) => Number(b.ativa) - Number(a.ativa) || a.nome.localeCompare(b.nome));
 }
 
 const brlLog = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Edit: only the fields that changed are written; each one becomes "Campo: antes → depois" in the history. */
-export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "descricao" | "projeto" | "equipe" | "pendente" | "evento" | "participante" | "conta" | "reembolsar">, quem: string) {
+export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "descricao" | "projeto" | "equipe" | "pendente" | "evento" | "participante" | "conta" | "reembolsar" | "unidade" | "recurso" | "natureza">, quem: string) {
   const l = getLancamentos().find((x) => x.id === id);
   if (!l || l.anulado) throw new Error("Lançamento não encontrado");
   const nomeProj = (p: string) => getProjetos().find((x) => x.id === p)?.nome ?? (p || "Geral");
@@ -805,6 +819,8 @@ export function editarLancamento(id: string, novo: Pick<Lancamento, "data" | "ti
     ["evento", "Evento", (v: string) => v || "—"], ["participante", "Participante", (v: string) => v || "—"],
     ["pendente", "Situação", (v: boolean) => (v ? "pendente" : "pago")], ["projeto", "Projeto", nomeProj], ["equipe", "Equipe", nomeEq],
     ["conta", "Conta", (v: string) => getContas().find((c) => c.id === v)?.nome ?? (v || "—")],
+    ["unidade", "Unidade", (v: string) => UNIDADES[v as Unidade] ?? (v || "Geral")], ["recurso", "Recurso com destino", (v: string) => v || "—"],
+    ["natureza", "Natureza no resultado", (v: string) => ({ receita: "receita operacional", variavel: "custo variável", fixa: "despesa fixa", investimento: "investimento", nao_operacional: "não operacional" } as Record<string, string>)[v] ?? "da categoria"],
     ["reembolsar", "Pago com dinheiro de", (v: string) => getPessoas().find((p) => p.id === v)?.name.split(" (")[0] ?? (v || "Santuário")],
   ];
   const items: Record<string, FmValue> = {}, linhas: string[] = [];

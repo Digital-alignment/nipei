@@ -17,7 +17,8 @@ import { getNotas, podeNotasInternas } from "./notasInternas";
 import { numBR } from "./importarFinancas";
 import { custoFixo, getFixos, previsaoCaixa } from "./fixos";
 import { getNaturezas, montarDRE } from "./dre";
-import { CATEGORIAS as CATEGORIAS_FIN, aReembolsar, createLancamento, getContas, pessoasReembolso } from "./data";
+import { contaPessoalNoPeriodo, resumoRecursos } from "./separacoes";
+import { CATEGORIAS as CATEGORIAS_FIN, UNIDADES, aReembolsar, createLancamento, getContas, pessoasReembolso } from "./data";
 import { STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault, type Me, type Status, type Tarefa, podeVerProjeto, projetosVisiveis } from "./data";
 
 // The Nipëi assistant (Equipe 1): one OpenRouter tool-calling loop over the platform's own getters
@@ -46,7 +47,7 @@ export type Acao =
   | { tipo: "esquecer"; id: string }
   | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string }
   | { tipo: "pedir_equipe"; equipe: string; titulo: string; descricao?: string; prazo?: string }
-  | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string; conta?: string; reembolsar?: string };
+  | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string; conta?: string; reembolsar?: string; unidade?: string; recurso?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
 export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[] };
@@ -234,6 +235,7 @@ const TOOLS = [
     descricao: { type: "string", description: "curta, com as palavras da pessoa" }, evento: { type: "string", description: "retiro/dieta a que pertence; prefira um dos eventos já usados" },
     participante: { type: "string", description: "quem pagou (inscrição de retiro)" }, pendente: { type: "boolean", description: "true = ainda não foi pago/recebido (a pagar / a receber)" },
     projeto: { type: "string" }, conta: { type: "string", description: "conta de onde saiu/entrou o dinheiro (banco, dinheiro, Pix…), se a pessoa disser" },
+    unidade: { type: "string", enum: Object.keys(UNIDADES), description: "unidade de negócio, se a pessoa disser (vazio = a da conta ou Geral)" }, recurso: { type: "string", description: "recurso com destino (doação/grant com fim definido) que recebeu ou pagou este valor; prefira um já usado" },
     pago_por: { type: "string", description: "só despesa: quem pagou com dinheiro PRÓPRIO e precisa ser reembolsado pelo Santuário (nome; \"eu\" = quem fala). Vazio = o Santuário pagou" },
   }, ["tipo", "valor", "categoria"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
@@ -398,6 +400,8 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
       previsao_caixa: (() => { const p = previsaoCaixa(getLancamentos(), getFixos(), hoje); return { saldo_hoje: p.hoje, em_30_dias: p.janelas[0], em_60_dias: p.janelas[1], primeiro_dia_negativo: p.negativo }; })(),
       // DRE of the same period (natureza of each category: Financeiro/naturezas.md)
       resultado_gerencial: (() => { const x = montarDRE(getLancamentos(), getNaturezas(), de, ate); return { receita_operacional: x.receita.total, custos_variaveis: x.variaveis.total, margem_contribuicao: x.margem, margem_pct: x.margemPct == null ? null : Math.round(x.margemPct * 100), despesas_fixas: x.fixas.total, resultado_operacional: x.operacional, nao_operacional: x.naoOperacional.total, resultado_periodo: x.resultado, investimentos: x.investimentos.total, receita_equilibrio: x.equilibrio }; })(),
+      recursos_com_destino: resumoRecursos(getLancamentos()),
+      conta_pessoal_cpf: contaPessoalNoPeriodo(getLancamentos(), getContas(), de, ate),
       reembolsos_a_fazer: getLancamentos().filter(aReembolsar).map((l) => ({ data: l.data, valor: l.valor, descricao: l.descricao || l.categoria, pessoa: getPessoas().find((p) => p.id === l.reembolsar)?.name.split(" (")[0] ?? l.reembolsar })),
       gastos_fixos: { custo_mensal: custoFixo(getFixos()), lista: getFixos().filter((f) => f.ativo).map((f) => ({ descricao: f.descricao, tipo: f.tipo, valor: f.valor, dia: f.dia, categoria: f.categoria })) },
     };
@@ -471,14 +475,17 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     const pp = tipo === "despesa" ? s(a.pago_por).trim() : "";
     const pagou = !pp ? undefined : /^(eu|mim|me)$/i.test(pp) ? me.pessoa : pessoasReembolso().find((p) => p.id === pp || n(p.name).includes(n(pp)));
     if (pp && !pagou) return { erro: `não achei "${pp}" na equipe para o reembolso; diga o nome como está em Pessoas` };
+    const unid = s(a.unidade) in UNIDADES ? s(a.unidade) : "";
+    const recInf = s(a.recurso).replace(/\s+/g, " ").slice(0, 80);
+    const recurso = getLancamentos().find((l) => l.recurso && n(l.recurso) === n(recInf))?.recurso ?? recInf;
     const valorTxt = valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     // the same entry twice (a re-proposal from an earlier message, or "sim" sent twice) is refused
     if (getLancamentos().some((l) => !l.anulado && l.data === data && l.tipo === tipo && l.valor === valor && n(l.descricao) === n(descricao)))
       return { erro: `já registrado: ${tipo === "entrada" ? "entrada" : "despesa"} de ${valorTxt} em ${dm(data)} (${descricao || categoria}). Não proponha de novo.` };
     return {
-      tipo: "registrar_lancamento", lancTipo: tipo, valor, data, categoria, descricao: descricao || undefined, evento: evento || undefined, participante: participante || undefined, pendente, projeto: pr?.id, conta: ct?.id, reembolsar: pagou?.id,
+      tipo: "registrar_lancamento", lancTipo: tipo, valor, data, categoria, descricao: descricao || undefined, evento: evento || undefined, participante: participante || undefined, pendente, projeto: pr?.id, conta: ct?.id, reembolsar: pagou?.id, unidade: unid || undefined, recurso: recurso || undefined,
       resumo: `${tipo === "entrada" ? "Entrada" : "Despesa"} ${valorTxt}: ${descricao || categoria}`,
-      detalhe: [dm(data), categoria, evento, participante, pendente && (tipo === "entrada" ? "a receber" : "a pagar"), pr?.nome, ct?.nome, pagou && `reembolsar ${pagou.name.split(" (")[0]}`].filter(Boolean).join(" · "),
+      detalhe: [dm(data), categoria, evento, participante, pendente && (tipo === "entrada" ? "a receber" : "a pagar"), pr?.nome, ct?.nome, pagou && `reembolsar ${pagou.name.split(" (")[0]}`, unid && UNIDADES[unid as keyof typeof UNIDADES], recurso && `recurso: ${recurso}`].filter(Boolean).join(" · "),
     };
   }
   if (nome === "registrar_conversa") {
@@ -609,7 +616,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
   if (v.tipo === "registrar_lancamento") {
     const via = quem.match(/\(via ([^)]+)\)/)?.[1] ?? "Pinu";
     const id = createLancamento({ tipo: v.lancTipo, valor: v.valor, data: v.data, categoria: v.categoria, descricao: v.descricao ?? "", projeto: v.projeto ?? "", equipe: "",
-      registradoPor: me.pessoa?.id ?? me.username, pendente: v.pendente, evento: v.evento, participante: v.participante, conta: v.conta, reembolsar: v.reembolsar, via: /assistente/i.test(via) ? "Pinu" : via });
+      registradoPor: me.pessoa?.id ?? me.username, pendente: v.pendente, evento: v.evento, participante: v.participante, conta: v.conta, reembolsar: v.reembolsar, unidade: v.unidade, recurso: v.recurso, via: /assistente/i.test(via) ? "Pinu" : via });
     // a receipt photo sent by WhatsApp waits for this entry (only for entries confirmed by WhatsApp, never by an MCP app)
     if (me.pessoa && /\(via (WhatsApp|assistente)\)/.test(quem)) {
       const { usarReciboPendente } = await import("./comprovantes");

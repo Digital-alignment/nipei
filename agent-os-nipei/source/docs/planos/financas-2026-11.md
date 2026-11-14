@@ -21,7 +21,9 @@ Para quem cuida das contas (ex.: Rodrigo) lançar e conciliar sem entrar na Equi
 - Onde: aba "Resultado" em `/financas` + seção no relatório mensal (o mesmo markdown vai ao Google Docs). Ponto de equilíbrio mensal = despesas fixas ÷ % de margem de contribuição.
 - Pinu: `financas_resumo` devolve o DRE do período.
 
-## Fase 3 — Separações (v2.92)
+## Fase 3 — Separações (v2.92) ✓
+
+> Feito em 14/11/2026: 1 (titular PJ/CPF da conta + aviso), 2 (unidade no lançamento, padrão da conta, DRE por unidade), 3 (recurso com destino + saldo) e 4 (natureza por lançamento). Ficaram para depois: 5 (campo único de centro de custo) e as regras "descrição contém X → categoria/unidade" aprendidas da importação; o Pinu já preenche unidade e recurso.
 
 O que hoje se mistura e atrapalha decidir:
 

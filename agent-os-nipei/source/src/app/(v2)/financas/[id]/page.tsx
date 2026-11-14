@@ -11,9 +11,10 @@ import LinhaDoTempo, { type ItemTempo } from "@/components/ds/padroes/LinhaDoTem
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
 import Upload from "@/components/v2/Upload";
-import { CATEGORIAS, aReembolsar, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, pessoasReembolso } from "@/lib/v2/data";
+import { CATEGORIAS, UNIDADES, aReembolsar, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, pessoasReembolso } from "@/lib/v2/data";
 import { BadgeEstado } from "@/components/ds/Chip";
 import { fmtDate, getT } from "@/lib/v2/i18n";
+import { NATUREZAS, getNaturezas } from "@/lib/v2/dre";
 import { anularLancamentoAction, comprovanteAction, editarLancamentoAction, reembolsarAction } from "../../actions";
 import { podeFinancas } from "@/lib/v2/funcoes";
 
@@ -34,6 +35,8 @@ export default async function LancamentoPage({ params, searchParams }: { params:
   const projetos = getProjetos(), equipes = getEquipes();
   const contasAtivas = getContas().filter((c) => c.ativa || c.id === l.conta);
   const eventos = [...new Set(todos.filter((x) => x.evento && !x.anulado).map((x) => x.evento))];
+  const recursos = [...new Set(todos.filter((x) => x.recurso && !x.anulado).map((x) => x.recurso))];
+  const natCat = getNaturezas()[l.categoria];
   const dia = (iso: string) => fmtDate(iso, lang);
   const pessoas = getPessoas();
   const quemCriou = pessoas.find((p) => p.id === l.registradoPor)?.name.split(" (")[0] ?? l.registradoPor;
@@ -125,6 +128,12 @@ export default async function LancamentoPage({ params, searchParams }: { params:
               <Campo tipo="selecao" name="equipe" rotulo={t.equipe} defaultValue={l.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
             </div>
             {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={l.conta}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
+            <div className="grid grid-cols-2 gap-3">
+              <Campo tipo="selecao" name="unidade" rotulo={t.unidadeLbl} defaultValue={l.unidade}><option value="">{t.unidadeDaConta}</option>{Object.entries(UNIDADES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Campo>
+              <Campo name="recurso" rotulo={t.recursoLbl} list="recursos-lanc" maxLength={80} placeholder={t.recursoEx} defaultValue={l.recurso} />
+            </div>
+            <datalist id="recursos-lanc">{recursos.map((r) => <option key={r} value={r} />)}</datalist>
+            <Campo tipo="selecao" name="natureza" rotulo={t.naturezaLanc} defaultValue={l.natureza}><option value="">{t.daCategoria}{natCat ? ` (${t.naturezas[natCat]})` : ""}</option>{NATUREZAS.map((n) => <option key={n} value={n}>{t.naturezas[n]}</option>)}</Campo>
             <Campo tipo="selecao" name="reembolsar" rotulo={t.pagoComDinheiroDe} defaultValue={l.reembolsar}><option value="">{t.santuarioPagou}</option>{pagadores.map((p) => <option key={p.id} value={p.id}>{p.name.split(" (")[0]}</option>)}</Campo>
             <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvarAlteracoes}</BotaoEnviar></div>
           </form>

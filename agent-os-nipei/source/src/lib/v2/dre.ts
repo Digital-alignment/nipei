@@ -37,7 +37,7 @@ export function salvarNaturezas(n: Record<string, Natureza>, por: string) {
   fs.writeFileSync(path.join(vault(), ARQ), noteText({ type: "naturezas_financeiras", ...campos, updated_at: new Date().toISOString() }, "# Natureza das categorias (DRE)"), "utf-8");
 }
 
-type L = Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "anulado" | "pendente">;
+type L = Pick<Lancamento, "data" | "tipo" | "valor" | "categoria" | "anulado" | "pendente"> & Partial<Pick<Lancamento, "natureza">>;
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export type Grupo = { total: number; categorias: { categoria: string; valor: number }[] };
@@ -50,7 +50,8 @@ export type DRE = {
 export function montarDRE(lanc: L[], nat: Record<string, Natureza>, de: string, ate: string): DRE {
   const ls = lanc.filter((l) => !l.anulado && l.data >= de && l.data <= ate);
   const pagos = ls.filter((l) => !l.pendente);
-  const natDe = (l: L): Natureza => nat[l.categoria] ?? NATUREZA_PADRAO[l.categoria] ?? (l.tipo === "entrada" ? "receita" : "fixa");
+  // the entry's own natureza wins (the roof repair that is an investment inside "Manutenção e obras")
+  const natDe = (l: L): Natureza => (valida(l.natureza) ? l.natureza : undefined) ?? nat[l.categoria] ?? NATUREZA_PADRAO[l.categoria] ?? (l.tipo === "entrada" ? "receita" : "fixa");
   const grupo = (f: (l: L) => boolean, sinal: (l: L) => number = () => 1): Grupo => {
     const m = new Map<string, number>();
     for (const l of pagos.filter(f)) m.set(l.categoria || "—", (m.get(l.categoria || "—") ?? 0) + sinal(l) * l.valor);
@@ -136,5 +137,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   const md = dreMarkdown(m);
   assert(md.includes("| **= Margem de contribuição** | **R$ 6.000,00** | **R$ 3.000,00** | **R$ 9.000,00** |") && md.includes("|   Alimentação | R$ 3.000,00 |"), "markdown");
   assert(montarDRE([L("2026-10-01", "despesa", 100, "Alimentação")], nat, "2026-10-01", "2026-10-31").margemPct === null, "sem receita, sem %");
+  const ov = montarDRE([{ ...L("2026-10-01", "despesa", 700, "Comunicação e internet"), natureza: "investimento" }, L("2026-10-02", "despesa", 50, "Comunicação e internet")], nat, "2026-10-01", "2026-10-31");
+  assert(ov.investimentos.total === 700 && ov.fixas.total === 50, "natureza do lançamento vence a da categoria");
   console.log(`dre: ${ok} ok`);
 }

@@ -11,8 +11,10 @@ import { BotaoIcone } from "@/components/ds/Botao";
 import Tabela, { Sparkline } from "@/components/ds/padroes/Tabela";
 import { BadgeEstado } from "@/components/ds/Chip";
 import { Interruptor } from "@/components/ds/Controles";
-import { CATEGORIAS, aReembolsar, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, pessoasReembolso, today } from "@/lib/v2/data";
+import { CATEGORIAS, UNIDADES, aReembolsar, emContaPessoal, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, pessoasReembolso, today } from "@/lib/v2/data";
 import { getOrcamentosEvento } from "@/lib/v2/orcamentoEvento";
+import { contaPessoalNoPeriodo, resumoRecursos } from "@/lib/v2/separacoes";
+import { fimDoMes } from "@/lib/v2/dre";
 import { norm } from "@/lib/v2/simulador";
 import { resumoContas } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
@@ -91,6 +93,8 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const reembolsos = Object.entries(todos.filter(aReembolsar).sort((a, b) => a.data.localeCompare(b.data)).reduce<Record<string, typeof todos>>((a, l) => ({ ...a, [l.reembolsar]: [...(a[l.reembolsar] ?? []), l] }), {}));
   const nomeCompleto = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? id;
   const orcamentos = getOrcamentosEvento();
+  const cpfMes = contaPessoalNoPeriodo(todos, contas, `${mes}-01`, fimDoMes(mes));
+  const recursos = resumoRecursos(todos);
 
   return (
     <>
@@ -130,6 +134,8 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         {/* o único destaque da tela: o saldo acumulado */}
         <Cartao variante="destaque"><span className="meta opacity-80">{t.saldoTotal}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl">{brl0(saldoTotal)}</span></Cartao>
       </div>
+
+      {cpfMes.n > 0 && <p className="meta -mt-3 mb-6 text-warn">{t.passouCPF} {brl(cpfMes.total)} {t.emLanc} {cpfMes.n} {cpfMes.n === 1 ? t.lancamentoMin : t.lancamentosMin}</p>}
 
       <Section title={t.previsaoCaixa}>
         {prev.negativo && <Aviso estado="atencao" className="mb-3" titulo={`${t.caixaNegativo} ${fmtDate(prev.negativo.data, lang)} (${brl0(prev.negativo.saldo)})`} />}
@@ -189,6 +195,11 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             <Campo tipo="selecao" name="equipe" rotulo={t.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
           </div>
           {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={""}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
+          <div className="grid grid-cols-2 gap-3">
+            <Campo tipo="selecao" name="unidade" rotulo={t.unidadeLbl} defaultValue=""><option value="">{t.unidadeDaConta}</option>{Object.entries(UNIDADES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</Campo>
+            <Campo name="recurso" rotulo={t.recursoLbl} list="recursos-fin" maxLength={80} placeholder={t.recursoEx} />
+          </div>
+          <datalist id="recursos-fin">{recursos.map((x) => <option key={x.recurso} value={x.recurso} />)}</datalist>
           <Campo tipo="selecao" name="reembolsar" rotulo={t.pagoComDinheiroDe} defaultValue="" ajuda={t.reembolsoExplica}><option value="">{t.santuarioPagou}</option>{pessoasReembolso().map((p) => <option key={p.id} value={p.id}>{p.name.split(" (")[0]}</option>)}</Campo>
           <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvar}</BotaoEnviar></div>
         </form>
@@ -228,6 +239,13 @@ export default async function Financas({ searchParams }: { searchParams: Promise
               </div>
             ))}
           </div>
+        </Section>
+      )}
+
+      {recursos.length > 0 && (
+        <Section title={t.recursosTitulo} count={recursos.length}>
+          <Tabela rotulo={t.recursosTitulo} colunas={[{ id: "r", rotulo: t.recursoLbl }, { id: "e", rotulo: t.recebidoLbl, numero: true }, { id: "u", rotulo: t.usadoLbl, numero: true }, { id: "s", rotulo: t.saldoRecurso, numero: true }]}
+            linhas={recursos.map((x) => ({ id: x.recurso, celulas: { r: x.recurso, e: brl0(x.recebido), u: brl0(x.usado), s: <span className={`font-semibold ${x.saldo < 0 ? "text-err" : "text-t1"}`}>{brl0(x.saldo)}</span> } }))} />
         </Section>
       )}
 
@@ -282,7 +300,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
-            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}{l.fixo && <BadgeEstado estado="interna">{t.fixoLbl}</BadgeEstado>}{aReembolsar(l) && <BadgeEstado estado="pendente">{t.aReembolsarLbl}</BadgeEstado>}</span>,
+            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}{l.fixo && <BadgeEstado estado="interna">{t.fixoLbl}</BadgeEstado>}{aReembolsar(l) && <BadgeEstado estado="pendente">{t.aReembolsarLbl}</BadgeEstado>}{emContaPessoal(l, contas) && <BadgeEstado estado="aviso">{t.contaPessoalBadge}</BadgeEstado>}</span>,
             ev: l.evento, conta: nomeConta(l.conta),
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,
