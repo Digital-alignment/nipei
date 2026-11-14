@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Cabeçalho do celular compacto e saudação mais baixa (10.10, 10.5.1)
+
+- `app/(v2)/layout.tsx`: abaixo de `md`, cabeçalho de uma linha — ícone do app (leva a Hoje) + lupa (`BotaoBuscaPinu`, abre o Pinu), sino e avatar; o campo "Pergunte ao Pinu ou busque…" só no computador. Decisão em DECISOES.md.
+- Hoje: no celular a data saiu da saudação para uma linha `meta` abaixo do nome.
+- `next.config.ts`: indicador de desenvolvimento do Next desligado (cobria a barra e depois o avatar).
+
 ## 2026-11-14 — Hoje: agenda de hoje em linha do tempo e foco de amanhã (10.5.1)
 
 - Agenda de hoje: lista hora · título (comunidade, reuniões fixas e Google), "Dia todo" primeiro, o próximo em acento, os que passaram em `t3`; os eventos de hoje saíram dos Chips.

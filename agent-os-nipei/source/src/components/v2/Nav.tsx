@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Selo, { type NomeSelo } from "@/components/ds/Selo";
 import Campo from "@/components/ds/Campo";
+import { BotaoIcone } from "@/components/ds/Botao";
 import { OrbePinu } from "@/components/ds/Pinu";
 import Tema from "@/components/ds/Tema";
 import { ABRIR_ASSISTENTE } from "./AssistenteGlobal";
@@ -226,6 +227,11 @@ export function PainelConta({ rotulos, perfilHref, idiomaAction, sairAction, men
       <form action={sairAction}><button className={linha}><Icone nome="voltar" tamanho={18} className="text-t2" />{rotulos.sair}</button></form>
     </div>
   );
+}
+
+/** Celular (DS 10.10): a lupa do cabeçalho compacto — abre o mesmo Pinu que o campo do computador. */
+export function BotaoBuscaPinu({ rotulo }: { rotulo: string }) {
+  return <BotaoIcone icone="buscar" aria-label={rotulo} tamanho={44} variante="fantasma" onClick={() => abrirPinu()} />;
 }
 
 /** Campo "Pergunte ao Pinu ou busque…" do cabeçalho: abre o Pinu com o texto (o microfone abre ouvindo). */

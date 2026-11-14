@@ -6,7 +6,7 @@ import Offline from "@/components/v2/Offline";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ehAdmin } from "@/lib/v2/admin";
-import Nav, { BuscaPinu, MenuCelular, PainelConta } from "@/components/v2/Nav";
+import Nav, { BotaoBuscaPinu, BuscaPinu, MenuCelular, PainelConta } from "@/components/v2/Nav";
 import AssistenteGlobal from "@/components/v2/AssistenteGlobal";
 import PulsoUso from "@/components/v2/PulsoUso";
 import Avatar from "@/components/ds/Avatar";
@@ -87,8 +87,14 @@ export default async function V2Layout({ children }: { children: React.ReactNode
         <Nav fechadoInicial={menuFechado} pinu={comAssistente && !user.vendoComo} conta={conta} contagens={contagens} extras={extras} rotulos={rotulosNav} />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="print:hidden flex items-center gap-2 px-4 pt-3 md:px-8 md:pt-4">
-            {comAssistente && !user.vendoComo && <BuscaPinu rotulo={t.perguntePinu} className="min-w-0 flex-1 md:max-w-[460px]" />}
+            {/* celular (DS 10.10): uma linha de 56 px — ícone do app à esquerda; à direita lupa (Pinu), sino e avatar. O campo grande só no computador. */}
+            <Link href="/hoje" aria-label={t.hoje} className="anel-foco shrink-0 rounded-[10px] md:hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element -- static app icon, 32 px */}
+              <img src="/icons/icon-192.png" alt="" width={32} height={32} className="size-8 rounded-[10px]" />
+            </Link>
+            {comAssistente && !user.vendoComo && <BuscaPinu rotulo={t.perguntePinu} className="hidden min-w-0 flex-1 md:block md:max-w-[460px]" />}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              {comAssistente && !user.vendoComo && <span className="md:hidden"><BotaoBuscaPinu rotulo={t.perguntePinu} /></span>}
               <span className="relative">
                 <BotaoIcone href="/hoje?aba=novidades" icone="notificacao" aria-label={t.notificacoes} tamanho={44} variante="fantasma" />
                 {novas > 0 && <Contagem valor={novas} rotulo={t.novidades} />}

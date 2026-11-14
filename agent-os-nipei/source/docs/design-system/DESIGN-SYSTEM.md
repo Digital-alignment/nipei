@@ -404,6 +404,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 
 ### 10.5.1 Foco de hoje e tarefa rápida (Hoje)
 - **Ordem de Hoje** (2026-11-14: as tarefas apareciam só depois de ~3 telas no celular): saudação + chips de pendências → Missão da semana (destaque) → Boas-vindas → faixa da semana → Foco de hoje → abas de tarefas → **depois** os cartões de configuração (Primeiros passos, Onde estou esta semana, Organizar equipes). "Organizar equipes" começa fechado (o resumo com a barra continua visível). Primeiros passos com 2 passos ou menos por fazer não vira cartão: cada passo que falta é um Chip nas pendências do cabeçalho (ícone `tarefa`). O campo do Pinu no fim da página saiu: o do cabeçalho (`BuscaPinu`) é o mesmo assistente.
+- **Saudação no celular**: só "Olá, <nome>." em `saudacao`; a data vai para uma linha `meta text-t3` logo abaixo (no computador continua em dois tons na mesma linha).
 - **Resumo do dia** (abaixo da saudação, `corpo text-t2`): uma linha com o que importa agora — "N atrasadas · N para hoje · N eventos hoje" (só as partes que não são zero; atrasadas em `text-err`); nada disso = "Nada pendente para hoje.".
 - **Pendências: no celular, até 3 Chips por grupo** e um Chip "+N" (sem ícone) que abre o resto ali mesmo (as linhas quebram, não rolam: o que passava da borda não se via). No computador aparecem todos, quebrando linha.
 - **Organizar equipes saiu de Hoje** (é trabalho de gestão, não do dia): em Hoje fica só um Chip "Organizar equipes N%" (ícone `pessoas`) em "Equipe e gestão" enquanto houver pendências; o Cartão com a barra de progresso, as contagens (sem equipe · equipes sem coordenação · sem função) e o Botão "Organizar" fica em `/pessoas`, abaixo do cabeçalho, só para a gestão e só sem filtro de equipe.
@@ -464,6 +465,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
   - Um só nível.
   - **Nunca sai da barra**: a altura de cada item (e de Configurações) é o token `--altura-item-menu` = `clamp(28px, 4.6dvh, 44px)` — 44 px em telas altas, encolhe com a altura da janela (zoom do navegador incluído) para caber até em 600 px.
   - Topo do conteúdo: campo **"Pergunte ao Pinu ou busque…"** (mini-anel + microfone) · notificações com contagem · avatar.
+  - **No celular** (abaixo de `md`): uma linha de 56 px — ícone do app (32 px, leva a Hoje) à esquerda; à direita três botões de ícone fantasma de 44 px: **buscar** (lupa; abre o Pinu, como o campo), notificações (com contagem) e avatar (configurações). Sem o campo: o orbe da barra de baixo já é a entrada do Pinu.
 - **Celular**: barra inferior flutuante em pílula (68 px) com **o orbe do Pinu no centro** (56 px num círculo de 76 px), ligado à pílula por **ponte líquida**; 2 itens de cada lado. Cada item = ícone 22 px dentro de um **indicador em pílula 56×32** + **rótulo de 12 px** embaixo. Ativo = indicador `ac-soft` com ícone `ac-text` e rótulo `t1` semibold; inativo = ícone `t2`, rótulo `t3`, sem fundo. Toque: `active:scale-95`. As outras seções ficam no painel do avatar. O "+" abre um menu radial com o fundo escurecido.
 
 ### 10.11 Pinu

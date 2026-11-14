@@ -254,10 +254,19 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     <>
       <header className="mb-5 grid gap-3">
         {/* saudação em dois tons (display fino) */}
-        <h1 className="saudacao">
-          <span className="text-t1">{t.ola}, {nome}.</span>{" "}
-          <span className="text-t3">{new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bahia" })}</span>
-        </h1>
+        {/* computador: nome + data em dois tons; celular: só o nome, a data numa linha pequena (DS 10.5.1) */}
+        {(() => {
+          const data = new Date().toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Bahia" });
+          return (
+            <div className="grid gap-0.5">
+              <h1 className="saudacao">
+                <span className="text-t1">{t.ola}, {nome}.</span>
+                <span className="hidden text-t3 md:inline"> {data}</span>
+              </h1>
+              <p className="meta text-t3 first-letter:uppercase md:hidden">{data}</p>
+            </div>
+          );
+        })()}
         {/* the day in one line: only the parts that are not zero */}
         {me && (() => {
           const nHoje = agora.length - atrasadas, nEv = eventosHoje.length + googleEvs.filter((e) => e.dia === hoje).length;
