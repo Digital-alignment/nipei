@@ -388,7 +388,8 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         <Num v={feitas30.length} label={t.feitas30} cor="text-ok" />
       </div>
       <AbasComPainel id="equipe" inicial={abasIds.includes(q.aba ?? "") ? q.aba : q.pessoa || q.area ? "tarefas" : undefined} abas={[
-        { id: "sobre", rotulo: t.eq.sobre, contagem: 0, conteudo: sobreAba },
+        // nothing written in Sobre: the tab goes last, so the team opens on Tarefas (DS 10.13)
+        ...(temSobre ? [{ id: "sobre", rotulo: t.eq.sobre, contagem: 0, conteudo: sobreAba }] : []),
         { id: "tarefas", rotulo: t.tarefasLbl, contagem: filtradas.length, alerta: atrasadas > 0, conteudo: tarefas },
         ...(gerir ? [{ id: "pedidos", rotulo: t.eq.pedidos, contagem: novos.length, alerta: novos.length > 0, conteudo: pedidosAba }] : []),
         { id: "procedimentos", rotulo: t.rot.procedimentos, contagem: procs.length, conteudo: procedimentosAba },
@@ -396,6 +397,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         { id: "objetivos", rotulo: t.objetivos, contagem: objetivos.length, conteudo: objetivosAba },
         // DS 10.19: id "sabemos" kept so the tab remembered on each device still opens
         { id: "sabemos", rotulo: t.ec.aba, contagem: paraRevisar || sabemos.length, alerta: paraRevisar > 0, conteudo: <ConhecimentoEquipe e={e} revisar={paraRevisar} sabemos={sabemos} lacunas={gerir ? lacunasEquipe(e) : []} t={t} /> },
+        ...(temSobre ? [] : [{ id: "sobre", rotulo: t.eq.sobre, contagem: 0, conteudo: sobreAba }]),
         ...(gerir ? [{ id: "config", rotulo: t.configuracao, contagem: 0, conteudo: config }] : []),
       ]} />
     </>

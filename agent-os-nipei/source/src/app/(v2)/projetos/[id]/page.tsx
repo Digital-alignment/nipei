@@ -20,6 +20,7 @@ import LoteBarra, { LoteToggle } from "@/components/v2/LoteBarra";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import Cartao from "@/components/ds/Cartao";
 import { BadgeEstado } from "@/components/ds/Chip";
+import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import { BADGE_RITMO, avanco, ritmo, rotuloAvanco } from "@/lib/v2/objetivos";
 import { PROJETO_SOBRE, podeVerProjeto, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
@@ -159,6 +160,9 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
     return href ? <Link href={href} className={`anel-foco ${cls} transition-colors hover:bg-s2`}>{c}</Link> : <div className={cls}>{c}</div>;
   };
   const longa = p.descricao.length > 220;
+  // the description often repeats the Objetivo word for word (DS 10.21)
+  const descricao = p.descricao.trim() === (p.sobre.objetivo ?? "").trim() ? "" : p.descricao;
+  const sobreCartoes = PROJETO_SOBRE.filter(([k]) => p.sobre[k]);
 
   return (
     <>
@@ -172,19 +176,26 @@ export default async function ProjetoDetalhe({ params, searchParams }: { params:
           <Botao href={`/tarefas/nova?projeto=${id}${q.equipe ? `&equipe=${q.equipe}` : ""}&back=/projetos/${id}`} icone="mais" folha>{t.novaTarefa}</Botao>
         </>}
         filtros={p.equipes.map((eid) => { const e = equipes.find((x) => x.id === eid); return e && <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} key={eid} href={`/equipes/${eid}`}>{e.nome}</ChipDS>; })} />
-      {p.descricao && (longa ? (
+      {descricao && (longa ? (
         <details className="-mt-3 mb-5 group">
-          <summary className="anel-foco corpo cursor-pointer list-none rounded-interno text-t2"><span className="line-clamp-2 group-open:hidden">{p.descricao}</span><span className="meta underline group-open:hidden">{t.lerMais}</span></summary>
-          <p className="corpo whitespace-pre-line text-t2">{p.descricao}</p>
+          <summary className="anel-foco corpo cursor-pointer list-none rounded-interno text-t2"><span className="line-clamp-2 group-open:hidden">{descricao}</span><span className="meta underline group-open:hidden">{t.lerMais}</span></summary>
+          <p className="corpo whitespace-pre-line text-t2">{descricao}</p>
         </details>
-      ) : <p className="corpo -mt-3 mb-5 text-t2">{p.descricao}</p>)}
+      ) : <p className="corpo -mt-3 mb-5 text-t2">{descricao}</p>)}
 
       {/* DS 10.21: what the project is for, before the numbers */}
-      {temSobre ? (
-        <div className="mb-4 grid gap-3 sm:grid-cols-3">
-          {PROJETO_SOBRE.filter(([k]) => p.sobre[k]).map(([k]) => <Cartao key={k}><p className="rotulo-maiusculo text-t3">{t.pj.secoes[k]}</p><p className="corpo whitespace-pre-line text-t1">{p.sobre[k]}</p></Cartao>)}
+      {temSobre ? (<>
+        {/* phone: one collapsed card, so the tabs stay near the top */}
+        <Cartao className="mb-4 sm:hidden">
+          <SecaoRecolhivel id="projeto-sobre" emCartao aberto={false} titulo={t.pj.sobre}
+            resumo={sobreCartoes[0] && <p className="corpo line-clamp-2 text-t2 group-open:hidden">{p.sobre[sobreCartoes[0][0]]}</p>}>
+            {sobreCartoes.map(([k]) => <div key={k}><p className="rotulo-maiusculo text-t3">{t.pj.secoes[k]}</p><p className="corpo whitespace-pre-line text-t1">{p.sobre[k]}</p></div>)}
+          </SecaoRecolhivel>
+        </Cartao>
+        <div className="mb-4 hidden gap-3 sm:grid sm:grid-cols-3">
+          {sobreCartoes.map(([k]) => <Cartao key={k}><p className="rotulo-maiusculo text-t3">{t.pj.secoes[k]}</p><p className="corpo whitespace-pre-line text-t1">{p.sobre[k]}</p></Cartao>)}
         </div>
-      ) : (
+      </>) : (
         <p className="meta mb-4 flex flex-wrap items-center gap-2 text-t2">{t.pj.semSobre}{editar && <Botao href={`/projetos/${id}/editar`} variante="fantasma" tamanho="P" icone="editar">{t.pj.escrever}</Botao>}</p>
       )}
       <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">

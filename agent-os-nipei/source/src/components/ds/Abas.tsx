@@ -73,7 +73,7 @@ export function AbasComPainel({ id, abas, inicial, pasta, rotulo }: { id: string
   const aba = abas.find((a) => a.id === atual) ?? abas[0];
   const base = `abas-${id}`;
   return (
-    <div className="mb-6 grid">
+    <div className="mb-6 grid grid-cols-1">
       <Abas itens={abas} ativa={aba?.id ?? ""} onChange={escolher} pasta={pasta} rotulo={rotulo} idBase={base} />
       <div role="tabpanel" id={`${base}-painel-${aba?.id}`} aria-labelledby={`${base}-aba-${aba?.id}`} tabIndex={0}
         className={`outline-none ${pasta ? "rounded-cartao bg-s2 p-4" : "pt-3"}`}>

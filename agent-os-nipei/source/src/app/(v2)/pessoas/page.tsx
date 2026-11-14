@@ -63,7 +63,7 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     const papel = p.funcao && p.funcao !== "Outro" ? p.funcao : p.area || p.funcao;
     const fone = !p.whatsapp ? { cor: "text-t3", t: t.semWhats } : p.whatsappVerificado ? { cor: "text-ok", t: t.whatsVerificado } : { cor: "text-warn", t: t.whatsNaoVerificado };
     return (
-      <li className="relative rounded-cartao bg-s1 p-4 transition-colors hover:bg-s2">
+      <li className="relative border-t border-s2 px-4 py-3 transition-colors first:border-t-0 hover:bg-s2 sm:rounded-cartao sm:border-t-0 sm:bg-s1 sm:p-4">
         {me.gestao && <input type="checkbox" name="ids" value={p.id} form="lote-pessoas" aria-label={p.name} className="lote-caixa absolute top-3 right-3 z-10 w-4 h-4 accent-ac" />}
         <Link href={`/pessoas/${p.id}`} className="flex items-center gap-3 after:absolute after:inset-0">
           <AvatarDS nome={p.name} foto={p.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined} tamanho={40} />
@@ -71,8 +71,15 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
             <p className="titulo-cartao truncate">{p.name}</p>
             <p className={`text-xs truncate ${papel ? "text-t2" : "text-t3 italic"}`}>{papel || t.funcaoNaoDefinida}</p>
           </div>
+          {/* phone: one dense row (DS 10.23) */}
+          <span className="meta flex shrink-0 items-center gap-2 tabular-nums sm:hidden [html[data-lote]_&]:hidden">
+            {n.atrasadas > 0 && <span className="text-err">{n.atrasadas}!</span>}
+            <span className="text-t2">{n.abertas}</span>
+            {p.suspenso ? <Icone nome="cadeado" tamanho={14} className="text-warn" aria-label={t.suspensoCurto} />
+              : me.gestao && (c < 4 || !acesso) && <span role="img" aria-label={t.faltaAlgo} title={t.faltaAlgo} className="size-2 rounded-pilula bg-warn" />}
+          </span>
         </Link>
-        <div className="mt-2.5 flex items-center gap-2 text-xs">
+        <div className="mt-2.5 hidden items-center gap-2 text-xs sm:flex">
           <span className="flex gap-1">{p.equipes.map((id) => { const k = chaveEquipe(id); const e = equipes.find((x) => x.id === id); return e && (k ? <Selo key={id} nome={EQUIPES_DS[k].selo} tamanho={16} aria-label={e.nome} style={{ color: EQUIPES_DS[k].cor }} /> : <span key={id} title={e.nome} className="size-2 rounded-pilula bg-s4" />); })}</span>
           <span className="text-t2 tabular-nums">{n.abertas} {n.abertas === 1 ? t.abertaLbl : t.abertasLbl}</span>
           {n.atrasadas > 0 && <span className="text-err tabular-nums">{n.atrasadas} {n.atrasadas === 1 ? t.atrasadaLbl : t.atrasadasLbl}</span>}
@@ -124,7 +131,13 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         {q.ordem && <input type="hidden" name="ordem" value={q.ordem} />}
         <Campo tipo="busca" name="q" rotulo={t.buscar} defaultValue={q.q} />
       </form>
-      {me.gestao && (
+      {me.gestao && (() => { const ativos = Number(ordem !== "nome") + Number(!!situacao); return (<>
+        {/* phone: sort and situation behind one "Filtros" chip, open by itself when one is active (DS 10.23) */}
+        <input type="checkbox" id="pessoas-filtros" className="peer sr-only" defaultChecked={ativos > 0} />
+        <label htmlFor="pessoas-filtros" className="anel-foco mb-3 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-pilula bg-s2 px-4 text-sm font-medium text-t1 peer-checked:bg-ac-soft peer-checked:text-ac-text peer-focus-visible:shadow-foco sm:hidden">
+          <Icone nome="filtrar" tamanho={16} />{t.filtrosLbl}{ativos > 0 && <span className="tabular-nums">· {ativos}</span>}
+        </label>
+        <div className="hidden peer-checked:block sm:block">
         <div className="-mx-4 mb-3 flex items-center gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
           <span className="rotulo-maiusculo shrink-0 text-t3">{t.ordenar}</span>
           {(["nome", "carga", "atrasadas", "participacao"] as const).map((o) => (
@@ -133,9 +146,6 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
             </ChipDS>
           ))}
         </div>
-      )}
-
-      {me.gestao && (
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto -mx-1 px-1 [&>*]:shrink-0 [&>*]:whitespace-nowrap">
             <ChipDS ativo={!situacao} href={link({ situacao: undefined })}>{t.todasSituacoes}</ChipDS>
@@ -143,9 +153,10 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
           </div>
           <LoteToggle formId="lote-pessoas" label={t.selecionarLbl} cancelar={t.cancelar} />
         </div>
-      )}
+        </div>
+      </>); })()}
       <h2 className="mb-3 flex items-center gap-2"><span className="titulo-secao">{t.membros}</span><span className="rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2">{ativas.length}</span></h2>
-      <ul className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{ativas.map((p) => <Cartao key={p.id} p={p} />)}</ul>
+      <ul className="mb-6 grid grid-cols-1 overflow-hidden rounded-cartao bg-s1 sm:gap-3 sm:overflow-visible sm:rounded-none sm:bg-transparent sm:grid-cols-2 xl:grid-cols-3">{ativas.map((p) => <Cartao key={p.id} p={p} />)}</ul>
       {me.gestao && <CadastroLote formId="lote-pessoas" labels={{ selecionadas: t.selecionadas, todas: t.selecionarTodas, limpar: t.limparSelecao, enviar: t.enviarCadastroLote, resultado: t.resultadoCadastroLote, aviso: t.avisoCadastroLote }} />}
 
       {gerenciaveis.length > 0 && (

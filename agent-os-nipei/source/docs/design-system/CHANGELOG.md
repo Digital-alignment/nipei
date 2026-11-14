@@ -2,6 +2,13 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Projeto, Pessoas e Equipe no celular (10.13, 10.21, 10.23)
+
+- Projeto: a descrição igual ao Objetivo não se repete; no celular o Sobre é um Cartão recolhível "Sobre o projeto" (fechado, Objetivo em 2 linhas). As abas do Santuário passaram do px 1005 ao 731 a 390 px.
+- Pessoas: no celular, linhas de lista de ~64 px num só Cartão (abertas, atrasadas e ponto âmbar de "falta algo" à direita) e Chip "Filtros" com ordenar/situação (abre sozinho com filtro ativo). 36 pessoas: de 5.118 para 3.313 px. Computador sem mudança.
+- Equipe: sem Sobre escrito, a aba Sobre vai para o fim e a equipe abre em Tarefas.
+- `AbasComPainel`: grade `grid-cols-1` — um painel com uma linha larga (chips de filtro) esticava além da tela e cortava os chips.
+
 ## 2026-11-14 — Finanças: primeiros passos (10.25)
 
 - `/financas`: Cartão "Primeiros passos de Finanças" (`SecaoRecolhivel` em cartão + `BarraProgresso`) com 4 passos que se marcam sozinhos (contas, gastos fixos, orçamento do ano, primeiro extrato conciliado), aviso dos lançamentos de teste e "O que reunir antes"; some quando os 4 estão feitos.

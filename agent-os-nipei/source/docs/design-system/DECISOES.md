@@ -816,3 +816,10 @@ Pedido do Ashuan ("mais moderna, mais elegante"), com captura do celular. Proble
 
 Pedido do Ashuan com captura do celular. No celular havia duas entradas para o Pinu (o campo grande "Pergunte ao Pinu ou busque…" de 56 px no topo e o orbe da barra de baixo, que abrem o mesmo painel) e a saudação em display ocupava duas linhas: ~250 px sem nada acionável antes das pendências. Decisão: abaixo de `md`, o cabeçalho vira uma linha de 56 px — ícone do app à esquerda (leva a Hoje) e, à direita, três botões de ícone de 44 px: buscar (lupa: abre o Pinu, o mesmo do campo), notificações e avatar. O orbe da barra continua sendo a entrada principal ao Pinu no celular. No computador o campo continua. Em Hoje, no celular, a data sai da saudação e vai para uma linha `meta` logo abaixo do nome (no computador continua em dois tons na mesma linha).
 
+## 2026-11-14 — Projeto, Pessoas e Equipe no celular (§10.13, §10.21, §10.23)
+
+Revisão a 390 px pedida pelo Ashuan ("Los tres"). Na ficha do projeto as abas começavam no px 1005: a descrição repetia o texto do Objetivo e os três Cartões do Sobre vinham antes dos números. Em `/pessoas` 36 pessoas ocupavam 5.118 px (Cartões de ~140 px) e três linhas de filtros empurravam a lista para o px 681. A equipe sem Sobre escrito abria num Estado vazio.
+
+- Projeto: descrição igual ao Objetivo não aparece; no celular o Sobre vira um Cartão recolhível "Sobre o projeto" (fechado, com as 2 primeiras linhas do Objetivo como resumo). No computador nada muda.
+- Pessoas: no celular cada pessoa é uma linha de lista (~64 px) num só Cartão: Avatar 40, nome + papel, abertas/atrasadas à direita e um ponto âmbar quando falta algo (gestão: ficha incompleta ou sem acesso; cadeado se suspensa). Ordenar e situação ficam atrás de um Chip "Filtros" (abre sozinho com um filtro ativo). A partir de `sm`, os Cartões de antes.
+- Equipe: sem Sobre escrito, a aba Sobre vai para o fim e a equipe abre em Tarefas (a memória da aba continua valendo).
