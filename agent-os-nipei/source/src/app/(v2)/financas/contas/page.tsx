@@ -12,6 +12,7 @@ import { currentUser, getContas, getLancamentos, today } from "@/lib/v2/data";
 import { TIPOS_CONTA, resumoContas } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { contaAtivaAction, salvarContaAction } from "../../actions";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Contas (DS 10.25, gestão): bank, cash, Pix — balance of each and the way into the reconciliation.
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ const valorBR = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits
 
 export default async function Contas({ searchParams }: { searchParams: Promise<{ editar?: string; ok?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t, lang } = await getT();
   const hoje = today();

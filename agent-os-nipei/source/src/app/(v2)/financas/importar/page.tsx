@@ -15,6 +15,7 @@ import { saldoConta } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { conciliar, getPrevia, importaveis } from "@/lib/v2/importarFinancas";
 import { cancelarImportacaoAction, importarPlanilhaAction, lerPlanilhaAction } from "../../actions";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Finanças → Importar planilha / extrato (DS 10.25, gestão): step 1 upload a CSV; step 2 preview what the server read
 // (nothing is written until "Importar"). With an account (?conta=), the preview reconciles the statement with the
@@ -25,7 +26,7 @@ const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", curren
 
 export default async function ImportarFinancas({ searchParams }: { searchParams: Promise<{ conta?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const { t, lang } = await getT();
   const q = await searchParams;
   const contasAtivas = getContas().filter((c) => c.ativa);

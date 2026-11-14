@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-13 — Finanças: acesso por pessoa e "Contador · em breve" (10.25)
+
+- Interruptor "Finanças" em `/controle → Funções`; o item Finanças do menu segue a mesma regra.
+- Cabeçalho de `/financas`: Botão fantasma M `desativado` "Contador · em breve" (sem ação).
+
 ## 2026-11-13 — Finanças: orçamento por evento e reembolsos (10.25)
 
 - `/financas/evento?e=`: CabecalhoPagina com o nome do evento; sem orçamento, Aviso `info` com "Criar no simulador"; com orçamento, Tabela "Orçado × realizado" (diferença verde/vermelha, Aviso `atencao` quando o resultado previsto fica abaixo) + "Editar no simulador"; Tabelas de despesas por categoria e de participantes. O nome do evento em "Por evento" de `/financas` abre esta página; coluna "Orçado" com BadgeEstado.

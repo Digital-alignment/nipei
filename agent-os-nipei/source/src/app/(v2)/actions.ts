@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { LANG_COOKIE, getT } from "@/lib/v2/i18n";
+import { podeFinancas } from "@/lib/v2/funcoes";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { chaveTrecho, corrigirFato, criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, responderComFatos, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
@@ -784,7 +785,7 @@ export async function aplicarIAAction(form: FormData) {
 
 export async function createLancamentoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
   const valor = Math.abs(numBR(String(form.get("valor") ?? "")));
   const data = String(form.get("data") ?? "");
@@ -807,7 +808,7 @@ export async function createLancamentoAction(form: FormData) {
 
 export async function anularLancamentoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   anularLancamento(String(form.get("id")), me.pessoa?.id ?? me.username, actorName(me));
   revalidatePath("/financas", "layout");
 }
@@ -815,7 +816,7 @@ export async function anularLancamentoAction(form: FormData) {
 /** Ficha do lançamento (DS 10.25): only what changed is written, each change goes to "## Alterações". */
 export async function editarLancamentoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const id = String(form.get("id") ?? "");
   const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
   const valor = Math.abs(numBR(String(form.get("valor") ?? "")));
@@ -843,7 +844,7 @@ export async function editarLancamentoAction(form: FormData) {
 // ---- Contas (DS 10.25)
 export async function salvarContaAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const { salvarConta, TIPOS_CONTA } = await import("@/lib/v2/contas");
   const nome = String(form.get("nome") ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
   const saldo = numBR(String(form.get("saldo") ?? "0") || "0");
@@ -859,7 +860,7 @@ export async function salvarContaAction(form: FormData) {
 
 export async function contaAtivaAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const { setContaAtiva } = await import("@/lib/v2/contas");
   await tentar(async () => setContaAtiva(String(form.get("id") ?? ""), form.get("ativa") === "1"));
   revalidatePath("/financas", "layout");
@@ -868,7 +869,7 @@ export async function contaAtivaAction(form: FormData) {
 // ---- Gastos fixos (DS 10.25)
 export async function salvarFixoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const tipo = form.get("tipo") === "entrada" ? "entrada" : "despesa";
   const valor = Math.abs(numBR(String(form.get("valor") ?? "")));
   const dia = Math.trunc(Number(form.get("dia")));
@@ -892,7 +893,7 @@ export async function salvarFixoAction(form: FormData) {
 
 export async function fixoAtivoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const { setFixoAtivo, gerarFixos } = await import("@/lib/v2/fixos");
   const ativo = form.get("ativo") === "1";
   await tentar(async () => { setFixoAtivo(String(form.get("id") ?? ""), ativo); if (ativo) gerarFixos(true); });
@@ -901,7 +902,7 @@ export async function fixoAtivoAction(form: FormData) {
 
 export async function comprovanteAction(form: FormData): Promise<{ error?: string }> {
   const me = await requireUser();
-  if (!me.gestao) return { error: "Só a gestão" };
+  if (!podeFinancas(me)) return { error: "Sem acesso a Finanças" };
   const f = form.get("arquivo"), id = String(form.get("id") ?? "");
   if (!(f instanceof File) || !f.size) return { error: "Escolha um arquivo" };
   try {
@@ -916,7 +917,7 @@ export async function comprovanteAction(form: FormData): Promise<{ error?: strin
 // ---- Importar planilha (DS 10.25): upload → preview in .jobs → confirm → entries with `importacao`
 export async function lerPlanilhaAction(form: FormData): Promise<{ error?: string }> {
   const me = await requireUser();
-  if (!me.gestao) return { error: "Só a gestão importa finanças" };
+  if (!podeFinancas(me)) return { error: "Sem acesso a Finanças" };
   const f = form.get("arquivo");
   if (!(f instanceof File) || !f.size) return { error: "Escolha um arquivo" };
   if (/\.(xlsx?|ods|numbers)$/i.test(f.name)) return { error: "Salve a planilha como CSV (Sheets: Arquivo → Fazer download → CSV; Excel: Salvar como → CSV) e envie de novo." };
@@ -933,7 +934,7 @@ export async function lerPlanilhaAction(form: FormData): Promise<{ error?: strin
 
 export async function importarPlanilhaAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const quem = me.pessoa?.id ?? me.username, p = getPrevia(quem);
   if (!p) redirect("/financas/importar");
   const projeto = pick(form.get("projeto"), getProjetos().map((x) => x.id));
@@ -970,14 +971,14 @@ export async function importarPlanilhaAction(form: FormData) {
 
 export async function cancelarImportacaoAction() {
   const me = await requireUser();
-  if (me.gestao) apagarPrevia(me.pessoa?.id ?? me.username);
+  if (podeFinancas(me)) apagarPrevia(me.pessoa?.id ?? me.username);
   redirect("/financas/importar");
 }
 
 /** Undo = void every entry of that import (entries are never deleted from the app). */
 export async function desfazerImportacaoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const id = String(form.get("importacao") ?? "");
   const ls = id ? getLancamentos().filter((l) => l.importacao === id && !l.anulado) : [];
   for (const l of ls) anularLancamento(l.id, me.pessoa?.id ?? me.username, actorName(me));
@@ -988,7 +989,7 @@ export async function desfazerImportacaoAction(form: FormData) {
 /** Simulator → event budget (DS 10.25): the numbers on screen, one budget per event (saving again replaces it). */
 export async function salvarOrcamentoEventoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   const num = (k: string) => { const v = numBR(String(form.get(k) ?? "") || "0"); return Number.isFinite(v) ? Math.max(0, v) : 0; };
   const d = { evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80), participantes: Math.round(num("n")), preco: num("preco"), fixo: num("fixo"), porPessoa: num("pp"), rateio: num("rateio"), margem: Math.min(90, num("margem")) / 100 };
   const { t } = await getT();
@@ -1003,14 +1004,14 @@ export async function salvarOrcamentoEventoAction(form: FormData) {
 /** Reimbursement paid back (DS 10.25); from the ficha (with the account it left from) or the /financas list. */
 export async function reembolsarAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   await tentar(async () => reembolsarLancamento(String(form.get("id") ?? ""), contaDe(form), me.pessoa?.id ?? me.username, actorName(me)));
   revalidatePath("/financas", "layout");
 }
 
 export async function quitarLancamentoAction(form: FormData) {
   const me = await requireUser();
-  if (!me.gestao) return;
+  if (!podeFinancas(me)) return;
   quitarLancamento(String(form.get("id")), me.pessoa?.id ?? me.username, actorName(me));
   revalidatePath("/financas", "layout");
   revalidatePath("/diagnosticos", "layout");
@@ -1850,12 +1851,12 @@ export async function exportarGoogleAction(form: FormData) {
       const md = `# Reunião · ${e.nome} · ${a.data}\n\nAta por ${a.por}. Presentes: ${a.presentes.map(nome).join(", ") || "-"}\n\n## Decisões\n\n${a.decisoes || "-"}\n\n## Encaminhamentos\n\n${a.encaminhamentos.map((x) => `- ${x.texto}`).join("\n") || "-"}\n`;
       link = (await g.salvarArquivo(pessoaId, { nome: `Reunião ${e.nome} · ${a.data}`, conteudo: md, tipo: "text/markdown", converter: true })).link;
     } else if (tipo === "relatorio") {
-      if (!me.gestao) throw new Error("Só a gestão exporta as finanças");
+      if (!podeFinancas(me)) throw new Error("Sem acesso a Finanças");
       if (!/^\d{4}-\d{2}$/.test(id)) throw new Error("Mês inválido");
       const { relatorioMensal, nomeMes } = await import("@/lib/v2/relatorioFinancas");
       link = (await g.salvarArquivo(pessoaId, { nome: `Relatório financeiro · ${nomeMes(id)}`, conteudo: relatorioMensal(id), tipo: "text/markdown", converter: true })).link;
     } else if (tipo === "financas") {
-      if (!me.gestao) throw new Error("Só a gestão exporta as finanças");
+      if (!podeFinancas(me)) throw new Error("Sem acesso a Finanças");
       const { getLancamentos } = await import("@/lib/v2/data");
       const cel = (x: unknown) => `"${String(x ?? "").replace(/"/g, '""')}"`;
       const linhas = getLancamentos().filter((l) => !l.anulado).sort((a, b) => a.data.localeCompare(b.data))

@@ -25,6 +25,7 @@ import { ToastAoAbrir } from "@/components/ds/Toast";
 import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
 import ExportarGoogle from "@/components/v2/ExportarGoogle";
 import { anularLancamentoAction, createLancamentoAction, desfazerImportacaoAction, quitarLancamentoAction, reembolsarAction } from "../actions";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // KPIs: whole reais, so the number never gets cut in 2 columns (cents stay in the list)
@@ -46,7 +47,7 @@ function Bar({ label, value, max, cls }: { label: string; value: number; max: nu
 
 export default async function Financas({ searchParams }: { searchParams: Promise<{ m?: string; ok?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t, lang } = await getT();
   const hoje = today();
@@ -94,7 +95,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   return (
     <>
       <CabecalhoPagina selo="semente" rotulo={t.gestaoLbl} titulo={t.financas}
-        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/contas" icone="abrir" variante="fantasma" tamanho="M">{t.contas}</Botao><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="M">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /></div>} />
+        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/contas" icone="abrir" variante="fantasma" tamanho="M">{t.contas}</Botao><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="M">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /><Botao desativado icone="baixar" type="button" variante="fantasma" tamanho="M">{t.exportarContador}</Botao></div>} />
       <ToastAoAbrir texto={q.ok} />
       {importacoes.length > 0 && (
         <ul className="mb-4 grid gap-1">

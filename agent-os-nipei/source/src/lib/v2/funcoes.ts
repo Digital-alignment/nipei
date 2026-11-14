@@ -14,6 +14,8 @@ export const FUNCOES = {
   whatsapp_conhecimento: { nome: "Enviar ao Conhecimento pelo WhatsApp", descricao: "Mandar ou encaminhar textos, áudios, fotos e PDFs ao número do Nipëi para virar fonte do Conhecimento (passa pela revisão).", padrao: (me: Me) => !!me.pessoa?.whatsappVerificado, regra: "membros com WhatsApp verificado" },
   gmail: { nome: "Gmail no assistente", descricao: "Ler, buscar e enviar e-mails pelo assistente (precisa ativar o Gmail em Conexões).", padrao: (me: Me) => me.gestao, regra: "Equipe 1", soGestao: true },
   mcp: { nome: "Apps de IA (Claude, Gemini…)", descricao: "Usar o Nipëi de dentro de outros apps de IA.", padrao: () => true, regra: "todos" },
+  // granted from the panel only, with no notice to the person (plano financas-2026-11, fase 1)
+  financas: { nome: "Finanças", descricao: "Ver e lançar em Finanças: lançamentos, comprovantes, contas e conciliação, gastos fixos, importar, relatório, simulador e eventos. Ligar para alguém fora da Equipe 1 não avisa a pessoa.", padrao: (me: Me) => me.gestao, regra: "Equipe 1" },
 } satisfies Record<string, { nome: string; descricao: string; padrao: (me: Me) => boolean; regra: string; soGestao?: boolean }>;
 export type FuncaoId = keyof typeof FUNCOES;
 export type ConfigFuncoes = Partial<Record<FuncaoId, { desligada?: boolean; pessoas?: Record<string, boolean> }>>;
@@ -24,6 +26,9 @@ export function salvarFuncoes(c: ConfigFuncoes) {
   fs.mkdirSync(path.dirname(ARQ()), { recursive: true });
   fs.writeFileSync(ARQ(), JSON.stringify(c, null, 2), { encoding: "utf-8", mode: 0o600 });
 }
+
+/** The one rule for every Finanças page, route and action. */
+export const podeFinancas = (me: Me | null | undefined) => funcaoLigada("financas", me);
 
 export function funcaoLigada(id: FuncaoId, me: Me | null | undefined): boolean {
   if (!me) return false;

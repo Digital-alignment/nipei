@@ -23,7 +23,7 @@ import { gerarFixos } from "@/lib/v2/fixos";
 import { vigiarSaude } from "@/lib/v2/alertas";
 import { getT } from "@/lib/v2/i18n";
 import { logoutAction, toggleLangAction } from "./actions";
-import { funcaoLigada } from "@/lib/v2/funcoes";
+import { funcaoLigada, podeFinancas } from "@/lib/v2/funcoes";
 import ProvedorAvisos from "@/components/ds/ProvedorAvisos";
 import Aviso from "@/components/ds/Aviso";
 import Botao from "@/components/ds/Botao";
@@ -63,7 +63,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
   const rotulosNav = { hoje: t.hoje, tarefas: t.tarefasTitulo, agenda: t.agenda, projetos: t.projetos, objetivos: t.objetivos, equipes: t.equipes, pessoas: t.pessoas, conhecimento: t.conhecimento, acervo: t.acervo,
     financas: t.financas, painel: t.painelLbl, principal: t.grupoPrincipal, equipe: t.grupoEquipe, gestao: t.grupoGestao, recolher: t.recolherMenu, expandir: t.expandirMenu,
     configuracoes: t.configuracoesLbl, falarPinu: t.falarPinu, novidade: t.novidadeLbl };
-  const extras = { financas: user.gestao, painel: ehAdmin(user) };
+  const extras = { financas: podeFinancas(user), painel: ehAdmin(user) };
   const conta = <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction} rotulos={rotulosConta} />;
   // celular: o avatar abre o menu completo (o que não cabe na barra de baixo) + as configurações
   const contaCel = <PainelConta perfilHref={perfilHref} idiomaAction={toggleLangAction} sairAction={logoutAction} rotulos={rotulosConta}

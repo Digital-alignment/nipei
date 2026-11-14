@@ -12,6 +12,7 @@ import { CATEGORIAS, currentUser, getContas, getProjetos, today } from "@/lib/v2
 import { custoFixo, getFixos } from "@/lib/v2/fixos";
 import { getT } from "@/lib/v2/i18n";
 import { fixoAtivoAction, salvarFixoAction } from "../../actions";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Gastos fixos (DS 10.25, gestão): fixed monthly costs (or incomes) that become a pending entry every month.
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ const valorBR = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits
 
 export default async function GastosFixos({ searchParams }: { searchParams: Promise<{ editar?: string; ok?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t } = await getT();
   const fixos = getFixos(), projetos = getProjetos();

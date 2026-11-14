@@ -15,6 +15,7 @@ import { CATEGORIAS, aReembolsar, currentUser, getContas, getEquipes, getLancame
 import { BadgeEstado } from "@/components/ds/Chip";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { anularLancamentoAction, comprovanteAction, editarLancamentoAction, reembolsarAction } from "../../actions";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Ficha do lançamento (DS 10.25, gestão): comprovante, editar (each change goes to the history), histórico, anular.
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ const valorBR = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits
 
 export default async function LancamentoPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const [{ id }, q] = await Promise.all([params, searchParams]);
   const todos = getLancamentos();
   const l = todos.find((x) => x.id === id);

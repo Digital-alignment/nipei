@@ -7,6 +7,7 @@ import Md from "@/components/v2/Md";
 import { currentUser, today } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 import { nomeMes, relatorioMensal } from "@/lib/v2/relatorioFinancas";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Relatório mensal (DS 10.25, gestão): the month in markdown — printable to PDF and exportable to Google Docs (same text).
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ const addMes = (ym: string, n: number) => { const [y, m] = ym.split("-").map(Num
 
 export default async function Relatorio({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t } = await getT();
   const mes = /^\d{4}-\d{2}$/.test(q.m ?? "") ? q.m! : today().slice(0, 7);

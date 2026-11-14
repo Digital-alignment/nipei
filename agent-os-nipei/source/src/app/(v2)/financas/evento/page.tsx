@@ -9,6 +9,7 @@ import { currentUser, getLancamentos } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { norm } from "@/lib/v2/simulador";
 import { compararEvento, orcamentoDoEvento, realDoEvento } from "@/lib/v2/orcamentoEvento";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Evento financeiro (DS 10.25, gestão): budget × actual (when the simulator saved one), costs by category, participants.
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ const mais = (v: number) => (v > 0 ? `+${brl0(v)}` : brl0(v));
 
 export default async function EventoFinanceiro({ searchParams }: { searchParams: Promise<{ e?: string; ok?: string }> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t, lang } = await getT();
   const lanc = getLancamentos();

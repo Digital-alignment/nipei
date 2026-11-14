@@ -15,6 +15,7 @@ import { numBR } from "@/lib/v2/importarFinancas";
 import { baseDoEvento, simular } from "@/lib/v2/simulador";
 import { orcamentoDoEvento } from "@/lib/v2/orcamentoEvento";
 import { salvarOrcamentoEventoAction } from "../../actions";
+import { podeFinancas } from "@/lib/v2/funcoes";
 
 // Simulador de preço por retiro (DS 10.25, gestão). GET form: every simulation is a link, nothing is saved.
 // The base event lives in its own form so changing it refills the numbers instead of keeping the typed ones.
@@ -28,7 +29,7 @@ type Q = { base?: string; evento?: string; n?: string; preco?: string; fixo?: st
 
 export default async function Simulador({ searchParams }: { searchParams: Promise<Q> }) {
   const me = (await currentUser())!;
-  if (!me.gestao) redirect("/hoje");
+  if (!podeFinancas(me)) redirect("/hoje");
   const q = await searchParams;
   const { t, lang } = await getT();
   const lanc = getLancamentos();
