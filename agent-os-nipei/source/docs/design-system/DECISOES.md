@@ -823,3 +823,13 @@ Revisão a 390 px pedida pelo Ashuan ("Los tres"). Na ficha do projeto as abas c
 - Projeto: descrição igual ao Objetivo não aparece; no celular o Sobre vira um Cartão recolhível "Sobre o projeto" (fechado, com as 2 primeiras linhas do Objetivo como resumo). No computador nada muda.
 - Pessoas: no celular cada pessoa é uma linha de lista (~64 px) num só Cartão: Avatar 40, nome + papel, abertas/atrasadas à direita e um ponto âmbar quando falta algo (gestão: ficha incompleta ou sem acesso; cadeado se suspensa). Ordenar e situação ficam atrás de um Chip "Filtros" (abre sozinho com um filtro ativo). A partir de `sm`, os Cartões de antes.
 - Equipe: sem Sobre escrito, a aba Sobre vai para o fim e a equipe abre em Tarefas (a memória da aba continua valendo).
+
+## 2026-11-14 — Tarefa, Conhecimento, Acervo e Pinu no celular (§9.x pasta, §10.1, §10.11)
+
+Revisão a 390 px aprovada pelo Ashuan ("Los cuatro").
+
+- Pinu: o balão da pessoa mostrava as dicas internas do comprovante pelo WhatsApp ("[anexou um comprovante…]", "[lido do comprovante pela IA…]"). Elas continuam indo ao modelo, mas o balão mostra só o que a pessoa escreveu + "(comprovante anexado)".
+- Ficha da tarefa: Descrição e Checklist primeiro; o bloco da IA e "Fazer por mim" depois. Link de anexo atrás de "+ Link", ao lado de Arquivo e Foto. Abas pasta sem ícone e mais estreitas no celular (a terceira aba era cortada). Título longo (> 40 caracteres) menor no celular.
+- Cabeçalho de página: subtítulo longo (intro de Conhecimento e Acervo) numa linha no celular com "Saiba mais"; no computador inteiro.
+- Conhecimento: em "Enviar", só Arquivo/Foto à vista; link e texto atrás de "Colar link ou texto".
+- Acervo: uma só entrada para adicionar (o Botão do cabeçalho abre o formulário; a linha "Adicionar ao acervo" não aparece fechada); no celular projeto/ano/ordem atrás do Chip "Filtros", como em Pessoas.

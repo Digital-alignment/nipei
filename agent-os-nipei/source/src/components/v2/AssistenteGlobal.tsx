@@ -22,11 +22,14 @@ type Labels = {
   nova: string; pensando: string; fechar: string; intro: string; abrir: string; semVoz: string;
   memoria: string; memoriaIntro: string; memoriaVazia: string; esquecer: string; categorias: Record<Lembranca["categoria"], string>;
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
-  oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
+  comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
+// hints that travel with a WhatsApp receipt for the model only (whatsappEntrada.ts): never in the person's balloon (DS 10.11)
+const DICA_INTERNA = /\n?\[(?:anexou um comprovante|lido do comprovante pela IA)[^\]]*\]/g;
+const semDicas = (s: string) => s.replace(DICA_INTERNA, "").trim();
 const CHAVE_RECENTES = "nipei:pinu:recentes"; // últimas perguntas neste aparelho (início do Pinu)
 const SILENCIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
 
@@ -344,7 +347,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
               {msgs === null && <div className="grid gap-2"><Skeleton largura="70%" /><Skeleton largura="40%" /></div>}
               {msgs?.map((m, mi) => m.role === "user" ? (
                 // a pessoa: balão tonal à direita
-                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{m.content}</p>
+                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{semDicas(m.content)}{/\[anexou um comprovante/.test(m.content) && <span className="meta mt-1 block text-t2">({labels.comprovanteAnexado})</span>}</p>
               ) : (
                 <div key={mi} className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 font-display text-sm font-semibold">
@@ -398,7 +401,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                     // ações da resposta: gerar outra · editar (a pergunta) · ⋯ (ouvir, copiar)
                     <div className="-ml-2 flex items-center gap-0.5 text-t3">
                       {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="gerar-outra" aria-label={labels.gerarOutra} tamanho={40} variante="fantasma" disabled={pending} onClick={() => enviar(ultimaPergunta)} />}
-                      {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="editar" aria-label={labels.editarPergunta} tamanho={40} variante="fantasma" onClick={() => { setTexto(ultimaPergunta); setTimeout(() => campo.current?.focus(), 30); }} />}
+                      {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="editar" aria-label={labels.editarPergunta} tamanho={40} variante="fantasma" onClick={() => { setTexto(semDicas(ultimaPergunta)); setTimeout(() => campo.current?.focus(), 30); }} />}
                       <MenuAcoes rotulo={labels.maisOpcoes} alinhar="esquerda" itens={[
                         falando === mi
                           ? { icone: "fechar", rotulo: labels.parar, onSelect: pararFala }

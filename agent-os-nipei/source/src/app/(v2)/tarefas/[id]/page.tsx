@@ -97,37 +97,6 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
 
   const detalhes = (
     <div className="grid gap-7">
-      {can.usarIA(me, tarefa) && (
-        <IAPanel id={id} propor={proporIAAction} aplicar={aplicarIAAction} labels={{
-          titulo: t.iaTitulo, detalhar: t.iaDetalhar, proximo: t.iaProximo, atualizar: t.iaAtualizar, pensando: t.iaPensando,
-          aplicar: t.confirmarLbl, descartar: t.cancelar, novaDescricao: t.iaNovaDescricao, adicionarChecklist: t.iaAdicionar,
-          concluirChecklist: t.iaConcluir, proximoPasso: t.iaProximoPasso, mudarStatus: t.iaStatus, mudarPrazo: t.iaPrazo,
-          fontes: t.iaFontes, nada: t.iaNada, aviso: t.iaAviso, proposta: t.propostaLbl, ajustar: t.ajustarLbl, status: { todo: t.aFazer, doing: t.fazendo, done: t.feito },
-        }} />
-      )}
-
-      {/* T3: Hermes does the work in the background */}
-      {can.usarIA(me, tarefa) && (() => {
-        const jobs = emAndamento(id);
-        return jobs.length ? (
-          <p className={`${POCO} meta flex items-center gap-2 p-3 text-t2`} aria-live="polite">
-            <span aria-hidden="true" className="arco-girando size-4" />{t.hermesTrabalhando} · {t.pedidoPor} {jobs[0].pedidoPorNome} · {new Date(jobs[0].criado).toLocaleTimeString(lang === "en" ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })}
-          </p>
-        ) : (
-          <details className={`${POCO} group p-3`}>
-            <summary className="anel-foco flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno font-texto text-[15px] font-semibold">
-              <Icone nome="gerar-outra" tamanho={18} className="text-ac-text" />{t.fazerPorMim}
-              <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
-            </summary>
-            <form action={fazerPorMimAction} className="mt-3 grid gap-2">
-              <input type="hidden" name="id" value={id} />
-              <Campo tipo="area" name="instrucao" rotulo={t.fazerPorMim} rows={3} maxLength={1000} placeholder={t.fazerInstrucao} ajuda={t.fazerAviso} />
-              <div><BotaoEnviar enviando="…" icone="enviar" variante="tonal" tamanho="P">{t.fazerPorMim}</BotaoEnviar></div>
-            </form>
-          </details>
-        );
-      })()}
-
       <Bloco titulo={t.descricaoTitulo}>
         {doc.descricao ? <Md>{doc.descricao}</Md> : <p className="corpo text-t3">{t.semDescricao}</p>}
         {doc.descricao && paraConhecimento("descricao", doc.descricao)}
@@ -178,6 +147,37 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
         </ul>
       </Bloco>
 
+      {can.usarIA(me, tarefa) && (
+        <IAPanel id={id} propor={proporIAAction} aplicar={aplicarIAAction} labels={{
+          titulo: t.iaTitulo, detalhar: t.iaDetalhar, proximo: t.iaProximo, atualizar: t.iaAtualizar, pensando: t.iaPensando,
+          aplicar: t.confirmarLbl, descartar: t.cancelar, novaDescricao: t.iaNovaDescricao, adicionarChecklist: t.iaAdicionar,
+          concluirChecklist: t.iaConcluir, proximoPasso: t.iaProximoPasso, mudarStatus: t.iaStatus, mudarPrazo: t.iaPrazo,
+          fontes: t.iaFontes, nada: t.iaNada, aviso: t.iaAviso, proposta: t.propostaLbl, ajustar: t.ajustarLbl, status: { todo: t.aFazer, doing: t.fazendo, done: t.feito },
+        }} />
+      )}
+
+      {/* T3: Hermes does the work in the background */}
+      {can.usarIA(me, tarefa) && (() => {
+        const jobs = emAndamento(id);
+        return jobs.length ? (
+          <p className={`${POCO} meta flex items-center gap-2 p-3 text-t2`} aria-live="polite">
+            <span aria-hidden="true" className="arco-girando size-4" />{t.hermesTrabalhando} · {t.pedidoPor} {jobs[0].pedidoPorNome} · {new Date(jobs[0].criado).toLocaleTimeString(lang === "en" ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })}
+          </p>
+        ) : (
+          <details className={`${POCO} group p-3`}>
+            <summary className="anel-foco flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-interno font-texto text-[15px] font-semibold">
+              <Icone nome="gerar-outra" tamanho={18} className="text-ac-text" />{t.fazerPorMim}
+              <Icone nome="abrir" tamanho={18} className="ml-auto text-t3 transition-transform group-open:rotate-180" />
+            </summary>
+            <form action={fazerPorMimAction} className="mt-3 grid gap-2">
+              <input type="hidden" name="id" value={id} />
+              <Campo tipo="area" name="instrucao" rotulo={t.fazerPorMim} rows={3} maxLength={1000} placeholder={t.fazerInstrucao} ajuda={t.fazerAviso} />
+              <div><BotaoEnviar enviando="…" icone="enviar" variante="tonal" tamanho="P">{t.fazerPorMim}</BotaoEnviar></div>
+            </form>
+          </details>
+        );
+      })()}
+
       <Bloco titulo={t.anexos} extra={anexos.length > 0 && <span className="rounded-pilula bg-s3 px-2 text-xs tabular-nums text-t2">{anexos.length}</span>}>
         {anexos.length === 0 && <p className="corpo text-t3">{t.semAnexos}</p>}
         {anexos.length > 0 && (
@@ -209,12 +209,16 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
           <div className="grid gap-3">
             <Upload id={id} action={uploadAction} accept={Object.keys(ANEXO_TIPOS).map((e) => `.${e}`).join(",")}
               labels={{ arquivo: t.arquivo, foto: t.foto, enviando: t.enviando, maximo: t.maximo }} />
-            <form action={linkAction} className="grid gap-2 sm:grid-cols-[1fr_12rem_auto] sm:items-start">
-              <input type="hidden" name="id" value={id} />
-              <Campo name="url" inputMode="url" required rotulo="Link" placeholder="https://…" className="bg-s1!" />
-              <Campo name="titulo" maxLength={150} rotulo={t.tituloLink} className="bg-s1!" />
-              <BotaoEnviar enviando="…" icone="mais" variante="tonal" tamanho="P" className="sm:mt-1.5">{t.adicionarLink}</BotaoEnviar>
-            </form>
+            {/* the link fields only when asked for (DS 9: abas pasta, aba Detalhes) */}
+            <details className="group">
+              <summary className="anel-foco inline-flex h-10 cursor-pointer list-none items-center gap-2 rounded-pilula bg-s3 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s4 group-open:bg-s4 [&::-webkit-details-marker]:hidden"><Icone nome="mais" tamanho={16} />Link</summary>
+              <form action={linkAction} className="mt-2 grid gap-2 sm:grid-cols-[1fr_12rem_auto] sm:items-start">
+                <input type="hidden" name="id" value={id} />
+                <Campo name="url" inputMode="url" required rotulo="Link" placeholder="https://…" className="bg-s1!" />
+                <Campo name="titulo" maxLength={150} rotulo={t.tituloLink} className="bg-s1!" />
+                <BotaoEnviar enviando="…" icone="mais" variante="tonal" tamanho="P" className="sm:mt-1.5">{t.adicionarLink}</BotaoEnviar>
+              </form>
+            </details>
             <p className="meta text-t3">{t.maximo}</p>
           </div>
         )}

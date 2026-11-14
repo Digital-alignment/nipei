@@ -58,6 +58,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
   const itens = semTipo.filter((i) => !q.tipo || i.tipo === q.tipo)
     .sort(ordem === "az" ? (a, b) => a.titulo.localeCompare(b.titulo, "pt") : ordem === "recentes" ? (a, b) => b.adicionadoEm.localeCompare(a.adicionadoEm) : () => 0);
   const filtrando = !!(q.tipo || q.projeto || q.ano || busca || ordem !== "ano");
+  const nFiltros = Number(!!q.projeto) + Number(!!q.ano) + Number(ordem !== "ano");
   const anos = [...new Set(todos.map((i) => i.ano).filter(Boolean))].sort().reverse();
   const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? (id === "claude-code" ? "migração" : id);
   const link = (p: Record<string, string | undefined>) => {
@@ -119,7 +120,7 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
 
   return (
     <>
-      <CabecalhoPagina selo="quadrados" rotulo={`${todos.length} ${t.itensN}`} titulo={t.acervo} subtitulo={t.acervoIntro}
+      <CabecalhoPagina selo="quadrados" rotulo={`${todos.length} ${t.itensN}`} titulo={t.acervo} subtitulo={t.acervoIntro} saibaMais={t.lerMais}
         abas={abas}
         acoes={podeAdicionar && <BotaoSecao id="novo" className="anel-foco forma-folha inline-flex h-14 items-center gap-2 bg-ac px-6 font-texto text-base font-semibold text-ac-ink hover:brightness-[.94]"><Icone nome="mais" tamanho={22} />{t.adicionar}</BotaoSecao>}
         filtros={<>
@@ -132,21 +133,31 @@ export default async function Acervo({ searchParams }: { searchParams: Promise<{
         </>} />
       <ToastAoAbrir texto={q.erro ? undefined : q.ok} />
 
+      {/* one way in: the header button opens this; closed, the row is not shown (DS 2026-11-14) */}
       {podeAdicionar && (
-        <Recolhivel id="novo" titulo={t.novoItem} aberto={todos.length === 0}>
-          <AcervoForm action={createAcervoAction} tipos={tiposOpc} projetos={projetos} labels={{ ...labels, salvar: t.adicionar }} />
-        </Recolhivel>
+        <div className="[&>details:not([open])]:hidden">
+          <Recolhivel id="novo" titulo={t.novoItem} aberto={todos.length === 0}>
+            <AcervoForm action={createAcervoAction} tipos={tiposOpc} projetos={projetos} labels={{ ...labels, salvar: t.adicionar }} />
+          </Recolhivel>
+        </div>
       )}
 
       {/* busca + filtros (10.2): os seletores aplicam-se sozinhos */}
       <FiltroAuto className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-[minmax(0,1fr)_repeat(3,11rem)]">
         {q.tipo && <input type="hidden" name="tipo" value={q.tipo} />}
         <div className="col-span-2 md:col-span-1"><Campo tipo="busca" name="q" rotulo={t.buscar} defaultValue={q.q} /></div>
+        {/* phone: project, year and order behind one "Filtros" chip (DS 10.2), open by itself when one is active */}
+        <input type="checkbox" id="acervo-filtros" className="peer sr-only" defaultChecked={nFiltros > 0} />
+        <label htmlFor="acervo-filtros" className="anel-foco col-span-2 inline-flex min-h-11 cursor-pointer items-center gap-2 justify-self-start rounded-pilula bg-s2 px-4 text-sm font-medium text-t1 peer-checked:bg-ac-soft peer-checked:text-ac-text peer-focus-visible:shadow-foco md:hidden">
+          <Icone nome="filtrar" tamanho={16} />{t.filtrosLbl}{nFiltros > 0 && <span className="tabular-nums">· {nFiltros}</span>}
+        </label>
+        <div className="col-span-2 hidden grid-cols-2 gap-2 peer-checked:grid md:contents">
         <Campo tipo="selecao" name="projeto" rotulo={t.projeto} defaultValue={q.projeto ?? ""}><option value="">{t.todosProjetos}</option>{projetos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</Campo>
         <Campo tipo="selecao" name="ano" rotulo={t.ano} defaultValue={q.ano ?? ""}><option value="">{t.todosAnos}</option>{anos.map((a) => <option key={a} value={a}>{a}</option>)}</Campo>
         <div className="col-span-2 md:col-span-1"><Campo tipo="selecao" name="ordem" rotulo={t.ordenar} defaultValue={ordem}>
           <option value="ano">{t.ordemAno}</option><option value="recentes">{t.ordemRecentes}</option><option value="az">{t.ordemAz}</option>
         </Campo></div>
+        </div>
       </FiltroAuto>
       {filtrando && <p className="meta mb-3 tabular-nums text-t2">{itens.length} {t.itensN}</p>}
 

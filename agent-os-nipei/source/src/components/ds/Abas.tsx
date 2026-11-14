@@ -26,17 +26,17 @@ export default function Abas({ itens, ativa, onChange, pasta, rotulo = "Abas", i
   };
   return (
     <div ref={lista} role="tablist" aria-label={rotulo} onKeyDown={teclas}
-      className={pasta ? "flex gap-1 overflow-x-auto px-5" : "inline-flex max-w-full gap-0.5 overflow-x-auto rounded-pilula bg-s1 p-1"}>
+      className={pasta ? "flex gap-1 overflow-x-auto px-3 sm:px-5" : "inline-flex max-w-full gap-0.5 overflow-x-auto rounded-pilula bg-s1 p-1"}>
       {itens.map((a) => {
         const on = a.id === ativa;
         const forma = pasta
-          ? `rounded-t-[18px] px-4 pb-3.5 pt-3 ${on ? "bg-s2 text-t1" : "text-t3 hover:text-t2"}`
+          ? `rounded-t-[18px] px-3 pb-3.5 pt-3 sm:px-4 ${on ? "bg-s2 text-t1" : "text-t3 hover:text-t2"}`
           : `rounded-pilula px-4 ${on ? "bg-s3 text-t1" : "text-t3 hover:bg-s2 hover:text-t2"}`;
         return (
           <button key={a.id} type="button" role="tab" id={`${base}-aba-${a.id}`} aria-selected={on} aria-controls={`${base}-painel-${a.id}`} tabIndex={on ? 0 : -1}
             onClick={() => onChange(a.id)}
             className={`anel-foco relative inline-flex min-h-11 shrink-0 items-center gap-2 font-texto text-[15px] font-medium transition-colors duration-150 ${forma}`}>
-            {a.icone && <Icone nome={a.icone} tamanho={18} className={on ? "text-ac-text" : undefined} />}
+            {a.icone && <Icone nome={a.icone} tamanho={18} className={`${pasta ? "hidden sm:block" : ""} ${on ? "text-ac-text" : ""}`} />}
             {a.rotulo}
             {a.contagem != null && a.contagem > 0 && (
               <span className={`rounded-pilula px-1.5 text-xs tabular-nums ${a.alerta ? "bg-err-bg text-err" : on ? "bg-s2 text-t2" : "bg-s2 text-t3"}`}>{a.contagem}</span>

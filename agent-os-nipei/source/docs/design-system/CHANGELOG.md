@@ -2,6 +2,14 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Tarefa, Conhecimento, Acervo e Pinu no celular (abas pasta, 10.1, 10.2, 10.11)
+
+- Pinu: o balão da pessoa não mostra mais as dicas internas do comprovante do WhatsApp; aparece "(comprovante anexado)". As dicas continuam indo ao modelo.
+- Ficha da tarefa: Descrição e Checklist antes da IA e do "Fazer por mim"; link de anexo atrás de "+ Link"; abas pasta sem ícone e mais estreitas no celular (Atividade não é mais cortada).
+- `CabecalhoPagina`: título com mais de 40 caracteres em 28 px no celular / 40 px no computador (`.titulo-pagina.longo`); `saibaMais` deixa o subtítulo em uma linha no celular com "ver mais" (Conhecimento, Acervo).
+- Conhecimento: "Enviar" mostra só Arquivo/Foto; link e texto atrás de "Colar link ou texto". O Botão do Mapa ("Organizar fatos por projeto") não sai mais da tela.
+- Acervo: uma só entrada para adicionar (a linha "Adicionar ao acervo" só aparece aberta, pelo Botão do cabeçalho); no celular projeto/ano/ordem atrás do Chip "Filtros".
+
 ## 2026-11-14 — Projeto, Pessoas e Equipe no celular (10.13, 10.21, 10.23)
 
 - Projeto: a descrição igual ao Objetivo não se repete; no celular o Sobre é um Cartão recolhível "Sobre o projeto" (fechado, Objetivo em 2 linhas). As abas do Santuário passaram do px 1005 ao 731 a 390 px.

@@ -57,7 +57,7 @@ export default async function Conhecimento({ searchParams }: { searchParams: Pro
   return (
     <>
       <AutoRefresh ativo={fontes.some((f) => f.status === "processando")} />
-      <CabecalhoPagina selo="espiral" rotulo={`${fatos.length} ${t.fatos.toLowerCase()} · ${fontes.length} ${t.fontesMin}`} titulo={t.conhecimento} subtitulo={t.conhecimentoIntro} />
+      <CabecalhoPagina selo="espiral" rotulo={`${fatos.length} ${t.fatos.toLowerCase()} · ${fontes.length} ${t.fontesMin}`} titulo={t.conhecimento} subtitulo={t.conhecimentoIntro} saibaMais={t.lerMais} />
 
       <section aria-label={t.perguntarBase} className="mb-6 grid gap-3">
         <form action="/conhecimento">

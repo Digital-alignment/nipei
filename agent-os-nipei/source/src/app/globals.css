@@ -723,8 +723,10 @@ html[data-lote] .v2 .lote-caixa { display: block; }
 .v2 .rotulo-campo    { font-family: var(--fonte-texto); font-weight: 500; font-size: 12px; line-height: 1.3; }
 .v2 .meta            { font-family: var(--fonte-texto); font-weight: 500; font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .v2 .rotulo-maiusculo { font-family: var(--fonte-display); font-weight: 500; font-size: 12px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; }
+.v2 .titulo-pagina.longo { font-size: 28px; } /* > 40 characters (DS 10.1) */
 @media (min-width: 1024px) {
   .v2 .titulo-pagina   { font-size: 60px; }
+  .v2 .titulo-pagina.longo { font-size: 40px; }
   .v2 .saudacao        { font-size: 40px; }
   .v2 .numero-display  { font-size: 58px; }
   .v2 .titulo-secao    { font-size: 20px; }

@@ -344,7 +344,7 @@ Um só componente que mistura três ideias:
 - ativa = pílula `superfície 3`, ícone em acento e **ponto de acento** embaixo (sem brilho);
 - contagem em pílula.
 
-Variante **pasta**: quando a aba controla o painel logo abaixo, a ativa **se funde ao painel** (cantos invertidos). Uso: fichas (Tarefa: Detalhes / Comentários / Atividade).
+Variante **pasta**: quando a aba controla o painel logo abaixo, a ativa **se funde ao painel** (cantos invertidos). Uso: fichas (Tarefa: Detalhes / Comentários / Atividade). No celular as abas pasta ficam sem ícone e com 12 px de respiro lateral, para três abas caberem em 390 px. **Aba Detalhes da tarefa**, nesta ordem: Descrição · Checklist · IA (proposta do Pinu + "Fazer por mim") · Anexos (Arquivo, Foto e "+ Link", que abre os campos do link) · Origem.
 
 ### 9.12 Seção recolhível
 Título de seção + contagem + ▼ (`abrir`, gira 180° quando aberta). Lembra o estado. Mesmo ritmo de `titulo-secao`.
@@ -381,7 +381,8 @@ Um item pode ser um link (`href`), uma função do navegador (`onSelect`) ou uma
 ### 10.1 Cabeçalho de página
 - Rótulo pequeno com selo (equipe ou contexto).
 - **Título `titulo-pagina` (Outfit 700)**.
-- Subtítulo com contagens ("24 abertas · 3 atrasadas · 7 com você").
+- Subtítulo com contagens ("24 abertas · 3 atrasadas · 7 com você"). Subtítulo longo (texto de apresentação da página): no celular uma linha + "Saiba mais" (abre o resto); no computador inteiro.
+- Título com mais de 40 caracteres (ex.: título de tarefa): 28 px no celular e 40 px no computador, em vez de 40/60.
 - À direita: busca (botão de ícone) + **ação principal em folha**. No celular as ações ocupam uma linha inteira abaixo do título (`w-full`), para um campo poder crescer.
 - Embaixo: abas de vista + chips de filtro.
 
@@ -476,6 +477,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 - **Celular**: barra inferior flutuante em pílula (68 px) com **o orbe do Pinu no centro** (56 px num círculo de 76 px), ligado à pílula por **ponte líquida**; 2 itens de cada lado. Cada item = ícone 22 px dentro de um **indicador em pílula 56×32** + **rótulo de 12 px** embaixo. Ativo = indicador `ac-soft` com ícone `ac-text` e rótulo `t1` semibold; inativo = ícone `t2`, rótulo `t3`, sem fundo. Toque: `active:scale-95`. As outras seções ficam no painel do avatar. O "+" abre um menu radial com o fundo escurecido.
 
 ### 10.11 Pinu
+- **Balão da pessoa = só o que ela escreveu.** Dicas internas que acompanham a mensagem para o modelo (comprovante anexado, dados lidos do comprovante) não aparecem; no lugar, "(comprovante anexado)" em `meta`.
 - **Orbe**: forma orgânica com gradiente `#042608 → #2A5C0B → #808F12 → #C3D14A`, brilho leve, 4 estados (seção 8). **Mini-anel** = avatar do Pinu em mensagens, campos e chips.
 - **Início**:
   - fundo com gradiente verde/oliva vindo do topo;

@@ -1,6 +1,7 @@
 import Upload from "@/components/v2/Upload";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Campo from "@/components/ds/Campo";
+import Icone from "@/components/ds/Icone";
 import { enviarFonteAction, enviarFonteArquivoAction } from "../../actions";
 import type { Ctx } from "./index";
 
@@ -13,14 +14,18 @@ export default function Enviar({ ctx: { t } }: { ctx: Ctx }) {
           labels={{ arquivo: t.enviarArquivoFonte, foto: t.foto, enviando: t.enviando, maximo: t.maximo }} />
         <p className="meta text-t3">{t.formatosFonte}</p>
       </div>
-      <form action={enviarFonteAction} className="grid gap-2">
-        <Campo name="url" inputMode="url" rotulo="Link" placeholder={t.ouColeLink} />
-        <Campo tipo="area" name="texto" rotulo={t.ouColeTexto} rows={3} maxLength={100000} />
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-          <Campo name="titulo" rotulo={t.tituloOpcional} maxLength={150} />
-          <BotaoEnviar enviando="…" icone="enviar" variante="primario">{t.enviar}</BotaoEnviar>
-        </div>
-      </form>
+      {/* link and text only when asked for (DS 10.19 note, 2026-11-14) */}
+      <details className="group">
+        <summary className="anel-foco inline-flex h-10 cursor-pointer list-none items-center gap-2 rounded-pilula bg-s2 px-4 font-texto text-sm font-semibold text-t1 hover:bg-s3 group-open:bg-s3 [&::-webkit-details-marker]:hidden"><Icone nome="mais" tamanho={16} />{t.colarLinkTexto}</summary>
+        <form action={enviarFonteAction} className="mt-3 grid gap-2">
+          <Campo name="url" inputMode="url" rotulo="Link" placeholder={t.ouColeLink} />
+          <Campo tipo="area" name="texto" rotulo={t.ouColeTexto} rows={3} maxLength={100000} />
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+            <Campo name="titulo" rotulo={t.tituloOpcional} maxLength={150} />
+            <BotaoEnviar enviando="…" icone="enviar" variante="primario">{t.enviar}</BotaoEnviar>
+          </div>
+        </form>
+      </details>
     </div>
   );
 }

@@ -6,16 +6,26 @@ import Selo, { type NomeSelo } from "./Selo";
  * subtítulo com contagens · à direita as ações (busca + ação principal em folha) · embaixo abas e chips de filtro
  * (os chips rolam na horizontal no celular).
  */
-export default function CabecalhoPagina({ rotulo, selo, titulo, subtitulo, acoes, abas, filtros }: {
+export default function CabecalhoPagina({ rotulo, selo, titulo, subtitulo, saibaMais, acoes, abas, filtros }: {
   rotulo?: ReactNode; selo?: NomeSelo; titulo: ReactNode; subtitulo?: ReactNode; acoes?: ReactNode; abas?: ReactNode; filtros?: ReactNode;
+  /** label of "read more": the subtitle shows one line on phones and opens on tap (long page intros) */
+  saibaMais?: string;
 }) {
+  const longo = typeof titulo === "string" && titulo.length > 40;
   return (
     <header className="mb-6 grid grid-cols-[minmax(0,1fr)] gap-4">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="grid min-w-0 gap-1.5">
           {(rotulo || selo) && <p className="rotulo-maiusculo flex items-center gap-2 text-t2">{selo && <Selo nome={selo} tamanho={18} />}{rotulo}</p>}
-          <h1 className="titulo-pagina text-t1">{titulo}</h1>
-          {subtitulo && <div className="corpo text-t2">{subtitulo}</div>}
+          <h1 className={`titulo-pagina text-t1 ${longo ? "longo" : ""}`}>{titulo}</h1>
+          {subtitulo && (saibaMais ? (
+            <details className="group corpo text-t2">
+              <summary className="anel-foco cursor-pointer list-none rounded-interno md:pointer-events-none [&::-webkit-details-marker]:hidden">
+                <span className="line-clamp-1 group-open:line-clamp-none md:line-clamp-none">{subtitulo}</span>
+                <span className="meta underline group-open:hidden md:hidden">{saibaMais}</span>
+              </summary>
+            </details>
+          ) : <div className="corpo text-t2">{subtitulo}</div>)}
         </div>
         {/* actions wrap under the title on narrow screens instead of being cut off (html clips the overflow) */}
         {acoes && <div className="flex w-full min-w-0 max-w-full flex-wrap items-center gap-2 md:w-auto">{acoes}</div>}
