@@ -35,7 +35,9 @@ O que hoje se mistura e atrapalha decidir:
 
 Eficiência: valores padrão por conta (titular e unidade vêm da conta escolhida), regras "descrição contém X → categoria/unidade" aprendidas da importação, e o Pinu preenche titular/unidade pelo que a pessoa disse.
 
-## Fase 4 — Orçamento anual por categoria (v2.93)
+## Fase 4 — Orçamento anual por categoria (v2.93) ✓
+
+> Feito em 14/11/2026: orçamento por ano e unidade, valor anual por categoria com os meses em que cai (sazonal), orçado × realizado por categoria e mês, previsão de fim de ano, alerta de 90% (página, `/financas`, relatório, Pinu) e "Começar a partir do ano anterior" com reajuste (usa o orçamento anterior ou o realizado). Ficaram para depois: revisão no meio do ano guardando a versão original, somar os orçamentos de evento no mês do evento, cenários e alerta de 90% por WhatsApp.
 
 - Orçamento do ano por categoria (e por unidade de negócio, da fase 3), dividido por mês (igual ou com sazonalidade: meses de retiro).
 - Orçado × realizado mês a mês e acumulado; previsão de fim de ano (realizado + orçado dos meses que faltam); alerta quando uma categoria passa de 90% do orçado do ano.

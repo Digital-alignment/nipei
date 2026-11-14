@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Finanças: orçamento anual (10.25)
+
+- `/financas/orcamento?a=&u=`: chips por unidade, Aviso de 90%, 3 Cartões `kpi` (receitas, despesas, previsão do fim do ano), Tabelas "Por categoria" (BadgeEstado `aviso` 90%) e "Mês a mês", `<details>` "Editar orçamento" (valor no ano + chips de marcar dos meses) e "Começar a partir de <ano−1>" (reajuste + `EnviarComConfirmacao`). Em `/financas`: Botão "Orçamento anual" e `meta text-warn` das categorias acima de 90%.
+
 ## 2026-11-14 — Finanças: separações (titular PJ/CPF, unidade, recurso com destino, natureza do lançamento) (10.25)
 
 - Contas: Campos "Titular" e "Unidade padrão"; BadgeEstado `aviso` "CPF de X" na tabela.

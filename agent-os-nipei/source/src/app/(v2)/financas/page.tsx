@@ -15,6 +15,7 @@ import { CATEGORIAS, UNIDADES, aReembolsar, emContaPessoal, currentUser, getCont
 import { getOrcamentosEvento } from "@/lib/v2/orcamentoEvento";
 import { contaPessoalNoPeriodo, resumoRecursos } from "@/lib/v2/separacoes";
 import { fimDoMes } from "@/lib/v2/dre";
+import { compararAnual, getOrcamentoAnual } from "@/lib/v2/orcamentoAnual";
 import { norm } from "@/lib/v2/simulador";
 import { resumoContas } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
@@ -95,6 +96,8 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const orcamentos = getOrcamentosEvento();
   const cpfMes = contaPessoalNoPeriodo(todos, contas, `${mes}-01`, fimDoMes(mes));
   const recursos = resumoRecursos(todos);
+  // categories above 90% of this year's budget (general budget)
+  const alertasOrc = compararAnual(getOrcamentoAnual(hoje.slice(0, 4))?.linhas ?? [], todos, hoje.slice(0, 4), hoje).alertas;
 
   return (
     <>
@@ -117,7 +120,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, -1)}`} />
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
-          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="M">{t.resultadoLbl}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="M">{t.relatorioMes}</Botao>
+          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="M">{t.resultadoLbl}</Botao><Botao href={`/financas/orcamento?a=${mes.slice(0, 4)}`} icone="calendario" variante="fantasma" tamanho="M">{t.orcamentoAnual}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="M">{t.relatorioMes}</Botao>
         </div>
         <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, 1)}`} />
       </div>
@@ -135,6 +138,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         <Cartao variante="destaque"><span className="meta opacity-80">{t.saldoTotal}</span><span className="font-display text-2xl font-extralight leading-none tabular-nums md:text-3xl">{brl0(saldoTotal)}</span></Cartao>
       </div>
 
+      {alertasOrc.length > 0 && <p className="meta -mt-3 mb-6 text-warn"><Link href={`/financas/orcamento?a=${hoje.slice(0, 4)}`} className="anel-foco rounded-interno underline">{alertasOrc.length} {alertasOrc.length === 1 ? t.catPassou90 : t.catsPassaram90}</Link>: {alertasOrc.join(", ")}</p>}
       {cpfMes.n > 0 && <p className="meta -mt-3 mb-6 text-warn">{t.passouCPF} {brl(cpfMes.total)} {t.emLanc} {cpfMes.n} {cpfMes.n === 1 ? t.lancamentoMin : t.lancamentosMin}</p>}
 
       <Section title={t.previsaoCaixa}>

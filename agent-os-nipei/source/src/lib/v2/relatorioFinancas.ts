@@ -2,6 +2,7 @@ import { getContas, getLancamentos, getPessoas, getProjetos, today, type Conta, 
 import { getFixos, previsaoCaixa, type Fixo } from "./fixos";
 import { saldoConta } from "./contas";
 import { contaPessoalNoPeriodo, resumoRecursos } from "./separacoes";
+import { compararAnual, getOrcamentoAnual, type LinhaOrc } from "./orcamentoAnual";
 import { dreMarkdown, dreMes, getNaturezas, NATUREZA_PADRAO, type Natureza } from "./dre";
 
 // Relatório mensal (DS 10.25): one markdown for the page (printable to PDF) and for Google Docs — the same text,
@@ -16,7 +17,7 @@ const fimMes = (ym: string) => new Date(Date.UTC(Number(ym.slice(0, 4)), Number(
 const cel = (v: string) => v.replace(/\|/g, "/").replace(/\r?\n/g, " ");
 const variacao = (atual: number, antes: number) => (!antes ? "—" : `${atual >= antes ? "+" : "−"}${Math.abs(Math.round(((atual - antes) / antes) * 100))}%`);
 
-export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[], fixos: Fixo[], projetos: { id: string; nome: string }[], hoje: string, pessoas: { id: string; name: string }[] = [], naturezas: Record<string, Natureza> = NATUREZA_PADRAO) {
+export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[], fixos: Fixo[], projetos: { id: string; nome: string }[], hoje: string, pessoas: { id: string; name: string }[] = [], naturezas: Record<string, Natureza> = NATUREZA_PADRAO, orcAno: LinhaOrc[] = []) {
   const ant = addMes(mes, -1), fim = fimMes(mes);
   const validos = lanc.filter((l) => !l.anulado);
   const pagos = (m: string) => validos.filter((l) => !l.pendente && l.data.startsWith(m));
@@ -60,6 +61,14 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
     if (cpf.n) out.push(`**Atenção:** ${brl(cpf.total)} em ${cpf.n} lançamento(s) passaram por contas pessoais (CPF) neste mês.`, "");
   }
 
+  // the year's budget as of the end of this month (or today, for the current month)
+  if (orcAno.length) {
+    const ca = compararAnual(orcAno, lanc, mes.slice(0, 4), fim < hoje ? fim : hoje);
+    out.push(`## Orçamento de ${mes.slice(0, 4)} (até ${dm(fim < hoje ? fim : hoje)})`, "", "| | Orçado até agora | Realizado | Orçado no ano |", "|---|---:|---:|---:|",
+      `| Receitas | ${brl(ca.receitas.ateAgora)} | ${brl(ca.receitas.real)} | ${brl(ca.receitas.anual)} |`, `| Despesas | ${brl(ca.despesas.ateAgora)} | ${brl(ca.despesas.real)} | ${brl(ca.despesas.anual)} |`, "",
+      `Previsão do resultado no fim do ano: ${brl(ca.previsaoResultado)}.${ca.alertas.length ? ` **Passaram de 90% do orçamento do ano:** ${ca.alertas.join(", ")}.` : ""}`, "");
+  }
+
   const recs = resumoRecursos(lanc.filter((l) => l.data <= fim));
   if (recs.length) out.push("## Recursos com destino (até o fim do mês)", "", "| Recurso | Recebido | Usado | Saldo |", "|---|---:|---:|---:|",
     ...recs.map((r) => `| ${cel(r.recurso)} | ${brl(r.recebido)} | ${brl(r.usado)} | ${brl(r.saldo)} |`), "");
@@ -96,7 +105,7 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
   return out.join("\n");
 }
 
-export const relatorioMensal = (mes: string) => montarRelatorio(mes, getLancamentos(), getContas(), getFixos(), getProjetos(), today(), getPessoas(), getNaturezas());
+export const relatorioMensal = (mes: string) => montarRelatorio(mes, getLancamentos(), getContas(), getFixos(), getProjetos(), today(), getPessoas(), getNaturezas(), getOrcamentoAnual(mes.slice(0, 4))?.linhas ?? []);
 
 // self-check (pure part): npx tsx src/lib/v2/relatorioFinancas.ts
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/relatorioFinancas.ts")) {
@@ -119,6 +128,8 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   const sep = montarRelatorio("2026-11", [L("2026-11-02", "entrada", 900, { conta: "nu", recurso: "Grant" }), L("2026-11-03", "despesa", 200, { recurso: "grant" })],
     [{ id: "nu", file: "", nome: "Nubank Ana", tipo: "banco", saldoInicial: 0, desde: "2026-01-01", ativa: true, titular: "cpf", titularPessoa: "ana", unidade: "" }], [], [], "2026-11-11");
   assert(sep.includes("R$ 900,00 em 1 lançamento(s) passaram por contas pessoais") && sep.includes("| Grant | R$ 900,00 | R$ 200,00 | R$ 700,00 |"), "CPF e recursos com destino");
+  const oa = montarRelatorio("2026-11", [L("2026-11-02", "despesa", 950, { categoria: "Alimentação" })], [], [], [], "2026-11-11", [], undefined, [{ categoria: "Alimentação", anual: 1000, meses: [11] }]);
+  assert(oa.includes("## Orçamento de 2026 (até 11/11)") && oa.includes("| Despesas | R$ 1.000,00 | R$ 950,00 | R$ 1.000,00 |") && oa.includes("Passaram de 90% do orçamento do ano:** Alimentação"), "orçamento anual no relatório");
   assert(md.includes("## Resultado gerencial") && md.includes("**= Margem de contribuição**"), "DRE no relatório");
   assert(rb.includes("## Reembolsos a fazer") && rb.includes("| 05/11 | Ana Souza | Gasolina | R$ 80,00 |") && !rb.includes("| 06/11 | Ana"), "reembolsos a fazer");
   console.log(`relatorioFinancas: ${ok} ok`);

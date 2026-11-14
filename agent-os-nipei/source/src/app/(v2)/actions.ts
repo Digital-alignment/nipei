@@ -1008,6 +1008,43 @@ export async function salvarOrcamentoEventoAction(form: FormData) {
   redirect(`/financas/evento?e=${encodeURIComponent(d.evento)}&ok=${encodeURIComponent(t.orcamentoSalvo)}`);
 }
 
+/** Orçamento anual (plano financas fase 4): value per category + the months it falls in; one budget per year and unit. */
+export async function salvarOrcamentoAnualAction(form: FormData) {
+  const me = await requireUser();
+  if (!podeFinancas(me)) return;
+  const ano = String(form.get("ano") ?? "").match(/^\d{4}$/)?.[0], u = unidadeForm(form);
+  if (!ano) return;
+  const { salvarOrcamentoAnual, TODOS_MESES } = await import("@/lib/v2/orcamentoAnual");
+  const linhas = [...CATEGORIAS.entrada, ...CATEGORIAS.despesa].map((categoria) => {
+    const v = numBR(String(form.get(`v:${categoria}`) ?? "") || "0");
+    const meses = form.getAll(`m:${categoria}`).map(Number).filter((m) => TODOS_MESES.includes(m));
+    return { categoria, anual: Number.isFinite(v) ? Math.max(0, v) : 0, meses: meses.length ? meses : TODOS_MESES };
+  });
+  await tentar(async () => salvarOrcamentoAnual(ano, u, linhas, actorName(me)));
+  revalidatePath("/financas", "layout");
+  const { t } = await getT();
+  redirect(`/financas/orcamento?a=${ano}${u ? `&u=${u}` : ""}&ok=${encodeURIComponent(t.orcamentoAnualSalvo)}`);
+}
+
+/** New year from the previous one: its budget, or what really happened, +reajuste%. Replaces the year's lines. */
+export async function copiarOrcamentoAnualAction(form: FormData) {
+  const me = await requireUser();
+  if (!podeFinancas(me)) return;
+  const ano = String(form.get("ano") ?? "").match(/^\d{4}$/)?.[0], u = unidadeForm(form);
+  if (!ano) return;
+  const reajuste = Math.max(-90, Math.min(200, numBR(String(form.get("reajuste") ?? "0") || "0") || 0));
+  const { baseDoAnoAnterior, getOrcamentoAnual, salvarOrcamentoAnual } = await import("@/lib/v2/orcamentoAnual");
+  const { unidadeDe } = await import("@/lib/v2/data");
+  const anterior = String(Number(ano) - 1), contas = getContas();
+  const lanc = getLancamentos().filter((l) => l.data.startsWith(anterior) && (!u || (unidadeDe(l, contas) || "geral") === u));
+  const linhas = baseDoAnoAnterior(getOrcamentoAnual(anterior, u)?.linhas, lanc, reajuste);
+  const { t } = await getT();
+  if (!linhas.length) redirect(`/financas/orcamento?a=${ano}${u ? `&u=${u}` : ""}&erro=${encodeURIComponent(t.nadaParaCopiar)}`);
+  await tentar(async () => salvarOrcamentoAnual(ano, u, linhas, actorName(me)));
+  revalidatePath("/financas", "layout");
+  redirect(`/financas/orcamento?a=${ano}${u ? `&u=${u}` : ""}&ok=${encodeURIComponent(t.orcamentoCopiado)}`);
+}
+
 /** DRE (plano financas fase 2): the natureza of each category; changing it reclassifies every month. */
 export async function salvarNaturezasAction(form: FormData) {
   const me = await requireUser();
