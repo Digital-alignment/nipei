@@ -21,7 +21,7 @@ import {
 import { pedirTrabalho } from "@/lib/v2/trabalhos";
 import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib/v2/importarFinancas";
 import { salvarComprovante } from "@/lib/v2/comprovantes";
-import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
+import { MAX_FOCO, getFoco, salvarFoco, salvarFocoAmanha } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
 import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, UNIDADES, getContas, getLancamentos, pessoasReembolso, reembolsarLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
@@ -1601,6 +1601,13 @@ export async function focoAction(form: FormData) {
   if (!me.pessoa) return;
   const pessoa = me.pessoa.id, hoje = today();
   const minhas = new Set(getTarefas().filter((x) => x.responsaveis.includes(pessoa)).map((x) => x.id));
+  // day close (DS 10.5.1): tomorrow's focus, stored apart so today's stays as it is
+  const amanha = new Date(Date.parse(`${hoje}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  if (form.get("amanha") === amanha) {
+    salvarFocoAmanha(pessoa, amanha, form.getAll("ids").map(String).filter((x) => minhas.has(x)));
+    revalidatePath("/", "layout");
+    return;
+  }
   const id = String(form.get("id") ?? "");
   const atual = getFoco(pessoa, hoje);
   const ids = id

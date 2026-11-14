@@ -17,7 +17,7 @@ import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
 import { organizacao } from "@/lib/v2/organizacao";
-import { MAX_FOCO, getFoco } from "@/lib/v2/foco";
+import { MAX_FOCO, getFoco, getFocoAmanha } from "@/lib/v2/foco";
 import { getConexoes } from "@/lib/v2/conexoes";
 import { eventosGoogle, type EventoGoogle } from "@/lib/v2/google";
 import Campo from "@/components/ds/Campo";
@@ -223,6 +223,18 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   // fechamento do dia: nada pendente em Agora e algo concluído hoje → resumo + o que vem amanhã
   const feitasHoje = doMeu.filter((x) => x.status === "done" && x.concluidoEm.slice(0, 10) === hoje);
   const fechouDia = !!me && agora.length === 0 && feitasHoje.length > 0;
+  // tomorrow's focus (day close): chosen, or a suggestion — tomorrow's tasks first, then the smart order
+  const focoAmanhaIds = me && fechouDia ? getFocoAmanha(me.id, dia(1)) : [];
+  const focoAmanha = focoAmanhaIds.length
+    ? focoAmanhaIds.map((id) => getTarefas().find((x) => x.id === id)).filter((x): x is Tarefa => !!x && x.status !== "done")
+    : [...proximas.filter((x) => x.prazo === dia(1)), ...proximas.filter((x) => x.prazo !== dia(1)), ...semData].slice(0, MAX_FOCO);
+  // today's agenda as a timeline: community events, fixed meetings and Google, by time ("" = all day, first)
+  const agoraHM = new Date().toLocaleTimeString("sv-SE", { timeZone: "America/Bahia" }).slice(0, 5);
+  const linhaTempo = [
+    ...eventosHoje.map((e) => ({ id: e.id, hora: e.hora, titulo: e.titulo, href: linkEvento(e), google: false })),
+    ...googleEvs.filter((e) => e.dia === hoje).map((e) => ({ id: `g${e.id}`, hora: e.hora, titulo: e.titulo, href: e.link, google: true })),
+  ].sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
+  const proximoId = linhaTempo.find((x) => x.hora && x.hora >= agoraHM)?.id;
   const amanha = semana[1].abertasDia;
   // linhas de atividade (Novidades, Esperando você): tarefa + quem fez o quê, quando
   const atividades = (itens: typeof novidades) => (
@@ -258,13 +270,33 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         })()}
         {/* pending items in two groups (DS 10.5.1): for you (events first, then by urgency) and team/management */}
         {([["voce", t.hj.paraVoce, [
-          ...eventosHoje.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="calendario">{e.hora && <b className="font-semibold text-t1">{e.hora}</b>} {e.titulo}</Chip>),
-          ...googleEvs.filter((e) => e.dia === hoje).map(chipGoogle),
           ...proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>),
           ...paraVoce.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>),
         ]], ["equipe", t.hj.equipeGestao, daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents">{x.equipe ? <Chip href={x.href} tipo="equipe" equipe={x.equipe}>{x.texto}</Chip> : <Chip href={x.href} icone={x.icone}>{x.texto}</Chip>}</span>)]] as const)
           .filter(([, , chips]) => chips.length > 0).map(([id, rotulo, chips]) => <FilaPendencias key={id} rotulo={rotulo} itens={[...chips]} />)}
       </header>
+
+      {linhaTempo.length > 0 && !doDia && (
+        // agenda de hoje (seção 10.5.1): hora · título; o próximo em acento, os que passaram apagados
+        <section aria-label={t.hj.agendaHoje} className="mb-6">
+          <h2 className="titulo-secao mb-2">{t.hj.agendaHoje}</h2>
+          <ol className="overflow-hidden rounded-cartao bg-s1">
+            {linhaTempo.map((x) => {
+              const proximo = x.id === proximoId, passou = !!x.hora && x.hora < agoraHM;
+              return (
+                <li key={x.id} className="border-t border-s2 first:border-t-0">
+                  <a href={x.href} target={x.google ? "_blank" : undefined} rel={x.google ? "noreferrer" : undefined} className="anel-foco flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-s2">
+                    <span className={`w-[4.5rem] shrink-0 whitespace-nowrap tabular-nums ${proximo ? "font-semibold text-ac-text" : passou ? "text-t3" : "text-t2"}`}>{x.hora || t.hj.diaTodo}</span>
+                    <span aria-hidden="true" className={`size-2 shrink-0 rounded-pilula ${proximo ? "bg-ac" : passou ? "bg-s3" : "bg-s4"}`} />
+                    <span className={`min-w-0 flex-1 truncate text-[15px] ${passou ? "text-t3" : "font-medium text-t1"}`}>{x.titulo}</span>
+                    {x.google && <Icone nome="abrir-fora" tamanho={16} className="shrink-0 text-t3" />}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      )}
 
       {missao && (
         // o único destaque de conteúdo da tela (regra 5)
@@ -396,6 +428,22 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             {amanha ? <Link href={`/hoje?dia=${dia(1)}`} scroll={false} className="anel-foco rounded-interno font-semibold text-t1 hover:underline">{t.amanhaN.replace("{n}", String(amanha))}</Link> : t.amanhaLivre}
             <span className="mt-1.5 block text-t2">{feitasHoje.slice(0, 5).map((x) => x.title).join(" · ")}{feitasHoje.length > 5 ? " …" : ""}</span>
           </>} />
+      )}
+
+      {fechouDia && !doDia && focoAmanha.length > 0 && (
+        // foco de amanhã (seção 10.5.1): escolhido hoje, vira o foco de amanhã
+        <section aria-label={t.hj.focoAmanha} className="mb-6">
+          <GrupoTarefas titulo={<>{t.hj.focoAmanha}{!focoAmanhaIds.length && <span className="meta ml-2 font-normal text-t3">{t.focoSugestao}</span>}</>} contagem={focoAmanhaIds.length || undefined}>
+            {focoAmanha.map((x) => <TaskRow key={x.id} t={x} {...props} />)}
+          </GrupoTarefas>
+          {!focoAmanhaIds.length && (
+            <form action={focoAction} className="mt-2">
+              <input type="hidden" name="amanha" value={dia(1)} />
+              {focoAmanha.map((x) => <input key={x.id} type="hidden" name="ids" value={x.id} />)}
+              <BotaoEnviar enviando="…" icone="inicio" variante="fantasma" tamanho="P">{t.hj.usarFocoAmanha}</BotaoEnviar>
+            </form>
+          )}
+        </section>
       )}
 
       {me && !doDia && triagem && (

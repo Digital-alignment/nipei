@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Hoje: agenda de hoje em linha do tempo e foco de amanhã (10.5.1)
+
+- Agenda de hoje: lista hora · título (comunidade, reuniões fixas e Google), "Dia todo" primeiro, o próximo em acento, os que passaram em `t3`; os eventos de hoje saíram dos Chips.
+- Foco de amanhã: no dia fechado, até 3 tarefas sugeridas (as de amanhã primeiro) e "Usar como foco de amanhã"; guardado à parte em `.jobs/foco/<pessoa>.json` (`amanha`), vira o Foco de hoje no dia seguinte.
+
 ## 2026-11-14 — Hoje: Organizar equipes em Pessoas e resumo por equipe (10.5.1)
 
 - Hoje: o Cartão "Organizar equipes" saiu; fica um Chip "Organizar equipes N%" em "Equipe e gestão". `/pessoas` (gestão, sem filtro): Cartão com a barra de progresso, as contagens e o Botão "Organizar equipes" (o botão do cabeçalho só aparece quando não há pendências).
