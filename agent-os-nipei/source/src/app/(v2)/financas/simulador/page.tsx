@@ -10,9 +10,11 @@ import { Section } from "@/components/v2/ui";
 import { FiltroAuto } from "@/components/v2/AcervoForm";
 import { currentUser, getLancamentos } from "@/lib/v2/data";
 import { custoFixo, getFixos } from "@/lib/v2/fixos";
-import { getT } from "@/lib/v2/i18n";
+import { fmtDate, getT } from "@/lib/v2/i18n";
 import { numBR } from "@/lib/v2/importarFinancas";
 import { baseDoEvento, simular } from "@/lib/v2/simulador";
+import { orcamentoDoEvento } from "@/lib/v2/orcamentoEvento";
+import { salvarOrcamentoEventoAction } from "../../actions";
 
 // Simulador de preço por retiro (DS 10.25, gestão). GET form: every simulation is a link, nothing is saved.
 // The base event lives in its own form so changing it refills the numbers instead of keeping the typed ones.
@@ -22,13 +24,13 @@ const brl = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("p
 const brl0 = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })}`;
 const campoBR = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
-type Q = { base?: string; n?: string; preco?: string; fixo?: string; pp?: string; rateio?: string; margem?: string };
+type Q = { base?: string; evento?: string; n?: string; preco?: string; fixo?: string; pp?: string; rateio?: string; margem?: string };
 
 export default async function Simulador({ searchParams }: { searchParams: Promise<Q> }) {
   const me = (await currentUser())!;
   if (!me.gestao) redirect("/hoje");
   const q = await searchParams;
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const lanc = getLancamentos();
   const eventos = [...new Set(lanc.filter((l) => l.evento && !l.anulado && l.tipo === "despesa").map((l) => l.evento))].sort();
   const base = q.base && eventos.includes(q.base) ? baseDoEvento(lanc, q.base) : null;
@@ -38,6 +40,7 @@ export default async function Simulador({ searchParams }: { searchParams: Promis
     porPessoa: num(q.pp, base?.porPessoa ?? 0), rateio: num(q.rateio, 0), margem: Math.min(90, num(q.margem, 20)) / 100,
   };
   const r = simular(e);
+  const orcAtual = base || q.evento ? orcamentoDoEvento(base?.evento ?? q.evento ?? "") : undefined;
   const mensal = custoFixo(getFixos()).despesas;
   const pct = (v: number) => `${Math.round(v * 100)}%`;
 
@@ -106,6 +109,17 @@ export default async function Simulador({ searchParams }: { searchParams: Promis
           } };
         })} />
       </Section>
+
+      <Cartao className="mt-6">
+        <p className="titulo-cartao">{t.orcamentoTitulo}</p>
+        <form action={salvarOrcamentoEventoAction} className="mt-3 grid gap-3" key={`orc-${JSON.stringify(q)}`}>
+          {([["n", e.participantes], ["preco", e.preco], ["fixo", e.fixo], ["pp", e.porPessoa], ["rateio", e.rateio], ["margem", Math.round(e.margem * 100)]] as const).map(([k, v]) => <input key={k} type="hidden" name={k} value={campoBR(v)} />)}
+          <Campo name="evento" rotulo={t.eventoFin} list="eventos-orc" maxLength={80} placeholder={t.eventoFinEx} defaultValue={base?.evento ?? q.evento ?? ""} required className="max-w-sm" />
+          <datalist id="eventos-orc">{eventos.map((v) => <option key={v} value={v} />)}</datalist>
+          {orcAtual && <p className="meta text-t2">{t.jaTemOrcamento} {fmtDate(orcAtual.salvoEm, lang)}{t.salvarSubstitui}</p>}
+          <div><Botao type="submit" icone="confirmar" variante="primario" tamanho="M">{t.salvarOrcEvento}</Botao></div>
+        </form>
+      </Cartao>
     </div>
   );
 }

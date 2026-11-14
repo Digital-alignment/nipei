@@ -11,10 +11,10 @@ import LinhaDoTempo, { type ItemTempo } from "@/components/ds/padroes/LinhaDoTem
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
 import Upload from "@/components/v2/Upload";
-import { CATEGORIAS, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos } from "@/lib/v2/data";
+import { CATEGORIAS, aReembolsar, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, pessoasReembolso } from "@/lib/v2/data";
 import { BadgeEstado } from "@/components/ds/Chip";
 import { fmtDate, getT } from "@/lib/v2/i18n";
-import { anularLancamentoAction, comprovanteAction, editarLancamentoAction } from "../../actions";
+import { anularLancamentoAction, comprovanteAction, editarLancamentoAction, reembolsarAction } from "../../actions";
 
 // Ficha do lançamento (DS 10.25, gestão): comprovante, editar (each change goes to the history), histórico, anular.
 export const dynamic = "force-dynamic";
@@ -34,7 +34,11 @@ export default async function LancamentoPage({ params, searchParams }: { params:
   const contasAtivas = getContas().filter((c) => c.ativa || c.id === l.conta);
   const eventos = [...new Set(todos.filter((x) => x.evento && !x.anulado).map((x) => x.evento))];
   const dia = (iso: string) => fmtDate(iso, lang);
-  const quemCriou = getPessoas().find((p) => p.id === l.registradoPor)?.name.split(" (")[0] ?? l.registradoPor;
+  const pessoas = getPessoas();
+  const quemCriou = pessoas.find((p) => p.id === l.registradoPor)?.name.split(" (")[0] ?? l.registradoPor;
+  const quemPagou = pessoas.find((p) => p.id === l.reembolsar)?.name.split(" (")[0] ?? l.reembolsar;
+  // people who can pay with own money, plus whoever is already set (even if they left the teams)
+  const pagadores = [...pessoasReembolso(), ...pessoas.filter((p) => p.id === l.reembolsar && !pessoasReembolso().some((x) => x.id === p.id))];
   const titulo = l.descricao || l.categoria;
   const pdf = l.comprovante.endsWith(".pdf");
   const src = `/financas/${encodeURIComponent(l.id)}/comprovante?v=${encodeURIComponent(l.historico.find((h) => /comprovante/i.test(h.texto))?.quando ?? "")}`;
@@ -72,6 +76,22 @@ export default async function LancamentoPage({ params, searchParams }: { params:
         </div>}
       </Cartao>
 
+      {l.tipo === "despesa" && l.reembolsar && (
+        <Cartao className="mb-6">
+          <p className="titulo-cartao">{t.reembolso}</p>
+          <p className="meta mt-1 text-t2">{t.pagoPorProprio} {quemPagou}</p>
+          {l.reembolsado ? <div className="mt-3"><BadgeEstado estado="feita">{t.reembolsadoEm} {dia(l.reembolsado)}</BadgeEstado></div>
+            : aReembolsar(l) && (
+              <form action={reembolsarAction} className="mt-3 grid gap-3">
+                <input type="hidden" name="id" value={l.id} />
+                {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaReembolso} defaultValue={l.conta} className="max-w-sm"><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
+                <div><BotaoEnviar enviando="…" icone="confirmar" variante="tonal">{t.reembolsadoBtn}</BotaoEnviar></div>
+              </form>
+            )}
+          <p className="meta mt-3 text-t3">{t.reembolsoExplica}</p>
+        </Cartao>
+      )}
+
       {!l.anulado && (
         <section className="mb-8 grid gap-3">
           <h2 className="titulo-secao inline-flex items-center gap-2"><Icone nome="editar" tamanho={20} />{t.editar}</h2>
@@ -104,6 +124,7 @@ export default async function LancamentoPage({ params, searchParams }: { params:
               <Campo tipo="selecao" name="equipe" rotulo={t.equipe} defaultValue={l.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
             </div>
             {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={l.conta}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
+            <Campo tipo="selecao" name="reembolsar" rotulo={t.pagoComDinheiroDe} defaultValue={l.reembolsar}><option value="">{t.santuarioPagou}</option>{pagadores.map((p) => <option key={p.id} value={p.id}>{p.name.split(" (")[0]}</option>)}</Campo>
             <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvarAlteracoes}</BotaoEnviar></div>
           </form>
         </section>

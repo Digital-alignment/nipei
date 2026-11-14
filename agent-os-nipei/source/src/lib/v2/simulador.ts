@@ -5,7 +5,7 @@ import type { Lancamento } from "./data";
 // (facilitators, marketing, transport, materials…: the same with 8 or 15 people). The person can change both.
 
 export const POR_PESSOA = ["Alimentação", "Hospedagem e limpeza"];
-const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+export const norm = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
 export type Base = {

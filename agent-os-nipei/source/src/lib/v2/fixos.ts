@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { createLancamento, getLancamentos, noteText, readDir, slugify, today, updateNote, vault, type Lancamento } from "./data";
+import { aReembolsar, createLancamento, getLancamentos, noteText, readDir, slugify, today, updateNote, vault, type Lancamento } from "./data";
 
 // Gastos fixos (DS 10.25): one note per fixed monthly cost (or income) in Financeiro/Fixos/. Every month each active one
 // becomes a PENDING lançamento on its day ("a pagar" / "a receber", estimated value: the real bill is corrected in the
@@ -86,13 +86,15 @@ export type Janela = { dias: number; saldo: number; aReceber: number; aPagar: nu
  * Cash forecast (pure): balance of what was paid/received until today, then every pending entry (overdue ones count
  * today), paid entries dated in the future and the fixed costs of the coming months not generated yet.
  */
-export function previsaoCaixa(lanc: Pick<Lancamento, "data" | "tipo" | "valor" | "anulado" | "pendente" | "fixo">[], fixos: Pick<Fixo, "id" | "tipo" | "valor" | "dia" | "inicio" | "ativo">[], hoje: string, janelas = [30, 60]) {
+export function previsaoCaixa(lanc: (Pick<Lancamento, "data" | "tipo" | "valor" | "anulado" | "pendente" | "fixo"> & Partial<Pick<Lancamento, "reembolsar" | "reembolsado">>)[], fixos: Pick<Fixo, "id" | "tipo" | "valor" | "dia" | "inicio" | "ativo">[], hoje: string, janelas = [30, 60]) {
   const sinal = (t: string) => (t === "entrada" ? 1 : -1);
   const validos = lanc.filter((l) => !l.anulado);
-  const saldoHoje = validos.filter((l) => !l.pendente && l.data <= hoje).reduce((a, l) => a + sinal(l.tipo) * l.valor, 0);
+  // a reimbursement still owed has not left the cash yet: it counts as "a pagar" (today, if the purchase is past)
+  const pend = (l: (typeof lanc)[number]) => l.pendente || aReembolsar(l);
+  const saldoHoje = validos.filter((l) => !pend(l) && l.data <= hoje).reduce((a, l) => a + sinal(l.tipo) * l.valor, 0);
   const fim = addDias(hoje, Math.max(...janelas));
   type Ev = { data: string; v: number; tipo: "aReceber" | "aPagar" | "fixos" };
-  const ev: Ev[] = validos.filter((l) => l.pendente || l.data > hoje).map((l) => ({
+  const ev: Ev[] = validos.filter((l) => pend(l) || l.data > hoje).map((l) => ({
     data: l.data < hoje ? hoje : l.data, v: sinal(l.tipo) * l.valor, tipo: l.fixo ? "fixos" as const : l.tipo === "entrada" ? "aReceber" as const : "aPagar" as const,
   }));
   const gerados = new Set(lanc.map((l) => l.fixo).filter(Boolean));
@@ -105,7 +107,7 @@ export function previsaoCaixa(lanc: Pick<Lancamento, "data" | "tipo" | "valor" |
   const res: Janela[] = janelas.map((dias) => {
     const ate = addDias(hoje, dias), dentro = ev.filter((e) => e.data <= ate);
     const soma = (t: Ev["tipo"]) => r2(Math.abs(dentro.filter((e) => e.tipo === t).reduce((a, e) => a + e.v, 0)));
-    return { dias, saldo: r2(saldoHoje + dentro.reduce((a, e) => a + e.v, 0)), aReceber: soma("aReceber"), aPagar: soma("aPagar"), fixos: r2(-dentro.filter((e) => e.tipo === "fixos").reduce((a, e) => a + e.v, 0)) };
+    return { dias, saldo: r2(saldoHoje + dentro.reduce((a, e) => a + e.v, 0)), aReceber: soma("aReceber"), aPagar: soma("aPagar"), fixos: r2(-dentro.filter((e) => e.tipo === "fixos").reduce((a, e) => a + e.v, 0)) + 0 }; // + 0: no "−-R$ 0" (negative zero)
   });
   let corrente = saldoHoje, negativo: { data: string; saldo: number } | null = saldoHoje < 0 ? { data: hoje, saldo: r2(saldoHoje) } : null;
   for (const e of ev) { if (negativo) break; corrente += e.v; if (corrente < 0) negativo = { data: e.data, saldo: r2(corrente) }; }
@@ -139,6 +141,9 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(p.janelas[1].saldo === -200, `60 dias ${JSON.stringify(p.janelas[1])}`);
   assert(p.negativo?.data === "2026-12-20" && p.negativo.saldo === -100, `primeiro dia negativo ${JSON.stringify(p.negativo)}`);
   assert(previsaoCaixa([], [], "2026-11-11").temFuturo === false, "sem nada");
+  // reimbursement still owed: out of today's cash, "a pagar" today; once reimbursed it is a normal paid expense
+  const rb = previsaoCaixa([L("2026-11-01", "entrada", 1000), L("2026-11-02", "despesa", 80, false, { reembolsar: "ana" }), L("2026-11-03", "despesa", 20, false, { reembolsar: "ana", reembolsado: "2026-11-04" })], [], "2026-11-11");
+  assert(rb.hoje === 980 && rb.janelas[0].aPagar === 80 && rb.janelas[0].saldo === 900, `reembolso ${JSON.stringify(rb)}`);
   assert(custoFixo([F("a"), F("b", { valor: 50 }), F("c", { ativo: false })]).despesas === 150, "custo fixo só ativos");
   console.log(`fixos: ${ok} ok`);
 }

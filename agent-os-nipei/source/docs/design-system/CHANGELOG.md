@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-13 — Finanças: orçamento por evento e reembolsos (10.25)
+
+- `/financas/evento?e=`: CabecalhoPagina com o nome do evento; sem orçamento, Aviso `info` com "Criar no simulador"; com orçamento, Tabela "Orçado × realizado" (diferença verde/vermelha, Aviso `atencao` quando o resultado previsto fica abaixo) + "Editar no simulador"; Tabelas de despesas por categoria e de participantes. O nome do evento em "Por evento" de `/financas` abre esta página; coluna "Orçado" com BadgeEstado.
+- Simulador: Cartão "Orçamento do evento" (Campo evento com sugestões + Botão primário "Salvar como orçamento do evento").
+- Reembolsos: Campo "Pago com dinheiro de" no lançamento novo e na ficha; Cartão "Reembolso" na ficha (Botão tonal "Reembolsado" com a conta, ou BadgeEstado "Reembolsado em"); BadgeEstado "a reembolsar" na lista; Seção "Reembolsos a fazer" em `/financas` agrupada por pessoa.
+
 ## 2026-11-11 — Finanças: simulador de preço por retiro (10.25)
 
 - `/financas/simulador`: base em um evento (`FiltroAuto` num formulário próprio, para trocar a base reencher os números), formulário GET (Botao `type="submit"`), 4 Cartões kpi + o Cartão destaque do preço sugerido, Aviso de prejuízo e Tabela "Cenários" (linha simulada em negrito, marca de equilíbrio); "Custos do evento-base" num `<details>`. Entrada: Botão "Simular preço" na Seção "Por evento" de `/financas` e o nome de cada evento vira link para simular a partir dele.

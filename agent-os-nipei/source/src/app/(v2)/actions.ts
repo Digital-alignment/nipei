@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { SESSION_COOKIE } from "@/lib/auth";
-import { LANG_COOKIE } from "@/lib/v2/i18n";
+import { LANG_COOKIE, getT } from "@/lib/v2/i18n";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
 import { chaveTrecho, corrigirFato, criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, responderComFatos, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
@@ -21,7 +21,7 @@ import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib
 import { salvarComprovante } from "@/lib/v2/comprovantes";
 import { MAX_FOCO, getFoco, salvarFoco } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, getContas, getLancamentos, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, getContas, getLancamentos, pessoasReembolso, reembolsarLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -40,6 +40,8 @@ const pick = (v: FormDataEntryValue | null, allowed: string[]) => {
 };
 /** Finanças: the account field (any existing account, archived ones included, so editing an old entry keeps it). */
 const contaDe = (form: FormData) => pick(form.get("conta"), getContas().map((c) => c.id));
+// "Pago com dinheiro de" (DS 10.25): only expenses can be reimbursed
+const reembolsoDe = (form: FormData, tipo: string, atual = "") => (tipo === "despesa" ? pick(form.get("reembolsar"), [...pessoasReembolso().map((p) => p.id), ...(atual ? [atual] : [])]) : ""); // atual: keep who is owed even if they left the teams
 const recorrencia = (form: FormData) => pick(form.get("recorrencia"), [...RECORRENCIAS]);
 
 const safeBack = (v: FormDataEntryValue | null) => {
@@ -797,7 +799,7 @@ export async function createLancamentoAction(form: FormData) {
     pendente: form.get("pendente") === "1",
     evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
     participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
-    conta: contaDe(form),
+    conta: contaDe(form), reembolsar: reembolsoDe(form, tipo),
   });
   revalidatePath("/financas");
   redirect(`/financas?m=${data.slice(0, 7)}`);
@@ -830,7 +832,7 @@ export async function editarLancamentoAction(form: FormData) {
       pendente: form.get("pendente") === "1",
       evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
       participante: String(form.get("participante") ?? "").trim().replace(/\s+/g, " ").slice(0, 80),
-      conta: contaDe(form),
+      conta: contaDe(form), reembolsar: reembolsoDe(form, tipo, getLancamentos().find((x) => x.id === id)?.reembolsar),
     }, actorName(me));
   });
   revalidatePath("/financas", "layout");
@@ -981,6 +983,29 @@ export async function desfazerImportacaoAction(form: FormData) {
   for (const l of ls) anularLancamento(l.id, me.pessoa?.id ?? me.username, actorName(me));
   revalidatePath("/financas");
   redirect(`/financas?ok=${encodeURIComponent(`Importação desfeita: ${ls.length} lançamentos anulados`)}`);
+}
+
+/** Simulator → event budget (DS 10.25): the numbers on screen, one budget per event (saving again replaces it). */
+export async function salvarOrcamentoEventoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const num = (k: string) => { const v = numBR(String(form.get(k) ?? "") || "0"); return Number.isFinite(v) ? Math.max(0, v) : 0; };
+  const d = { evento: String(form.get("evento") ?? "").trim().replace(/\s+/g, " ").slice(0, 80), participantes: Math.round(num("n")), preco: num("preco"), fixo: num("fixo"), porPessoa: num("pp"), rateio: num("rateio"), margem: Math.min(90, num("margem")) / 100 };
+  const { t } = await getT();
+  const q = new URLSearchParams({ n: String(d.participantes), preco: String(d.preco), fixo: String(d.fixo), pp: String(d.porPessoa), rateio: String(d.rateio), margem: String(Math.round(d.margem * 100)) });
+  if (!d.evento) redirect(`/financas/simulador?${q}&erro=${encodeURIComponent(t.eventoObrigatorio)}`);
+  const { salvarOrcamentoEvento } = await import("@/lib/v2/orcamentoEvento");
+  await tentar(async () => salvarOrcamentoEvento(d, actorName(me)));
+  revalidatePath("/financas", "layout");
+  redirect(`/financas/evento?e=${encodeURIComponent(d.evento)}&ok=${encodeURIComponent(t.orcamentoSalvo)}`);
+}
+
+/** Reimbursement paid back (DS 10.25); from the ficha (with the account it left from) or the /financas list. */
+export async function reembolsarAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  await tentar(async () => reembolsarLancamento(String(form.get("id") ?? ""), contaDe(form), me.pessoa?.id ?? me.username, actorName(me)));
+  revalidatePath("/financas", "layout");
 }
 
 export async function quitarLancamentoAction(form: FormData) {

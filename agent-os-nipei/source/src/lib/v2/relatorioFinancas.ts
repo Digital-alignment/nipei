@@ -1,4 +1,4 @@
-import { getContas, getLancamentos, getProjetos, today, type Conta, type Lancamento } from "./data";
+import { getContas, getLancamentos, getPessoas, getProjetos, today, type Conta, type Lancamento } from "./data";
 import { getFixos, previsaoCaixa, type Fixo } from "./fixos";
 import { saldoConta } from "./contas";
 
@@ -14,7 +14,7 @@ const fimMes = (ym: string) => new Date(Date.UTC(Number(ym.slice(0, 4)), Number(
 const cel = (v: string) => v.replace(/\|/g, "/").replace(/\r?\n/g, " ");
 const variacao = (atual: number, antes: number) => (!antes ? "—" : `${atual >= antes ? "+" : "−"}${Math.abs(Math.round(((atual - antes) / antes) * 100))}%`);
 
-export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[], fixos: Fixo[], projetos: { id: string; nome: string }[], hoje: string) {
+export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[], fixos: Fixo[], projetos: { id: string; nome: string }[], hoje: string, pessoas: { id: string; name: string }[] = []) {
   const ant = addMes(mes, -1), fim = fimMes(mes);
   const validos = lanc.filter((l) => !l.anulado);
   const pagos = (m: string) => validos.filter((l) => !l.pendente && l.data.startsWith(m));
@@ -64,6 +64,14 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
       ...pend.map((l) => `| ${dm(l.data)} | ${cel([l.descricao || l.categoria, l.participante, l.evento].filter(Boolean).join(" · "))} | ${l.tipo === "entrada" ? "a receber" : "a pagar"} | ${brl(l.valor)} |`), "");
   }
 
+  // paid with someone's own money and still owed at the end of the month
+  const reemb = validos.filter((l) => l.tipo === "despesa" && l.reembolsar && l.data <= fim && (!l.reembolsado || l.reembolsado > fim));
+  if (reemb.length) {
+    const nomeP = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? id;
+    out.push("## Reembolsos a fazer", "", `Total: ${brl(reemb.reduce((a, l) => a + l.valor, 0))} (despesas pagas com dinheiro próprio; já estão nos totais, ainda não saíram do caixa)`, "", "| Data | Pessoa | Descrição | Valor |", "|---|---|---|---:|",
+      ...reemb.sort((a, b) => a.data.localeCompare(b.data)).map((l) => `| ${dm(l.data)} | ${cel(nomeP(l.reembolsar))} | ${cel(l.descricao || l.categoria)} | ${brl(l.valor)} |`), "");
+  }
+
   if (mes === hoje.slice(0, 7)) {
     const p = previsaoCaixa(lanc, fixos, hoje);
     out.push("## Previsão de caixa", "", "| | Saldo |", "|---|---:|", `| Hoje (${dm(hoje)}) | ${brl(p.hoje)} |`, ...p.janelas.map((j) => `| Em ${j.dias} dias | ${brl(j.saldo)} |`), "");
@@ -77,7 +85,7 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
   return out.join("\n");
 }
 
-export const relatorioMensal = (mes: string) => montarRelatorio(mes, getLancamentos(), getContas(), getFixos(), getProjetos(), today());
+export const relatorioMensal = (mes: string) => montarRelatorio(mes, getLancamentos(), getContas(), getFixos(), getProjetos(), today(), getPessoas());
 
 // self-check (pure part): npx tsx src/lib/v2/relatorioFinancas.ts
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/relatorioFinancas.ts")) {
@@ -85,7 +93,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };
   const L = (data: string, tipo: "entrada" | "despesa", valor: number, extra: Partial<Lancamento> = {}): Lancamento => ({
     id: data + valor, file: "", data, tipo, valor, categoria: tipo === "entrada" ? "Cursos" : "Alimentação", descricao: "x", projeto: "", equipe: "", registradoPor: "",
-    anulado: false, pendente: false, evento: "", participante: "", importacao: "", fixo: "", conta: "", conciliado: "", comprovante: "", registradoEm: "", registradoVia: "", anuladoEm: "", historico: [], ...extra });
+    anulado: false, pendente: false, evento: "", participante: "", importacao: "", fixo: "", conta: "", conciliado: "", reembolsar: "", reembolsado: "", comprovante: "", registradoEm: "", registradoVia: "", anuladoEm: "", historico: [], ...extra });
   const md = montarRelatorio("2026-11", [L("2026-11-02", "entrada", 1000, { conta: "bb" }), L("2026-11-03", "despesa", 300, { comprovante: "x.jpg", descricao: "a|b" }), L("2026-10-03", "despesa", 200),
     L("2026-11-20", "despesa", 450, { pendente: true, fixo: "f|2026-11" }), L("2026-11-04", "despesa", 9, { anulado: true })],
     [{ id: "bb", file: "", nome: "Banco", tipo: "banco", saldoInicial: 100, desde: "2026-01-01", ativa: true }], [], [], "2026-11-11");
@@ -96,5 +104,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(md.includes("| a/b |") && md.includes("| sim |"), "pipe escapado, comprovante");
   assert(md.includes("1 lançamento(s) anulado(s)") && md.includes("## Previsão de caixa"), "anulados e previsão no mês atual");
   assert(!montarRelatorio("2026-10", [], [], [], [], "2026-11-11").includes("Previsão"), "previsão só no mês atual");
+  const rb = montarRelatorio("2026-11", [L("2026-11-05", "despesa", 80, { reembolsar: "ana", descricao: "Gasolina" }), L("2026-11-06", "despesa", 20, { reembolsar: "ana", reembolsado: "2026-11-07" })], [], [], [], "2026-11-11", [{ id: "ana", name: "Ana Souza" }]);
+  assert(rb.includes("## Reembolsos a fazer") && rb.includes("| 05/11 | Ana Souza | Gasolina | R$ 80,00 |") && !rb.includes("| 06/11 | Ana"), "reembolsos a fazer");
   console.log(`relatorioFinancas: ${ok} ok`);
 }

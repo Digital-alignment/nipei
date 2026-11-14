@@ -11,7 +11,9 @@ import { BotaoIcone } from "@/components/ds/Botao";
 import Tabela, { Sparkline } from "@/components/ds/padroes/Tabela";
 import { BadgeEstado } from "@/components/ds/Chip";
 import { Interruptor } from "@/components/ds/Controles";
-import { CATEGORIAS, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, today } from "@/lib/v2/data";
+import { CATEGORIAS, aReembolsar, currentUser, getContas, getEquipes, getLancamentos, getPessoas, getProjetos, pessoasReembolso, today } from "@/lib/v2/data";
+import { getOrcamentosEvento } from "@/lib/v2/orcamentoEvento";
+import { norm } from "@/lib/v2/simulador";
 import { resumoContas } from "@/lib/v2/contas";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { resumoFinanceiro } from "@/lib/v2/diagnostico";
@@ -22,7 +24,7 @@ import Botao from "@/components/ds/Botao";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import EnviarComConfirmacao from "@/components/v2/EnviarComConfirmacao";
 import ExportarGoogle from "@/components/v2/ExportarGoogle";
-import { anularLancamentoAction, createLancamentoAction, desfazerImportacaoAction, quitarLancamentoAction } from "../actions";
+import { anularLancamentoAction, createLancamentoAction, desfazerImportacaoAction, quitarLancamentoAction, reembolsarAction } from "../actions";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // KPIs: whole reais, so the number never gets cut in 2 columns (cents stay in the list)
@@ -84,6 +86,10 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   const maxMes = Math.max(1, ...meses.flatMap((x) => [x.e, x.d]));
   const lista = todos.filter((l) => l.data.startsWith(mes));
   const nome = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" ")[0] ?? id;
+  // paid with someone's own money, not paid back yet: grouped by person, oldest first
+  const reembolsos = Object.entries(todos.filter(aReembolsar).sort((a, b) => a.data.localeCompare(b.data)).reduce<Record<string, typeof todos>>((a, l) => ({ ...a, [l.reembolsar]: [...(a[l.reembolsar] ?? []), l] }), {}));
+  const nomeCompleto = (id: string) => pessoas.find((p) => p.id === id)?.name.split(" (")[0] ?? id;
+  const orcamentos = getOrcamentosEvento();
 
   return (
     <>
@@ -182,6 +188,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
             <Campo tipo="selecao" name="equipe" rotulo={t.equipe}><option value="">{t.nenhum}</option>{equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}</Campo>
           </div>
           {contasAtivas.length > 0 && <Campo tipo="selecao" name="conta" rotulo={t.contaLbl} defaultValue={""}><option value="">—</option>{contasAtivas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}</Campo>}
+          <Campo tipo="selecao" name="reembolsar" rotulo={t.pagoComDinheiroDe} defaultValue="" ajuda={t.reembolsoExplica}><option value="">{t.santuarioPagou}</option>{pessoasReembolso().map((p) => <option key={p.id} value={p.id}>{p.name.split(" (")[0]}</option>)}</Campo>
           <div><BotaoEnviar enviando="…" icone="confirmar" variante="primario">{t.salvar}</BotaoEnviar></div>
         </form>
       </details>
@@ -201,14 +208,37 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         </Section>
       )}
 
+      {reembolsos.length > 0 && (
+        <Section title={t.reembolsosAFazer} count={reembolsos.reduce((a, [, ls]) => a + ls.length, 0)}>
+          <div className="grid gap-4">
+            {reembolsos.map(([pid, ls]) => (
+              <div key={pid} className="grid gap-2">
+                <p className="corpo text-t1">{nomeCompleto(pid)} · <span className="font-semibold tabular-nums">{brl(ls.reduce((a, l) => a + l.valor, 0))}</span></p>
+                <ul className="grid gap-2">
+                  {ls.map((l) => (
+                    <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-interno bg-s1 px-3 py-2">
+                      <span className="meta tabular-nums text-t3">{fmtDate(l.data, lang)}</span>
+                      <span className="corpo min-w-0 flex-1 text-t1"><Link href={`/financas/${encodeURIComponent(l.id)}`} className="anel-foco rounded-interno hover:underline">{l.descricao || l.categoria}</Link>{l.evento && <span className="meta text-t3"> · {l.evento}</span>}</span>
+                      <span className="font-semibold tabular-nums text-err">−{brl(l.valor)}</span>
+                      <form action={reembolsarAction}><input type="hidden" name="id" value={l.id} /><BotaoEnviar enviando="…" icone="confirmar" variante="tonal">{t.reembolsadoBtn}</BotaoEnviar></form>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
       {porEvento.length > 0 && (
         <Section title={t.porEvento} count={porEvento.length}>
           <div><Botao href="/financas/simulador" icone="gerar-outra" variante="fantasma" tamanho="M">{t.simularPreco}</Botao></div>
           <Tabela rotulo={t.porEvento} colunas={[
             { id: "ev", rotulo: t.eventoFin }, { id: "e", rotulo: t.entradas, numero: true }, { id: "d", rotulo: t.despesas, numero: true },
-            { id: "r", rotulo: t.resultado, numero: true }, { id: "p", rotulo: t.aReceber, numero: true },
+            { id: "r", rotulo: t.resultado, numero: true }, { id: "p", rotulo: t.aReceber, numero: true }, { id: "o", rotulo: t.orcadoLbl },
           ]} linhas={porEvento.map((x) => ({ id: x.evento, celulas: {
-            ev: <Link href={`/financas/simulador?base=${encodeURIComponent(x.evento)}`} className="anel-foco rounded-interno hover:underline" title={t.simularPreco}>{x.evento}</Link>, e: <span className="text-ok">{brl0(x.entradas)}</span>, d: <span className="text-err">{brl0(x.despesas)}</span>,
+            o: orcamentos.some((o) => norm(o.evento) === norm(x.evento)) ? <BadgeEstado estado="feita">{t.orcadoLbl}</BadgeEstado> : "—",
+            ev: <Link href={`/financas/evento?e=${encodeURIComponent(x.evento)}`} className="anel-foco rounded-interno hover:underline">{x.evento}</Link>, e: <span className="text-ok">{brl0(x.entradas)}</span>, d: <span className="text-err">{brl0(x.despesas)}</span>,
             r: <span className={x.resultado < 0 ? "text-err" : "text-t1"}>{brl0(x.resultado)}</span>, p: x.aReceber ? <span className="text-warn">{brl0(x.aReceber)}</span> : "—",
           } }))} />
         </Section>
@@ -251,7 +281,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           id: l.id, apagada: l.anulado,
           valores: { desc: l.descricao || l.categoria, data: l.data, cat: l.categoria, valor: l.tipo === "entrada" ? l.valor : -l.valor },
           celulas: {
-            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}{l.fixo && <BadgeEstado estado="interna">{t.fixoLbl}</BadgeEstado>}</span>,
+            desc: <span className="inline-flex flex-wrap items-center gap-2"><Link href={`/financas/${encodeURIComponent(l.id)}`} className={`anel-foco rounded-interno hover:underline ${l.anulado ? "line-through" : ""}`}>{l.descricao || l.categoria}{l.anulado ? ` · ${t.anulado}` : ""}</Link>{l.comprovante && <span className="text-t3" role="img" aria-label={t.temComprovante} title={t.temComprovante}><Icone nome="imagem" tamanho={16} /></span>}{l.participante && <span className="meta text-t3">{l.participante}</span>}{l.pendente && !l.anulado && <BadgeEstado estado="pendente">{rotPend(l.tipo)}</BadgeEstado>}{l.fixo && <BadgeEstado estado="interna">{t.fixoLbl}</BadgeEstado>}{aReembolsar(l) && <BadgeEstado estado="pendente">{t.aReembolsarLbl}</BadgeEstado>}</span>,
             ev: l.evento, conta: nomeConta(l.conta),
             data: fmtDate(l.data, lang), cat: l.categoria, proj: l.projeto ? projetos.find((p) => p.id === l.projeto)?.nome ?? l.projeto : "", por: nome(l.registradoPor),
             valor: <span className={`font-semibold ${l.tipo === "entrada" ? "text-ok" : "text-err"}`}>{l.tipo === "entrada" ? "+" : "−"}{brl(l.valor)}</span>,

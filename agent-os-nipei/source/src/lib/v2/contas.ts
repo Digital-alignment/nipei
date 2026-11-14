@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { getContas, noteText, slugify, today, updateNote, vault, type Conta, type Lancamento } from "./data";
+import { aReembolsar, getContas, noteText, slugify, today, updateNote, vault, type Conta, type Lancamento } from "./data";
 
 // Contas (DS 10.25): where the money is (bank, cash, Pix). One note each in Financeiro/Contas/; the balance is the
 // opening balance on `desde` plus every paid/received entry of the account from that day until today.
@@ -31,10 +31,10 @@ export function setContaAtiva(id: string, ativa: boolean) {
   updateNote(c.file, { ativa });
 }
 
-type L = Pick<Lancamento, "data" | "tipo" | "valor" | "anulado" | "pendente" | "conta" | "conciliado">;
+type L = Pick<Lancamento, "data" | "tipo" | "valor" | "anulado" | "pendente" | "conta" | "conciliado"> & Partial<Pick<Lancamento, "reembolsar" | "reembolsado">>;
 /** Balance of one account on a day (pure). */
 export function saldoConta(c: Pick<Conta, "id" | "saldoInicial" | "desde">, lanc: L[], ate: string) {
-  const v = lanc.filter((l) => l.conta === c.id && !l.anulado && !l.pendente && l.data >= c.desde && l.data <= ate)
+  const v = lanc.filter((l) => l.conta === c.id && !l.anulado && !l.pendente && !aReembolsar(l) && l.data >= c.desde && l.data <= ate)
     .reduce((a, l) => a + (l.tipo === "entrada" ? l.valor : -l.valor), c.saldoInicial);
   return Math.round(v * 100) / 100;
 }
@@ -60,6 +60,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
     x("2026-10-11", "despesa", 70, "bb", { pendente: true }), x("2026-10-12", "despesa", 70, "bb", { anulado: true }), x("2026-10-13", "despesa", 30, "outra"), x("2026-12-01", "despesa", 5)];
   assert(saldoConta(c, ls, "2026-11-11") === 850.5, `saldo ${saldoConta(c, ls, "2026-11-11")}`);
   assert(saldoConta(c, ls, "2026-10-06") === 800, "até um dia");
+  assert(saldoConta(c, [x("2026-10-05", "despesa", 40, "bb", { reembolsar: "ana" }), x("2026-10-06", "despesa", 10, "bb", { reembolsar: "ana", reembolsado: "2026-10-07" })], "2026-11-11") === 990, "reembolso a fazer não sai da conta");
   const r = resumoContas([{ ...c, file: "", nome: "BB", tipo: "banco", ativa: true }], [...ls, x("2026-10-01", "despesa", 1, "")], "2026-11-11");
   assert(r.contas[0].conciliadoAte === "2026-10-10" && r.semConta === 1, "conciliado até e sem conta");
   console.log(`contas: ${ok} ok`);

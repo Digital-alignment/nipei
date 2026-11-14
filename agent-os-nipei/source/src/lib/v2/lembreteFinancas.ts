@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { getEquipes, getLancamentos, getPessoas, vault, type Lancamento } from "./data";
+import { aReembolsar, getEquipes, getLancamentos, getPessoas, vault, type Lancamento } from "./data";
 import { semanaDe } from "./lembreteRevisao";
 import { enviarWhatsApp } from "./whatsapp";
 
@@ -18,7 +18,7 @@ const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", curren
 const dm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
 /** The message (pure, testable); "" when nothing is pending. */
-export function textoPendentes(lanc: Pick<Lancamento, "data" | "tipo" | "valor" | "descricao" | "categoria" | "evento" | "participante" | "anulado" | "pendente">[]) {
+export function textoPendentes(lanc: (Pick<Lancamento, "data" | "tipo" | "valor" | "descricao" | "categoria" | "evento" | "participante" | "anulado" | "pendente"> & Partial<Pick<Lancamento, "reembolsar" | "reembolsado">>)[], nomes: Record<string, string> = {}) {
   const pend = lanc.filter((l) => l.pendente && !l.anulado && !/^\[TESTE\]/i.test(l.descricao)).sort((a, b) => a.data.localeCompare(b.data));
   const bloco = (tipo: "despesa" | "entrada", titulo: string) => {
     const ls = pend.filter((l) => l.tipo === tipo);
@@ -27,7 +27,10 @@ export function textoPendentes(lanc: Pick<Lancamento, "data" | "tipo" | "valor" 
     if (ls.length > MAX) linhas.push(`• e mais ${ls.length - MAX}`);
     return `*${titulo}: ${brl(ls.reduce((a, l) => a + l.valor, 0))}*\n${linhas.join("\n")}`;
   };
-  const partes = [bloco("despesa", "A pagar"), bloco("entrada", "A receber")].filter(Boolean);
+  // paid with someone's own money, not paid back yet
+  const reemb = lanc.filter((l) => aReembolsar(l) && !/^\[TESTE\]/i.test(l.descricao)).sort((a, b) => a.data.localeCompare(b.data));
+  const blocoReemb = reemb.length ? `*A reembolsar: ${brl(reemb.reduce((a, l) => a + l.valor, 0))}*\n${[...reemb.slice(0, MAX).map((l) => `• ${brl(l.valor)} — ${nomes[l.reembolsar ?? ""] ?? l.reembolsar}: ${l.descricao || l.categoria} · ${dm(l.data)}`), ...(reemb.length > MAX ? [`• e mais ${reemb.length - MAX}`] : [])].join("\n")}` : "";
+  const partes = [bloco("despesa", "A pagar"), bloco("entrada", "A receber"), blocoReemb].filter(Boolean);
   return partes.length ? `Finanças da semana\n\n${partes.join("\n\n")}\n\nMarque como pago/recebido em ${LINK}` : "";
 }
 
@@ -44,7 +47,7 @@ export function lembreteFinancas() {
     fs.mkdirSync(path.dirname(ARQ()), { recursive: true });
     fs.writeFileSync(ARQ(), JSON.stringify({ semana, em: agora })); // before sending: never twice in a week
   } catch { rodando = false; return; }
-  const texto = textoPendentes(getLancamentos());
+  const texto = textoPendentes(getLancamentos(), Object.fromEntries(getPessoas().map((p) => [p.id, p.name.split(" (")[0]])));
   if (!texto) { rodando = false; return; }
   const gestao = new Set(getEquipes().filter((e) => e.gestao).map((e) => e.id));
   const pessoas = getPessoas().filter((p) => p.equipes.some((e) => gestao.has(e)) && p.whatsapp && p.whatsappVerificado && p.avisosWhatsapp && !p.suspenso && !p.externo && !p.contato);
@@ -63,5 +66,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(t.includes("*A receber: R$ 600,50*") && t.includes("Maria"), "a receber pelo participante, sem o anulado");
   const muitos = textoPendentes(Array.from({ length: 7 }, (_, i) => L("despesa", 1, `d${i}`)));
   assert(muitos.includes("e mais 2"), "corta em 5");
+  const r = textoPendentes([L("despesa", 80, "Gasolina", false, { reembolsar: "ana" }), L("despesa", 50, "Já devolvido", false, { reembolsar: "ana", reembolsado: "2026-10-21" })], { ana: "Ana Souza" }).replace(/\s/g, " ");
+  assert(r.includes("*A reembolsar: R$ 80*") && r.includes("Ana Souza: Gasolina") && !r.includes("devolvido"), "reembolsos a fazer, sem os já reembolsados");
   console.log("lembreteFinancas: ok");
 }
