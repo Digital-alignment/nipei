@@ -2,6 +2,13 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Hoje: semana compacta, ações no ⋯ no celular, dar prazo às sem data (9.19, 10.3, 10.5, 10.5.1)
+
+- `MenuAcoes`: itens com ação do servidor (`acao` + `campos`) e `soCelular`; o menu ⋯ agora é `fixed` junto ao botão (antes era cortado pelo `overflow-hidden` das listas arredondadas nas últimas linhas), abre para cima se não cabe embaixo e fecha ao rolar.
+- `LinhaTarefa`: `extraSoComputador`; `TaskRow`: `acoesCelular` — em Hoje, no celular, foco e prazo vão para o ⋯ (Pôr/Tirar do foco, Prazo: Para hoje / Amanhã / +1 semana); no computador continuam os botões.
+- Faixa da semana: semana vazia vira linha fina (pílulas de 44 px, dia + número), sem os 7 anéis vazios.
+- Hoje: com 5+ tarefas sem prazo, Chip "N sem data · dar prazo" → `/hoje?triagem=1`, 3 por vez com as opções de prazo abertas (`PrazoRapido abertoInicial`) e "Pronto".
+
 ## 2026-11-14 — Barra do celular: rótulos e indicador suave (10.10)
 
 - `components/v2/Nav.tsx` (barra do celular): cada item = ícone 22 px num indicador em pílula 56×32 + rótulo de 12 px; ativo = `ac-soft` + `ac-text` (antes: círculo de 56 px cheio de acento); orbe 64 → 56 px, círculo 84 → 76 px, pílula 72 → 68 px, sombra mais suave. Decisão em DECISOES.md; pendente "ampliar/melhorar" (§14) resolvido. Verificado a 390 px, escuro e claro.

@@ -13,7 +13,7 @@ import { EQUIPES_DS, chaveEquipe } from "../equipes";
 
 export type MetadadoTarefa = { icone?: NomeIcone; texto: ReactNode; rotulo?: string };
 
-export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, prioridade, metadados = [], pessoas = [], pessoasSoComputador, estado, feita, concluir, acoes, extra, antes, ...li }: {
+export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, prioridade, metadados = [], pessoas = [], pessoasSoComputador, extraSoComputador, estado, feita, concluir, acoes, extra, antes, ...li }: {
   href: string; titulo: ReactNode;
   /** Chave, id do vault ou cor antiga: desenha a barra e o selo. Sem uma das 4 equipes, só o nome. */
   equipe?: string; nomeEquipe?: string;
@@ -30,6 +30,8 @@ export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, p
   acoes?: ItemMenu[];
   /** Ação rápida antes do ⋯ (ex.: mudar prazo); pode abrir uma linha inteira embaixo (`basis-full`). */
   extra?: ReactNode;
+  /** `extra` only from `sm` up (on phones the same actions go into the ⋯ as `soCelular` items). */
+  extraSoComputador?: boolean;
   /** Antes do círculo (ex.: caixa de seleção do lote). */
   antes?: ReactNode;
 } & Omit<HTMLAttributes<HTMLLIElement>, "title">) {
@@ -66,7 +68,7 @@ export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, p
       )}
       {pessoas.length > 0 && <span className={`${feita ? "opacity-50" : ""} ${pessoasSoComputador ? "hidden sm:inline-flex" : ""}`}><GrupoAvatares pessoas={pessoas} tamanho={24} anel="s1" /></span>}
       {estado && <span className="hidden md:inline-flex"><BadgeEstado estado={estado} /></span>}
-      {extra}
+      {extra && (extraSoComputador ? <span className="hidden sm:contents">{extra}</span> : extra)}
       {acoes && acoes.length > 0 && <MenuAcoes itens={acoes} />}
     </li>
   );

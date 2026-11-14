@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import StatusBotao from "@/components/v2/StatusBotao";
+import type { ItemMenu } from "@/components/ds/MenuAcoes";
 import { can, type Equipe, type Me, type Pessoa, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, type Lang } from "@/lib/v2/i18n";
 import { chaveEquipe } from "@/components/ds/equipes";
@@ -21,7 +22,8 @@ export function Section({ title, count, children }: { title: ReactNode; count?: 
 /** One task as the design system's <LinhaTarefa>; the circle (StatusBotao) marks it done and works offline. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
-export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string } & RowProps) {
+/** acoesCelular: quick actions that, on phones, go into the ⋯ instead of `extra` (DS 10.3). */
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar, acoesCelular }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string; acoesCelular?: ItemMenu[] } & RowProps) {
   const en = lang === "en";
   const eq = equipes.find((e) => e.id === t.equipe);
   const pessoa = (id: string) => {
@@ -51,8 +53,8 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arr
         // read-only: not yours and not your team's to coordinate (dashed = can't change here)
         : <span aria-hidden="true" className="-mx-2 grid size-11 shrink-0 place-items-center"><span className="size-[26px] rounded-pilula border-2 border-dashed border-s4" /></span>}
       antes={selecionar && <input type="checkbox" name="ids" value={t.id} form={selecionar} aria-label={t.title} className="lote-caixa size-4 shrink-0 accent-ac" />}
-      extra={extra?.(t)}
-      acoes={[{ icone: "avancar", rotulo: en ? "Open" : "Abrir", href: `/tarefas/${t.id}` }, ...(editar ? [{ icone: "editar" as const, rotulo: en ? "Edit" : "Editar", href: `/tarefas/${t.id}/editar` }] : [])]}
+      extra={extra?.(t)} extraSoComputador={!!acoesCelular?.length}
+      acoes={[{ icone: "avancar", rotulo: en ? "Open" : "Abrir", href: `/tarefas/${t.id}` }, ...(editar ? [{ icone: "editar" as const, rotulo: en ? "Edit" : "Editar", href: `/tarefas/${t.id}/editar` }] : []), ...(acoesCelular ?? []).map((i) => ({ ...i, soCelular: true }))]}
       draggable={arrastavel || undefined} data-tarefa={arrastavel ? t.id : undefined} />
   );
 }

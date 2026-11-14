@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import Icone, { type NomeIcone } from "./Icone";
 import { useConfirmar, type PedidoConfirmacao } from "./Dialogo";
 
@@ -13,6 +13,10 @@ import { useConfirmar, type PedidoConfirmacao } from "./Dialogo";
 export type ItemMenu = {
   icone: NomeIcone; rotulo: string;
   onSelect?: () => void; href?: string;
+  /** Server action: the menu closes, sends `campos` as the form and refreshes the page. */
+  acao?: (form: FormData) => unknown; campos?: Record<string, string>;
+  /** Only below `sm` (the same action already has its own button on larger screens). */
+  soCelular?: boolean;
   /** Ação que tira algo: vai depois de um divisor. */
   sensivel?: boolean;
   /** Pergunta antes (ex.: Remover…): só chama onSelect se a pessoa confirmar. */
@@ -27,16 +31,24 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
   const criar = gatilho === "criar";
   const [aberto, setAberto] = useState(false);
   const [lado, setLado] = useState(alinhar);
-  /** Abre na direção do centro da tela: nunca por baixo do menu lateral nem para fora da borda. */
+  // ⋯ menus are fixed to the button: inside a list with overflow-hidden (rounded cards) an absolute menu was cut off
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left?: number; right?: number }>({});
+  /** Abre na direção do centro da tela: nunca por baixo do menu lateral nem para fora da borda; para cima se não cabe embaixo. */
   const abrir = () => {
     const r = botao.current?.getBoundingClientRect();
-    if (r) setLado(r.left + r.width / 2 < window.innerWidth / 2 ? "esquerda" : "direita");
+    if (r) {
+      const esq = r.left + r.width / 2 < window.innerWidth / 2;
+      setLado(esq ? "esquerda" : "direita");
+      const altura = Math.min(56 * itens.length + 12, 420), cabeEmbaixo = r.bottom + 8 + altura < window.innerHeight - 96;
+      setPos({ ...(cabeEmbaixo ? { top: r.bottom + 8 } : { bottom: window.innerHeight - r.top + 8 }), ...(esq ? { left: r.left } : { right: window.innerWidth - r.right }) });
+    }
     setAberto(true);
   };
   const caixa = useRef<HTMLDivElement>(null), botao = useRef<HTMLButtonElement>(null);
   const id = useId();
   const confirmar = useConfirmar();
   const router = useRouter();
+  const [, iniciar] = useTransition();
   const ordenados = [...itens.filter((i) => !i.sensivel), ...itens.filter((i) => i.sensivel)];
   const primeiroSensivel = ordenados.findIndex((i) => i.sensivel);
 
@@ -51,7 +63,10 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
     requestAnimationFrame(() => focar(0));
     const fora = (e: PointerEvent) => { if (!caixa.current?.contains(e.target as Node)) setAberto(false); };
     document.addEventListener("pointerdown", fora);
-    return () => document.removeEventListener("pointerdown", fora);
+    // fixed menu: closes when the page scrolls instead of floating away from its button
+    const rolou = () => { if (!criar) setAberto(false); };
+    window.addEventListener("scroll", rolou, { passive: true });
+    return () => { document.removeEventListener("pointerdown", fora); window.removeEventListener("scroll", rolou); };
   }, [aberto]);
 
   const teclasMenu = (e: KeyboardEvent) => {
@@ -70,6 +85,12 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
     if (item.confirmar && !(await confirmar(item.confirmar))) { botao.current?.focus(); return; }
     if (item.href) router.push(item.href);
     item.onSelect?.();
+    if (item.acao) {
+      const f = new FormData();
+      for (const [k, v] of Object.entries(item.campos ?? {})) f.set(k, v);
+      const acao = item.acao;
+      iniciar(async () => { await acao(f); router.refresh(); });
+    }
   };
 
   return (
@@ -83,13 +104,13 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
         <Icone nome={criar ? "mais" : "mais-opcoes"} tamanho={criar ? 26 : 20} className={criar ? `transition-transform duration-150 ${aberto ? "rotate-45" : ""}` : undefined} />
       </button>
       {aberto && (
-        <div id={id} role="menu" aria-label={rotulo}
-          className={`absolute z-50 flex ${criar ? "bottom-full mb-3" : "top-full mt-2"} min-w-[230px] flex-col rounded-[16px] bg-s2 p-1.5 shadow-[0_0_0_1px_var(--s3)] ${lado === "direita" ? "right-0" : "left-0"}`}>
+        <div id={id} role="menu" aria-label={rotulo} style={criar ? undefined : pos}
+          className={`z-50 flex max-h-[420px] min-w-[230px] flex-col overflow-y-auto rounded-[16px] bg-s2 p-1.5 shadow-[0_0_0_1px_var(--s3)] ${criar ? `absolute bottom-full mb-3 ${lado === "direita" ? "right-0" : "left-0"}` : "fixed"}`}>
           {ordenados.map((item, i) => (
             <div key={i} className="contents">
               {i === primeiroSensivel && i > 0 && <hr className="mx-1.5 my-1 h-px border-0 bg-s3" />}
               <button type="button" role="menuitem" tabIndex={-1} onClick={() => escolher(item)}
-                className="flex min-h-11 items-center gap-2.5 rounded-[10px] px-3 text-left font-texto text-sm font-medium text-t1 outline-none hover:bg-s3 focus:bg-s3">
+                className={`flex min-h-11 items-center gap-2.5 rounded-[10px] px-3 text-left font-texto text-sm font-medium text-t1 outline-none hover:bg-s3 focus:bg-s3 ${item.soCelular ? "sm:hidden" : ""}`}>
                 <Icone nome={item.icone} tamanho={18} className="text-t2" />
                 {item.rotulo}
               </button>

@@ -372,6 +372,7 @@ Selo grande num círculo (`superfície 2`) · título `titulo-secao` · uma fras
 
 ### 9.19 Menu de ações ⋯
 Cartão flutuante `superfície 2` + contorno de 1 px, raio 16, itens de 44 px com ícone + texto, divisor antes de ações sensíveis. "Remover…" abre o diálogo (não é vermelho no menu). O botão ⋯ ganha anel de acento enquanto o menu está aberto.
+Um item pode ser um link (`href`), uma função do navegador (`onSelect`) ou uma **ação do servidor** (`acao` + `campos`: o menu fecha, envia e atualiza a página). `soCelular`: o item só aparece abaixo de `sm` (quando a mesma ação já tem botão próprio no computador).
 
 ---
 
@@ -393,12 +394,13 @@ Campo de busca em pílula + fila de chips de filtro (rola na horizontal no celul
 - **Feita**: círculo preenchido em acento com ✓, título riscado e apagado, "Concluída em 1 out".
 - Agrupada por **Atrasadas / Hoje / Amanhã / …**, cada grupo com contagem.
 - No celular: somem metadados e estado.
+- **Ações rápidas no celular** (Hoje): a linha pode mandar as ações rápidas (foco, mudar prazo) para dentro do ⋯ abaixo de `sm` (`extraSoComputador` + itens `soCelular`), para o título ocupar a largura; no computador continuam como botões de ícone.
 
 ### 10.4 Cartão de tarefa (grade)
 Cartão com **recorte** e botão ↗; avatar; título `titulo-cartao` 22 px; data; estado em **pílula com menu** (avatar + "Aguardando ▼"); ação rápida. Um em destaque por tela.
 
 ### 10.5 Faixa da semana
-Pílulas verticais por dia (dia curto + número display + pontos = quantidade de eventos). Dia escolhido = acento. Variante em **anéis** (progresso por dia): anel de 48 com o número do dia no centro (tarefas do dia feitas/total), ponto azul = evento; hoje em `superfície 2`, dia escolhido com contorno de acento (o anel já é acento). No celular rola na horizontal. Uso: Hoje.
+Pílulas verticais por dia (dia curto + número display + pontos = quantidade de eventos). Dia escolhido = acento. Variante em **anéis** (progresso por dia): anel de 48 com o número do dia no centro (tarefas do dia feitas/total), ponto azul = evento; hoje em `superfície 2`, dia escolhido com contorno de acento (o anel já é acento). No celular rola na horizontal. Uso: Hoje. **Semana vazia** (nenhuma tarefa nem evento nos 7 dias): a faixa vira uma linha fina — pílulas de 44 px com dia curto e número lado a lado, sem anel —, porque 7 anéis vazios só ocupam espaço.
 
 ### 10.5.1 Foco de hoje e tarefa rápida (Hoje)
 - **Ordem de Hoje** (2026-11-14: as tarefas apareciam só depois de ~3 telas no celular): saudação + chips de pendências → Missão da semana (destaque) → Boas-vindas → faixa da semana → Foco de hoje → abas de tarefas → **depois** os cartões de configuração (Primeiros passos, Onde estou esta semana, Organizar equipes). "Organizar equipes" começa fechado (o resumo com a barra continua visível). Primeiros passos com 2 passos ou menos por fazer não vira cartão: cada passo que falta é um Chip nas pendências do cabeçalho (ícone `tarefa`). O campo do Pinu no fim da página saiu: o do cabeçalho (`BuscaPinu`) é o mesmo assistente.
@@ -411,6 +413,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 - **Dia carregado** (faixa da semana): pílula em `warn-bg` com o dia curto em `warn` quando as abertas do dia ≥ máx(4, 2× a média da semana). Ao escolher o dia: aviso `atencao` com o dia mais leve, e a primeira opção do calendário de cada tarefa vira "Para <dia mais leve>".
 - **Agenda Google na faixa**: com a conta Google conectada, ponto neutro (`texto secundário`) ao lado do azul = evento pessoal do Google; os de hoje (cabeçalho) e os do dia escolhido viram chips com o ícone `abrir-fora` (abrem no Google).
 - **Dia fechado**: quando Agora fica vazia e houve tarefas concluídas hoje, aviso `sucesso` acima do foco: "Nada pendente para hoje e N concluídas." + link "Amanhã: N tarefas." (abre o dia seguinte) + os títulos feitos em `texto secundário`.
+- **Dar prazo às sem data** (Hoje): com 5 ou mais tarefas minhas sem prazo, Chip em "Para você" "N sem data · dar prazo" (ícone `prazo`) que abre `/hoje?triagem=1`: no lugar do foco, Seção "Dar prazo" com `meta` "N sem data" e as 3 primeiras (ordem inteligente), cada uma com as opções de prazo já abertas (Esta semana · Próxima semana · Este mês · Outra data); ao escolher, a tarefa sai e entra a próxima. Botão fantasma P "Pronto" (ícone `confirmar`) fecha a triagem.
 - **Tarefa rápida**: no topo da aba Agora, campo em pílula (9.5, forma de busca) com `mais` à esquerda e botão de ícone em acento `enviar` à direita; Enter cria a tarefa para hoje, comigo, na minha equipe.
 
 ### 10.6 Agenda

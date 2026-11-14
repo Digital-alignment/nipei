@@ -8,8 +8,8 @@ import Chip from "@/components/ds/Chip";
 import Icone from "@/components/ds/Icone";
 
 /** New due date in two taps: the calendar icon opens the options (keeps the list compact). */
-export default function PrazoRapido({ id, opcoes, outraData, rotulo }: { id: string; opcoes: { label: string; data: string }[]; outraData: string; rotulo: string }) {
-  const [aberto, setAberto] = useState(false);
+export default function PrazoRapido({ id, opcoes, outraData, rotulo, abertoInicial = false }: { id: string; opcoes: { label: string; data: string }[]; outraData: string; rotulo: string; abertoInicial?: boolean }) {
+  const [aberto, setAberto] = useState(abertoInicial);
   const [pending, start] = useTransition();
   const salvar = (prazo: string) => {
     if (!prazo || pending) return;
