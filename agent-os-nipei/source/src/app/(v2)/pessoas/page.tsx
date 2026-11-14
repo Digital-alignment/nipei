@@ -17,6 +17,9 @@ import CadastroLote from "@/components/v2/CadastroLote";
 import { LoteToggle } from "@/components/v2/LoteBarra";
 import { createPessoaAction } from "../actions";
 import EscolherEquipes from "@/components/v2/EscolherEquipes";
+import CartaoDS from "@/components/ds/Cartao";
+import { BarraProgresso } from "@/components/ds/Progresso";
+import { organizacao } from "@/lib/v2/organizacao";
 
 const waLink = (n: string) => `https://wa.me/${n.replace(/\D/g, "")}`;
 
@@ -86,17 +89,36 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
     );
   };
 
+  // pending team organisation (management, no team filter): the card replaces the header button
+  const org = me.gestao && !q.equipe ? (() => { const o = organizacao(); return o.semEquipe.length || o.semCoordenacao.length || o.semFuncao.length ? o : null; })() : null;
   return (
     <>
       {(() => { const e = q.equipe ? equipes.find((x) => x.id === q.equipe) : null; return (
         <div className="-ml-3 mb-2"><Botao href={e ? `/equipes/${e.id}` : "/equipes"} variante="fantasma" tamanho="P" icone="voltar">{e ? e.nome : t.equipes}</Botao></div>
       ); })()}
       <CabecalhoPagina selo="mao" rotulo={`${ativas.length} ${t.membros.toLowerCase()}`} titulo={t.pessoas}
-        acoes={me.gestao && <><Botao href="/pessoas/completar" variante="tonal" icone="editar" tamanho="M">{t.ps.completar}</Botao><Botao href="/pessoas/organizar" variante="tonal" icone="pessoas" tamanho="M">{t.organizarEquipes}</Botao></>}
+        acoes={me.gestao && <><Botao href="/pessoas/completar" variante="tonal" icone="editar" tamanho="M">{t.ps.completar}</Botao>{!org && <Botao href="/pessoas/organizar" variante="tonal" icone="pessoas" tamanho="M">{t.organizarEquipes}</Botao>}</>}
         filtros={<>
           <ChipDS ativo={!q.equipe} href={link({ equipe: undefined })}>{t.todas}</ChipDS>
           {[...equipes].sort((a, b) => Number(b.id === q.equipe) - Number(a.id === q.equipe)).map((e) => <ChipDS tipo={chaveEquipe(e.cor) ? "equipe" : "filtro"} equipe={chaveEquipe(e.cor)} ativo={q.equipe === e.id} key={e.id} href={link({ equipe: e.id })}>{e.nome}</ChipDS>)}
         </>} />
+      {org && (() => {
+        // Organizar equipes (moved here from Hoje, DS 10.5.1): progress + what is missing, while there is work left
+        return (
+          <CartaoDS className="mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="titulo-cartao inline-flex items-center gap-2"><Icone nome="pessoas" tamanho={20} />{t.organizarEquipes}<span className="meta font-normal text-t3">{org.pct}%</span></p>
+              <Botao href="/pessoas/organizar" variante="tonal" tamanho="P" icone="avancar">{t.organizarTodos}</Botao>
+            </div>
+            <BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />
+            <div className="flex flex-wrap gap-1.5">
+              {org.semEquipe.length > 0 && <ChipDS tipo="metadado" icone="pessoa">{org.semEquipe.length} {t.semEquipeCurto}</ChipDS>}
+              {org.semCoordenacao.length > 0 && <ChipDS tipo="metadado" icone="atencao">{org.semCoordenacao.length} {t.equipesSemCoord}</ChipDS>}
+              {org.semFuncao.length > 0 && <ChipDS tipo="metadado" icone="editar">{org.semFuncao.length} {t.semFuncaoCurto}</ChipDS>}
+            </div>
+          </CartaoDS>
+        );
+      })()}
       <form className="mb-3">
         {q.equipe && <input type="hidden" name="equipe" value={q.equipe} />}
         {q.ordem && <input type="hidden" name="ordem" value={q.ordem} />}

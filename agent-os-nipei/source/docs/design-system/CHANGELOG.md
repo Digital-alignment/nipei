@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Hoje: Organizar equipes em Pessoas e resumo por equipe (10.5.1)
+
+- Hoje: o Cartão "Organizar equipes" saiu; fica um Chip "Organizar equipes N%" em "Equipe e gestão". `/pessoas` (gestão, sem filtro): Cartão com a barra de progresso, as contagens e o Botão "Organizar equipes" (o botão do cabeçalho só aparece quando não há pendências).
+- Hoje: o Chip "N atrasadas · N sem responsável" virou um Chip por equipe com selo e cor (`tipo="equipe"`), um número só (atrasadas, senão sem responsável), que abre o Pulso filtrado.
+
 ## 2026-11-14 — Hoje: pendências sem cortar, "+" que não cobre, chip de novidades (9.1, 10.5.1)
 
 - `components/v2/FilaPendencias.tsx`: os grupos de pendências quebram linha; no celular até 3 Chips + "+N" que abre o resto (antes rolavam de lado e o que passava da borda não se via).

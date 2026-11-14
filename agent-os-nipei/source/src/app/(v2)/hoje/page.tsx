@@ -4,7 +4,6 @@ import { EstadoVazio } from "@/components/ds/Estados";
 import { TaskRow, byPrazo } from "@/components/v2/ui";
 
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import EscolherEquipes from "@/components/v2/EscolherEquipes";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { filtrarConfirmados, getFatos, podeRevisar, usoFatos } from "@/lib/v2/conhecimento";
@@ -28,6 +27,7 @@ import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction } from "../actions";
 import type { ItemMenu } from "@/components/ds/MenuAcoes";
 import Chip from "@/components/ds/Chip";
+import { chaveEquipe } from "@/components/ds/equipes";
 import { pedidosNovos } from "@/lib/v2/pedidos";
 import { checkinPendente } from "@/lib/v2/objetivos";
 import { diaSemana, getPresenca, getProcedimentos, segunda } from "@/lib/v2/rotinas";
@@ -132,7 +132,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
 
   // pending items as small pills (each opens its page)
   // grupo: "voce" (my own things, by urgency) or "equipe" (team and management); ordem: lower = more urgent
-  type Pilula = { href: string; icone: NomeIcone; texto: string; titulo: string; grupo?: "equipe"; ordem?: number; alerta?: boolean };
+  type Pilula = { href: string; icone: NomeIcone; texto: string; titulo: string; grupo?: "equipe"; ordem?: number; alerta?: boolean; equipe?: string };
   const pilulas: Pilula[] = [];
   const passos = primeirosPassos(user);
   const comPassos = passos.some((x) => !x.feito);
@@ -179,7 +179,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const triagem = !!q.triagem && semData.length > 0;
   if (semData.length >= 5 && !triagem) pilulas.push({ href: "/hoje?triagem=1", icone: "prazo", texto: `${semData.length} ${t.hj.semDataDar}`, titulo: t.semData, ordem: 5 });
   const p = user.gestao ? pulso() : null;
-  if (p && (p.atrasadas > 0 || p.semDono > 0)) pilulas.push({ href: "/pulso", icone: "atencao", texto: `${p.atrasadas} ${t.atrasadasLbl} · ${p.semDono} ${t.semDonoLbl}`, titulo: t.pulso, grupo: "equipe", ordem: 4 });
+  // team snapshot: where to act, not a raw total (most overdue first; team selo and colour on the chip)
+  if (p) for (const l of p.linhas.filter((x) => x.atrasadas > 0 || x.semDono > 0).sort((a, b) => b.atrasadas - a.atrasadas || b.semDono - a.semDono)) {
+    // one number per chip (overdue, else without owner): with both, long team names went past the phone edge
+    const partes = l.atrasadas > 0 ? `${l.atrasadas} ${l.atrasadas === 1 ? t.hj.resumoAtrasada : t.atrasadasLbl}` : `${l.semDono} ${t.hj.semResp}`;
+    pilulas.push({ href: `/pulso?equipe=${encodeURIComponent(l.id)}&ver=${l.atrasadas > 0 ? "atrasadas" : "semdono"}`, icone: "atencao", texto: `${l.nome || t.semEquipeLbl} · ${partes}`, titulo: t.pulso, grupo: "equipe", ordem: 4, equipe: chaveEquipe(l.cor) || undefined });
+  }
+  if (mostrarOrg && org) pilulas.push({ href: "/pessoas/organizar", icone: "pessoas", texto: `${t.organizarEquipes} ${org.pct}%`, titulo: t.organizarEquipes, grupo: "equipe", ordem: 7 });
   if (podeFinancas(user)) {
     const ls = getLancamentos().filter((l) => !l.anulado && !/^\[TESTE\]/i.test(l.descricao));
     const aPagar = ls.filter((l) => l.pendente && l.tipo === "despesa" && l.data <= dia(7)).length, reemb = ls.filter(aReembolsar).length;
@@ -256,7 +262,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           ...googleEvs.filter((e) => e.dia === hoje).map(chipGoogle),
           ...proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>),
           ...paraVoce.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>),
-        ]], ["equipe", t.hj.equipeGestao, daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)]] as const)
+        ]], ["equipe", t.hj.equipeGestao, daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents">{x.equipe ? <Chip href={x.href} tipo="equipe" equipe={x.equipe}>{x.texto}</Chip> : <Chip href={x.href} icone={x.icone}>{x.texto}</Chip>}</span>)]] as const)
           .filter(([, , chips]) => chips.length > 0).map(([id, rotulo, chips]) => <FilaPendencias key={id} rotulo={rotulo} itens={[...chips]} />)}
       </header>
 
@@ -485,31 +491,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         );
       })()}
 
-      {mostrarOrg && org && (
-        <Cartao className="mb-4">
-          <SecaoRecolhivel id="hoje-organizar" emCartao aberto={false} contagem={`${org.pct}%`}
-            titulo={<span className="flex items-center gap-2.5"><span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome="pessoas" tamanho={20} /></span>{t.organizarEquipes}</span>}
-            resumo={<BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />}>
-            <p className="corpo text-t2">{t.organizarHojeIntro}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {org.semEquipe.length > 0 && <Chip tipo="metadado" icone="pessoa">{org.semEquipe.length} {t.semEquipeCurto}</Chip>}
-              {org.semCoordenacao.length > 0 && <Chip tipo="metadado" icone="atencao">{org.semCoordenacao.length} {t.equipesSemCoord}</Chip>}
-              {org.semFuncao.length > 0 && <Chip tipo="metadado" icone="editar">{org.semFuncao.length} {t.semFuncaoCurto}</Chip>}
-            </div>
-            {org.semEquipe.length > 0 && (
-              <ul className="grid gap-3">
-                {org.semEquipe.slice(0, 3).map((pe) => (
-                  <li key={pe.id} className="grid gap-1.5">
-                    <Link href={`/pessoas/${pe.id}`} className="anel-foco alvo-toque min-w-0 rounded-interno text-[15px] font-medium text-t1 hover:underline"><span className="block truncate">{pe.name}</span></Link>
-                    <EscolherEquipes pessoaId={pe.id} equipes={equipes} t={t} />
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div><Botao href="/pessoas/organizar" variante="fantasma" tamanho="M" icone="pessoas" iconeDireita="avancar">{t.organizarTodos}</Botao></div>
-          </SecaoRecolhivel>
-        </Cartao>
-      )}
 
       </div>
 
