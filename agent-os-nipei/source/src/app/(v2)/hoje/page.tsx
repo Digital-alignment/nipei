@@ -4,9 +4,7 @@ import { EstadoVazio } from "@/components/ds/Estados";
 import { TaskRow, byPrazo } from "@/components/v2/ui";
 
 import PrazoRapido from "@/components/v2/PrazoRapido";
-import { CampoAssistente } from "@/components/v2/AssistenteGlobal";
 import EscolherEquipes from "@/components/v2/EscolherEquipes";
-import { funcaoLigada } from "@/lib/v2/funcoes";
 import { prontosPara } from "@/lib/v2/trabalhos";
 import { perfilPendente } from "@/lib/v2/perfil";
 import { filtrarConfirmados, getFatos, podeRevisar, usoFatos } from "@/lib/v2/conhecimento";
@@ -117,6 +115,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const atrasadas = agora.filter((x) => x.prazo < hoje).length;
   const foco = focoIds.map((id) => getTarefas().find((x) => x.id === id)).filter((x): x is Tarefa => !!x);
   const sugestao = foco.length ? [] : [...agora, ...proximas].slice(0, MAX_FOCO);
+  const sugestaoUtil = sugestao.some((x) => !agora.includes(x));
   // tarefa rápida em "Agora": nasce para hoje, comigo, na minha primeira equipe (a gestão pode criar sem equipe)
   const equipeRapida = user.equipes.find((id) => equipes.some((e) => e.id === id)) ?? "";
   const podeRapida = !!me && can.criarEm(user, equipeRapida);
@@ -130,6 +129,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const pilulas: Pilula[] = [];
   const passos = primeirosPassos(user);
   const comPassos = passos.some((x) => !x.feito);
+  // 2 steps or fewer left: they go to the header chips; the card only while there is a real checklist
+  const passosFaltam = passos.filter((x) => !x.feito), passosEmCartao = passosFaltam.length > 2;
   const missao = missaoDaSemana(user);
   const org = user.gestao ? organizacao() : null;
   const mostrarOrg = !!org && (org.semEquipe.length > 0 || org.semCoordenacao.length > 0 || org.semFuncao.length > 0);
@@ -144,6 +145,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       if (feitas < x.perguntas.length) pilulas.push({ href: `/diagnosticos/${d.id}/coletivo?secao=${x.id}`, icone: "tarefa", texto: `${lang === "en" ? x.titulo_en : x.titulo} ${feitas}/${x.perguntas.length}`, titulo: t.parteColetiva });
     }
   }
+  if (comPassos && !passosEmCartao) for (const x of passosFaltam) pilulas.push({ href: x.href, icone: "tarefa", texto: t.passos[x.id], titulo: t.primeirosPassos });
   const fatos = getFatos();
   const revisar = fatos.filter((f) => f.status === "proposto" && podeRevisar(user, f)).length;
   const alertas = getAlertas().filter((a) => {
@@ -254,25 +256,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </Cartao>
       )}
 
-      {comPassos && (
-        <Cartao className="mb-4">
-          <SecaoRecolhivel id="hoje-passos" emCartao titulo={t.primeirosPassos} contagem={`${passosFeitos} / ${passos.length}`}
-            resumo={<BarraProgresso valor={passosFeitos} max={passos.length} planejado rotuloAcessivel={t.primeirosPassos} />}>
-            <ul className="grid gap-x-4 sm:grid-cols-2">
-              {passos.map((x) => (
-                <li key={x.id}>
-                  <Link href={x.href} className={`anel-foco flex min-h-11 items-center gap-3 rounded-interno text-[15px] ${x.feito ? "text-t3" : "text-t1 hover:underline"}`}>
-                    <span className={`grid size-[26px] shrink-0 place-items-center rounded-pilula ${x.feito ? "bg-ac text-ac-ink" : "hachurado shadow-[inset_0_0_0_2px_var(--s4)]"}`}>{x.feito && <Icone nome="confirmar" tamanho={15} />}</span>
-                    <span className={`min-w-0 flex-1 ${x.feito ? "line-through" : ""}`}>{t.passos[x.id]}</span>
-                    {!x.feito && <Icone nome="avancar" tamanho={16} className="shrink-0 text-t3" />}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </SecaoRecolhivel>
-        </Cartao>
-      )}
-
       {me && me.boasVindas.filter((b) => b.desde >= dia(-30)).map((b) => {
         // DS 10.20: welcome to a team joined in the last 30 days, until "Entendi"
         const eq = equipes.find((x) => x.id === b.equipe);
@@ -303,49 +286,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           </Cartao>
         );
       })}
-
-      {me && !me.contato && me.equipes.length > 0 && (() => {
-        // DS 10.18: where I am this week (tap a day to cycle); empty week → "same as last week"
-        const seg = segunda(hoje), minha = getPresenca(seg)[me.id], passada = getPresenca(segunda(dia(-7)))[me.id];
-        const dias = minha ?? Array(7).fill(""), noSant = dias.filter((x) => x === "s").length;
-        return (
-          <Cartao className="mb-4">
-            <SecaoRecolhivel id="hoje-semana" emCartao aberto={false} titulo={t.rot.ondeEstou} contagem={noSant ? `${noSant} ${t.rot.diasNoSantuario}` : undefined}>
-              <SemanaPresenca pessoa={me.id} dias={dias} hojeIdx={diaSemana(hoje) - 1} t={t} editar />
-              {!minha && passada?.some(Boolean) && (
-                <form action={presencaAction}><input type="hidden" name="pessoa" value={me.id} /><input type="hidden" name="copiar" value="1" />
-                  <BotaoEnviar enviando="…" icone="gerar-outra" variante="tonal" tamanho="P">{t.rot.igualPassada}</BotaoEnviar></form>
-              )}
-            </SecaoRecolhivel>
-          </Cartao>
-        );
-      })()}
-
-      {mostrarOrg && org && (
-        <Cartao className="mb-4">
-          <SecaoRecolhivel id="hoje-organizar" emCartao contagem={`${org.pct}%`}
-            titulo={<span className="flex items-center gap-2.5"><span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome="pessoas" tamanho={20} /></span>{t.organizarEquipes}</span>}
-            resumo={<BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />}>
-            <p className="corpo text-t2">{t.organizarHojeIntro}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {org.semEquipe.length > 0 && <Chip tipo="metadado" icone="pessoa">{org.semEquipe.length} {t.semEquipeCurto}</Chip>}
-              {org.semCoordenacao.length > 0 && <Chip tipo="metadado" icone="atencao">{org.semCoordenacao.length} {t.equipesSemCoord}</Chip>}
-              {org.semFuncao.length > 0 && <Chip tipo="metadado" icone="editar">{org.semFuncao.length} {t.semFuncaoCurto}</Chip>}
-            </div>
-            {org.semEquipe.length > 0 && (
-              <ul className="grid gap-3">
-                {org.semEquipe.slice(0, 3).map((pe) => (
-                  <li key={pe.id} className="grid gap-1.5">
-                    <Link href={`/pessoas/${pe.id}`} className="anel-foco alvo-toque min-w-0 rounded-interno text-[15px] font-medium text-t1 hover:underline"><span className="block truncate">{pe.name}</span></Link>
-                    <EscolherEquipes pessoaId={pe.id} equipes={equipes} t={t} />
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div><Botao href="/pessoas/organizar" variante="fantasma" tamanho="M" icone="pessoas" iconeDireita="avancar">{t.organizarTodos}</Botao></div>
-          </SecaoRecolhivel>
-        </Cartao>
-      )}
 
       {me && (
         // faixa da semana em anéis (seção 10.5): anel = minhas tarefas do dia feitas/total, número no centro; ponto azul = evento
@@ -401,7 +341,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           </>} />
       )}
 
-      {me && !doDia && (foco.length > 0 || sugestao.length > 0) && (
+      {me && !doDia && (foco.length > 0 || sugestaoUtil) && (
         // foco de hoje (seção 10.5.1): até 3 tarefas; vazio = sugestão da ordem inteligente com "Usar estas"
         <section aria-label={t.focoHoje} className="mb-6">
           <GrupoTarefas titulo={<>{t.focoHoje}{!foco.length && <span className="meta ml-2 font-normal text-t3">{t.focoSugestao}</span>}</>} contagem={foco.length ? foco.length : undefined}>
@@ -446,7 +386,71 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         ]} />
       )}
 
-      {funcaoLigada("assistente", user) && !user.vendoComo && <section className="mt-8 pb-16 md:pb-0"><CampoAssistente placeholder={t.perguntePeca} sugestoes={t.sugestoesHoje} /></section>}
+      {/* setup cards (first steps, where I am, organizing teams) after the tasks: DS 10.5.1, order of Hoje */}
+      <div className="mt-8 pb-16 md:pb-0">
+      {passosEmCartao && (
+        <Cartao className="mb-4">
+          <SecaoRecolhivel id="hoje-passos" emCartao titulo={t.primeirosPassos} contagem={`${passosFeitos} / ${passos.length}`}
+            resumo={<BarraProgresso valor={passosFeitos} max={passos.length} planejado rotuloAcessivel={t.primeirosPassos} />}>
+            <ul className="grid gap-x-4 sm:grid-cols-2">
+              {passos.map((x) => (
+                <li key={x.id}>
+                  <Link href={x.href} className={`anel-foco flex min-h-11 items-center gap-3 rounded-interno text-[15px] ${x.feito ? "text-t3" : "text-t1 hover:underline"}`}>
+                    <span className={`grid size-[26px] shrink-0 place-items-center rounded-pilula ${x.feito ? "bg-ac text-ac-ink" : "hachurado shadow-[inset_0_0_0_2px_var(--s4)]"}`}>{x.feito && <Icone nome="confirmar" tamanho={15} />}</span>
+                    <span className={`min-w-0 flex-1 ${x.feito ? "line-through" : ""}`}>{t.passos[x.id]}</span>
+                    {!x.feito && <Icone nome="avancar" tamanho={16} className="shrink-0 text-t3" />}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </SecaoRecolhivel>
+        </Cartao>
+      )}
+
+      {me && !me.contato && me.equipes.length > 0 && (() => {
+        // DS 10.18: where I am this week (tap a day to cycle); empty week → "same as last week"
+        const seg = segunda(hoje), minha = getPresenca(seg)[me.id], passada = getPresenca(segunda(dia(-7)))[me.id];
+        const dias = minha ?? Array(7).fill(""), noSant = dias.filter((x) => x === "s").length;
+        return (
+          <Cartao className="mb-4">
+            <SecaoRecolhivel id="hoje-semana" emCartao aberto={false} titulo={t.rot.ondeEstou} contagem={noSant ? `${noSant} ${t.rot.diasNoSantuario}` : undefined}>
+              <SemanaPresenca pessoa={me.id} dias={dias} hojeIdx={diaSemana(hoje) - 1} t={t} editar />
+              {!minha && passada?.some(Boolean) && (
+                <form action={presencaAction}><input type="hidden" name="pessoa" value={me.id} /><input type="hidden" name="copiar" value="1" />
+                  <BotaoEnviar enviando="…" icone="gerar-outra" variante="tonal" tamanho="P">{t.rot.igualPassada}</BotaoEnviar></form>
+              )}
+            </SecaoRecolhivel>
+          </Cartao>
+        );
+      })()}
+
+      {mostrarOrg && org && (
+        <Cartao className="mb-4">
+          <SecaoRecolhivel id="hoje-organizar" emCartao aberto={false} contagem={`${org.pct}%`}
+            titulo={<span className="flex items-center gap-2.5"><span className="grid size-10 shrink-0 place-items-center rounded-pilula bg-s2 text-t1"><Icone nome="pessoas" tamanho={20} /></span>{t.organizarEquipes}</span>}
+            resumo={<BarraProgresso valor={org.pct} planejado rotuloAcessivel={t.organizarEquipes} />}>
+            <p className="corpo text-t2">{t.organizarHojeIntro}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {org.semEquipe.length > 0 && <Chip tipo="metadado" icone="pessoa">{org.semEquipe.length} {t.semEquipeCurto}</Chip>}
+              {org.semCoordenacao.length > 0 && <Chip tipo="metadado" icone="atencao">{org.semCoordenacao.length} {t.equipesSemCoord}</Chip>}
+              {org.semFuncao.length > 0 && <Chip tipo="metadado" icone="editar">{org.semFuncao.length} {t.semFuncaoCurto}</Chip>}
+            </div>
+            {org.semEquipe.length > 0 && (
+              <ul className="grid gap-3">
+                {org.semEquipe.slice(0, 3).map((pe) => (
+                  <li key={pe.id} className="grid gap-1.5">
+                    <Link href={`/pessoas/${pe.id}`} className="anel-foco alvo-toque min-w-0 rounded-interno text-[15px] font-medium text-t1 hover:underline"><span className="block truncate">{pe.name}</span></Link>
+                    <EscolherEquipes pessoaId={pe.id} equipes={equipes} t={t} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div><Botao href="/pessoas/organizar" variante="fantasma" tamanho="M" icone="pessoas" iconeDireita="avancar">{t.organizarTodos}</Botao></div>
+          </SecaoRecolhivel>
+        </Cartao>
+      )}
+
+      </div>
 
       {/* "+" flutuante: ações de criação (acima da barra do celular) */}
       <div className="print:hidden fixed bottom-[calc(7.25rem+env(safe-area-inset-bottom))] right-4 z-30 md:bottom-8 md:right-8">

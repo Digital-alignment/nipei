@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Hoje mais direto (10.5.1)
+
+- Ordem: as tarefas (semana, foco, abas) vêm logo depois das pendências e da missão; Primeiros passos, Onde estou e Organizar equipes foram para o fim. No celular a lista de tarefas começava a ~2.100 px e agora a ~360 px; a página caiu de ~2.800 para ~1.100 px.
+- Organizar equipes começa fechado. Primeiros passos com ≤ 2 por fazer vira Chip nas pendências. A sugestão do Foco só aparece se trouxer algo fora da aba Agora. Saiu o campo do Pinu do fim (o do cabeçalho é o mesmo).
+
 ## 2026-11-14 — Revisão de Finanças no celular (10.1, 9.x, 10.25)
 
 - `CabecalhoPagina`: as ações quebram linha (`flex-wrap`) em vez de sair da tela (o `html` corta o excesso; no celular "Importar" e "Contador" sumiam).
