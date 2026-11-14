@@ -132,7 +132,8 @@ async function chamarModelo(sistema: string, conteudo: Parte[], maxTokens: numbe
   const res = await fetch(m.url, {
     method: "POST",
     headers: m.headers,
-    body: JSON.stringify({ model: modelo, temperature: 0.2, max_tokens: maxTokens, messages: [{ role: "system", content: sistema }, { role: "user", content: conteudo }], usage: { include: true } }),
+    // reasoning off: with a long context the model spent all of max_tokens "thinking" and answered nothing (finish_reason "length")
+    body: JSON.stringify({ model: modelo, temperature: 0.2, max_tokens: maxTokens, reasoning: { enabled: false }, messages: [{ role: "system", content: sistema }, { role: "user", content: conteudo }], usage: { include: true } }),
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) { const e = new Error(`IA indisponível (${res.status})`); registrarErro(`IA (${modelo})`, e); throw e; }

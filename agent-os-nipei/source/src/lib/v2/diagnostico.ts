@@ -283,6 +283,15 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
   const tarefas = getTarefas().filter((t) => !d.projeto || t.projeto === d.projeto);
   const col = getColetivo(d.id);
   const lanc = secaoId === "financas" ? lancamentosDoPeriodo(d, col.periodo) : [];
+  // the model miscounted sums (11/2026 test); it gets the system's totals and is told not to recompute them
+  const fin = secaoId === "financas" ? resumoFinanceiro(lanc, col.orcamento) : null;
+  const totais = fin ? [
+    "## Totais calculados pelo sistema (use estes números; não refaça as contas. \"Real\" = só pago/recebido; pendentes à parte)",
+    `- Entradas recebidas: R$ ${fin.totalEntradas} · Despesas pagas: R$ ${fin.totalDespesas} · Resultado: R$ ${fin.resultado}`,
+    `- A receber: R$ ${fin.aReceber} · A pagar: R$ ${fin.aPagar} · Resultado com os pendentes: R$ ${fin.resultado + fin.aReceber - fin.aPagar}`,
+    "- Orçado × real por categoria:", ...fin.comparacao.map((c) => `  - ${c.categoria} (${c.tipo}): orçado R$ ${c.orcado}, real R$ ${c.real}, diferença R$ ${c.diferenca}`),
+    "- Por evento:", ...fin.porEvento.map((e) => `  - ${e.evento || "(sem evento)"}: entradas R$ ${e.entradas}, despesas R$ ${e.despesas}, resultado R$ ${e.resultado}, a receber R$ ${e.aReceber}`),
+  ].join("\n") : "";
   const contexto = [
     `Hoje: ${today()} · Diagnóstico: ${d.titulo} · Evento: ${d.evento}`,
     projeto ? `Projeto: ${projeto.nome} — ${projeto.descricao}` : "",
@@ -290,6 +299,7 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
     "## Notas do vault (não revisadas)", ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 6).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
     `## Tarefas do projeto (${tarefas.length})`, ...tarefas.slice(0, 80).map((t) => `- ${t.id}: ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
     secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo}${l.pendente ? (l.tipo === "entrada" ? " A RECEBER" : " A PAGAR") : ""} R$ ${l.valor} ${l.categoria}${l.evento ? ` [${l.evento}]` : ""}${l.participante ? ` (participante: ${l.participante})` : ""}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}\n## Orçamento original por categoria\n${Object.entries(col.orcamento).map(([k, v]) => `- ${k}: R$ ${v}`).join("\n") || "(nenhum orçamento registrado)"}` : "",
+    totais,
     `## Perguntas (${sec.titulo})`, ...sec.perguntas.map((q) => `- ${q.id}: ${q.texto}\n  Guia: ${q.guia.join(" | ")}`),
   ].filter(Boolean).join("\n");
   const { o } = await chamarIA(SISTEMA_COLETIVO, [{ type: "text", text: contexto }], 6000, 150_000);

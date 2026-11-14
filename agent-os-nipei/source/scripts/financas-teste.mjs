@@ -70,6 +70,24 @@ function carregar() {
   return DADOS.length;
 }
 
+// The test period and budget were typed in the app (Diagnosticos/<id>/coletivo.md), so they carry no mark of their own:
+// `limpar-diagnostico` empties `periodo` and `orcamento` of every diagnostic and prints what it removed.
+function limparDiagnostico() {
+  const base = path.join(vault, "Diagnosticos");
+  if (!fs.existsSync(base)) return;
+  for (const d of fs.readdirSync(base)) {
+    const f = path.join(base, d, "coletivo.md");
+    if (!fs.existsSync(f)) continue;
+    const s = fs.readFileSync(f, "utf-8"), nl = s.includes("\r\n") ? "\r\n" : "\n";
+    const bloco = (k) => new RegExp(`^${k}:.*(?:\\r?\\n  .*)*`, "m");
+    const novo = s.replace(bloco("periodo"), `periodo:${nl}  de: ''${nl}  ate: ''`).replace(bloco("orcamento"), "orcamento: {}");
+    if (novo === s) continue;
+    console.log(`${d}: apagado\n${s.match(bloco("periodo"))?.[0] ?? ""}\n${s.match(bloco("orcamento"))?.[0] ?? ""}`);
+    fs.writeFileSync(f, novo);
+  }
+}
+
 if (cmd === "carregar") console.log(`${carregar()} lançamentos de teste em ${dir}`);
-else if (cmd === "limpar") console.log(`${limpar()} lançamentos de teste apagados de ${dir}`);
-else console.log("use: node scripts/financas-teste.mjs carregar|limpar [vault]");
+else if (cmd === "limpar") console.log(`${limpar()} lançamentos de teste apagados de ${dir}\n(período e orçamento do diagnóstico ficam: limpar-diagnostico)`);
+else if (cmd === "limpar-diagnostico") limparDiagnostico();
+else console.log("use: node scripts/financas-teste.mjs carregar|limpar|limpar-diagnostico [vault]");
