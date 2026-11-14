@@ -25,7 +25,8 @@ export type ItemMenu = {
 
 /**
  * `alinhar` é só o lado inicial: ao abrir, o menu vai na direção do centro da tela.
- * `gatilho="criar"`: o "+" flutuante (56 px, claro sobre o fundo) que abre as ações de criação; o menu abre para cima.
+ * `gatilho="criar"`: o "+" flutuante (56 px no computador, 48 no celular, claro sobre o fundo) que abre as ações de criação; o menu abre para cima.
+ * No celular some enquanto a página desce e volta ao subir (não fica por cima do que se lê).
  */
 export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "direita", gatilho = "mais-opcoes" }: { itens: ItemMenu[]; rotulo?: string; alinhar?: "direita" | "esquerda"; gatilho?: "mais-opcoes" | "criar" }) {
   const criar = gatilho === "criar";
@@ -49,6 +50,19 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
   const confirmar = useConfirmar();
   const router = useRouter();
   const [, iniciar] = useTransition();
+  // "+": hidden while scrolling down (phones only, by CSS), back when scrolling up or near the top
+  const [oculto, setOculto] = useState(false);
+  useEffect(() => {
+    if (!criar) return;
+    let ultimo = window.scrollY;
+    const rolar = () => {
+      const y = window.scrollY;
+      if (y < 80 || y < ultimo - 8) setOculto(false); else if (y > ultimo + 8) setOculto(true);
+      if (Math.abs(y - ultimo) > 8) ultimo = y;
+    };
+    window.addEventListener("scroll", rolar, { passive: true });
+    return () => window.removeEventListener("scroll", rolar);
+  }, [criar]);
   const ordenados = [...itens.filter((i) => !i.sensivel), ...itens.filter((i) => i.sensivel)];
   const primeiroSensivel = ordenados.findIndex((i) => i.sensivel);
 
@@ -94,14 +108,15 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
   };
 
   return (
-    <div ref={caixa} className="relative inline-block" onKeyDown={aberto ? teclasMenu : undefined}>
+    <div ref={caixa} onKeyDown={aberto ? teclasMenu : undefined}
+      className={`relative inline-block ${criar ? `transition-[transform,opacity] duration-200 ${oculto && !aberto ? "max-md:pointer-events-none max-md:translate-y-6 max-md:opacity-0" : ""}` : ""}`}>
       <button ref={botao} type="button" aria-label={rotulo} title={rotulo} aria-haspopup="menu" aria-expanded={aberto} aria-controls={aberto ? id : undefined}
         onClick={() => (aberto ? setAberto(false) : abrir())}
         onKeyDown={(e) => { if (!aberto && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); abrir(); } }}
         className={criar
-          ? `anel-foco inline-grid size-14 place-items-center rounded-pilula bg-t1 text-bg transition-[transform,box-shadow] duration-150 active:scale-95 ${aberto ? "shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--ac)]" : ""}`
+          ? `anel-foco inline-grid size-12 place-items-center rounded-pilula bg-t1 text-bg md:size-14 transition-[transform,box-shadow] duration-150 active:scale-95 ${aberto ? "shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--ac)]" : ""}`
           : `anel-foco inline-grid size-11 place-items-center rounded-pilula text-t1 transition-[background-color,box-shadow] duration-150 lg:size-10 ${aberto ? "bg-s2 shadow-[0_0_0_1.5px_var(--ac)]" : "hover:bg-s2"}`}>
-        <Icone nome={criar ? "mais" : "mais-opcoes"} tamanho={criar ? 26 : 20} className={criar ? `transition-transform duration-150 ${aberto ? "rotate-45" : ""}` : undefined} />
+        <Icone nome={criar ? "mais" : "mais-opcoes"} tamanho={criar ? 24 : 20} className={criar ? `transition-transform duration-150 ${aberto ? "rotate-45" : ""}` : undefined} />
       </button>
       {aberto && (
         <div id={id} role="menu" aria-label={rotulo} style={criar ? undefined : pos}

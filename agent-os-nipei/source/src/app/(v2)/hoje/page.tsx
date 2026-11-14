@@ -32,6 +32,7 @@ import { pedidosNovos } from "@/lib/v2/pedidos";
 import { checkinPendente } from "@/lib/v2/objetivos";
 import { diaSemana, getPresenca, getProcedimentos, segunda } from "@/lib/v2/rotinas";
 import SemanaPresenca from "@/components/v2/SemanaPresenca";
+import FilaPendencias from "@/components/v2/FilaPendencias";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Cartao from "@/components/ds/Cartao";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
@@ -161,6 +162,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   if (revisar) pilulas.push({ href: "/conhecimento/revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento, ordem: 4 });
   if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento, grupo: "equipe", ordem: 3 });
   if (esperando.length) pilulas.push({ href: "/hoje?aba=esperando", icone: "mensagem", texto: `${esperando.length} ${t.esperandoVoce}`, titulo: t.esperandoTitulo, ordem: 1 });
+  const novas24h = novidadesPara(user, 1).length;
+  if (novas24h) pilulas.push({ href: "/hoje?aba=novidades", icone: "notificacao", texto: `${novas24h} ${t.novidades.toLowerCase()}`, titulo: t.novidades, ordem: 1.5 });
   if (prontos.length) pilulas.push({ href: `/tarefas/${prontos[0].taskId}`, icone: "sucesso", texto: `${prontos.length} ${t.prontoHermes}`, titulo: t.prontosIA, ordem: 8 });
   // Pontes: contacts this person should reconnect with (link person; no link = Pontes coordination), oldest first, max 3
   if (me) for (const c of getPessoas().filter((x) => x.contato && (reconectarEm(x) || "9") <= hoje && reconectarPor(x, equipes).includes(me.id))
@@ -254,12 +257,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           ...proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>),
           ...paraVoce.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>),
         ]], ["equipe", t.hj.equipeGestao, daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>)]] as const)
-          .filter(([, , chips]) => chips.length > 0).map(([id, rotulo, chips]) => (
-            <div key={id} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
-              <span className="rotulo-maiusculo shrink-0 text-t3">{rotulo}</span>
-              {chips}
-            </div>
-          ))}
+          .filter(([, , chips]) => chips.length > 0).map(([id, rotulo, chips]) => <FilaPendencias key={id} rotulo={rotulo} itens={[...chips]} />)}
       </header>
 
       {missao && (

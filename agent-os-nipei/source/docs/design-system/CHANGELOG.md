@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Hoje: pendências sem cortar, "+" que não cobre, chip de novidades (9.1, 10.5.1)
+
+- `components/v2/FilaPendencias.tsx`: os grupos de pendências quebram linha; no celular até 3 Chips + "+N" que abre o resto (antes rolavam de lado e o que passava da borda não se via).
+- `MenuAcoes gatilho="criar"`: 48 px no celular (56 no computador) e, no celular, some enquanto a página desce e volta ao subir.
+- Hoje: Chip "N novidades" (últimas 24 h, o mesmo número do sino) em "Para você", abre a aba Novidades.
+
 ## 2026-11-14 — Hoje: semana compacta, ações no ⋯ no celular, dar prazo às sem data (9.19, 10.3, 10.5, 10.5.1)
 
 - `MenuAcoes`: itens com ação do servidor (`acao` + `campos`) e `soCelular`; o menu ⋯ agora é `fixed` junto ao botão (antes era cortado pelo `overflow-hidden` das listas arredondadas nas últimas linhas), abre para cima se não cabe embaixo e fecha ao rolar.
