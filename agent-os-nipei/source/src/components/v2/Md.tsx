@@ -8,7 +8,7 @@ export default function Md({ children }: { children: string }) {
       [&_h3]:font-semibold [&_h3]:mt-5 [&_h3]:mb-1 [&_blockquote]:text-sm [&_blockquote]:font-normal [&_blockquote]:not-italic [&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-warn [&_blockquote]:pl-3 [&_blockquote]:text-t2
       [&_table]:w-full [&_table]:my-3 [&_table]:text-xs [&_th]:text-left [&_th]:border-b [&_th]:border-s3 [&_th]:py-1 [&_th]:pr-2
       [&_td]:border-b [&_td]:border-s2 [&_td]:py-1 [&_td]:pr-2 [&_td]:align-top">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: (p) => <a {...p} target="_blank" rel="noreferrer" /> }}>{children}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: (p) => <a {...p} target="_blank" rel="noreferrer" />, table: (p) => <div className="overflow-x-auto print:overflow-visible"><table {...p} /></div> }}>{children}</ReactMarkdown>
     </div>
   );
 }

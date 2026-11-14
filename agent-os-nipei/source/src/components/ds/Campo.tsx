@@ -48,7 +48,7 @@ export default function Campo(props: PropsCampo) {
   const varias = tipo === "area" || tipo === "titulo" || !!sugestao;
 
   const casca = [
-    "group/campo relative flex bg-s2 transition-shadow duration-200",
+    "group/campo relative flex min-w-0 bg-s2 transition-shadow duration-200",
     erro ? "shadow-[0_0_0_1.5px_var(--err)]" : "[&:hover:not(:focus-within)]:shadow-brilho-ia focus-within:shadow-foco",
     busca ? "min-h-14 items-center gap-2 rounded-pilula py-1.5 pl-4 pr-1.5" : varias ? "flex-col gap-1 rounded-cartao px-4 pb-3.5 pt-3" : "flex-col gap-0.5 rounded-pilula px-5 pb-2.5 pt-2",
     className ?? "",
@@ -77,7 +77,8 @@ export default function Campo(props: PropsCampo) {
   }
 
   return (
-    <div className="grid gap-1.5">
+    // min-w-0: inside a grid, a date/month input would otherwise widen its column past the screen
+    <div className="grid min-w-0 gap-1.5">
       <div className={casca}>
         {busca ? (
           <>

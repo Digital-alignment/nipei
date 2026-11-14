@@ -2,6 +2,14 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Revisão de Finanças no celular (10.1, 9.x, 10.25)
+
+- `CabecalhoPagina`: as ações quebram linha (`flex-wrap`) em vez de sair da tela (o `html` corta o excesso; no celular "Importar" e "Contador" sumiam).
+- `Campo`: `min-w-0` na raiz e na casca — num grid de 2 colunas, campos de data/mês alargavam a coluna além da tela.
+- `Md`: tabelas dentro de `overflow-x-auto` (relatório mensal no celular).
+- `/financas`: botões do cabeçalho e das vistas do mês em tamanho P; as vistas (Resultado, Orçamento anual, Relatório) numa linha própria abaixo do mês.
+- Orçamento anual: chips dos meses com ícone de check, anel e foco visível (mesmo padrão de Escolher equipes). Resultado: "Mês anterior" só no computador. Simulador: botão "Salvar como orçamento" (cabe em 320 px).
+
 ## 2026-11-14 — Finanças: orçamento anual (10.25)
 
 - `/financas/orcamento?a=&u=`: chips por unidade, Aviso de 90%, 3 Cartões `kpi` (receitas, despesas, previsão do fim do ano), Tabelas "Por categoria" (BadgeEstado `aviso` 90%) e "Mês a mês", `<details>` "Editar orçamento" (valor no ano + chips de marcar dos meses) e "Começar a partir de <ano−1>" (reajuste + `EnviarComConfirmacao`). Em `/financas`: Botão "Orçamento anual" e `meta text-warn` das categorias acima de 90%.

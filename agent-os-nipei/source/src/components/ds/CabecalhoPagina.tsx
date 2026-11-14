@@ -17,7 +17,8 @@ export default function CabecalhoPagina({ rotulo, selo, titulo, subtitulo, acoes
           <h1 className="titulo-pagina text-t1">{titulo}</h1>
           {subtitulo && <div className="corpo text-t2">{subtitulo}</div>}
         </div>
-        {acoes && <div className="flex shrink-0 items-center gap-2">{acoes}</div>}
+        {/* actions wrap under the title on narrow screens instead of being cut off (html clips the overflow) */}
+        {acoes && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{acoes}</div>}
       </div>
       {abas}
       {filtros && <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">{filtros}</div>}

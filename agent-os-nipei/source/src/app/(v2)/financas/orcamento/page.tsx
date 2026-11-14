@@ -111,8 +111,10 @@ export default async function OrcamentoAnualPage({ searchParams }: { searchParam
                       <Campo name={`v:${cat}`} rotulo={cat} inputMode="decimal" placeholder="0" defaultValue={valorBR(l?.anual ?? 0)} />
                       <div role="group" aria-label={`${t.mesesQueCai}: ${cat}`} className="flex flex-wrap gap-1">
                         {TODOS_MESES.map((m) => (
-                          <label key={m} className="anel-foco inline-flex h-9 cursor-pointer items-center rounded-pilula bg-s1 px-2.5 font-texto text-sm text-t2 has-[:checked]:bg-s3 has-[:checked]:text-t1 has-[:checked]:shadow-[inset_0_0_0_1px_var(--s4)]">
-                            <input type="checkbox" name={`m:${cat}`} value={m} defaultChecked={(l?.meses ?? TODOS_MESES).includes(m)} className="sr-only" />{t.mesesCurtos[m - 1]}
+                          // same toggle chip as EscolherEquipes: check icon + ring when on, visible keyboard focus
+                          <label key={m} className="group/mes inline-flex h-9 cursor-pointer select-none items-center gap-1 rounded-pilula bg-s1 px-2.5 font-texto text-sm text-t3 hover:text-t1 has-[:checked]:bg-s3 has-[:checked]:font-medium has-[:checked]:text-t1 has-[:checked]:shadow-[inset_0_0_0_1px_var(--s4)] has-[:focus-visible]:shadow-foco">
+                            <input type="checkbox" name={`m:${cat}`} value={m} defaultChecked={(l?.meses ?? TODOS_MESES).includes(m)} className="sr-only" />
+                            <Icone nome="confirmar" tamanho={14} className="hidden text-ac-text group-has-[:checked]/mes:inline" />{t.mesesCurtos[m - 1]}
                           </label>
                         ))}
                       </div>

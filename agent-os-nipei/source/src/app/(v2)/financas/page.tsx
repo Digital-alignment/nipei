@@ -102,7 +102,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
   return (
     <>
       <CabecalhoPagina selo="semente" rotulo={t.gestaoLbl} titulo={t.financas}
-        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/contas" icone="abrir" variante="fantasma" tamanho="M">{t.contas}</Botao><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="M">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="M">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /><Botao desativado icone="baixar" type="button" variante="fantasma" tamanho="M">{t.exportarContador}</Botao></div>} />
+        acoes={<div className="flex flex-wrap gap-2"><Botao href="/financas/contas" icone="abrir" variante="fantasma" tamanho="P">{t.contas}</Botao><Botao href="/financas/fixos" icone="calendario" variante="fantasma" tamanho="P">{t.gastosFixos}</Botao><Botao href="/financas/importar" icone="mais" variante="fantasma" tamanho="P">{t.importarPlanilha}</Botao><ExportarGoogle pessoaId={me.pessoa?.id} t={t} campos={{ tipo: "financas" }} formatos={[{ formato: "sheet", label: t.cx.exportarSheet }]} /><Botao desativado icone="baixar" type="button" variante="fantasma" tamanho="P">{t.exportarContador}</Botao></div>} />
       <ToastAoAbrir texto={q.ok} />
       {importacoes.length > 0 && (
         <ul className="mb-4 grid gap-1">
@@ -116,13 +116,14 @@ export default async function Financas({ searchParams }: { searchParams: Promise
           ))}
         </ul>
       )}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between">
         <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, -1)}`} />
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
-          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="M">{t.resultadoLbl}</Botao><Botao href={`/financas/orcamento?a=${mes.slice(0, 4)}`} icone="calendario" variante="fantasma" tamanho="M">{t.orcamentoAnual}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="M">{t.relatorioMes}</Botao>
-        </div>
+        <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
         <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, 1)}`} />
+      </div>
+      {/* the month's views, in their own row: between the arrows they piled up on the phone */}
+      <div className="mb-4 flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
+          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="P">{t.resultadoLbl}</Botao><Botao href={`/financas/orcamento?a=${mes.slice(0, 4)}`} icone="calendario" variante="fantasma" tamanho="P">{t.orcamentoAnual}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="P">{t.relatorioMes}</Botao>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-2 lg:grid-cols-4">

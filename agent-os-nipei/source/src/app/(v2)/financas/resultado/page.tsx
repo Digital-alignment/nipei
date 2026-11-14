@@ -79,7 +79,7 @@ export default async function Resultado({ searchParams }: { searchParams: Promis
       </div>
 
       <Section title={t.demonstrativo}>
-        <Tabela rotulo={t.demonstrativo} colunas={[{ id: "l", rotulo: "" }, { id: "m", rotulo: t.esteMes, numero: true }, { id: "a", rotulo: t.mesAnteriorLbl, numero: true }, { id: "y", rotulo: t.acumuladoAno, numero: true }]}
+        <Tabela rotulo={t.demonstrativo} colunas={[{ id: "l", rotulo: "" }, { id: "m", rotulo: t.esteMes, numero: true }, { id: "a", rotulo: t.mesAnteriorLbl, numero: true, soComputador: true }, { id: "y", rotulo: t.acumuladoAno, numero: true }]}
           linhas={linhas.map((l) => ({ id: l.id, celulas: {
             l: <span className={l.total ? "font-semibold text-t1" : "meta pl-4 text-t2"}>{l.rot}</span>, m: valor(l, d.mes), a: valor(l, d.anterior), y: valor(l, d.ano),
           } }))} />
