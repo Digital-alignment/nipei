@@ -382,7 +382,7 @@ Um item pode ser um link (`href`), uma função do navegador (`onSelect`) ou uma
 - Rótulo pequeno com selo (equipe ou contexto).
 - **Título `titulo-pagina` (Outfit 700)**.
 - Subtítulo com contagens ("24 abertas · 3 atrasadas · 7 com você").
-- À direita: busca (botão de ícone) + **ação principal em folha**.
+- À direita: busca (botão de ícone) + **ação principal em folha**. No celular as ações ocupam uma linha inteira abaixo do título (`w-full`), para um campo poder crescer.
 - Embaixo: abas de vista + chips de filtro.
 
 ### 10.2 Busca + filtros
@@ -425,13 +425,20 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 ### 10.6 Agenda
 - **Dia**:
   - faixa da semana;
-  - grade de horas (linhas finas, horas em `meta`) com **linha do agora** âmbar;
+  - grade de horas (linhas finas, horas em `meta`) com **linha do agora** âmbar; mostra **só as horas úteis** (da hora antes do primeiro evento — ou de agora, hoje — até a hora depois do último; sem eventos com hora: 4 horas a partir de agora, ou das 8h) cada trecho vazio de 2 horas ou mais vira uma linha fina tracejada "10:00 – 22:00 · livre"; e um Botão fantasma P "Ver o dia inteiro" (`?horas=todas`; lá, "Só as horas com eventos" volta) — antes desenhava 7h–21h sempre, ~1.000 px vazios no celular;
   - **evento com horário = bloco tingido** com a cor da equipe + barra à esquerda + local + avatares;
   - **tarefa ou lembrete = pílula** com ícone + ponto de cor;
   - botão "+" redondo flutuante.
 - **Lista por dia**: número do dia display grande e fino; hoje destacado (dia em acento); "Sem eventos" discreto.
 - **Mês**: grade com **pontos na cor de cada equipe**; hoje = círculo de acento; ao tocar, a lista do dia aparece embaixo (celular) ou ao lado (computador).
 - Filtros: chips das equipes. Abas: Dia / Semana / Mês.
+- **No celular** o cabeçalho tem só o botão de ícone "Nova tarefa"; "Novo evento" fica no "+" flutuante (o Botão em folha só a partir de `md`).
+
+### 10.6.1 Tarefas (página)
+- Abas **Lista / Quadro** (a Agenda tem página própria, não é aba aqui) e, na mesma linha, o seletor lista/grade (`SegmentadoLinks`, só na Lista).
+- **Busca de tarefas**: no celular é um campo em pílula que ocupa a linha das ações, ao lado de "Nova tarefa" (com o texto "Buscar tarefas…" visível) — não um segundo botão de lupa, para não confundir com a lupa do cabeçalho (o Pinu). No computador, campo de 224 px.
+- **Tarefa rápida** no topo da Lista (mesmo campo de Hoje, 10.5.1): cria a tarefa sem prazo, comigo, na minha primeira equipe.
+- Linhas iguais às de Hoje: no celular foco e prazo vão para o ⋯ (`acoesCelular`).
 
 ### 10.7 Quadro (kanban)
 - Uma coluna por estado (`superfície 1`) com o badge do estado, contagem e "+".

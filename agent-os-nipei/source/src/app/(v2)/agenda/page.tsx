@@ -58,7 +58,7 @@ type Comum = {
   mover: (x: Tarefa) => boolean;
 };
 
-export default async function Agenda({ searchParams }: { searchParams: Promise<{ equipe?: string; vista?: string; m?: string; dia?: string; s?: string; quem?: string }> }) {
+export default async function Agenda({ searchParams }: { searchParams: Promise<{ equipe?: string; vista?: string; m?: string; dia?: string; s?: string; quem?: string; horas?: string }> }) {
   const q = await searchParams;
   const { t, lang } = await getT();
   const hoje = today();
@@ -124,7 +124,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </>}
         acoes={<>
           <BotaoIcone icone="tarefa" aria-label={`${t.novaTarefa}`} href={`/tarefas/nova?back=/agenda${diaAlvo >= hoje ? `&prazo=${diaAlvo}` : ""}`} />
-          {podeEvento && <Botao href={`/eventos/novo${diaAlvo >= hoje ? `?inicio=${diaAlvo}` : ""}`} icone="calendario" folha>{t.novoEvento}</Botao>}
+          {podeEvento && <span className="hidden md:inline-flex"><Botao href={`/eventos/novo${diaAlvo >= hoje ? `?inicio=${diaAlvo}` : ""}`} icone="calendario" folha>{t.novoEvento}</Botao></span>}
         </>}
         abas={<AbasLinks rotulo={t.agenda} ativa={vista === "lista" ? "semana" : vista} itens={[
           { id: "dia", rotulo: t.diaLbl, icone: "tema-claro", href: link({ vista: "dia", dia: undefined, s: undefined, m: undefined }) },
@@ -162,7 +162,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
       {gErro && <p className="meta mb-3 inline-flex items-center gap-1.5 text-warn"><Icone nome="atencao" tamanho={16} />{t.cx.doGoogle}: {gErro}</p>}
       <Suspense><LembrarVista chave="agenda" params={["vista", "quem"]} /></Suspense>
       <ArrastarAgenda dica={t.dicaArrastar} />
-      {vista === "dia" && <DiaGrade d={diaSel} inicioSemana={semanaIni} {...c} />}
+      {vista === "dia" && <DiaGrade d={diaSel} inicioSemana={semanaIni} diaInteiro={q.horas === "todas"} {...c} />}
       {vista === "semana" && <Semana inicio={semanaIni} {...c} />}
       {vista === "lista" && <Lista {...c} />}
       {vista === "mes" && <Mes mes={mesSel} dia={q.dia} {...c} />}
@@ -275,7 +275,7 @@ function PilulaTarefa({ x, arrastavel }: { x: Tarefa; arrastavel: boolean }) {
 }
 
 /** Vista Dia: faixa da semana + dia inteiro (eventos sem hora, tarefas) + grade de horas com a linha do agora. */
-function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: string }) {
+function DiaGrade({ d, inicioSemana, diaInteiro, ...c }: Comum & { d: string; inicioSemana: string; diaInteiro: boolean }) {
   const { hoje, comPrazo, eventos, gevs, t, lang, link } = c;
   const evs = eventos.filter((e) => noDia(e, d));
   const comHora = [
@@ -289,9 +289,34 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
   const faixas: number[] = [];
   const pos = comHora.map((e) => { let i = faixas.findIndex((f) => f <= e.ini); if (i < 0) { faixas.push(0); i = faixas.length - 1; } faixas[i] = e.fim; return i; });
   const agora = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" });
-  const de = Math.min(7, ...comHora.map((e) => Math.floor(e.ini / 60)), d === hoje ? Math.floor(minutos(agora) / 60) : 24);
-  const ate = Math.max(21, ...comHora.map((e) => Math.ceil(e.fim / 60)));
+  const horaAgora = Math.floor(minutos(agora) / 60);
+  // dia inteiro (?horas=todas): 7h–21h at least, as before; otherwise only the hours that matter
+  const util = comHora.length
+    ? { de: Math.max(0, Math.min(...comHora.map((e) => Math.floor(e.ini / 60)), ...(d === hoje ? [horaAgora] : [])) - 1), ate: Math.min(24, Math.max(...comHora.map((e) => Math.ceil(e.fim / 60))) + 1) }
+    : d === hoje ? { de: Math.min(horaAgora, 20), ate: Math.min(horaAgora, 20) + 4 } : { de: 8, ate: 12 };
+  const de = diaInteiro ? Math.min(7, ...comHora.map((e) => Math.floor(e.ini / 60)), d === hoje ? horaAgora : 24) : util.de;
+  const ate = diaInteiro ? Math.max(21, ...comHora.map((e) => Math.ceil(e.fim / 60))) : Math.max(util.ate, util.de + 4);
   const H = 64; // px por hora
+  const GAP = 28; // px of a collapsed empty stretch ("10:00 – 22:00")
+  const horaUtil = (h: number) => diaInteiro || comHora.some((e) => e.ini < (h + 2) * 60 && e.fim > (h - 1) * 60) || (d === hoje && h === horaAgora);
+  type Linha = { tipo: "h"; h: number } | { tipo: "vazio"; de: number; ate: number };
+  const linhas: Linha[] = [];
+  for (let h = de; h < ate; h++) {
+    if (horaUtil(h)) linhas.push({ tipo: "h", h });
+    else { const u = linhas[linhas.length - 1]; if (u?.tipo === "vazio") u.ate = h + 1; else linhas.push({ tipo: "vazio", de: h, ate: h + 1 }); }
+  }
+  // a single empty hour is not worth collapsing
+  const eixo: Linha[] = linhas.flatMap((l) => (l.tipo === "vazio" && l.ate - l.de < 2 ? [{ tipo: "h" as const, h: l.de }] : [l]));
+  /** minutes of the day → px on the compressed axis */
+  const y = (min: number) => {
+    let acc = 0;
+    for (const l of eixo) {
+      const ini = (l.tipo === "h" ? l.h : l.de) * 60, fim = (l.tipo === "h" ? l.h + 1 : l.ate) * 60, alto = l.tipo === "h" ? H : GAP;
+      if (min < fim) return acc + (Math.max(0, min - ini) / (fim - ini)) * alto;
+      acc += alto;
+    }
+    return acc;
+  };
   const titulo = new Date(`${d}T12:00:00Z`).toLocaleDateString(loc(lang), { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
   return (
     <>
@@ -316,15 +341,20 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
           </div>
         )}
         <div className="relative grid" style={{ gridTemplateColumns: "3.25rem 1fr" }}>
-          {Array.from({ length: ate - de }, (_, i) => (
-            <div key={i} className="contents">
-              <span className="meta -translate-y-2 pr-2 text-right tabular-nums text-t3" style={{ height: H }}>{String(de + i).padStart(2, "0")}:00</span>
+          {eixo.map((l) => l.tipo === "h" ? (
+            <div key={l.h} className="contents">
+              <span className="meta -translate-y-2 pr-2 text-right tabular-nums text-t3" style={{ height: H }}>{String(l.h).padStart(2, "0")}:00</span>
               <span className="border-t border-s2" style={{ height: H }} />
+            </div>
+          ) : (
+            <div key={`v${l.de}`} className="contents">
+              <span aria-hidden="true" style={{ height: GAP }} />
+              <span className="meta flex items-center gap-2 border-t border-dashed border-s3 pl-2 text-t3" style={{ height: GAP }}>{String(l.de).padStart(2, "0")}:00 – {String(l.ate).padStart(2, "0")}:00 · {t.semEventosCurto}</span>
             </div>
           ))}
           <div className="absolute inset-y-0 left-[3.25rem] right-0">
             {comHora.map((e, i) => {
-              const top = ((e.ini - de * 60) / 60) * H, alto = Math.max(28, ((e.fim - e.ini) / 60) * H - 4);
+              const top = y(e.ini), alto = Math.max(28, y(e.fim) - y(e.ini) - 4);
               const largura = 100 / faixas.length;
               const corpo = (
                 <>
@@ -344,13 +374,14 @@ function DiaGrade({ d, inicioSemana, ...c }: Comum & { d: string; inicioSemana: 
             })}
             {d === hoje && minutos(agora) >= de * 60 && minutos(agora) <= ate * 60 && (
               // linha do agora (âmbar)
-              <span role="img" aria-label={`${t.agoraLbl} ${agora}`} className="pointer-events-none absolute -left-1.5 right-0 z-10 flex items-center" style={{ top: ((minutos(agora) - de * 60) / 60) * H - 5 }}>
+              <span role="img" aria-label={`${t.agoraLbl} ${agora}`} className="pointer-events-none absolute -left-1.5 right-0 z-10 flex items-center" style={{ top: y(minutos(agora)) - 5 }}>
                 <span className="size-2.5 shrink-0 rounded-pilula bg-warn" /><span className="h-0.5 flex-1 bg-warn" />
               </span>
             )}
           </div>
         </div>
         {!comHora.length && !semHora.length && !ts.length && !gSemHora.length && <p className="meta text-t3">{t.semEventos}</p>}
+        <div><Botao href={link({ vista: "dia", dia: d, horas: diaInteiro ? undefined : "todas" })} variante="fantasma" tamanho="P" icone={diaInteiro ? "fechar" : "abrir"}>{diaInteiro ? t.soHorasComEventos : t.verDiaInteiro}</Botao></div>
       </section>
     </>
   );

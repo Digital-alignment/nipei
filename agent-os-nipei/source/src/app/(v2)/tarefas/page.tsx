@@ -16,6 +16,10 @@ import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import { can, currentUser, getEquipes, getPessoas, getTarefas, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora } from "@/lib/v2/ordem";
+import { MAX_FOCO, getFoco } from "@/lib/v2/foco";
+import Campo from "@/components/ds/Campo";
+import type { ItemMenu } from "@/components/ds/MenuAcoes";
+import { createTarefaAction, focoAction, prazoRapidoAction } from "../actions";
 
 type Q = { vista?: string; quem?: string; equipe?: string; q?: string };
 const sn = (x: string) => x.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
@@ -53,8 +57,19 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
   };
   const props = { equipes, pessoas, lang, hoje, me: user };
   const opcoesPrazo = [{ label: t.paraHoje, data: hoje }, { label: t.amanha, data: dia(1) }, { label: t.maisSemana, data: dia(7) }];
-  const linha = (x: Tarefa) => <TaskRow key={x.id} t={x} {...props}
+  const focoIds = me ? getFoco(me.id, hoje) : [];
+  const acoesCelular = (x: Tarefa): ItemMenu[] => {
+    const noFoco = focoIds.includes(x.id);
+    return [
+      ...(me && minha(x) && (noFoco || (x.status !== "done" && focoIds.length < MAX_FOCO)) ? [{ icone: "inicio" as const, rotulo: noFoco ? t.hj.focoMenuTirar : t.hj.focoMenuPor, acao: focoAction, campos: { id: x.id } }] : []),
+      ...(can.editTarefa(user, x) ? opcoesPrazo.map((o) => ({ icone: "prazo" as const, rotulo: `${t.hj.prazoMenu}: ${o.label}`, acao: prazoRapidoAction, campos: { id: x.id, prazo: o.data } })) : []),
+    ];
+  };
+  const linha = (x: Tarefa) => <TaskRow key={x.id} t={x} {...props} acoesCelular={acoesCelular(x)}
     extra={(tt) => (can.editTarefa(user, tt) ? <PrazoRapido id={tt.id} opcoes={opcoesPrazo} outraData={t.outraData} rotulo={t.reprogramar} /> : null)} />;
+  // quick task (same field as Hoje): no date, with me, in my first team
+  const equipeRapida = user.equipes.find((id) => equipes.some((e) => e.id === id)) ?? "";
+  const podeRapida = !!me && can.criarEm(user, equipeRapida);
   const foto = (id: string) => {
     const p = pessoas.find((x) => x.id === id);
     return { nome: p?.name ?? id, foto: p?.foto ? `/pessoas/${p.id}/foto?v=${encodeURIComponent(p.fotoEm || p.dadosConfirmadosEm)}` : undefined };
@@ -75,24 +90,23 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
       <CabecalhoPagina selo="broto" rotulo={quem === "minhas" ? t.minhasTarefas : quem === "equipe" ? t.minhaEquipe : t.todas} titulo={t.tarefasTitulo}
         subtitulo={<>{abertas.length} {t.tarefasAbertasLbl} · <span className={atrasadas ? "text-err" : undefined}>{atrasadas} {t.atrasadasLbl}</span>{me && <> · {comVoce} {t.comVoce}</>}</>}
         acoes={<>
-          <form action="/tarefas" role="search" className="flex items-center">
+          <form action="/tarefas" role="search" className="flex min-w-0 flex-1 items-center md:flex-none">
             {vista !== "lista" && <input type="hidden" name="vista" value={vista} />}
             <input type="hidden" name="quem" value={quem} />{q.equipe && <input type="hidden" name="equipe" value={q.equipe} />}
-            <label className="group/b relative flex h-[52px] items-center rounded-pilula bg-s3 focus-within:shadow-foco">
+            <label className="group/b relative flex h-[52px] w-full items-center rounded-pilula bg-s3 focus-within:shadow-foco md:w-auto">
               <Icone nome="buscar" tamanho={20} className="pointer-events-none absolute left-4 text-t1" />
-              <input type="search" name="q" defaultValue={q.q} placeholder={t.buscarTarefas} aria-label={t.buscarTarefas}
-                className="h-full w-[52px] rounded-pilula bg-transparent pl-12 font-texto text-base text-t1 outline-none transition-[width] duration-200 placeholder:text-transparent focus:w-56 focus:placeholder:text-t3 md:w-56 md:placeholder:text-t3 [&::-webkit-search-cancel-button]:hidden" />
+              <input type="search" name="q" defaultValue={q.q} placeholder={t.buscarTarefasPh} aria-label={t.buscarTarefas}
+                className="h-full w-full min-w-0 rounded-pilula bg-transparent pl-12 pr-4 font-texto text-base text-t1 outline-none placeholder:text-t3 md:w-56 [&::-webkit-search-cancel-button]:hidden" />
             </label>
           </form>
           <Botao href={novaHref} icone="mais" folha>{t.novaTarefa}</Botao>
         </>}
         abas={
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <AbasLinks rotulo={t.tarefasTitulo} ativa={vista === "grade" ? "lista" : vista} itens={[
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <div className="min-w-0"><AbasLinks rotulo={t.tarefasTitulo} ativa={vista === "grade" ? "lista" : vista} itens={[
               { id: "lista", rotulo: t.vistaLista, icone: "tarefa", contagem: abertas.length, href: url({ vista: vista === "grade" ? "grade" : "lista" }) },
               { id: "quadro", rotulo: t.vistaQuadro, icone: "filtrar", href: url({ vista: "quadro" }) },
-              { id: "agenda", rotulo: t.agenda, icone: "calendario", href: "/agenda" },
-            ]} />
+            ]} /></div>
             {vista !== "quadro" && <SegmentadoLinks rotulo={t.vistaLista} valor={vista} opcoes={[
               { valor: "lista", rotulo: t.vistaLista, icone: "tarefa", href: url({ vista: "lista" }) },
               { valor: "grade", rotulo: t.vistaGrade, icone: "imagem", href: url({ vista: "grade" }) },
@@ -109,6 +123,16 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
           {(q.q || q.equipe) && <Chip href={url({ q: undefined, equipe: undefined })} icone="fechar">{t.limparFiltros}</Chip>}
         </>}
       />
+
+      {podeRapida && vista !== "quadro" && (
+        <form action={createTarefaAction} className="mb-4">
+          <input type="hidden" name="equipe" value={equipeRapida} />
+          <input type="hidden" name="responsaveis" value={me!.id} />
+          <input type="hidden" name="back" value={url({})} />
+          <Campo tipo="busca" iconeEsquerda="mais" name="title" rotulo={t.tarefaRapidaSemPrazo} required maxLength={200} autoComplete="off"
+            acaoDireita={<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" />} />
+        </form>
+      )}
 
       {vista === "quadro" ? (
         <QuadroTarefas novaHref={novaHref} cartoes={[...ordem.tarefas, ...feitasRecentes].map((x) => {

@@ -10,7 +10,7 @@ export default function CabecalhoPagina({ rotulo, selo, titulo, subtitulo, acoes
   rotulo?: ReactNode; selo?: NomeSelo; titulo: ReactNode; subtitulo?: ReactNode; acoes?: ReactNode; abas?: ReactNode; filtros?: ReactNode;
 }) {
   return (
-    <header className="mb-6 grid gap-4">
+    <header className="mb-6 grid grid-cols-[minmax(0,1fr)] gap-4">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="grid min-w-0 gap-1.5">
           {(rotulo || selo) && <p className="rotulo-maiusculo flex items-center gap-2 text-t2">{selo && <Selo nome={selo} tamanho={18} />}{rotulo}</p>}
@@ -18,7 +18,7 @@ export default function CabecalhoPagina({ rotulo, selo, titulo, subtitulo, acoes
           {subtitulo && <div className="corpo text-t2">{subtitulo}</div>}
         </div>
         {/* actions wrap under the title on narrow screens instead of being cut off (html clips the overflow) */}
-        {acoes && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{acoes}</div>}
+        {acoes && <div className="flex w-full min-w-0 max-w-full flex-wrap items-center gap-2 md:w-auto">{acoes}</div>}
       </div>
       {abas}
       {filtros && <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">{filtros}</div>}

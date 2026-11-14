@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Agenda e Tarefas no celular (10.1, 10.6, 10.6.1)
+
+- Agenda, vista Dia: só as horas úteis e trechos vazios compactados ("10:00 – 22:00 · livre"), com "Ver o dia inteiro"; no celular o Botão "Novo evento" saiu (fica no "+").
+- Tarefas: busca como campo no celular (não uma segunda lupa), abas Lista / Quadro (a aba Agenda saiu) com o seletor lista/grade na mesma linha, tarefa rápida no topo da Lista, linhas com foco e prazo no ⋯ no celular.
+- `CabecalhoPagina`: grade `minmax(0,1fr)` (uma linha larga não estica mais o cabeçalho além da tela) e ações `w-full` no celular.
+
 ## 2026-11-14 — Cabeçalho do celular compacto e saudação mais baixa (10.10, 10.5.1)
 
 - `app/(v2)/layout.tsx`: abaixo de `md`, cabeçalho de uma linha — ícone do app (leva a Hoje) + lupa (`BotaoBuscaPinu`, abre o Pinu), sino e avatar; o campo "Pergunte ao Pinu ou busque…" só no computador. Decisão em DECISOES.md.
