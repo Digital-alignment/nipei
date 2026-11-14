@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-14 — Finanças: resultado gerencial / DRE (10.25)
+
+- `/financas/resultado?m=`: 3 Cartões `kpi` + Cartão `destaque` (resultado do período), Tabela "Demonstrativo" (este mês · mês anterior · acumulado do ano; totais em `font-semibold`, categorias recuadas em `meta`), `meta` com o ponto de equilíbrio e os pendentes, `<details>` "Natureza das categorias" com um Campo seleção por categoria. Entrada: Botão fantasma "Resultado" (ícone `tarefa`) ao lado de "Relatório do mês".
+
 ## 2026-11-13 — Finanças: acesso por pessoa e "Contador · em breve" (10.25)
 
 - Interruptor "Finanças" em `/controle → Funções`; o item Finanças do menu segue a mesma regra.

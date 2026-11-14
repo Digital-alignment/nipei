@@ -12,7 +12,9 @@ Para quem cuida das contas (ex.: Rodrigo) lançar e conciliar sem entrar na Equi
 - Não muda: quem pode entrar na plataforma (acesso continua pela equipe/ficha; **Rodrigo não recebe a função nem acesso agora** — só quando Finanças estiver pronta), o Pinu e o MCP de finanças (continuam só gestão), o lembrete de segunda (continua só gestão), o CSV do diagnóstico (gestão ou responsável da seção).
 - Ao abrir para alguém de verdade (depois): decidir se o lembrete de segunda e as ferramentas de finanças do MCP vão também para quem tem a função.
 
-## Fase 2 — Resultado gerencial (DRE) mensal e anual (v2.91)
+## Fase 2 — Resultado gerencial (DRE) mensal e anual (v2.91) ✓
+
+> Feito em 14/11/2026. Observação: o DRE é por data de pagamento (caixa). Num retiro com inscrições num mês e custos no seguinte, um mês sai muito positivo e o outro negativo; o acumulado do ano e a página do evento mostram o quadro certo. Se incomodar: opção "por competência" (data do evento) — anotado para a fase 3/4.
 
 - Cada categoria ganha uma **natureza**: receita operacional · custo variável (do evento/produto: alimentação, hospedagem, facilitadores…) · despesa fixa (estrutura: internet, manutenção…) · investimento (obras, equipamentos: fora do resultado operacional) · não operacional (doações/grants, impostos, taxas financeiras). Padrão sugerido para as categorias de hoje; ajustável numa tela.
 - DRE: Receita → (−) custos variáveis = **margem de contribuição** (e %) → (−) despesas fixas = **resultado operacional** → (±) não operacional = **resultado do período** → investimentos à parte. Colunas: mês, mês anterior, acumulado do ano; "a pagar/receber" à parte.

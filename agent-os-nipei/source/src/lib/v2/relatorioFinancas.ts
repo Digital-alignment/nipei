@@ -1,6 +1,7 @@
 import { getContas, getLancamentos, getPessoas, getProjetos, today, type Conta, type Lancamento } from "./data";
 import { getFixos, previsaoCaixa, type Fixo } from "./fixos";
 import { saldoConta } from "./contas";
+import { dreMarkdown, dreMes, getNaturezas, NATUREZA_PADRAO, type Natureza } from "./dre";
 
 // Relatório mensal (DS 10.25): one markdown for the page (printable to PDF) and for Google Docs — the same text,
 // for Lynn or the accountant. Pure core (`montarRelatorio`) + a wrapper that reads the vault.
@@ -14,7 +15,7 @@ const fimMes = (ym: string) => new Date(Date.UTC(Number(ym.slice(0, 4)), Number(
 const cel = (v: string) => v.replace(/\|/g, "/").replace(/\r?\n/g, " ");
 const variacao = (atual: number, antes: number) => (!antes ? "—" : `${atual >= antes ? "+" : "−"}${Math.abs(Math.round(((atual - antes) / antes) * 100))}%`);
 
-export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[], fixos: Fixo[], projetos: { id: string; nome: string }[], hoje: string, pessoas: { id: string; name: string }[] = []) {
+export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[], fixos: Fixo[], projetos: { id: string; nome: string }[], hoje: string, pessoas: { id: string; name: string }[] = [], naturezas: Record<string, Natureza> = NATUREZA_PADRAO) {
   const ant = addMes(mes, -1), fim = fimMes(mes);
   const validos = lanc.filter((l) => !l.anulado);
   const pagos = (m: string) => validos.filter((l) => !l.pendente && l.data.startsWith(m));
@@ -29,6 +30,9 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
   out.push("## Resumo", "", "| | Este mês | Mês anterior | Variação |", "|---|---:|---:|---:|",
     `| Entradas | ${brl(e)} | ${brl(eA)} | ${variacao(e, eA)} |`, `| Despesas | ${brl(d)} | ${brl(dA)} | ${variacao(d, dA)} |`,
     `| **Resultado** | **${brl(e - d)}** | ${brl(eA - dA)} | |`, "");
+
+  // gerencial view: by the natureza of each category (Financeiro/naturezas.md)
+  if (doMes.length || doAnt.length) out.push("## Resultado gerencial", "", dreMarkdown(dreMes(lanc, naturezas, mes)), "");
 
   for (const [tipo, titulo] of [["despesa", "Despesas por categoria"], ["entrada", "Entradas por categoria"]] as const) {
     const cats = [...new Set([...doMes, ...doAnt].filter((l) => l.tipo === tipo).map((l) => l.categoria))];
@@ -85,7 +89,7 @@ export function montarRelatorio(mes: string, lanc: Lancamento[], contas: Conta[]
   return out.join("\n");
 }
 
-export const relatorioMensal = (mes: string) => montarRelatorio(mes, getLancamentos(), getContas(), getFixos(), getProjetos(), today(), getPessoas());
+export const relatorioMensal = (mes: string) => montarRelatorio(mes, getLancamentos(), getContas(), getFixos(), getProjetos(), today(), getPessoas(), getNaturezas());
 
 // self-check (pure part): npx tsx src/lib/v2/relatorioFinancas.ts
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/relatorioFinancas.ts")) {
@@ -105,6 +109,7 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(md.includes("1 lançamento(s) anulado(s)") && md.includes("## Previsão de caixa"), "anulados e previsão no mês atual");
   assert(!montarRelatorio("2026-10", [], [], [], [], "2026-11-11").includes("Previsão"), "previsão só no mês atual");
   const rb = montarRelatorio("2026-11", [L("2026-11-05", "despesa", 80, { reembolsar: "ana", descricao: "Gasolina" }), L("2026-11-06", "despesa", 20, { reembolsar: "ana", reembolsado: "2026-11-07" })], [], [], [], "2026-11-11", [{ id: "ana", name: "Ana Souza" }]);
+  assert(md.includes("## Resultado gerencial") && md.includes("**= Margem de contribuição**"), "DRE no relatório");
   assert(rb.includes("## Reembolsos a fazer") && rb.includes("| 05/11 | Ana Souza | Gasolina | R$ 80,00 |") && !rb.includes("| 06/11 | Ana"), "reembolsos a fazer");
   console.log(`relatorioFinancas: ${ok} ok`);
 }

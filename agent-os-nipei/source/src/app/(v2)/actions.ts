@@ -1001,6 +1001,19 @@ export async function salvarOrcamentoEventoAction(form: FormData) {
   redirect(`/financas/evento?e=${encodeURIComponent(d.evento)}&ok=${encodeURIComponent(t.orcamentoSalvo)}`);
 }
 
+/** DRE (plano financas fase 2): the natureza of each category; changing it reclassifies every month. */
+export async function salvarNaturezasAction(form: FormData) {
+  const me = await requireUser();
+  if (!podeFinancas(me)) return;
+  const { NATUREZAS, getNaturezas, salvarNaturezas } = await import("@/lib/v2/dre");
+  const atual = getNaturezas();
+  const novo = Object.fromEntries(Object.keys(atual).map((c) => [c, pick(form.get(`nat:${c}`), [...NATUREZAS]) || atual[c]])) as typeof atual;
+  await tentar(async () => salvarNaturezas(novo, actorName(me)));
+  revalidatePath("/financas", "layout");
+  const { t } = await getT();
+  redirect(`/financas/resultado?m=${String(form.get("m") ?? "").match(/^\d{4}-\d{2}$/)?.[0] ?? ""}&ok=${encodeURIComponent(t.naturezasSalvas)}`);
+}
+
 /** Reimbursement paid back (DS 10.25); from the ficha (with the account it left from) or the /financas list. */
 export async function reembolsarAction(form: FormData) {
   const me = await requireUser();

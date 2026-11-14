@@ -113,7 +113,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
         <BotaoIcone icone="voltar" aria-label="‹" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, -1)}`} />
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <p className="titulo-secao first-letter:uppercase">{fmtDate(mes, lang)}</p>
-          <Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="M">{t.relatorioMes}</Botao>
+          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="M">{t.resultadoLbl}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="M">{t.relatorioMes}</Botao>
         </div>
         <BotaoIcone icone="avancar" aria-label="›" tamanho={44} variante="fantasma" href={`/financas?m=${addMonths(mes, 1)}`} />
       </div>
