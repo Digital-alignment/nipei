@@ -48,6 +48,33 @@ for (const abs of arquivos) {
   });
 }
 
+// Valor (não componente) de um arquivo "use client" importado por um arquivo sem "use client": no servidor ele
+// chega como referência de cliente, não como o valor (v2.107.1: CAMPO_COMPACTO virou o texto de uma função em 10 telas).
+// Componentes (PascalCase) e tipos podem; constantes e funções não: mova-os para um módulo comum.
+const ehCliente = (txt) => /^\s*(?:\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*["']use client["']/.test(txt);
+const resolver = (de, esp) => {
+  const base = esp.startsWith("@/") ? join(RAIZ, "src", esp.slice(2)) : esp.startsWith(".") ? join(de, "..", esp) : null;
+  if (!base) return null;
+  for (const ext of ["", ".tsx", ".ts", "/index.tsx", "/index.ts"]) { try { if (statSync(base + ext).isFile()) return base + ext; } catch { /* tenta a próxima */ } }
+  return null;
+};
+const cacheCliente = new Map();
+const clienteArq = (p) => { if (!cacheCliente.has(p)) cacheCliente.set(p, ehCliente(readFileSync(p, "utf-8"))); return cacheCliente.get(p); };
+for (const abs of arquivos) {
+  if (!/\.tsx?$/.test(abs)) continue;
+  const txt = readFileSync(abs, "utf-8");
+  if (ehCliente(txt)) continue;
+  const arq = relative(RAIZ, abs).replaceAll("\\", "/");
+  for (const m of txt.matchAll(/^import\s+(?!type\b)([^;]*?)\s+from\s+["']([^"']+)["']/gm)) {
+    const chaves = m[1].match(/\{([^}]*)\}/);
+    if (!chaves) continue;
+    const alvo = resolver(abs, m[2]);
+    if (!alvo || !clienteArq(alvo)) continue;
+    const valores = chaves[1].split(",").map((x) => x.trim()).filter((x) => x && !x.startsWith("type ") && !/^[A-Z][a-z]/.test(x));
+    if (valores.length) problemas.push(`${arq}:${txt.slice(0, m.index).split("\n").length}  valor de arquivo "use client" no servidor  →  ${valores.join(", ")} de ${m[2]}`);
+  }
+}
+
 if (problemas.length) {
   console.error(`Design system: ${problemas.length} problema(s) em ${arquivos.length} arquivos\n`);
   for (const p of problemas) console.error("  " + p);

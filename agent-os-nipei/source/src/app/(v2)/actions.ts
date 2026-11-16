@@ -1,6 +1,6 @@
 "use server";
 
-import { sugerirTarefa, type SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
+import { sugerirPedido, sugerirTarefa, type SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -757,6 +757,19 @@ export async function sugerirTarefaAction(titulo: string, descricao: string, ant
   if (t.length < 12) return {};
   try {
     return { sugestao: await sugerirTarefa(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined }) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+/** Pedido (DS 10.14): the Pinu suggests the team and due date. Anyone with a profile (pedidos are open to all), 15/day. */
+export async function sugerirPedidoAction(titulo: string, descricao: string, anterior?: string): Promise<{ sugestao?: SugestaoTarefa; error?: string }> {
+  const me = await requireUser();
+  if (!me.pessoa) return { error: "Sem permissão" };
+  const t = String(titulo ?? "").trim();
+  if (t.length < 12) return {};
+  try {
+    return { sugestao: await sugerirPedido(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined }) };
   } catch (e) {
     return { error: (e as Error).message };
   }

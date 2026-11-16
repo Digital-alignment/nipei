@@ -857,3 +857,10 @@ Revisão a 390 px aprovada pelo Ashuan ("Sí, los dos"). Em Pulso o título de c
 
 - Pulso: no celular o título ocupa a linha inteira e as ações ficam embaixo (o seletor cresce).
 - `CAMPO_COMPACTO` foi para `components/ds/campoCompacto.ts` (módulo comum); `Campo.tsx` não o exporta mais. Regra: constantes compartilhadas não ficam em arquivos "use client".
+
+## 2026-11-16 — Sugestão do Pinu no pedido e verificação de imports de cliente (§10.14, §13.4)
+
+Pedido do Ashuan ("haz la revisión automática y luego Pedidos").
+
+- `npm run verificar:ds` falha quando um arquivo sem "use client" importa um valor (não componente, não tipo) de um arquivo "use client" — o erro do `CAMPO_COMPACTO` (v2.107.1) não volta.
+- Pedido: o Pinu sugere a equipe e o prazo. Quem mais precisa é quem não conhece as equipes (membros fora da gestão), então vale para qualquer pessoa com ficha, com limite próprio de 15 por dia; o prompt leva só as equipes (Sobre, temas), nunca pessoas. Decisão padrão tomada por Claude, a confirmar com o Ashuan.

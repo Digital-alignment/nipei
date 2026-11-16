@@ -57,6 +57,37 @@ export async function sugerirTarefa(me: Me, entrada: { titulo: string; descricao
   return validarSugestao(o, { equipes: equipes.map((e) => e.id), pessoas: pessoas.map((p) => p.id), projetos: projetos.map((p) => p.id), hoje });
 }
 
+const SISTEMA_PEDIDO = `Você ajuda alguém a pedir algo a uma equipe do Santuário Nipëihu. A partir do pedido, sugira:
+- "equipe": o id da equipe que deve receber (pelo propósito, pelo que decide, pelo "como pedir" e pelos temas de cada equipe);
+- "prazo": AAAA-MM-DD só se o texto disser quando ("amanhã", "sexta", "até dia 20"); senão "";
+- "motivo": por quê, em até 12 palavras, em português (sem ids nem datas).
+Use só ids da lista. Responda só com JSON: {"equipe":"","prazo":"","motivo":""}`;
+
+// ponytail: per-process daily counter like contarUso (resets on deploy); pedidos are open to everyone, so a lower cap
+const LIMITE_PEDIDO = 15;
+const usoPedido = new Map<string, { dia: string; n: number }>();
+
+/** Pedido (DS 10.14): only team and due date; the prompt carries the teams, never people. */
+export async function sugerirPedido(me: Me, entrada: { titulo: string; descricao?: string; anterior?: string }): Promise<SugestaoTarefa> {
+  const hoje = today();
+  const u = usoPedido.get(me.username);
+  const n = u?.dia === hoje ? u.n : 0;
+  if (n >= LIMITE_PEDIDO) throw new Error(`Limite diário de ${LIMITE_PEDIDO} sugestões atingido`);
+  usoPedido.set(me.username, { dia: hoje, n: n + 1 });
+  const equipes = getEquipes().filter((e) => !e.contatos);
+  const dias = Array.from({ length: 14 }, (_, i) => somar(hoje, i)).map((d) => `${d} ${DIAS[new Date(`${d}T12:00:00Z`).getUTCDay()]}`).join(", ");
+  const curto = (x: string, n: number) => x.replace(/\s+/g, " ").slice(0, n);
+  const texto = [
+    `Hoje: ${hoje}. Próximos dias: ${dias}.`,
+    `\nEquipes:\n${equipes.map((e) => `- ${e.id}: ${e.nome}${e.sobre.proposito ? ` — propósito: ${curto(e.sobre.proposito, 160)}` : ""}${e.sobre.decide ? ` · decide: ${curto(e.sobre.decide, 120)}` : ""}${e.sobre.comoPedir ? ` · como pedir: ${curto(e.sobre.comoPedir, 120)}` : ""}${e.temas.length ? ` · temas: ${e.temas.slice(0, 8).join(", ")}` : ""}`).join("\n")}`,
+    `\nPedido: ${entrada.titulo.slice(0, 200)}`,
+    entrada.descricao ? `Detalhes: ${entrada.descricao.slice(0, 1000)}` : "",
+    entrada.anterior ? `\nA pessoa pediu outra sugestão; a anterior foi: ${entrada.anterior.slice(0, 300)}. Proponha algo diferente se fizer sentido.` : "",
+  ].filter(Boolean).join("\n");
+  const { o } = await chamarIA(SISTEMA_PEDIDO, [{ type: "text", text: texto }], 250, 20_000);
+  return validarSugestao(o, { equipes: equipes.map((e) => e.id), pessoas: [], projetos: [], hoje });
+}
+
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/sugestaoTarefa.ts")) {
   let ok = 0;
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };

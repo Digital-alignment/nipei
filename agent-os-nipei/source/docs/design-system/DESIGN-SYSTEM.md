@@ -509,10 +509,11 @@ Primeira aba da página da equipe. Quatro Cartões em grade bento (2 colunas a p
 
 ### 10.14 Pedidos à equipe
 Quem não sabe a quem pedir, pede à equipe.
-- **Pedir algo**: Botão de ícone `enviar` (rótulo "Pedir algo") no cabeçalho da equipe, junto de Reunião e Pessoas, e item no "+" de Hoje → página com Campo seleção de equipe (quando não veio da equipe), Campo título "O que você precisa?", Campo área "Detalhes" e Campo data "Até quando?" (opcional). Primário "Enviar pedido" (ícone `enviar`).
+- **Pedir algo**: Botão de ícone `enviar` (rótulo "Pedir algo") no cabeçalho da equipe, junto de Reunião e Pessoas, e item no "+" de Hoje → página com Campo título "O que você precisa?" primeiro (a sugestão do Pinu preenche a equipe abaixo), Campo seleção de equipe (quando não veio da equipe), Campo área "Detalhes" e Campo data "Até quando?" (opcional). Primário "Enviar pedido" (ícone `enviar`).
 - **Aba Pedidos** (só coordenação/gestão; contagem em pílula, `alerta` quando há novos): linhas de tarefa (10.3) com quem pediu e quando (`meta`), o seletor "Atribuir a…" e "Recusar" (Botão fantasma) que abre, na própria linha, o Campo "Motivo" + "Recusar pedido" (o Diálogo de confirmação não tem campo de texto).
 - **/pedidos**: "Para minhas equipes" (coordenação) e "Meus pedidos" (quem pediu). Estado com BadgeEstado: Pendente (novo) · Em andamento (atribuído, com o nome) · Feita · Atrasada (passou do "até quando") · Recusado = estado "interna" com o texto "Recusado" e o motivo em `meta`.
 - Hoje: Chip "N pedidos para sua equipe" (ícone `enviar`) para a coordenação.
+- **Sugestão do Pinu no pedido** (quando a equipe não veio escolhida): como na Nova tarefa (10.26), 1,5 s depois de parar de digitar "O que você precisa?" (12+ caracteres), a linha `SugestaoPinu` sugere a equipe (pelo Sobre e pelos temas de cada equipe) e o "até quando", com o porquê em até 12 palavras; ✓ preenche, ⟳ pede outra. Vale para qualquer pessoa com ficha, até 15 sugestões por dia; o Pinu não recebe nomes nem cargas de pessoas, só as equipes.
 
 ### 10.15 Saúde da equipe (cartão de `/equipes`)
 Abaixo da barra "% em dia": `Sparkline` (10.8) das últimas 8 semanas com o % de tarefas concluídas no prazo em cada semana + texto `meta` "No prazo · 8 semanas" e a tendência **sempre em texto** ("melhorando", "estável", "caindo"; caindo em `text-warn`). Menos de 2 semanas com dados → só "Sem histórico ainda".
@@ -685,7 +686,7 @@ Situação em 2026-10-26: todas as linhas acima foram cumpridas na v2 (`src/app/
 4. Revisar contraste quando criar um par texto/fundo novo.
 
 ### 13.4 Verificação automática
-- `npm run verificar:ds` = `scripts/verificar-ds.mjs` (falha com `arquivo:linha` se aparecer lucide, `dark:`, cor do Tailwind, hex literal, `text-[10px]/[11px]`, `confirm()/alert()`, emoji ou monospace em `src/app/(v2)`, `src/app/login`, `src/components/v2`, `src/components/ds`) + `scripts/ds-contraste.mjs` (lê os tokens de `globals.css` e confere os pares da seção 3.5 nos dois temas; o bloco "Sistema" precisa repetir o claro).
+- `npm run verificar:ds` = `scripts/verificar-ds.mjs` (falha com `arquivo:linha` se aparecer lucide, `dark:`, cor do Tailwind, hex literal, `text-[10px]/[11px]`, `confirm()/alert()`, emoji ou monospace em `src/app/(v2)`, `src/app/login`, `src/components/v2`, `src/components/ds`; e quando um arquivo sem "use client" importa um valor — constante ou função, não componente nem tipo — de um arquivo "use client", que no servidor chega como referência de cliente e não como o valor) + `scripts/ds-contraste.mjs` (lê os tokens de `globals.css` e confere os pares da seção 3.5 nos dois temas; o bloco "Sistema" precisa repetir o claro).
 - Roda sozinho antes de todo `npm run build` (`prebuild`), inclusive no deploy (Dockerfile).
 - Exceção pontual e justificada: `ds-permitido: <motivo>` na linha ou na linha anterior (hoje: o logo oficial do Google no Login e o mapa das cores antigas de equipe em `components/ds/equipes.ts`).
 

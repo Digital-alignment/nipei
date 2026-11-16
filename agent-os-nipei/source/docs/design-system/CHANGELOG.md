@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Sugestão do Pinu no pedido e verificação de imports de cliente (10.14, 13.4)
+
+- `verificar-ds.mjs`: falha quando um arquivo sem "use client" importa um valor (não componente nem tipo) de um arquivo "use client". Testado com o import antigo de `CAMPO_COMPACTO` (acusa `pulso/page.tsx:4`).
+- `/pedidos/novo`: `components/v2/PedidoForm.tsx` (cliente); "O que você precisa?" vem primeiro; sem equipe escolhida, `sugerirPedidoAction` → `sugerirPedido` (em `lib/v2/sugestaoTarefa.ts`) sugere equipe e "até quando" pelo Sobre e pelos temas das equipes; ✓ preenche, ⟳ pede outra. Qualquer pessoa com ficha, 15 por dia; o prompt não leva pessoas.
+
 ## 2026-11-16 — Pulso no celular e Campo compacto (9.5, 10.3)
 
 - Erro corrigido: `CAMPO_COMPACTO` saiu de `Campo.tsx` ("use client") para `components/ds/campoCompacto.ts`; os 11 imports mudaram. Os seletores compactos voltam a ter fundo e forma em Pulso, Completar fichas, Sem projeto, Fatos por projeto, Importar planilha, Reunião da equipe, ficha da pessoa, Diagnósticos (2) e Ver como.
