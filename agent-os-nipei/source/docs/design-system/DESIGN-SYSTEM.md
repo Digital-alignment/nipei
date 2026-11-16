@@ -593,6 +593,11 @@ O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), com
 - **Exportar para o contador** (em breve): no cabeçalho de `/financas`, depois de "Exportar", Botão fantasma M `desativado` (9.1: cadeado no lugar do ícone) "Contador · em breve". Sem ação até o conteúdo ser decidido (plano `docs/planos/financas-2026-11.md`, fase 5).
 - **Acesso a Finanças por pessoa**: interruptor "Finanças" em `/controle → Funções` (mesmo padrão das outras funções). Quem tem a função vê o item Finanças no menu e todas as telas; ligar não manda aviso.
 
+### 10.26 Formulário de tarefa (nova e editar) e de evento
+- **Um só formulário** para criar e editar tarefa: título · (nova: descrição) · (editar: estado em Chips de marcar A fazer / Fazendo / Feito) · equipe e área · prioridade em Chips · prazo com atalhos (Hoje, Amanhã, Sexta, Próxima semana, Sem prazo) e repetir · projeto e objetivo · responsáveis agrupados (desta equipe / outras / sem equipe) com busca e "+ Eu" · (nova: checklist). Em editar, a descrição e o checklist ficam na ficha, e o id interno não aparece.
+- **Barra de ações** fixa acima da barra do celular, numa linha só, com o fundo da página: Primário em folha ("Criar" / "Salvar") · tonal curto ("Outra" no celular, "Criar e adicionar outra" no computador; só ao criar) · Botão de ícone ✕ "Cancelar" à direita.
+- **Evento**: título; início e fim lado a lado; hora; equipe e estado em coluna única no celular (duas a partir de `sm`); Primário "Salvar" + fantasma "Cancelar".
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

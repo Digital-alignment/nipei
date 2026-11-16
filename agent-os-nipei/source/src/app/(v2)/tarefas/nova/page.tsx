@@ -40,7 +40,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
           prioridade: t.prioridade, prazo: t.prazo, hoje: t.hoje, amanha: t.amanha, sexta: t.sextaLbl, proximaSemana: t.proximaSemana, semPrazo: t.semPrazoLbl,
           repetir: t.repetir, naoRepete: t.naoRepete, semanal: t.semanal, quinzenal: t.quinzenal, mensal: t.mensal, repeteAviso: t.repeteAviso,
           projeto: t.projeto, objetivo: t.objetivo, responsaveis: t.responsaveis, buscarPessoa: t.buscarPessoa, eu: t.euLbl, checklist: t.checklist,
-          checklistPh: t.checklistPh, criar: t.criar, criarOutra: t.criarOutra, cancelar: t.cancelar, suspenso: t.suspensoLbl, nenhumaPessoa: t.nenhumaPessoa,
+          checklistPh: t.checklistPh, criar: t.criar, criarOutra: t.criarOutra, outra: t.outraCurto, cancelar: t.cancelar, salvar: t.salvar, status: t.status, aFazer: t.aFazer, fazendo: t.fazendo, feito: t.feito, suspenso: t.suspensoLbl, nenhumaPessoa: t.nenhumaPessoa,
           prio: { baixa: t.prioBaixa, "média": t.prioMedia, alta: t.prioAlta, urgente: t.prioUrgente }, grupos: t.gruposResp,
         }}
       />

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Botao from "@/components/ds/Botao";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import { EstadoVazio } from "@/components/ds/Estados";
 import Campo from "@/components/ds/Campo";
@@ -35,13 +35,13 @@ export default async function EventoForm({ params, searchParams }: { params: Pro
           <Campo tipo="data" rotulo={t.fim} name="fim" defaultValue={e?.fim} />
         </div>
         <Campo tipo="texto" rotulo={t.hora} type="time" name="hora" defaultValue={e?.hora} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Campo tipo="selecao" rotulo={t.equipe} name="equipe" defaultValue={e?.equipe ?? equipes[0].id}>{equipes.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}</Campo>
           <Campo tipo="selecao" rotulo={t.status} name="status" defaultValue={e?.status ?? "a_confirmar"}><option value="a_confirmar">{t.aConfirmar}</option><option value="confirmado">{t.confirmado}</option></Campo>
         </div>
         <div className="flex gap-3 pt-2">
-          <button className="anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]">{t.salvar}</button>
-          <Link href="/agenda" className="rounded-interno px-5 py-2 text-sm bg-s2">{t.cancelar}</Link>
+          <Botao type="submit" icone="confirmar" folha>{t.salvar}</Botao>
+          <Botao href="/agenda" variante="fantasma" icone="fechar">{t.cancelar}</Botao>
         </div>
       </form>
     </>

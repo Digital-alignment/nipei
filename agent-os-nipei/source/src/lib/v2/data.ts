@@ -875,7 +875,7 @@ export function arquivarAcervo(id: string, por: string) {
 
 // ---------------------------------------------------------------- edits (tarefa, evento, objetivo)
 
-export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status; recorrencia: string }, actor: string) {
+export function updateTarefa(id: string, input: { title: string; equipe: string; area: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status: Status; recorrencia: string; priority?: string }, actor: string) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");
   const pessoas = getPessoas();
@@ -884,6 +884,7 @@ export function updateTarefa(id: string, input: { title: string; equipe: string;
     // doesn't log "A Fazer → A fazer" or turn "5 de junio de 2026" into its ISO form for nothing.
     if (statusOf(String(d.fm.status ?? "")) !== input.status) d.fm.status = STATUS_RAW[input.status];
     if (normalizeDueDate(String(d.fm.prazo ?? "")) !== input.prazo) d.fm.prazo = input.prazo;
+    if (input.priority && String(d.fm.priority ?? "").toLowerCase().replace("media", "média") !== input.priority) d.fm.priority = input.priority;
     Object.assign(d.fm, {
       title: input.title, equipe: input.equipe, area: input.area, projeto: input.projeto, objetivo: input.objetivo,
       responsaveis: input.responsaveis, recorrencia: input.recorrencia,

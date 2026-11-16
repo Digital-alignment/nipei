@@ -2,6 +2,12 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Formulários de tarefa e evento no celular (10.26)
+
+- Nova tarefa: a barra de ações virou uma linha (Criar · Outra · ✕), de 208 para 80 px, com o fundo da página; no computador "Criar e adicionar outra" continua por extenso.
+- Editar tarefa: usa o `NovaTarefaForm` (modo `editar`): estado em Chips, prioridade (agora editável), atalhos de prazo, área, responsáveis por grupo com busca; sem o id interno; descrição e checklist ficam na ficha. `updateTarefaAction` grava a prioridade e a área escolhidas.
+- Novo/editar evento: Equipe e Status em coluna única no celular; Botões do sistema (Salvar em folha, Cancelar fantasma).
+
 ## 2026-11-14 — Tarefa, Conhecimento, Acervo e Pinu no celular (abas pasta, 10.1, 10.2, 10.11)
 
 - Pinu: o balão da pessoa não mostra mais as dicas internas do comprovante do WhatsApp; aparece "(comprovante anexado)". As dicas continuam indo ao modelo.

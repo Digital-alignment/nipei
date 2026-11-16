@@ -833,3 +833,11 @@ Revisão a 390 px aprovada pelo Ashuan ("Los cuatro").
 - Cabeçalho de página: subtítulo longo (intro de Conhecimento e Acervo) numa linha no celular com "Saiba mais"; no computador inteiro.
 - Conhecimento: em "Enviar", só Arquivo/Foto à vista; link e texto atrás de "Colar link ou texto".
 - Acervo: uma só entrada para adicionar (o Botão do cabeçalho abre o formulário; a linha "Adicionar ao acervo" não aparece fechada); no celular projeto/ano/ordem atrás do Chip "Filtros", como em Pessoas.
+
+## 2026-11-16 — Formulários de tarefa e evento no celular (§10.26)
+
+Revisão a 390 px aprovada pelo Ashuan ("Los tres"). Na Nova tarefa a barra fixa tinha três botões empilhados (208 px, ¼ da tela) que cobriam os campos; Editar tarefa era a tela antiga (3 colunas cortadas, id interno à vista, 36 pessoas sem grupo nem busca, sem atalhos de prazo nem prioridade); no Novo evento a Equipe era cortada ao lado do Status.
+
+- Barra de ações de formulário: uma só linha fixa (Primário em folha + tonal curto + ✕), fundo da página.
+- Editar tarefa usa o mesmo formulário da Nova (estado em chips, prioridade, atalhos de prazo, responsáveis por grupo com busca); a descrição e o checklist continuam na ficha.
+- Novo evento: Equipe e Status em coluna única no celular; botões do sistema.

@@ -1,9 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { createTarefaAction } from "@/app/(v2)/actions";
+import { createTarefaAction, updateTarefaAction } from "@/app/(v2)/actions";
 import Campo from "@/components/ds/Campo";
-import Botao from "@/components/ds/Botao";
+import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
 import Icone from "@/components/ds/Icone";
 import Avatar from "@/components/ds/Avatar";
@@ -12,7 +12,7 @@ type Equipe = { id: string; nome: string; cor: string; areas: string[] };
 type Pessoa = { id: string; nome: string; equipes: string[]; coordena: string[]; suspenso: boolean; foto?: string };
 type L = Record<"titulo" | "tituloPh" | "descricao" | "descricaoPh" | "equipe" | "nenhum" | "area" | "prioridade" | "prazo" | "hoje" | "amanha" | "sexta" | "proximaSemana" | "semPrazo"
   | "repetir" | "naoRepete" | "semanal" | "quinzenal" | "mensal" | "repeteAviso" | "projeto" | "objetivo" | "responsaveis" | "buscarPessoa" | "eu" | "checklist" | "checklistPh"
-  | "criar" | "criarOutra" | "cancelar" | "suspenso" | "nenhumaPessoa", string> & { prio: Record<string, string>; grupos: Record<"equipe" | "outras" | "sem", string> };
+  | "criar" | "criarOutra" | "outra" | "cancelar" | "suspenso" | "nenhumaPessoa" | "salvar" | "status" | "aFazer" | "fazendo" | "feito", string> & { prio: Record<string, string>; grupos: Record<"equipe" | "outras" | "sem", string> };
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const mais = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
@@ -23,15 +23,17 @@ const CHIP = "anel-foco inline-flex h-9 cursor-pointer select-none items-center 
 const PRIO_ICONE: Record<string, "prazo" | "informacao" | "atencao"> = { baixa: "prazo", "média": "informacao", alta: "atencao", urgente: "atencao" };
 const PRIO_COR: Record<string, string> = { baixa: "text-t3", "média": "text-info", alta: "text-warn", urgente: "text-err" };
 
-function Enviar({ children, ...p }: { children: string; name?: string; value?: string; variante?: "primario" | "tonal"; folha?: boolean; icone: "confirmar" | "mais" }) {
+function Enviar({ children, ...p }: { children: React.ReactNode; name?: string; value?: string; variante?: "primario" | "tonal"; folha?: boolean; icone: "confirmar" | "mais" }) {
   const { pending } = useFormStatus();
   return <Botao type="submit" name={p.name} value={p.value} variante={p.variante} folha={p.folha} icone={p.icone} carregando={pending} textoCarregando="…">{children}</Botao>;
 }
 
-/** "Nova tarefa": everything a task can carry in one screen; people grouped by the chosen team, with search. */
-export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, inicial, podeSemEquipe, meId, back, l }: {
+/** "Nova tarefa" and "Editar tarefa" (DS 10.26): everything a task can carry in one screen; people grouped by the chosen team, with search. */
+export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, inicial, podeSemEquipe, meId, back, l, editar }: {
   equipes: Equipe[]; pessoas: Pessoa[]; projetos: { id: string; nome: string }[]; objetivos: { id: string; titulo: string; ano: number; projeto: string }[];
   inicial: { equipe: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status?: string }; podeSemEquipe: boolean; meId: string; back: string; l: L;
+  /** editing an existing task: description and checklist stay in the task page */
+  editar?: { id: string; title: string; status: string; prioridade: string; recorrencia: string; area: string };
 }) {
   const [equipe, setEquipe] = useState(inicial.equipe);
   const [projeto, setProjeto] = useState(inicial.projeto);
@@ -50,14 +52,30 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
   const rotulo = "rotulo-campo flex items-center gap-1.5 text-t2";
 
   return (
-    <form action={createTarefaAction} className="grid gap-6">
+    <form action={editar ? updateTarefaAction : createTarefaAction} className="grid gap-6">
       <input type="hidden" name="back" value={back} />
+      {editar && <input type="hidden" name="id" value={editar.id} />}
       {inicial.status && <input type="hidden" name="status" value={inicial.status} />}
       <div className="grid gap-3">
         {/* TODO(pinu): ainda não há endpoint de sugestão para um título novo (proporIAAction só serve tarefas que já existem).
             Quando houver, passe sugestao={<SugestaoPinu texto={...} onUsar={...} onOutra={...} />} (components/ds/Campo). */}
-        <Campo tipo="titulo" name="title" required autoFocus maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh} sugestao={undefined} />
-        <Campo tipo="area" name="descricao" rows={2} maxLength={4000} rotulo={l.descricao} placeholder={l.descricaoPh} />
+        <Campo tipo="titulo" name="title" required autoFocus={!editar} defaultValue={editar?.title} maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh} sugestao={undefined} />
+        {!editar && <Campo tipo="area" name="descricao" rows={2} maxLength={4000} rotulo={l.descricao} placeholder={l.descricaoPh} />}
+      </div>
+
+      {editar && (
+        <fieldset className="grid gap-2"><legend className={`${rotulo} mb-2`}><Icone nome="tarefa" tamanho={16} />{l.status}</legend>
+          <div className="flex flex-wrap gap-2">
+            {([["todo", l.aFazer, "prazo"], ["doing", l.fazendo, "enviar"], ["done", l.feito, "confirmar"]] as const).map(([v, nome, ic]) => (
+              <label key={v} className={CHIP}>
+                <input type="radio" name="status" value={v} defaultChecked={v === editar.status} className="sr-only" />
+                <span className="grid size-6 place-items-center rounded-pilula bg-s1"><Icone nome={ic} tamanho={14} /></span>{nome}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <div className="hidden">
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -66,7 +84,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
           {equipes.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
         </Campo>
         {areas.length > 0
-          ? <Campo tipo="selecao" name="area" rotulo={l.area} defaultValue="" key={equipe}><option value="">{l.nenhum}</option>{areas.map((a) => <option key={a} value={a}>{a}</option>)}</Campo>
+          ? <Campo tipo="selecao" name="area" rotulo={l.area} defaultValue={editar && equipe === inicial.equipe ? editar.area : ""} key={equipe}><option value="">{l.nenhum}</option>{areas.map((a) => <option key={a} value={a}>{a}</option>)}</Campo>
           : <div className="hidden sm:block" />}
       </div>
 
@@ -74,7 +92,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
         <div className="flex flex-wrap gap-2">
           {Object.entries(l.prio).map(([v, nome]) => (
             <label key={v} className={CHIP}>
-              <input type="radio" name="prioridade" value={v} defaultChecked={v === "média"} className="sr-only" />
+              <input type="radio" name="prioridade" value={v} defaultChecked={v === (editar?.prioridade || "média")} className="sr-only" />
               <span className="grid size-6 place-items-center rounded-pilula bg-s1"><Icone nome={PRIO_ICONE[v]} tamanho={14} className={PRIO_COR[v]} /></span>{nome}
             </label>
           ))}
@@ -90,7 +108,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
           </div>
         </div>
         <div className="grid content-start gap-1.5">
-          <Campo tipo="selecao" name="recorrencia" rotulo={l.repetir} defaultValue="" aria-describedby="repete-aviso">
+          <Campo tipo="selecao" name="recorrencia" rotulo={l.repetir} defaultValue={editar?.recorrencia ?? ""} aria-describedby="repete-aviso">
             <option value="">{l.naoRepete}</option><option value="semanal">{l.semanal}</option><option value="quinzenal">{l.quinzenal}</option><option value="mensal">{l.mensal}</option>
           </Campo>
           <p id="repete-aviso" className="meta px-4 text-t3">{l.repeteAviso}</p>
@@ -137,15 +155,16 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
         </div>
       </fieldset>
 
-      <details className="group">
+      {!editar && <details className="group">
         <summary className={`${rotulo} anel-foco alvo-toque min-h-9 cursor-pointer list-none rounded-pilula`}><Icone nome="tarefa" tamanho={16} />{l.checklist}<Icone nome="abrir" tamanho={16} className="transition-transform group-open:rotate-180" /></summary>
         <Campo tipo="area" name="checklist" rotulo={l.checklist} rows={4} maxLength={3000} placeholder={l.checklistPh} className="mt-2" />
-      </details>
+      </details>}
 
-      <div className="sticky bottom-[calc(7rem+env(safe-area-inset-bottom))] z-10 -mx-4 flex flex-wrap items-center gap-2 bg-bg/95 px-4 py-3 backdrop-blur md:bottom-0 md:mx-0 md:px-0">
-        <Enviar icone="confirmar" folha>{l.criar}</Enviar>
-        <Enviar icone="mais" variante="tonal" name="outra" value="1">{l.criarOutra}</Enviar>
-        <span className="ml-auto"><Botao href={back} variante="fantasma" icone="fechar">{l.cancelar}</Botao></span>
+      {/* one row of actions above the phone bar (DS 10.26) */}
+      <div className="sticky bottom-[calc(7rem+env(safe-area-inset-bottom))] z-10 -mx-4 flex items-center gap-2 bg-bg px-4 py-3 md:bottom-0 md:mx-0 md:px-0">
+        <Enviar icone="confirmar" folha>{editar ? l.salvar : l.criar}</Enviar>
+        {!editar && <Enviar icone="mais" variante="tonal" name="outra" value="1"><span className="sm:hidden">{l.outra}</span><span className="hidden sm:inline">{l.criarOutra}</span></Enviar>}
+        <span className="ml-auto"><BotaoIcone icone="fechar" aria-label={l.cancelar} href={back} variante="fantasma" /></span>
       </div>
     </form>
   );

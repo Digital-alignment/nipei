@@ -619,9 +619,12 @@ export async function updateTarefaAction(form: FormData) {
   if (equipe !== t.equipe && !(equipe ? can.criarEm(me, equipe) : me.gestao)) return;
   const status = String(form.get("status")) as Status;
   const title = String(form.get("title") ?? "").trim().slice(0, 200) || t.title;
+  const areas = getEquipes().find((e) => e.id === equipe)?.areas ?? [];
   updateTarefa(t.id, {
     title, equipe,
-    area: equipe === t.equipe ? t.area : "", // an area belongs to the old team
+    // an area belongs to its team: the form's choice when it has one, else kept only on the same team
+    area: form.has("area") ? pick(form.get("area"), areas) : equipe === t.equipe ? t.area : "",
+    priority: pick(form.get("prioridade"), ["baixa", "média", "alta", "urgente"]) || undefined,
     projeto: pick(form.get("projeto"), getProjetos().map((p) => p.id)),
     objetivo: pick(form.get("objetivo"), getObjetivos().map((o) => o.id)),
     prazo: isDate(form.get("prazo")),
