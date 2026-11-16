@@ -2,8 +2,6 @@
 
 Para a documentação completa, especificações de arquitetura, comandos de build e regras de isolamento/deploy, consulte o arquivo mestre:
 - [CLAUDE.md principal](../../CLAUDE.md)
-- [.agents/PROJECT_STATE.md](../../.agents/PROJECT_STATE.md)
-- [.agents/UPDATES.md](../../.agents/UPDATES.md)
 
 ### Comandos Rápidos neste Diretório:
 - `npm run dev` — Servidor de desenvolvimento Next.js

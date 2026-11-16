@@ -46,12 +46,13 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 │       │   └── lib/v2/ + lib/{auth,config,tarefaNote,hermesRAG,vaultDigest,kanbanGrounding,tiposKanban}.ts
 │       ├── docs/design-system/, design-assets/, scripts/, public/{brand,icons,sw.js}
 │       └── package.json
-├── docker-compose.yml           <-- Configuração Docker para deploy no VPS
-├── .agents/                     <-- Estado do projeto para agentes (PROJECT_STATE.md, UPDATES.md)
-└── CLAUDE.md                    <-- Este arquivo de referência
+├── scripts/                     <-- vault sync, avisos WhatsApp, worker do Hermes, deploy-vps.sh, auditoria
+├── hermes/skills/nipei-os/      <-- skill do Hermes (usa /api/agent-kanban e /api/venu/kanban-action)
+├── docs/deploy-rapido.md, .github/workflows/deploy.yml, docker-compose.yml
+└── CLAUDE.md                    <-- Este arquivo de referência (o estado vivo do projeto)
 ```
 
-**v1 removida (2026-11-16):** o "Mission Control" antigo (`/mi-portal`, `/overview`, `/kanban`, `/venu`, `/hermes`, `/organograma`, `/empresas`, `/memory`, `/productivity`, `/metodologias`, os ~50 painéis de agentes/estúdios, `/legacy`), ~300 rotas de API, ~90 libs, o Shell/Sidebar e os contextos Company/Language saíram do código. Quase tudo usava dados fixos ou já existia na v2; nada no VPS (cron, workers, n8n) chamava essas rotas. Se precisar de algo dela: está no histórico do git antes do commit "remove v1".
+**v1 removida (2026-11-16):** o "Mission Control" antigo (`/mi-portal`, `/overview`, `/kanban`, `/venu`, `/hermes`, `/organograma`, `/empresas`, `/memory`, `/productivity`, `/metodologias`, os ~50 painéis de agentes/estúdios, `/legacy`), ~300 rotas de API, ~90 libs, o Shell/Sidebar e os contextos Company/Language saíram do código. Quase tudo usava dados fixos ou já existia na v2; nada no VPS (cron, workers, n8n) chamava essas rotas. Se precisar de algo dela: está no histórico do git antes do commit "remove v1". Na mesma limpeza saíram da raiz o primeiro "Nipei" (app Vite + Supabase do AI Studio, jan/2026; o projeto Vercel parou em 15/10), a plantilla "Agent OS" de agent-os-nipei/, as bitácoras `.agents/` e os testes `tests/` da v1.
 
 ### Vault Canônico
 - **Caminho Local:** `C:\Users\ondig\Code\Nipei\nipei-vault`
