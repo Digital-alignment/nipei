@@ -4,7 +4,6 @@ import { defaultVault } from "@/lib/config";
 import { motorIA } from "./motorIA";
 import { registrarCustoIA } from "./custosIA";
 import { registrarErro } from "./erros";
-import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, type Status } from "./data";
 import { buscarConhecimento, formatarConhecimento } from "./conhecimento";
 
@@ -41,7 +40,7 @@ const INSTRUCOES: Record<ModoIA, string> = {
 const SISTEMA = `Você é o assistente de tarefas do Nipëi OS (Santuário Nipeihu, Aldeia Mutum, Inirau). Responda SEMPRE em português do Brasil.
 Regras:
 - Zero alucinação: use só o que está no contexto (tarefa, base de conhecimento, notas do vault, anexos). Não invente nomes, datas, valores, contatos nem fatos.
-- A "Base de conhecimento confirmada" prevalece sobre as notas antigas; se a tarefa contradiz a base, aponte isso em \`resumo\`.
+- A "Base de conhecimento confirmada" é a fonte de verdade; se a tarefa contradiz a base, aponte isso em \`resumo\`.
 - Se faltar informação, diga em \`resumo\` o que falta e a quem perguntar.
 - Liste em \`fontes\` as notas/anexos/comentários que você usou.
 - Responda APENAS com um objeto JSON, sem texto antes ou depois, com estas chaves:
@@ -67,7 +66,6 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
   const relacionadas = getTarefas()
     .filter((t) => t.id !== id && ((tarefa.projeto && t.projeto === tarefa.projeto) || (tarefa.objetivo && t.objetivo === tarefa.objetivo) || (tarefa.equipe && t.equipe === tarefa.equipe)))
     .slice(0, 15);
-  const rag = queryVaultGrounding(`${tarefa.title} ${doc.descricao}`.slice(0, 500), "squad_1_ceo");
   const base = buscarConhecimento(`${tarefa.title} ${doc.descricao} ${doc.checklist.map((c) => c.texto).join(" ")}`, {
     origem: "tarefas", equipe: tarefa.equipe, projetos: tarefa.projeto ? [tarefa.projeto] : [], objetivos: tarefa.objetivo ? [tarefa.objetivo] : [], pessoas: tarefa.responsaveis, limite: 15,
     comPrivados: tarefa.projeto ? [tarefa.projeto] : undefined, // the task's own project, even when private (task AI is gestão-only)
@@ -89,8 +87,6 @@ export function contexto(id: string): { texto: string; anexos: Parte[] } {
     "", "## Links anexados", ...(anexos.filter((a) => a.tipo === "link").map((a) => `- ${a.titulo}: ${a.url}`) || []),
     "", "## Tarefas relacionadas (mesmo projeto/objetivo/equipe)", ...relacionadas.map((t) => `- ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
     "", "## Base de conhecimento confirmada (fonte de verdade; revisada pela gestão)", base.length ? formatarConhecimento(base) : "(nada confirmado sobre este assunto)",
-    "", "## Notas antigas do vault (não revisadas; se contradizem a base confirmada, vale a base)",
-    ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 5).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
   ];
 
   // Attached files: photos and PDFs go to the model as they are; text files inline. Newest 6 only.

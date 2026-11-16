@@ -6,8 +6,8 @@ import { getPessoas, vault, type Me } from "./data";
 
 // Internal notes about a person: only management (Equipe 1, logged in = not suspended) sees, edits and
 // comments them. They live in Gestao_Interna/Notas_pessoas/<pessoa>.md — outside Miembros/, and
-// Gestao_Interna is skipped by every vault reader that feeds the AIs (lib/vault SKIP_DIRS; hermesRAG
-// only reads its own folder list), so a note never reaches Hermes, Venu or a non-management screen.
+// no AI reads raw vault notes (they answer from confirmed Conhecimento facts only), so a note never reaches
+// Hermes or a non-management screen.
 // The management assistant reads them on purpose (tool notas_internas / person page context).
 
 export type Comentario = { por: string; em: string; texto: string };

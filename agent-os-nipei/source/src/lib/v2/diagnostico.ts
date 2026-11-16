@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
 import { requestSync } from "@/lib/tarefaNote";
-import { queryVaultGrounding } from "@/lib/hermesRAG";
 import { chamarIA, chamarIATexto } from "./ia";
 import { buscarConhecimento, criarFonte, formatarConhecimento, processarFonte } from "./conhecimento";
 import { CATEGORIAS, createTarefa, getEquipes, getLancamentos, getPessoas, getProjetos, getTarefas, noteText, slugify, today, vault, type Lancamento, type Me, type Pessoa } from "./data";
@@ -279,7 +278,6 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
   const projeto = getProjetos().find((p) => p.id === d.projeto);
   const consulta = `${projeto?.nome ?? ""} ${sec.titulo} ${sec.perguntas.map((q) => `${q.texto} ${q.guia.join(" ")}`).join(" ")}`;
   const base = buscarConhecimento(consulta, { origem: "diagnostico", projetos: d.projeto ? [d.projeto] : [], limite: 30, minimo: 0.12 });
-  const rag = queryVaultGrounding(`${projeto?.nome ?? ""} retiro dieta ${sec.titulo}`.slice(0, 400));
   const tarefas = getTarefas().filter((t) => !d.projeto || t.projeto === d.projeto);
   const col = getColetivo(d.id);
   const lanc = secaoId === "financas" ? lancamentosDoPeriodo(d, col.periodo) : [];
@@ -296,7 +294,6 @@ export async function rascunhoColetivoIA(d: Diagnostico, secaoId: string, quem: 
     `Hoje: ${today()} · Diagnóstico: ${d.titulo} · Evento: ${d.evento}`,
     projeto ? `Projeto: ${projeto.nome} — ${projeto.descricao}` : "",
     "## Base de conhecimento confirmada", base.length ? formatarConhecimento(base) : "(nada)",
-    "## Notas do vault (não revisadas)", ...(rag.citations ?? []).filter((c) => !c.path.startsWith("Conhecimento/")).slice(0, 6).map((c) => `### ${c.title} (${c.path})\n${c.snippet.slice(0, 1200)}`),
     `## Tarefas do projeto (${tarefas.length})`, ...tarefas.slice(0, 80).map((t) => `- ${t.id}: ${t.title} [${t.statusRaw || "A fazer"}${t.prazo ? `, ${t.prazo}` : ""}]`),
     secaoId === "financas" ? `## Lançamentos financeiros do projeto (${lanc.length})\n${lanc.slice(0, 150).map((l) => `- ${l.data} ${l.tipo}${l.pendente ? (l.tipo === "entrada" ? " A RECEBER" : " A PAGAR") : ""} R$ ${l.valor} ${l.categoria}${l.evento ? ` [${l.evento}]` : ""}${l.participante ? ` (participante: ${l.participante})` : ""}: ${l.descricao}`).join("\n") || "(nenhum lançamento registrado)"}\n## Orçamento original por categoria\n${Object.entries(col.orcamento).map(([k, v]) => `- ${k}: R$ ${v}`).join("\n") || "(nenhum orçamento registrado)"}` : "",
     totais,
