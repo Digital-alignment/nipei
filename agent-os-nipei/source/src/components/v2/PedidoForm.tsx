@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { pedirAction, sugerirPedidoAction } from "@/app/(v2)/actions";
-import type { SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
+import { pedirAction, sugerirPedidoAction, usouSugestaoAction } from "@/app/(v2)/actions";
+import type { Aplicada, SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
 import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import Cartao from "@/components/ds/Cartao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
@@ -16,6 +16,7 @@ export default function PedidoForm({ equipes, equipeFixa, hoje, l }: { equipes: 
   const [descricao, setDescricao] = useState("");
   const [sug, setSug] = useState<{ s: SugestaoTarefa; texto: string } | null>(null);
   const [pensando, setPensando] = useState(false);
+  const [aplicada, setAplicada] = useState<Aplicada | null>(null);
   const pedido = useRef("");
   const descrever = (s: SugestaoTarefa) => {
     const dia = s.prazo ? new Date(`${s.prazo}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) : "";
@@ -42,11 +43,14 @@ export default function PedidoForm({ equipes, equipeFixa, hoje, l }: { equipes: 
     if (!sug) return;
     if (sug.s.equipe) setEquipe(sug.s.equipe);
     if (sug.s.prazo) setPrazo(sug.s.prazo);
+    setAplicada({ equipe: sug.s.equipe || undefined, prazo: sug.s.prazo || undefined });
+    void usouSugestaoAction("pedido").catch(() => {});
     setSug(null);
   };
 
   return (
     <form action={pedirAction}>
+      {aplicada && <input type="hidden" name="sugestao_pinu" value={JSON.stringify(aplicada)} />}
       <Cartao className="gap-3">
         <Campo tipo="titulo" name="titulo" rotulo={l.oQuePrecisa} required minLength={3} maxLength={200} onChange={(e) => setTitulo(e.target.value)}
           sugestao={!equipeFixa && (pensando || sug) ? <SugestaoPinu texto={sug?.texto ?? ""} carregando={pensando} onUsar={usar} onOutra={() => pedir(true)} /> : undefined} />

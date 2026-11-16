@@ -864,3 +864,7 @@ Pedido do Ashuan ("haz la revisión automática y luego Pedidos").
 
 - `npm run verificar:ds` falha quando um arquivo sem "use client" importa um valor (não componente, não tipo) de um arquivo "use client" — o erro do `CAMPO_COMPACTO` (v2.107.1) não volta.
 - Pedido: o Pinu sugere a equipe e o prazo. Quem mais precisa é quem não conhece as equipes (membros fora da gestão), então vale para qualquer pessoa com ficha, com limite próprio de 15 por dia; o prompt leva só as equipes (Sobre, temas), nunca pessoas. Decisão padrão tomada por Claude, a confirmar com o Ashuan.
+
+## 2026-11-16 — Medir as sugestões do Pinu (§10.14, §10.26)
+
+Pedido do Ashuan ("haz el punto 1, las dos cosas"): saber em 1–2 semanas se a sugestão acerta, sem depender de impressões. Registro (`.jobs/eventos`, só o tipo de ação): mostrou, outra, usou e, ao criar, "manteve N/M · mudou …" comparando o que o Pinu preencheu com o que foi criado. Módulo do Painel "Sugestões do Pinu" (7/30/90 dias): mostradas, usadas, criadas com a sugestão, campos mantidos e o que mais mudam. Auditoria de 16/11 em produção: as 4 equipes têm `temas`, nenhuma tem o Sobre escrito — o Pinu decide só pelo nome e pelos temas.

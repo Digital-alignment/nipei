@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Medir as sugestões do Pinu (10.14, 10.26)
+
+- Eventos `sugestão do Pinu` ("tarefa|pedido · mostrou | outra | usou | criou · manteve N/M · mudou …"): `sugerirTarefaAction`/`sugerirPedidoAction` registram mostrou/outra; ✓ chama `usouSugestaoAction`; o formulário manda o que foi preenchido (`sugestao_pinu`, oculto) e `createTarefaAction`/`pedirAction` comparam com o criado (`compararSugestao`, puro).
+- Painel → "Sugestões do Pinu" (`controle/modulos/SugestoesPinu.tsx`, `resumoSugestoes` puro, `eventosDesde` em `eventos.ts`): por tipo (mostradas, usadas %, criadas com a sugestão, campos mantidos %, o que mais mudam) e por pessoa. Autoteste: `npx tsx src/lib/v2/sugestaoTarefa.ts` (10 ok).
+
 ## 2026-11-16 — Sugestão do Pinu no pedido e verificação de imports de cliente (10.14, 13.4)
 
 - `verificar-ds.mjs`: falha quando um arquivo sem "use client" importa um valor (não componente nem tipo) de um arquivo "use client". Testado com o import antigo de `CAMPO_COMPACTO` (acusa `pulso/page.tsx:4`).

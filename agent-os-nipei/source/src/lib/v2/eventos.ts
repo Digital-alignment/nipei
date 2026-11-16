@@ -78,6 +78,12 @@ function historico(): Evento[] {
   return ev;
 }
 
+/** Only the event log (no task history, no logins), since `dias` ago. */
+export function eventosDesde(dias: number): Evento[] {
+  const desde = Date.now() - dias * 86_400_000;
+  return doLog(desde).filter((e) => Date.parse(e.em) >= desde);
+}
+
 /** Everything since `dias` ago, newest first. */
 export function atividade(dias: number): Evento[] {
   const desde = Date.now() - dias * 86_400_000;

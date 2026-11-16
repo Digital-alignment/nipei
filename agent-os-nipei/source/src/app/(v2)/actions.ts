@@ -1,6 +1,7 @@
 "use server";
 
-import { sugerirPedido, sugerirTarefa, type SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
+import { compararSugestao, detalheCriou, sugerirPedido, sugerirTarefa, TIPO_EVENTO, type Aplicada, type SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
+import { registrarEvento } from "@/lib/v2/eventos";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -89,6 +90,11 @@ export async function createTarefaAction(form: FormData) {
     descricao: String(form.get("descricao") ?? "").replace(/\r/g, "").trim().slice(0, 4000) || undefined,
     checklist: checklist.map((texto) => ({ feito: false, texto })),
   });
+  const aplicada = aplicadaDe(form);
+  if (aplicada) {
+    const c = compararSugestao(aplicada, { equipe, prazo: /^\d{4}-\d{2}-\d{2}$/.test(prazo) ? prazo : "", prioridade: pick(form.get("prioridade"), ["baixa", "média", "alta", "urgente"]), responsaveis: [...new Set(form.getAll("responsaveis").map(String))], projeto });
+    if (c.total) registrarEvento(me.pessoa?.id, TIPO_EVENTO, detalheCriou("tarefa", c), "plataforma");
+  }
   // "+" de uma coluna do Quadro: a tarefa já nasce no estado da coluna
   const estado = pick(form.get("status"), ["doing", "done"]);
   if (estado) setTarefaStatus(id, estado as Status, actorName(me));
@@ -553,6 +559,11 @@ export async function pedirAction(form: FormData) {
   const prazo = isDate(form.get("prazo"));
   const id = createTarefa({ title: titulo, equipe: e.id, prazo, responsaveis: [], projeto: "", objetivo: "", recorrencia: "", pedidoPor: me.pessoa.id },
     actorName(me), { descricao: String(form.get("descricao") ?? "").trim().slice(0, 3000) || undefined, semAviso: true });
+  const aplicada = aplicadaDe(form);
+  if (aplicada) {
+    const c = compararSugestao(aplicada, { equipe: e.id, prazo });
+    if (c.total) registrarEvento(me.pessoa.id, TIPO_EVENTO, detalheCriou("pedido", c), "plataforma");
+  }
   const { avisarPedido } = await import("@/lib/v2/pedidos");
   void avisarPedido(e, { id, titulo, prazo }, { id: me.pessoa.id, nome: me.pessoa.name }).catch(() => {});
   revalidatePath("/", "layout");
@@ -756,11 +767,24 @@ export async function sugerirTarefaAction(titulo: string, descricao: string, ant
   const t = String(titulo ?? "").trim();
   if (t.length < 12) return {};
   try {
-    return { sugestao: await sugerirTarefa(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined }) };
+    const sugestao = await sugerirTarefa(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined });
+    if (sugestao.equipe || sugestao.prazo || sugestao.responsaveis.length || sugestao.projeto || sugestao.prioridade) registrarEvento(me.pessoa?.id, TIPO_EVENTO, `tarefa · ${anterior ? "outra" : "mostrou"}`, "plataforma");
+    return { sugestao };
   } catch (e) {
     return { error: (e as Error).message };
   }
 }
+
+/** ✓ on a Pinu suggestion (only counted: what the person does next is measured when creating). */
+export async function usouSugestaoAction(tipo: "tarefa" | "pedido") {
+  const me = await requireUser();
+  if (tipo === "tarefa" || tipo === "pedido") registrarEvento(me.pessoa?.id, TIPO_EVENTO, `${tipo} · usou`, "plataforma");
+}
+
+/** The suggestion the form applied (hidden field), compared with what was finally created. */
+const aplicadaDe = (form: FormData): Aplicada | null => {
+  try { const o = JSON.parse(String(form.get("sugestao_pinu") ?? "")); return o && typeof o === "object" ? o as Aplicada : null; } catch { return null; }
+};
 
 /** Pedido (DS 10.14): the Pinu suggests the team and due date. Anyone with a profile (pedidos are open to all), 15/day. */
 export async function sugerirPedidoAction(titulo: string, descricao: string, anterior?: string): Promise<{ sugestao?: SugestaoTarefa; error?: string }> {
@@ -769,7 +793,9 @@ export async function sugerirPedidoAction(titulo: string, descricao: string, ant
   const t = String(titulo ?? "").trim();
   if (t.length < 12) return {};
   try {
-    return { sugestao: await sugerirPedido(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined }) };
+    const sugestao = await sugerirPedido(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined });
+    if (sugestao.equipe || sugestao.prazo) registrarEvento(me.pessoa?.id, TIPO_EVENTO, `pedido · ${anterior ? "outra" : "mostrou"}`, "plataforma");
+    return { sugestao };
   } catch (e) {
     return { error: (e as Error).message };
   }

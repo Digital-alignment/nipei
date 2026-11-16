@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { createTarefaAction, sugerirTarefaAction, updateTarefaAction } from "@/app/(v2)/actions";
-import type { SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
+import { createTarefaAction, sugerirTarefaAction, updateTarefaAction, usouSugestaoAction } from "@/app/(v2)/actions";
+import type { Aplicada, SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
 import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
@@ -49,6 +49,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
   const [descricao, setDescricao] = useState("");
   const [sug, setSug] = useState<{ s: SugestaoTarefa; texto: string } | null>(null);
   const [pensando, setPensando] = useState(false);
+  const [aplicada, setAplicada] = useState<Aplicada | null>(null);
   const pedido = useRef("");
   const descrever = (s: SugestaoTarefa) => {
     const nomeP = (id: string) => pessoas.find((p) => p.id === id)?.nome.split(" (")[0] ?? id;
@@ -80,6 +81,9 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
     if (s.prazo) setPrazo(s.prazo);
     if (s.responsaveis.length) setSel(new Set(s.responsaveis));
     if (s.projeto) setProjeto(s.projeto);
+    // what was filled goes with the form, to measure what the person kept (panel "Sugestões do Pinu")
+    setAplicada({ equipe: s.equipe || undefined, prioridade: s.prioridade || undefined, prazo: s.prazo || undefined, responsaveis: s.responsaveis.length ? s.responsaveis : undefined, projeto: s.projeto || undefined });
+    void usouSugestaoAction("tarefa").catch(() => {});
     setSug(null);
   };
   const areas = equipes.find((e) => e.id === equipe)?.areas ?? [];
@@ -97,6 +101,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
     <form action={editar ? updateTarefaAction : createTarefaAction} className="grid gap-6">
       <input type="hidden" name="back" value={back} />
       {editar && <input type="hidden" name="id" value={editar.id} />}
+      {aplicada && <input type="hidden" name="sugestao_pinu" value={JSON.stringify(aplicada)} />}
       {inicial.status && <input type="hidden" name="status" value={inicial.status} />}
       <div className="grid gap-3">
         <Campo tipo="titulo" name="title" required autoFocus={!editar} defaultValue={editar?.title} maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh}

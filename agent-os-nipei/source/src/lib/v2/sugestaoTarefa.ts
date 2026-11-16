@@ -88,6 +88,52 @@ export async function sugerirPedido(me: Me, entrada: { titulo: string; descricao
   return validarSugestao(o, { equipes: equipes.map((e) => e.id), pessoas: [], projetos: [], hoje });
 }
 
+// ---- Does the Pinu help? (admin panel "Sugestões do Pinu") ----
+// Events in the log (tipo TIPO_EVENTO, never the text): "<tarefa|pedido> · mostrou | outra | usou | criou · manteve N/M · mudou a, b".
+export const TIPO_EVENTO = "sugestão do Pinu";
+export type Aplicada = { equipe?: string; prazo?: string; prioridade?: string; responsaveis?: string[]; projeto?: string };
+const CAMPOS = ["equipe", "prazo", "prioridade", "responsaveis", "projeto"] as const;
+
+/** Pure: of the fields the suggestion filled, which ones the person kept until creating. */
+export function compararSugestao(aplicada: Aplicada, final: Aplicada) {
+  const mudou: string[] = [];
+  let total = 0;
+  for (const k of CAMPOS) {
+    const a = aplicada[k];
+    if (a === undefined || a === "" || (Array.isArray(a) && !a.length)) continue;
+    total++;
+    const f = final[k];
+    const igual = Array.isArray(a) ? JSON.stringify([...a].sort()) === JSON.stringify([...(Array.isArray(f) ? f : [])].sort()) : a === f;
+    if (!igual) mudou.push(k);
+  }
+  return { total, mantidos: total - mudou.length, mudou };
+}
+
+export const detalheCriou = (tipo: "tarefa" | "pedido", c: ReturnType<typeof compararSugestao>) =>
+  `${tipo} · criou · manteve ${c.mantidos}/${c.total}${c.mudou.length ? ` · mudou ${c.mudou.join(", ")}` : ""}`;
+
+type Conta = { mostrou: number; outra: number; usou: number; criou: number; campos: number; mantidos: number; mudou: Record<string, number> };
+const zero = (): Conta => ({ mostrou: 0, outra: 0, usou: 0, criou: 0, campos: 0, mantidos: 0, mudou: {} });
+
+/** Pure: totals per kind (tarefa/pedido) and per person, from the event log. */
+export function resumoSugestoes(eventos: { pessoa: string; tipo: string; detalhe: string }[]) {
+  const porTipo = { tarefa: zero(), pedido: zero() };
+  const porPessoa = new Map<string, Conta>();
+  for (const e of eventos) {
+    if (e.tipo !== TIPO_EVENTO) continue;
+    const [tipo, acao, manteve, mudou] = e.detalhe.split(" · ");
+    if ((tipo !== "tarefa" && tipo !== "pedido") || !["mostrou", "outra", "usou", "criou"].includes(acao)) continue;
+    if (!porPessoa.has(e.pessoa)) porPessoa.set(e.pessoa, zero());
+    for (const c of [porTipo[tipo], porPessoa.get(e.pessoa)!]) {
+      c[acao as "mostrou" | "outra" | "usou" | "criou"]++;
+      const m = manteve?.match(/manteve (\d+)\/(\d+)/);
+      if (m) { c.mantidos += Number(m[1]); c.campos += Number(m[2]); }
+      for (const k of (mudou ?? "").replace(/^mudou /, "").split(", ").filter(Boolean)) c.mudou[k] = (c.mudou[k] ?? 0) + 1;
+    }
+  }
+  return { porTipo, porPessoa };
+}
+
 if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsWith("lib/v2/sugestaoTarefa.ts")) {
   let ok = 0;
   const assert = (c: boolean, m: string) => { if (!c) throw new Error(m); ok++; };
@@ -100,5 +146,15 @@ if (typeof process !== "undefined" && process.argv[1]?.replace(/\\/g, "/").endsW
   assert(validarSugestao({ prazo: "2028-01-01" }, l).prazo === "", "prazo além de 1 ano");
   assert(validarSugestao({ responsaveis: ["jordao", "ana", "jordao", "ana"] }, { ...l, pessoas: ["jordao", "ana", "c", "d"] }).responsaveis.length === 2, "sem repetidos");
   assert(validarSugestao({}, l).motivo === "", "vazia");
+  // what was kept of an applied suggestion
+  const c = compararSugestao({ equipe: "equipe_4", prazo: "2026-11-20", responsaveis: ["b", "a"] }, { equipe: "equipe_4", prazo: "2026-11-21", responsaveis: ["a", "b"], prioridade: "alta" });
+  assert(c.total === 3 && c.mantidos === 2 && c.mudou.join() === "prazo", `comparar ${JSON.stringify(c)}`);
+  assert(compararSugestao({}, { equipe: "x" }).total === 0, "nada aplicado");
+  // panel summary
+  const ev = (detalhe: string, pessoa = "ana") => ({ em: "2026-11-16T10:00:00Z", pessoa, tipo: TIPO_EVENTO, detalhe, canal: "plataforma" as const });
+  const rs = resumoSugestoes([ev("tarefa · mostrou"), ev("tarefa · mostrou"), ev("tarefa · outra"), ev("tarefa · usou"), ev("tarefa · criou · manteve 4/5 · mudou prazo"), ev("pedido · mostrou", "bia"), ev("outro")]);
+  const tr = rs.porTipo.tarefa;
+  assert(tr.mostrou === 2 && tr.outra === 1 && tr.usou === 1 && tr.criou === 1 && tr.campos === 5 && tr.mantidos === 4 && tr.mudou.prazo === 1, `resumo ${JSON.stringify(tr)}`);
+  assert(rs.porTipo.pedido.mostrou === 1 && rs.porPessoa.get("bia")?.mostrou === 1, "pedido e pessoa");
   console.log(`sugestaoTarefa: ${ok} ok`);
 }
