@@ -36,7 +36,7 @@ export default function Offline({ gerado, labels }: { gerado: string; labels: { 
   if (online && !fila) return null;
   return (
     <div className="print:hidden mb-3 flex items-center gap-2 rounded-interno bg-s2 px-3 py-1.5 text-xs text-t2">
-      {/* TODO(ícones): sem conexão (pedido em ICONES.md); provisório: atenção */}<Icone nome="atencao" tamanho={16} />
+      <Icone nome="sem-conexao" tamanho={16} />
       {!online && <span>{labels.semConexao} · {labels.dadosDe} {gerado}</span>}
       {fila > 0 && <span className="ml-auto">{labels.aEnviar}: {fila}</span>}
     </div>

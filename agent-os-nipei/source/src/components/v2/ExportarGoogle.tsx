@@ -6,8 +6,7 @@ import { getConexoes } from "@/lib/v2/conexoes";
 import { googleConfigurado } from "@/lib/v2/google";
 import type { Dict } from "@/lib/v2/i18n";
 
-// TODO(ícones): documento, apresentação, planilha (pedidos em ICONES.md)
-const ICONE: Record<"doc" | "slides" | "sheet", NomeIcone> = { doc: "tarefa", slides: "imagem", sheet: "filtrar" };
+const ICONE: Record<"doc" | "slides" | "sheet", NomeIcone> = { doc: "documento", slides: "apresentacao", sheet: "planilha" };
 
 /** "Export to Google" buttons; the file lands in the person's own Nipëi folder and opens. */
 export default function ExportarGoogle({ pessoaId, t, campos, formatos }: {

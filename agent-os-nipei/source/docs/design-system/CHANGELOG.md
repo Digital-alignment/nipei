@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — 14 ícones novos (7)
+
+- `design-assets/icones/funcionais/`: quadro, grade, semana, mes, copiar, ver, ocultar, sem-conexao, documento, planilha, apresentacao, video, audio, pasta → `npm run icones` (48 funcionais).
+- Provisórios trocados: Tarefas (abas Quadro e vista Grade), Agenda (abas Semana e Mês), Acervo (tipos vídeo, áudio, documentos, outros = pasta), Exportar para o Google (Doc, Slides, Sheets), Login (ver/ocultar senha), aviso sem conexão, CopiarBotao, Relatório do mês em Finanças. Restam os TODO de `marca` (Acervo) e `carteira` (Contas).
+
 ## 2026-11-16 — Rascunho do Sobre da equipe com o Pinu (10.13)
 
 - `/equipes/[id]/sobre` usa `components/v2/SobreEquipeForm.tsx` (cliente, campos controlados): Botão tonal "Rascunho com o Pinu" (`gerar-outra`) + linha `meta` de aviso; `rascunhoSobreAction` (coordenação ou gestão) → `lib/v2/rascunhoSobre.ts` (`rascunhoSobre`: temas, áreas, outras equipes, tarefas abertas e feitas em 120 dias, pedidos recebidos, fatos confirmados da equipe e o já escrito; `limparRascunho` puro, autoteste `npx tsx src/lib/v2/rascunhoSobre.ts`). Preenche os campos; só "Salvar" grava. Limite diário da IA das tarefas.

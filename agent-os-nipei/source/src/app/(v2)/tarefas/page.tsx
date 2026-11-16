@@ -105,11 +105,11 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
           <div className="flex min-w-0 items-center justify-between gap-3">
             <div className="min-w-0"><AbasLinks rotulo={t.tarefasTitulo} ativa={vista === "grade" ? "lista" : vista} itens={[
               { id: "lista", rotulo: t.vistaLista, icone: "tarefa", contagem: abertas.length, href: url({ vista: vista === "grade" ? "grade" : "lista" }) },
-              { id: "quadro", rotulo: t.vistaQuadro, icone: "filtrar", href: url({ vista: "quadro" }) },
+              { id: "quadro", rotulo: t.vistaQuadro, icone: "quadro", href: url({ vista: "quadro" }) },
             ]} /></div>
             {vista !== "quadro" && <SegmentadoLinks rotulo={t.vistaLista} valor={vista} opcoes={[
               { valor: "lista", rotulo: t.vistaLista, icone: "tarefa", href: url({ vista: "lista" }) },
-              { valor: "grade", rotulo: t.vistaGrade, icone: "imagem", href: url({ vista: "grade" }) },
+              { valor: "grade", rotulo: t.vistaGrade, icone: "grade", href: url({ vista: "grade" }) },
             ]} />}
           </div>
         }

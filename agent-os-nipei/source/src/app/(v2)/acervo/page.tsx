@@ -21,8 +21,8 @@ import { MiniAnelPinu } from "@/components/ds/Pinu";
 import { AbasLinks } from "@/components/v2/VistaLinks";
 import PlanoTrabalho from "./PlanoTrabalho";
 
-// tipo = ícone + texto (nunca só a cor). TODO(ícones): vídeo, áudio, pasta, documento, marca (pedidos em ICONES.md)
-const ICONE: Record<string, NomeIcone> = { fotos: "imagem", videos: "imagem", audios: "microfone", cursos: "sucesso", documentos: "tarefa", marca: "editar", outros: "abrir-fora" };
+// tipo = ícone + texto (nunca só a cor). TODO(ícones): marca (pedido em ICONES.md)
+const ICONE: Record<string, NomeIcone> = { fotos: "imagem", videos: "video", audios: "audio", cursos: "sucesso", documentos: "documento", marca: "editar", outros: "pasta" };
 const ORDENS = ["ano", "recentes", "az"] as const;
 const ACAO = "anel-foco inline-flex min-h-9 items-center gap-1.5 rounded-pilula px-2 font-texto text-[13px] font-medium text-t2 hover:bg-s2 hover:text-t1";
 const CONTA = "rounded-pilula bg-s2 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-t2";

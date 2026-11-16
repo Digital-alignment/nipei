@@ -872,3 +872,7 @@ Pedido do Ashuan ("haz el punto 1, las dos cosas"): saber em 1–2 semanas se a 
 ## 2026-11-16 — Rascunho do Sobre da equipe com o Pinu (§10.13)
 
 Pedido do Ashuan. Nenhuma das 4 equipes tem o Sobre escrito, e é dele que o Pinu tira a equipe certa nas sugestões de tarefa e pedido. Para não começar do zero: botão "Rascunho com o Pinu" na edição do Sobre (quem já edita: coordenação da equipe ou gestão), que propõe as quatro seções a partir dos temas, das tarefas (abertas e feitas nos últimos 120 dias), dos pedidos recebidos e dos fatos confirmados da equipe. Texto já escrito é mantido e completado. Preenche os campos; só "Salvar" grava. Usa o limite diário da IA das tarefas.
+
+## 2026-11-16 — 14 ícones funcionais que faltavam (§7)
+
+Pedido do Ashuan ("sí, haz los íconos"). Desenhados por Claude no traço do conjunto (§7.2–7.3): um path, preenchimento, contorno de ~2,4 px com bordas levemente arqueadas, pontas redondas, ponto como assinatura onde cabe; conferidos a 18 e 44 px ao lado de `calendario`, `tarefa` e `cadeado`. `quadro` (três colunas), `grade` (quatro quadrados), `semana` (calendário + faixa), `mes` (calendário + grade), `copiar`, `ver`/`ocultar` (olho; ocultar com a barra), `sem-conexao` (wi-fi cortado), `documento` (folha com dobra e linhas), `planilha`, `apresentacao` (quadro com pé), `video`, `audio`, `pasta`. Trocam os provisórios em Tarefas, Agenda, Acervo, Exportar para o Google, Login, aviso sem conexão, Copiar e Relatório de Finanças. Se o Ashuan quiser outro desenho, troca-se o SVG e roda `npm run icones`.

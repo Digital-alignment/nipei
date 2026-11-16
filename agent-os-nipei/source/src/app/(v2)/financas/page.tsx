@@ -158,7 +158,7 @@ export default async function Financas({ searchParams }: { searchParams: Promise
       </div>
       {/* the month's views, in their own row: between the arrows they piled up on the phone */}
       <div className="mb-4 flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
-          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="P">{t.resultadoLbl}</Botao><Botao href={`/financas/orcamento?a=${mes.slice(0, 4)}`} icone="calendario" variante="fantasma" tamanho="P">{t.orcamentoAnual}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="baixar" variante="fantasma" tamanho="P">{t.relatorioMes}</Botao>
+          <Botao href={`/financas/resultado?m=${mes}`} icone="tarefa" variante="fantasma" tamanho="P">{t.resultadoLbl}</Botao><Botao href={`/financas/orcamento?a=${mes.slice(0, 4)}`} icone="calendario" variante="fantasma" tamanho="P">{t.orcamentoAnual}</Botao><Botao href={`/financas/relatorio?m=${mes}`} icone="documento" variante="fantasma" tamanho="P">{t.relatorioMes}</Botao>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-2 lg:grid-cols-4">

@@ -86,9 +86,8 @@ export default function LoginForm({ labels: l, google, lang }: { labels: Labels;
       ) : (
         <form onSubmit={entrar} className="grid gap-3 baixa:gap-2 deitada:col-start-2 deitada:row-span-2 deitada:row-start-1">
           <Campo rotulo={l.usuario} iconeEsquerda="pessoa" className={CAMPO_BAIXO} value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder={l.usuarioPh} required />
-          {/* TODO(ícones): ver / ocultar (pedidos em ICONES.md); provisório: informação / cadeado */}
           <Campo tipo={ver ? "texto" : "senha"} rotulo={l.senha} iconeEsquerda="cadeado" className={CAMPO_BAIXO} value={senha} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSenha(e.target.value)} autoComplete="current-password" required
-            acaoDireita={<BotaoIcone icone={ver ? "cadeado" : "informacao"} aria-label={ver ? l.ocultar : l.mostrar} tamanho={40} variante="fantasma" onClick={() => setVer(!ver)} />} />
+            acaoDireita={<BotaoIcone icone={ver ? "ocultar" : "ver"} aria-label={ver ? l.ocultar : l.mostrar} tamanho={40} variante="fantasma" onClick={() => setVer(!ver)} />} />
           {erroP}
           <Botao type="submit" icone="avancar" largo folha className={BAIXO} carregando={busy} textoCarregando="…">{l.entrar}</Botao>
           <Botao type="button" variante="fantasma" tamanho="P" icone="mensagem" className="justify-self-center" onClick={() => { setModo("whats"); setErro(""); }}>{l.esqueci}</Botao>

@@ -219,11 +219,13 @@ Cada forma tem **um** papel. Não usar fora dele.
 - **Pontos = assinatura**: no "+", na lupa, no balão de mensagem, na tarefa, no calendário, no cadeado, no sino.
 - **Círculo à mão = estado**: sucesso, erro, informação. Atenção = triângulo.
 
-### 7.4 Funcionais prontos (34)
+### 7.4 Funcionais prontos (48)
 
 `mais · fechar · confirmar · editar (pena) · lixeira · buscar · filtrar · enviar · baixar · mais-opcoes · abrir-fora · gerar-outra · microfone · voltar · avancar · abrir · inicio · sucesso · atencao · erro · informacao · cadeado · tarefa · prazo (ampulheta) · calendario · pessoa · pessoas · mensagem · imagem · notificacao · configuracoes · tema-escuro · tema-claro · tema-sistema`
 
-Pendentes (P2/P3): ver `ICONES.md` — entre eles `semana`, `mes`, `copiar`, `link`, `camera`, `pasta`, `projeto`, `documento`, `objetivo`, `financas`.
+v2.111 (desenhados no mesmo traço: contorno de ~2,4 px com bordas levemente curvas, pontas redondas, vazados com o sentido oposto): `quadro · grade · semana · mes · copiar · ver · ocultar · sem-conexao · documento · planilha · apresentacao · video · audio · pasta`
+
+Pendentes (P2/P3): ver `ICONES.md` — entre eles `link`, `camera`, `projeto`, `objetivo`, `financas`, `carteira`, `marca`.
 
 ### 7.5 Selos em uso (sempre citar com o lote)
 

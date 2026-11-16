@@ -128,9 +128,8 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </>}
         abas={<AbasLinks rotulo={t.agenda} ativa={vista === "lista" ? "semana" : vista} itens={[
           { id: "dia", rotulo: t.diaLbl, icone: "tema-claro", href: link({ vista: "dia", dia: undefined, s: undefined, m: undefined }) },
-          // TODO(ícones): trocar "calendario" pelos ícones `semana` e `mes` quando existirem (pedidos em ICONES.md)
-          { id: "semana", rotulo: t.semanaLbl, icone: "calendario", href: link({ vista: "semana", dia: undefined, s: undefined, m: undefined }) },
-          { id: "mes", rotulo: t.mes, icone: "calendario", href: link({ vista: "mes", dia: undefined, s: undefined, m: undefined }) },
+          { id: "semana", rotulo: t.semanaLbl, icone: "semana", href: link({ vista: "semana", dia: undefined, s: undefined, m: undefined }) },
+          { id: "mes", rotulo: t.mes, icone: "mes", href: link({ vista: "mes", dia: undefined, s: undefined, m: undefined }) },
         ]} />}
         filtros={<>
           {me && <Chip href={link({ quem: "minhas", equipe: undefined })} ativo={quem === "minhas"} icone="pessoa">{t.minhas}</Chip>}

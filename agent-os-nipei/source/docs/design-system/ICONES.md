@@ -30,7 +30,7 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | buscar | Search | P1 |
 | baixar | Download, FileDown | P2 |
 | enviar arquivo | HardDriveUpload | P2 |
-| copiar | Copy | P2 |
+| copiar | Copy → ✅ `copiar` (v2.111) | P2 |
 | link | Link2 | P2 |
 | abrir fora | ExternalLink | P2 |
 | atualizar | RefreshCw | P2 |
@@ -41,15 +41,15 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | câmera / foto | Camera | P2 |
 | microfone / voz | Mic | P2 |
 | filtrar | — (novo) | P2 |
-| vista quadro (kanban) | — (novo; provisório: `filtrar`) | P2 |
-| vista grade | — (novo; provisório: `imagem`) | P2 |
-| vista semana (Agenda) | — (novo; provisório: `calendario`) | P2 |
-| vista mês (Agenda) | — (novo; provisório: `calendario`) | P2 |
-| copiar | — (pedido; provisório: `baixar`) | P2 |
-| ver / ocultar senha | — (pedido; provisório: `informacao` / `cadeado`) | P2 |
-| sem conexão (offline) | — (pedido; provisório: `atencao`) | P2 |
-| documento · planilha · apresentação · vídeo · áudio · pasta | — (pedidos; provisórios no Acervo e no Exportar) | P2 |
-| carteira (conta bancária) | — (Finanças → Contas; provisório `abrir`. O Relatório do mês usa `baixar` enquanto falta documento) | P2 |
+| vista quadro (kanban) | ✅ `quadro` (v2.111) | P2 |
+| vista grade | ✅ `grade` (v2.111) | P2 |
+| vista semana (Agenda) | ✅ `semana` (v2.111) | P2 |
+| vista mês (Agenda) | ✅ `mes` (v2.111) | P2 |
+| copiar | ✅ `copiar` (v2.111) | P2 |
+| ver / ocultar senha | ✅ `ver` / `ocultar` (v2.111) | P2 |
+| sem conexão (offline) | ✅ `sem-conexao` (v2.111) | P2 |
+| documento · planilha · apresentação · vídeo · áudio · pasta | ✅ `documento` · `planilha` · `apresentacao` · `video` · `audio` · `pasta` (v2.111) | P2 |
+| carteira (conta bancária) | — (Finanças → Contas; provisório `abrir`. O Relatório do mês usa `documento` desde a v2.111) | P2 |
 | mais opções ⋯ | — (novo) | P1 |
 | selecionar em lote | CheckSquare, Square | P3 |
 
@@ -72,8 +72,8 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | erro | XCircle | P1 |
 | informação | — (novo) | P2 |
 | bloqueado / privado | Lock | P1 |
-| ver / ocultar | Eye, EyeOff | P2 |
-| sem conexão | CloudOff | P2 |
+| ver / ocultar | Eye, EyeOff → ✅ `ver` / `ocultar` (v2.111) | P2 |
+| sem conexão | CloudOff → ✅ `sem-conexao` (v2.111) | P2 |
 | pendente / rascunho | CircleDashed | P2 |
 | notificação / sem notificação | Bell, BellOff | P2 |
 | som ligado / mudo | Volume2, VolumeX | P3 |
@@ -91,13 +91,13 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | pessoas / equipe | Users, UsersRound | P1 |
 | remover pessoa | UserX | P3 |
 | projeto | FolderKanban | P2 |
-| pasta | Folder, FolderOpen | P2 |
-| documento | FileText, ScrollText | P2 |
-| planilha | Sheet | P3 |
-| apresentação | Presentation | P3 |
+| pasta | Folder, FolderOpen → ✅ `pasta` (v2.111) | P2 |
+| documento | FileText, ScrollText → ✅ `documento` (v2.111) | P2 |
+| planilha | Sheet → ✅ `planilha` (v2.111) | P3 |
+| apresentação | Presentation → ✅ `apresentacao` (v2.111) | P3 |
 | imagem | Image | P2 |
-| vídeo | Video | P3 |
-| música / áudio | Music | P3 |
+| vídeo | Video → ✅ `video` (v2.111) | P3 |
+| música / áudio | Music → ✅ `audio` (v2.111) | P3 |
 | mensagem / conversa | MessageCircle, MessageSquare | P1 |
 | e-mail | Mail | P3 |
 | telefone / WhatsApp | Phone | P3 |
