@@ -75,7 +75,7 @@ export default function Nav({ rotulos, conta, fechadoInicial = true, extras, con
   return (
     <>
       <div className={`print:hidden hidden shrink-0 transition-[width] duration-200 md:block ${fechado ? "w-[88px]" : "w-[264px]"}`}>
-        <nav aria-label="Menu" className="sticky top-0 h-dvh p-3">
+        <nav aria-label="Menu" className="sticky top-0 z-30 h-dvh p-3">
           <div className={`flex h-full flex-col gap-1 bg-s1 font-texto ${fechado ? "w-16 items-center rounded-pilula px-2 py-3" : "w-60 rounded-[24px] px-2.5 py-3.5"}`}>
             <div className={`flex items-center gap-2.5 ${fechado ? "flex-col" : "px-1"}`}>
               <Link href="/hoje" aria-label="Nipëi OS" className="anel-foco grid size-10 shrink-0 place-items-center rounded-[12px_4px_12px_4px] bg-ac font-display text-lg font-bold text-ac-ink">N</Link>

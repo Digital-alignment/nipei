@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Sem a v1: código e CSS (v2.112)
+
+- A v1 "Mission Control" saiu do código (páginas, ~300 rotas de API, ~90 libs, Shell/Sidebar, contextos, 10 dependências). O layout raiz renderiza só a v2.
+- `globals.css`: de 799 para ~200 linhas. Saíram o tema v1 (variáveis `--bg-deep/--cream`, Manrope/JetBrains, fundo de pontos `body::before`, `main, header, nav { z-index: 2 }`, títulos e `code` globais, barras de rolagem verdes, ~70 classes como `eyebrow`, `panel`, `pill`, `cmdk-*`, `chat-md`) e os resets `.v2` que só existiam para desfazê-lo. Ficam a base `.v2`, `code` sem monospace (regra 11), a citação do `Md`, a rolagem lateral sem barra e `.lote-caixa`. O menu lateral (`Nav.tsx`) ganhou `z-30` na própria classe (antes vinha do override). Conferido a 390 e 1280 px, escuro e claro, com menus ⋯, "+", Pinu e barra de baixo por cima do conteúdo.
+
 ## 2026-11-16 — 14 ícones novos (7)
 
 - `design-assets/icones/funcionais/`: quadro, grade, semana, mes, copiar, ver, ocultar, sem-conexao, documento, planilha, apresentacao, video, audio, pasta → `npm run icones` (48 funcionais).
