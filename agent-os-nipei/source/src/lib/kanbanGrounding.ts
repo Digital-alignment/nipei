@@ -2,7 +2,7 @@ import fs from "fs";
 import { createTarefaNote, nomesDoVault, writeTarefa } from "./tarefaNote";
 import path from "path";
 import { defaultVault } from "@/lib/config";
-import type { GlobalTask, SquadId, KanbanColumnId } from "@/lib/nipeiStore";
+import type { GlobalTask, SquadId, KanbanColumnId } from "@/lib/tiposKanban";
 
 // Helper: load project-to-squad dictionary from Squads/squad_*.md
 function loadProjectToSquadMap(vaultRoot: string): Record<string, string> {

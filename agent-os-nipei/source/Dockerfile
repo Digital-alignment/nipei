@@ -20,7 +20,5 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 # Archivos que el código lee con process.cwd() y que el trazado de Next no copia solo.
 COPY --from=build /app/scripts ./scripts
-COPY --from=build /app/src/data ./src/data
-COPY --from=build /app/VERSION /app/SEO-SETUP.md ./
 EXPOSE 3333
 CMD ["node", "server.js"]

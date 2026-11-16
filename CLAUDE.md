@@ -35,25 +35,23 @@
 ```text
 c:\Users\ondig\Code\Nipei\nipei-control\
 ├── agent-os-nipei/
-│   └── source/                  <-- CÓDIGO FONTE NEXT.JS PRINCIPAL
+│   └── source/                  <-- CÓDIGO FONTE NEXT.JS (só a v2 desde 2026-11-16)
 │       ├── src/
-│       │   ├── app/             <-- App Router Pages & API Routes
-│       │   │   ├── api/
-│       │   │   │   ├── agent-kanban/     <-- API Kanban, Attachments, Deliverables, Dispatch, Execute
-│       │   │   │   ├── venu/kanban-action <-- API Bridge Venu ↔ Kanban
-│       │   │   │   ├── hermes/realtime/  <-- OpenAI Realtime WebRTC S2S Session
-│       │   │   │   └── vault/            <-- APIs de leitura/escrita do Nipëi Vault
-│       │   │   ├── kanban/      <-- Interface Multidisciplinar do Kanban (/kanban)
-│       │   │   ├── venu/        <-- Interface HUD Venu / Apollo (/venu)
-│       │   │   └── mi-portal/   <-- Portal de Produtividade & Orbes (/mi-portal)
-│       │   ├── components/      <-- Componentes React (SquadKanbanView, ApolloRealtime, etc.)
-│       │   └── lib/             <-- Utilitários (kanbanGrounding, taskWorkspace, hermesApollo, config)
-│       ├── package.json
-│       └── tsconfig.json
+│       │   ├── app/(v2)/        <-- todas as telas (Hoje, Agenda, Tarefas, Equipes, Pessoas, Projetos, Finanças…)
+│       │   ├── app/api/         <-- só 9 rotas: auth (2), uso, assistente/voz, agenda/ics, whatsapp/webhook,
+│       │   │                        tarefas/entregavel (worker do Hermes), agent-kanban (GET) e venu/kanban-action
+│       │   │                        (create/update/assign) — essas duas para a skill do Hermes nipei-os
+│       │   ├── app/{login,cadastro,entrar,google,mcp,oauth,.well-known,privacidade,ver-como}
+│       │   ├── components/{ds,v2}/
+│       │   └── lib/v2/ + lib/{auth,config,tarefaNote,hermesRAG,vaultDigest,kanbanGrounding,tiposKanban}.ts
+│       ├── docs/design-system/, design-assets/, scripts/, public/{brand,icons,sw.js}
+│       └── package.json
 ├── docker-compose.yml           <-- Configuração Docker para deploy no VPS
 ├── .agents/                     <-- Estado do projeto para agentes (PROJECT_STATE.md, UPDATES.md)
 └── CLAUDE.md                    <-- Este arquivo de referência
 ```
+
+**v1 removida (2026-11-16):** o "Mission Control" antigo (`/mi-portal`, `/overview`, `/kanban`, `/venu`, `/hermes`, `/organograma`, `/empresas`, `/memory`, `/productivity`, `/metodologias`, os ~50 painéis de agentes/estúdios, `/legacy`), ~300 rotas de API, ~90 libs, o Shell/Sidebar e os contextos Company/Language saíram do código. Quase tudo usava dados fixos ou já existia na v2; nada no VPS (cron, workers, n8n) chamava essas rotas. Se precisar de algo dela: está no histórico do git antes do commit "remove v1".
 
 ### Vault Canônico
 - **Caminho Local:** `C:\Users\ondig\Code\Nipei\nipei-vault`
@@ -61,38 +59,13 @@ c:\Users\ondig\Code\Nipei\nipei-control\
   - VPS: cron a cada 5 min → `/opt/nipei-vault-sync/sync.sh` (commit das edições da app + pull --rebase + push, deploy key `/root/.ssh/nipei_vault_deploy`, host alias `github-nipei-vault`). Snapshot diário 03:32 (fora do minuto do sync; `backup.sh` trata o código 1 do tar — arquivo mudou durante a cópia — como aviso, não erro) → `/opt/backups/nipei-vault/` (14 dias). Log: `/var/log/nipei-vault-sync.log`.
   - Local: tarefa agendada do Windows "Nipei Vault Sync" a cada 10 min → `scripts/vault-sync.ps1`. Log: `%LOCALAPPDATA%\nipei-vault-sync.log`.
   - Conflito: nada é sobrescrito; o rebase é abortado, o commit fica local e o log registra `CONFLICT` até resolução manual. Nunca use `git reset --hard`/`push --force` no vault sem olhar o que será descartado.
-- **Tarefas Operacionais:** `Productivity/Tarefas/` e `Productivity/Todo_Audit_Lists/` (308 tarefas ativas)
-- **Workspaces de Tarefas:** `Task_Workspace/YYYY/SQ-XX/TASK_ID/`
-  - `inputs/`: Anexos, dados e insumos
-  - `deliverables/`: Relatórios gerados em Markdown, DOCX, Slides
-  - `_workspace_meta.json`: Metadados canônicos e histórico de despachos/comunicações
+- **Tarefas:** `Productivity/Tarefas/*.md` (escritor único, 3.1). Anexos de arquivo da v2 em `Task_Workspace/<id>/`. As pastas que só a v1 escrevia (`Squads/`, `Task_Workspace/AAAA/SQ-XX/`, `Productivity/Metodologias|Datasets|Templates`, `Todo_Audit_Lists`, `Ingestion_Inbox`, `Raw_Uploads`, `Hermes_Sessions`…) continuam no vault até decidirmos arquivá-las.
 
 ---
 
-## 3. Estado Atual das Fases Implementadas (Fases 1 a 5)
+## 3. Fases antigas (v1, removidas)
 
-1. **Fase 1: Kanban Multidisciplinar & Modal 2 Colunas**
-   - Suporte aos 7 Squads principais + biofarmácia + conhecimento.
-   - Filtros dinâmicos, métricas em tempo real e drag-and-drop.
-2. **Fase 2: Gestão de Insumos & Anexos (`TaskAttachmentsManager.tsx`)**
-   - Rota `/api/agent-kanban/attachments` com upload, extração de texto e persistência em `Task_Workspace/`.
-3. **Fase 3: Orquestrador de Entregáveis Executivos (`TaskDeliverablesHub.tsx`)**
-   - Rota `/api/agent-kanban/deliverables` desacoplada com `executeGenerateDeliverable`.
-   - Formatos suportados: `executive_report`, `technical_brief`, `operational_checklist`, `slide_deck`, `csv_data`.
-   - Grounding com RAG do Vault (`queryVaultGrounding`).
-4. **Fase 4: Despacho Omnicanal (`TaskDispatchHub.tsx`)**
-   - Rota `/api/agent-kanban/dispatch` com `executeDispatchCommunication`.
-   - Canais: WhatsApp (Evolution API `https://evolution.digital-alignment.com`), E-mail Executivo (Gmail CLI), Webhooks n8n.
-   - Modo de simulação/auditoria transparente.
-5. **Fase 5: Integração Venu ↔ Kanban Multidirecional**
-   - **5.1 Grounding Contínuo (`kanbanGrounding.ts`):** Venu lê todas as 308 tarefas e seus squads em tempo real.
-   - **5.2 Tool Calling de Mutações (`/api/venu/kanban-action`):** Venu cria tarefas (`create`), move colunas/prioridades (`update`) e atribui agentes/humanos (`assign`) via voz ou texto.
-   - **5.3 Entregáveis & Despacho por Voz/Texto:** Venu gera documentos (`deliverable`) e despacha mensagens (`dispatch`) diretamente pelo HUD.
-6. **Fase 6: Execução Real de Agentes CLI (armazenamento único de tarefas)**
-   - **Um só Kanban, um só armazenamento:** as notas de tarefa do vault (`Productivity/Tarefas/*.md`). Não crie outro store de tarefas (o antigo `~/.nipei-os/agent-tasks.json` / `/api/agent-tasks` foi removido; `/agents-todo` não existe).
-   - Atribuição de agentes: linha `agents: ["claude", "hermes"]` no frontmatter da nota (UI, `PATCH /api/agent-kanban`, Venu `assign`).
-   - Rota `/api/agent-kanban/execute` roda o primeiro agente CLI atribuído (claude/openclaw/hermes/custom): status `IA em Execução` → `Revisão` ou `Bloqueado`; logs em `executionLogs` do `_workspace_meta.json`.
-   - O `kanban.db` do Hermes (`lib/kanbanDb.ts`) é só leitura — fila interna do Hermes, não um quadro editável.
+O Kanban multidisciplinar, anexos/entregáveis/despacho do Kanban, o HUD Venu e a execução de agentes CLI (`/api/agent-kanban/execute`) eram da v1 e foram removidos em 2026-11-16. Continua valendo: **um só armazenamento de tarefas** — as notas `Productivity/Tarefas/*.md`, sempre pelo escritor único (3.1). A skill do Hermes `nipei-os` (`hermes/skills/nipei-os/SKILL.md`) usa `GET /api/agent-kanban` (lista) e `POST /api/venu/kanban-action` (`create` / `update` / `assign`); não mude o formato dessas respostas sem atualizar a skill.
 
 ---
 

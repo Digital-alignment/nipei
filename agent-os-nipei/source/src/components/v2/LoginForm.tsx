@@ -5,7 +5,6 @@ import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Campo from "@/components/ds/Campo";
 import Icone from "@/components/ds/Icone";
 import Aviso from "@/components/ds/Aviso";
-import { INITIAL_MEMBERS } from "@/lib/nipeiStore";
 const LANG_COOKIE = "nipei_lang"; // same as lib/v2/i18n.ts (server-only module)
 
 type Labels = {
@@ -34,13 +33,6 @@ export default function LoginForm({ labels: l, google, lang }: { labels: Labels;
     const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: usuario.trim(), password: senha }) }).catch(() => null);
     const j = await res?.json().catch(() => null);
     if (!res?.ok) { setBusy(false); setErro(res?.status === 401 ? l.erroLogin : res?.status === 429 ? j?.error ?? l.erroServidor : l.erroServidor); return; }
-    // v1 pages read who is logged in from localStorage; store the real person, not a default.
-    try {
-      const p = j?.pessoa as { id: string; name: string } | undefined;
-      const profile = INITIAL_MEMBERS.find((m) => m.id === p?.id) ?? { id: p?.id ?? usuario, name: p?.name ?? usuario };
-      localStorage.setItem("nipei_current_user", JSON.stringify(profile));
-      localStorage.setItem("nipei_selected_member_id", profile.id);
-    } catch { /* storage blocked: v1 falls back to its default profile */ }
     window.location.href = destino();
   }
 

@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { Google_Sans, Outfit } from "next/font/google";
 import "./globals.css";
-import Shell from "@/components/Shell";
 import { SCRIPT_TEMA } from "@/components/ds/temaScript";
-import { CompanyProvider } from "@/context/CompanyContext";
-import { LanguageProvider } from "@/context/LanguageContext";
 
 // Tipografia do design system (DESIGN-SYSTEM.md seção 4): Outfit (títulos, números) e Google Sans (o resto).
-// Viram --fonte-display / --fonte-texto em globals.css. As fontes da v1 ficam em components/fontesV1.ts.
+// Viram --fonte-display / --fonte-texto em globals.css.
 // preload: false → o navegador só baixa o que a tela usa (ex.: itálico e Outfit só quando aparecem).
 const outfit = Outfit({ variable: "--font-outfit", subsets: ["latin"], weight: "variable", preload: false });
 const googleSans = Google_Sans({ variable: "--font-google-sans", subsets: ["latin"], style: ["normal", "italic"], axes: ["opsz"], adjustFontFallback: false, preload: false }); // next/font has no fallback metrics for Google Sans yet
@@ -38,13 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
       </head>
       <body className="min-h-full">
-        <div className="relative z-10">
-          <LanguageProvider>
-            <CompanyProvider>
-              <Shell>{children}</Shell>
-            </CompanyProvider>
-          </LanguageProvider>
-        </div>
+        <div className="relative z-10">{children}</div>
       </body>
     </html>
   );

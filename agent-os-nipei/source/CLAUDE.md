@@ -12,8 +12,7 @@ Para a documentação completa, especificações de arquitetura, comandos de bui
 
 ### Vault & Dados
 - Vault principal: `C:\Users\ondig\Code\Nipei\nipei-vault`
-- Endpoints de Kanban: `/api/agent-kanban`, `/api/agent-kanban/attachments`, `/api/agent-kanban/deliverables`, `/api/agent-kanban/dispatch`, `/api/agent-kanban/execute`
-- Endpoint de Venu: `/api/venu/kanban-action`
+- Só a v2 existe no código (a v1 "Mission Control" foi removida em 2026-11-16). APIs para fora: `GET /api/agent-kanban` e `POST /api/venu/kanban-action` (create/update/assign) para a skill do Hermes `nipei-os`; `/api/tarefas/entregavel` para o worker do Hermes; `/api/whatsapp/webhook` para o Evolution.
 
 ## Design system (obrigatório)
 

@@ -189,7 +189,6 @@ export default async function Pessoas({ searchParams }: { searchParams: Promise<
         </details>
       )}
 
-      {me.gestao && <p className="meta mt-8 text-t2"><Link href="/legacy" className="underline">{t.versaoAnterior}</Link></p>}
     </>
   );
 }

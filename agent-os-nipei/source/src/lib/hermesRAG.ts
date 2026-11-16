@@ -24,18 +24,6 @@ export interface HermesRAGResult {
   answerText: string;
 }
 
-import { NIPEI_STRICT_DOMAIN_RULE } from "./nipeiDomainGuard";
-
-/**
- * System Prompt for Hermes 2.0 with strict domain isolation and zero-hallucination policy.
- */
-export const HERMES_SYSTEM_PROMPT = `
-You are Hermes 2.0, the autonomous AI system orchestrator for Nipëi OS.
-
-${NIPEI_STRICT_DOMAIN_RULE}
-
-- If information is not present in Nipëi Vault, return a Zero-Hallucination response indicating a Knowledge Gap (Vacío de Ingesta).
-`;
 
 
 // "Notas antigas na IA" (/controle → Operação). Off since 2026-11-04, when the base was fully reviewed:

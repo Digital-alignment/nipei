@@ -7,7 +7,6 @@ import { subEhAdmin } from "@/lib/v2/admin";
 // (or signed per-member token) inside the handler.
 const PUBLIC_API = [
   "/api/auth/login",
-  "/api/ingest/inbox-webhook", // checks NIPEI_WEBHOOK_SECRET itself
   "/api/agenda/ics", // Google Calendar feed: checks its signed "ics" token itself
   "/api/whatsapp/webhook", // Evolution webhook: checks NIPEI_WHATSAPP_WEBHOOK_SECRET itself
   "/api/auth/link-whatsapp", // "receive an access link": rate-limited, always answers the same
@@ -15,8 +14,8 @@ const PUBLIC_API = [
 ];
 const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade", "/google/entrar", "/google/callback"]; // /google/callback checks its signed state itself // /entrar and /cadastro check their link token
 
-// A "member" session (non-gestão teams) only reaches the v2 pages; v1 and the internal API
-// (agents, dispatch, vault writes…) stay gestão-only. Keep in sync with V2_PATHS in Shell.tsx.
+// A "member" session (non-gestão teams) only reaches these pages; the rest (/controle, /design)
+// and the internal API (Hermes skill: /api/agent-kanban, /api/venu/kanban-action) stay gestão-only.
 const MEMBER_PAGES = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/pedidos", "/google", "/financas"]; // /financas: each page/route/action checks podeFinancas (Equipe 1 or the panel switch). /google = each person's own Google connection
 const isMemberPage = (p: string) => p === "/" || MEMBER_PAGES.some((m) => p === m || p.startsWith(m + "/"));
 
