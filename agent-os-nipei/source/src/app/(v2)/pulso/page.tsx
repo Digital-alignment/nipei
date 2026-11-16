@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Selo from "@/components/ds/Selo";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import ChipDS from "@/components/ds/Chip";
 import { notFound } from "next/navigation";
@@ -44,7 +44,7 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
               <td className={`text-right tabular-nums ${l.semDono ? "text-warn" : ""}`}><Link href={url({ equipe: l.id, ver: "semdono" })}>{l.semDono}</Link></td>
             </tr>
           ))}
-          <tr className="border-t font-medium"><td className="py-1.5">Total</td><td className="text-right tabular-nums">{p.abertas}</td><td className="text-right tabular-nums">{p.atrasadas}</td><td className="text-right tabular-nums">{p.semDono}</td></tr>
+          <tr className="border-t border-s3 font-medium"><td className="py-1.5">{t.total}</td><td className="text-right tabular-nums">{p.abertas}</td><td className="text-right tabular-nums">{p.atrasadas}</td><td className="text-right tabular-nums">{p.semDono}</td></tr>
         </tbody>
       </table>
 
@@ -57,13 +57,14 @@ export default async function Pulso({ searchParams }: { searchParams: Promise<{ 
       <ul>
         {tarefas.map((x) => (
           <li key={x.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-s2">
-            <div className="min-w-0 flex-1">
+            {/* phone: title on its own line, the actions below (DS 10.3) */}
+            <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
               <Link href={`/tarefas/${x.id}`} className="block text-sm leading-snug hover:underline">{x.title}</Link>
               <p className="text-xs text-t2">{x.prazo ? <span className={x.prazo < hoje ? "text-err" : ""}>{fmtDate(x.prazo, lang)}</span> : t.semData}{x.responsaveis.length ? ` · ${x.responsaveis.map((r) => p.pessoas.find((y) => y.id === r)?.name.split(" ")[0] ?? r).join(", ")}` : ""}</p>
             </div>
-            <form action={atribuirAction} className="flex items-center gap-1">
+            <form action={atribuirAction} className="flex min-w-0 flex-1 items-center gap-1 sm:flex-none">
               <input type="hidden" name="id" value={x.id} />
-              <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={`${CAMPO_COMPACTO} max-w-36`}>
+              <select name="pessoa" defaultValue="" aria-label={t.escolherPessoa} className={`${CAMPO_COMPACTO} min-w-0 flex-1 sm:max-w-36`}>
                 <option value="" disabled>{t.escolherPessoa}</option>
                 {responsaveisPara(x.equipe).map((g) => (
                   <optgroup key={g.grupo} label={t.gruposResp[g.grupo]}>

@@ -850,3 +850,10 @@ Pedido do Ashuan. Enquanto a pessoa escreve o título, o Pinu sugere equipe, pri
 - Pede depois de 1,5 s sem digitar, com título de 12+ caracteres, e só se o título mudou: não a cada tecla (custo).
 - Nada muda sozinho: ✓ preenche os campos, que a pessoa ainda pode mudar antes de "Criar". Só na criação (não em editar).
 - O servidor valida tudo (ids de equipe, pessoa e projeto que existem e a pessoa pode ver; prazo de hoje até 1 ano; até 3 responsáveis); o que não valida é descartado.
+
+## 2026-11-16 — Pulso no celular e Campo compacto sem estilo (§9.5, §10.3)
+
+Revisão a 390 px aprovada pelo Ashuan ("Sí, los dos"). Em Pulso o título de cada tarefa dividia a linha com o seletor, "Atribuir" e o prazo e ficava com 34 px (uma palavra por linha; 4.499 px para 13 tarefas). Na mesma revisão apareceu um erro: `CAMPO_COMPACTO` era exportado de `Campo.tsx` ("use client") e, nas 10 páginas do servidor que o usavam, a classe virava o texto de uma função — os seletores compactos apareciam sem fundo nem forma, também em produção.
+
+- Pulso: no celular o título ocupa a linha inteira e as ações ficam embaixo (o seletor cresce).
+- `CAMPO_COMPACTO` foi para `components/ds/campoCompacto.ts` (módulo comum); `Campo.tsx` não o exporta mais. Regra: constantes compartilhadas não ficam em arquivos "use client".

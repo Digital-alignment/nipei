@@ -303,7 +303,7 @@ Pílula `superfície 2` com ícones; ativo = `superfície 3` + contorno de 1 px.
 - **Busca do Pinu**: mini-anel à esquerda + microfone em acento à direita.
 - **Sugestão do Pinu no campo**: linha abaixo do texto com mini-anel + sugestão + ✓ usar + ⟳ gerar outra.
 - **Senha** (`tipo="senha"`): campo de uma linha com `type="password"`; o `type` HTML também passa direto nos outros tipos de uma linha (`number`, `email`, `time`…).
-- **Compacto** (`CAMPO_COMPACTO`, exportado de `components/ds/Campo.tsx`): só dentro de linhas densas (tabela editável, barra de lote, atribuir numa lista); pílula `superfície 2`, sem rótulo visível (usar `aria-label`), 44 px no celular e 36 px a partir de `sm`.
+- **Compacto** (`CAMPO_COMPACTO`, de `components/ds/campoCompacto.ts` — fora do `Campo.tsx`, que é "use client": exportada de lá, chegava às páginas do servidor como referência de cliente e o select ficava sem estilo): só dentro de linhas densas (tabela editável, barra de lote, atribuir numa lista); pílula `superfície 2`, sem rótulo visível (usar `aria-label`), 44 px no celular e 36 px a partir de `sm`.
 
 ### 9.6 Chip
 - **Filtro**: pílula `superfície 2` + ícone + texto + contagem; **ativo = `superfície 3` + contorno interno sutil + ✓ em acento**.

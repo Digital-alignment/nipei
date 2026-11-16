@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import AvatarDS from "@/components/ds/Avatar";
 import { BarraProgresso } from "@/components/ds/Progresso";

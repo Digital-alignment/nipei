@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import Icone from "@/components/ds/Icone";
 import Campo from "@/components/ds/Campo";
 import { BadgeEstado } from "@/components/ds/Chip";

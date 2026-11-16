@@ -1,6 +1,6 @@
 "use client";
 
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import { useEffect, useState } from "react";
 import Icone from "@/components/ds/Icone";
 import { loteAction } from "@/app/(v2)/actions";

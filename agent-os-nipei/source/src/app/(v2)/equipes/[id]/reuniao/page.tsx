@@ -1,7 +1,8 @@
 import Link from "next/link";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import { EstadoVazio } from "@/components/ds/Estados";
-import Campo, { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import Campo from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import Cartao from "@/components/ds/Cartao";
 import Icone from "@/components/ds/Icone";
 import { headers } from "next/headers";

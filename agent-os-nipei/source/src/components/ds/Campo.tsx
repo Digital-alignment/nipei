@@ -32,9 +32,6 @@ type PropsArea = Comum & { tipo: "area" } & Omit<TextareaHTMLAttributes<HTMLText
 type PropsSelecao = Comum & { tipo: "selecao" } & Omit<SelectHTMLAttributes<HTMLSelectElement>, keyof Comum>;
 export type PropsCampo = PropsInput | PropsArea | PropsSelecao;
 
-/** Campo compacto (seção 9.2): select/input dentro de uma linha densa — tabela, barra de lote, atribuir na lista. Sem rótulo visível: use aria-label. 44 px no celular, 36 px a partir de sm. */
-export const CAMPO_COMPACTO = "anel-foco h-11 sm:h-9 rounded-pilula bg-s2 px-3 font-texto text-sm text-t1 outline-none focus:shadow-foco disabled:text-t3";
-
 const CONTROLE = "w-full min-w-0 bg-transparent text-t1 font-texto text-base outline-none placeholder:text-t3 disabled:text-t3 disabled:cursor-not-allowed";
 
 export default function Campo(props: PropsCampo) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import { AbasComPainel } from "@/components/ds/Abas";
 import OQueSabemos from "@/components/v2/OQueSabemos";
 import { EstadoVazio } from "@/components/ds/Estados";

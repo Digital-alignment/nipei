@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Pulso no celular e Campo compacto (9.5, 10.3)
+
+- Erro corrigido: `CAMPO_COMPACTO` saiu de `Campo.tsx` ("use client") para `components/ds/campoCompacto.ts`; os 11 imports mudaram. Os seletores compactos voltam a ter fundo e forma em Pulso, Completar fichas, Sem projeto, Fatos por projeto, Importar planilha, Reunião da equipe, ficha da pessoa, Diagnósticos (2) e Ver como.
+- Pulso: título da tarefa na linha inteira no celular, seletor + "Atribuir" + prazo embaixo; 13 tarefas de 4.499 para 2.239 px. "Total" traduzido.
+
 ## 2026-11-16 — Sugestão do Pinu na Nova tarefa (9.5, 10.26)
 
 - `NovaTarefaForm` com `pinu` (gestão): 1,5 s depois de parar de digitar um título de 12+ caracteres, `sugerirTarefaAction` → `lib/v2/sugestaoTarefa.ts` (`sugerirTarefa`, autoteste `npx tsx src/lib/v2/sugestaoTarefa.ts`) devolve equipe, prioridade, prazo, até 3 responsáveis e projeto, validados no servidor (`validarSugestao`). A linha `SugestaoPinu` do título mostra a sugestão; ✓ preenche os campos, ⟳ pede outra. Prioridade virou estado controlado. Mesmo limite diário da IA das tarefas (60/pessoa).

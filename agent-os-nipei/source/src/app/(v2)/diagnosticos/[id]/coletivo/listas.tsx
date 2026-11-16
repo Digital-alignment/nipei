@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
 import Botao from "@/components/ds/Botao";
 import Tabela from "@/components/ds/padroes/Tabela";

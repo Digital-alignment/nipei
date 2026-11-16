@@ -5,7 +5,7 @@ import Botao from "@/components/ds/Botao";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Cartao from "@/components/ds/Cartao";
 import Chip from "@/components/ds/Chip";
-import { CAMPO_COMPACTO } from "@/components/ds/Campo";
+import { CAMPO_COMPACTO } from "@/components/ds/campoCompacto";
 import { EstadoVazio } from "@/components/ds/Estados";
 import { ToastAoAbrir } from "@/components/ds/Toast";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
