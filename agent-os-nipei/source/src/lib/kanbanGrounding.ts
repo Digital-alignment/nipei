@@ -4,35 +4,6 @@ import path from "path";
 import { defaultVault } from "@/lib/config";
 import type { GlobalTask, SquadId, KanbanColumnId } from "@/lib/tiposKanban";
 
-// Helper: load project-to-squad dictionary from Squads/squad_*.md
-function loadProjectToSquadMap(vaultRoot: string): Record<string, string> {
-  const map: Record<string, string> = {};
-  const squadsDir = path.join(vaultRoot, "Squads");
-  if (!fs.existsSync(squadsDir)) return map;
-
-  try {
-    const files = fs.readdirSync(squadsDir).filter((f) => f.startsWith("squad_") && f.endsWith(".md"));
-    for (const file of files) {
-      const squadId = file.replace(".md", "");
-      try {
-        const content = fs.readFileSync(path.join(squadsDir, file), "utf-8");
-        const matches = content.match(/\[\[(?:Nipei OS\/Projetos\/|Projetos\/)([^\|\]]+)(?:\|([^\]]+))?\]\]/g) || [];
-        for (const m of matches) {
-          const raw = m.replace(/\[\[/, "").replace(/\]\]/, "");
-          const parts = raw.split("|");
-          const projName = parts[parts.length - 1].trim().toLowerCase();
-          map[projName] = squadId;
-        }
-      } catch {
-        /* ignore single file read errors */
-      }
-    }
-  } catch {
-    /* ignore dir read error */
-  }
-  return map;
-}
-
 const MONTHS: Record<string, number> = {
   enero: 1, janeiro: 1, febrero: 2, fevereiro: 2, marzo: 3, "março": 3, marco: 3, abril: 4, mayo: 5, maio: 5,
   junio: 6, junho: 6, julio: 7, julho: 7, agosto: 8, septiembre: 9, setiembre: 9, setembro: 9,
@@ -74,13 +45,12 @@ export function setAgentsFrontmatter(content: string, agents: string[]): string 
 }
 
 /**
- * Reads all live tasks from the Vault (Productivity/Tarefas and Todo_Audit_Lists)
+ * Reads all live tasks from the Vault (Productivity/Tarefas). Squads/ and Todo_Audit_Lists/ were v1 and are archived.
  */
 export function getLiveKanbanTasks(): GlobalTask[] {
   const vaultRoot = defaultVault();
   if (!vaultRoot) return [];
 
-  const projectToSquad = loadProjectToSquadMap(vaultRoot);
   const tasks: GlobalTask[] = [];
 
   // 1. Load operational tasks from Productivity/Tarefas
@@ -137,7 +107,7 @@ export function getLiveKanbanTasks(): GlobalTask[] {
             column = "todo";
           }
 
-          const squad = (fileSquad || projectToSquad[projectName.toLowerCase()] || "squad_1_ceo") as SquadId;
+          const squad = (fileSquad || "squad_1_ceo") as SquadId;
 
           // Assigned agents: frontmatter `agents:` wins, else squad default mapping
           const assignedAgents =
@@ -166,56 +136,6 @@ export function getLiveKanbanTasks(): GlobalTask[] {
       }
     } catch {
       /* ignore directory read error */
-    }
-  }
-
-  // 2. Load audit tasks from Todo_Audit_Lists
-  const todoDir = path.join(vaultRoot, "Todo_Audit_Lists");
-  if (fs.existsSync(todoDir)) {
-    try {
-      const files = fs.readdirSync(todoDir).filter((f) => f.endsWith(".md"));
-      files.forEach((filename, index) => {
-        const filePath = path.join(todoDir, filename);
-        let content = "";
-        try {
-          content = fs.readFileSync(filePath, "utf-8");
-        } catch {
-          /* ignore */
-        }
-
-        let title = filename
-          .replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}_/, "")
-          .replace(/_vacios\.md$/, "")
-          .replace(/_/g, " ");
-        title = title.charAt(0).toUpperCase() + title.slice(1);
-
-        let squad: SquadId = "squad_1_ceo";
-        if (filename.includes("squad_02")) squad = "squad_2_mutum";
-        else if (filename.includes("squad_03") || filename.includes("squad_06")) squad = "squad_4_vendas_mkt";
-        else if (filename.includes("squad_04")) squad = "squad_5_adm_legal";
-        else if (filename.includes("squad_05")) squad = "squad_6_infra";
-        else if (filename.includes("squad_07")) squad = "squad_7_instituto";
-
-        const isResolved = content.includes("RESUELTO_Y_VERIFICADO") || content.includes("[x]");
-        const column: KanbanColumnId = isResolved ? "done" : "triage";
-
-        tasks.push({
-          id: `VAC-${(index + 1).toString().padStart(3, "0")}`,
-          title: `Auditoria: ${title}`,
-          project: "Auditoria do Vault Nipëi",
-          squad,
-          columnStatus: column,
-          status: isResolved ? "concluido" : "pendente",
-          assignee: "",
-          priority: "alta",
-          dueDate: "",
-          assignedAgents: ["antigravity", "hermes"],
-          vaultPath: `Todo_Audit_Lists/${filename}`,
-          description: content.slice(0, 200) || "Auditoria de integridade e vacíos de informação.",
-        });
-      });
-    } catch {
-      /* ignore */
     }
   }
 

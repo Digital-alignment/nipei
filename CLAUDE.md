@@ -60,7 +60,7 @@ c:\Users\ondig\Code\Nipei\nipei-control\
   - VPS: cron a cada 5 min → `/opt/nipei-vault-sync/sync.sh` (commit das edições da app + pull --rebase + push, deploy key `/root/.ssh/nipei_vault_deploy`, host alias `github-nipei-vault`). Snapshot diário 03:32 (fora do minuto do sync; `backup.sh` trata o código 1 do tar — arquivo mudou durante a cópia — como aviso, não erro) → `/opt/backups/nipei-vault/` (14 dias). Log: `/var/log/nipei-vault-sync.log`.
   - Local: tarefa agendada do Windows "Nipei Vault Sync" a cada 10 min → `scripts/vault-sync.ps1`. Log: `%LOCALAPPDATA%\nipei-vault-sync.log`.
   - Conflito: nada é sobrescrito; o rebase é abortado, o commit fica local e o log registra `CONFLICT` até resolução manual. Nunca use `git reset --hard`/`push --force` no vault sem olhar o que será descartado.
-- **Tarefas:** `Productivity/Tarefas/*.md` (escritor único, 3.1). Anexos de arquivo da v2 em `Task_Workspace/<id>/`. As pastas que só a v1 escrevia (`Squads/`, `Task_Workspace/AAAA/SQ-XX/`, `Productivity/Metodologias|Datasets|Templates`, `Todo_Audit_Lists`, `Ingestion_Inbox`, `Raw_Uploads`, `Hermes_Sessions`…) continuam no vault até decidirmos arquivá-las.
+- **Tarefas:** `Productivity/Tarefas/*.md` (escritor único, 3.1). Anexos de arquivo da v2 em `Task_Workspace/<id>/`. As pastas que só a v1 escrevia (`Squads/`, `Task_Workspace/AAAA/SQ-XX/`, `Productivity/Metodologias|Datasets|Templates`, `Todo_Audit_Lists`, `Ingestion_Inbox`, `Raw_Uploads`, `Hermes_Sessions`…) foram movidas para `Archive_Deprecados/v1/` em 2026-11-16 (`Hermes_Sessions` apagada); README e CLAUDE.md do vault reescritos. `GET /api/agent-kanban` lê só `Productivity/Tarefas`.
 
 ---
 
