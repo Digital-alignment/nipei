@@ -1,5 +1,6 @@
 "use server";
 
+import { sugerirTarefa, type SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -747,6 +748,19 @@ export async function removeAnexoAction(form: FormData) {
 }
 
 // ---------------------------------------------------------------- task AI (T2)
+
+/** "Nova tarefa": the Pinu's suggestion for team, priority, due date, owners and project (DS 10.26). Nothing is written. */
+export async function sugerirTarefaAction(titulo: string, descricao: string, anterior?: string): Promise<{ sugestao?: SugestaoTarefa; error?: string }> {
+  const me = await requireUser();
+  if (!me.gestao) return { error: "Sem permissão" }; // same people who use the AI on tasks
+  const t = String(titulo ?? "").trim();
+  if (t.length < 12) return {};
+  try {
+    return { sugestao: await sugerirTarefa(me, { titulo: t, descricao: String(descricao ?? ""), anterior: anterior ? String(anterior) : undefined }) };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
 
 export async function proporIAAction(id: string, modo: ModoIA): Promise<{ proposta?: PropostaIA; error?: string }> {
   const me = await requireUser();

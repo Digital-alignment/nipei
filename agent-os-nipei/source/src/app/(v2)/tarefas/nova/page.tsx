@@ -34,7 +34,7 @@ export default async function NovaTarefa({ searchParams }: { searchParams: Promi
           responsaveis: q.responsavel ? [q.responsavel] : !q.criada && me ? [me.id] : [],
           status: q.status === "doing" || q.status === "done" ? q.status : undefined,
         }}
-        podeSemEquipe={user.gestao} meId={me?.id ?? ""} back={back}
+        podeSemEquipe={user.gestao} meId={me?.id ?? ""} back={back} pinu={user.gestao}
         l={{
           titulo: t.titulo, tituloPh: t.tituloPh, descricao: t.descricao, descricaoPh: t.descricaoPh, equipe: t.equipe, nenhum: t.nenhum, area: t.areaEquipe,
           prioridade: t.prioridade, prazo: t.prazo, hoje: t.hoje, amanha: t.amanha, sexta: t.sextaLbl, proximaSemana: t.proximaSemana, semPrazo: t.semPrazoLbl,

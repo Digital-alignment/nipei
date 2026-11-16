@@ -1,8 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { createTarefaAction, updateTarefaAction } from "@/app/(v2)/actions";
-import Campo from "@/components/ds/Campo";
+import { createTarefaAction, sugerirTarefaAction, updateTarefaAction } from "@/app/(v2)/actions";
+import type { SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
+import Campo, { SugestaoPinu } from "@/components/ds/Campo";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Chip from "@/components/ds/Chip";
 import Icone from "@/components/ds/Icone";
@@ -29,17 +30,58 @@ function Enviar({ children, ...p }: { children: React.ReactNode; name?: string; 
 }
 
 /** "Nova tarefa" and "Editar tarefa" (DS 10.26): everything a task can carry in one screen; people grouped by the chosen team, with search. */
-export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, inicial, podeSemEquipe, meId, back, l, editar }: {
+export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, inicial, podeSemEquipe, meId, back, l, editar, pinu }: {
   equipes: Equipe[]; pessoas: Pessoa[]; projetos: { id: string; nome: string }[]; objetivos: { id: string; titulo: string; ano: number; projeto: string }[];
   inicial: { equipe: string; projeto: string; objetivo: string; prazo: string; responsaveis: string[]; status?: string }; podeSemEquipe: boolean; meId: string; back: string; l: L;
   /** editing an existing task: description and checklist stay in the task page */
   editar?: { id: string; title: string; status: string; prioridade: string; recorrencia: string; area: string };
+  /** the Pinu suggests team, priority, due date, owners and project from the title (only when creating) */
+  pinu?: boolean;
 }) {
   const [equipe, setEquipe] = useState(inicial.equipe);
   const [projeto, setProjeto] = useState(inicial.projeto);
   const [prazo, setPrazo] = useState(inicial.prazo);
   const [sel, setSel] = useState(new Set(inicial.responsaveis));
   const [busca, setBusca] = useState("");
+  const [prio, setPrio] = useState(editar?.prioridade || "média");
+  // Pinu suggestion (DS 10.26): asks 1.5 s after typing stops, only for a new title of 12+ characters
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [sug, setSug] = useState<{ s: SugestaoTarefa; texto: string } | null>(null);
+  const [pensando, setPensando] = useState(false);
+  const pedido = useRef("");
+  const descrever = (s: SugestaoTarefa) => {
+    const nomeP = (id: string) => pessoas.find((p) => p.id === id)?.nome.split(" (")[0] ?? id;
+    const dia = s.prazo ? new Date(`${s.prazo}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }) : "";
+    const partes = [equipes.find((e) => e.id === s.equipe)?.nome, s.prioridade && l.prio[s.prioridade], dia, s.responsaveis.map(nomeP).join(", "), projetos.find((p) => p.id === s.projeto)?.nome].filter(Boolean);
+    return partes.length ? `${partes.join(" · ")}${s.motivo ? ` — ${s.motivo}` : ""}` : "";
+  };
+  const pedir = async (outra: boolean) => {
+    const t = titulo.trim();
+    pedido.current = t;
+    setPensando(true);
+    const r = await sugerirTarefaAction(t, descricao, outra ? sug?.texto : undefined).catch(() => ({ sugestao: undefined }));
+    if (pedido.current !== t) return; // the title changed meanwhile: a newer request wins
+    setPensando(false);
+    const texto = r.sugestao ? descrever(r.sugestao) : "";
+    setSug(r.sugestao && texto ? { s: r.sugestao, texto } : null);
+  };
+  useEffect(() => {
+    const t = titulo.trim();
+    if (!pinu || editar || t.length < 12 || t === pedido.current) return;
+    const h = setTimeout(() => pedir(false), 1500);
+    return () => clearTimeout(h);
+  }, [titulo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const usar = () => {
+    if (!sug) return;
+    const { s } = sug;
+    if (s.equipe) setEquipe(s.equipe);
+    if (s.prioridade) setPrio(s.prioridade);
+    if (s.prazo) setPrazo(s.prazo);
+    if (s.responsaveis.length) setSel(new Set(s.responsaveis));
+    if (s.projeto) setProjeto(s.projeto);
+    setSug(null);
+  };
   const areas = equipes.find((e) => e.id === equipe)?.areas ?? [];
   const objs = objetivos.filter((o) => !projeto || !o.projeto || o.projeto === projeto);
   const grupos = useMemo(() => {
@@ -57,10 +99,10 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
       {editar && <input type="hidden" name="id" value={editar.id} />}
       {inicial.status && <input type="hidden" name="status" value={inicial.status} />}
       <div className="grid gap-3">
-        {/* TODO(pinu): ainda não há endpoint de sugestão para um título novo (proporIAAction só serve tarefas que já existem).
-            Quando houver, passe sugestao={<SugestaoPinu texto={...} onUsar={...} onOutra={...} />} (components/ds/Campo). */}
-        <Campo tipo="titulo" name="title" required autoFocus={!editar} defaultValue={editar?.title} maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh} sugestao={undefined} />
-        {!editar && <Campo tipo="area" name="descricao" rows={2} maxLength={4000} rotulo={l.descricao} placeholder={l.descricaoPh} />}
+        <Campo tipo="titulo" name="title" required autoFocus={!editar} defaultValue={editar?.title} maxLength={200} rotulo={l.titulo} placeholder={l.tituloPh}
+          onChange={(e) => setTitulo(e.target.value)}
+          sugestao={pinu && !editar && (pensando || sug) ? <SugestaoPinu texto={sug?.texto ?? ""} carregando={pensando} onUsar={usar} onOutra={() => pedir(true)} /> : undefined} />
+        {!editar && <Campo tipo="area" name="descricao" rows={2} maxLength={4000} rotulo={l.descricao} placeholder={l.descricaoPh} onChange={(e) => setDescricao(e.target.value)} />}
       </div>
 
       {editar && (
@@ -92,7 +134,7 @@ export default function NovaTarefaForm({ equipes, pessoas, projetos, objetivos, 
         <div className="flex flex-wrap gap-2">
           {Object.entries(l.prio).map(([v, nome]) => (
             <label key={v} className={CHIP}>
-              <input type="radio" name="prioridade" value={v} defaultChecked={v === (editar?.prioridade || "média")} className="sr-only" />
+              <input type="radio" name="prioridade" value={v} checked={prio === v} onChange={() => setPrio(v)} className="sr-only" />
               <span className="grid size-6 place-items-center rounded-pilula bg-s1"><Icone nome={PRIO_ICONE[v]} tamanho={14} className={PRIO_COR[v]} /></span>{nome}
             </label>
           ))}

@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Sugestão do Pinu na Nova tarefa (9.5, 10.26)
+
+- `NovaTarefaForm` com `pinu` (gestão): 1,5 s depois de parar de digitar um título de 12+ caracteres, `sugerirTarefaAction` → `lib/v2/sugestaoTarefa.ts` (`sugerirTarefa`, autoteste `npx tsx src/lib/v2/sugestaoTarefa.ts`) devolve equipe, prioridade, prazo, até 3 responsáveis e projeto, validados no servidor (`validarSugestao`). A linha `SugestaoPinu` do título mostra a sugestão; ✓ preenche os campos, ⟳ pede outra. Prioridade virou estado controlado. Mesmo limite diário da IA das tarefas (60/pessoa).
+
 ## 2026-11-16 — Formulários de tarefa e evento no celular (10.26)
 
 - Nova tarefa: a barra de ações virou uma linha (Criar · Outra · ✕), de 208 para 80 px, com o fundo da página; no computador "Criar e adicionar outra" continua por extenso.

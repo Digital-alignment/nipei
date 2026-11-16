@@ -841,3 +841,12 @@ Revisão a 390 px aprovada pelo Ashuan ("Los tres"). Na Nova tarefa a barra fixa
 - Barra de ações de formulário: uma só linha fixa (Primário em folha + tonal curto + ✕), fundo da página.
 - Editar tarefa usa o mesmo formulário da Nova (estado em chips, prioridade, atalhos de prazo, responsáveis por grupo com busca); a descrição e o checklist continuam na ficha.
 - Novo evento: Equipe e Status em coluna única no celular; botões do sistema.
+
+## 2026-11-16 — Sugestão do Pinu na Nova tarefa (§9.5, §10.26)
+
+Pedido do Ashuan. Enquanto a pessoa escreve o título, o Pinu sugere equipe, prioridade, prazo, responsáveis e projeto numa linha abaixo do título (`SugestaoPinu`: ✓ usar, ⟳ outra). Decisões:
+
+- Só para quem já usa a IA nas tarefas (gestão = Equipe 1), com o mesmo limite diário (60 usos por pessoa).
+- Pede depois de 1,5 s sem digitar, com título de 12+ caracteres, e só se o título mudou: não a cada tecla (custo).
+- Nada muda sozinho: ✓ preenche os campos, que a pessoa ainda pode mudar antes de "Criar". Só na criação (não em editar).
+- O servidor valida tudo (ids de equipe, pessoa e projeto que existem e a pessoa pode ver; prazo de hoje até 1 ano; até 3 responsáveis); o que não valida é descartado.

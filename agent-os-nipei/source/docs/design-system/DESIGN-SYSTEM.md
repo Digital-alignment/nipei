@@ -595,6 +595,7 @@ O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), com
 
 ### 10.26 Formulário de tarefa (nova e editar) e de evento
 - **Um só formulário** para criar e editar tarefa: título · (nova: descrição) · (editar: estado em Chips de marcar A fazer / Fazendo / Feito) · equipe e área · prioridade em Chips · prazo com atalhos (Hoje, Amanhã, Sexta, Próxima semana, Sem prazo) e repetir · projeto e objetivo · responsáveis agrupados (desta equipe / outras / sem equipe) com busca e "+ Eu" · (nova: checklist). Em editar, a descrição e o checklist ficam na ficha, e o id interno não aparece.
+- **Sugestão do Pinu** (só ao criar, para quem usa a IA nas tarefas): depois de 1,5 s sem digitar um título de 12+ caracteres, a linha `SugestaoPinu` abaixo do título diz o que o Pinu propõe ("Manutenção · alta · sex., 20/11 · Camargo · Infraestrutura") e, depois de um travessão, o porquê em até 12 palavras; ✓ preenche equipe, prioridade, prazo, responsáveis e projeto (a pessoa pode mudar depois), ⟳ pede outra. Nada é criado nem mudado sozinho.
 - **Barra de ações** fixa acima da barra do celular, numa linha só, com o fundo da página: Primário em folha ("Criar" / "Salvar") · tonal curto ("Outra" no celular, "Criar e adicionar outra" no computador; só ao criar) · Botão de ícone ✕ "Cancelar" à direita.
 - **Evento**: título; início e fim lado a lado; hora; equipe e estado em coluna única no celular (duas a partir de `sm`); Primário "Salvar" + fantasma "Cancelar".
 
@@ -697,7 +698,6 @@ Situação em 2026-10-26: todas as linhas acima foram cumpridas na v2 (`src/app/
 - Pinu: modo voz em tela cheia, o que abre primeiro, curvas de nível, lista de capacidades, deslizar para confirmar.
 - Ícones P2/P3 restantes (`ICONES.md`): `quadro`, `grade`, `semana`, `mes`, `copiar`, `ver`/`ocultar`, `sem-conexao`, `documento`, `planilha`, `apresentacao`, `video`, `audio`, `pasta`. No código estão com um provisório e `TODO(ícones)`.
 - Pulso: o ponto de cada equipe ainda usa a cor gravada no vault (`cor` da equipe), não o token `eq-*`.
-- Sugestão do Pinu na Nova tarefa: o slot (`SugestaoPinu`) existe, falta o endpoint.
 - Pinu ainda não recebe arquivos (sem "+"/imagem no campo).
 - Painel do Notificar (ficha da pessoa) e o painel do Pinu usam sobreposição própria; falta um componente de folha/painel lateral no sistema.
 - Telas v1 (fora de `(v2)`): fora do design system; lucide e as fontes antigas continuam só nelas.
