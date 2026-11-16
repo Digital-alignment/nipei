@@ -540,6 +540,20 @@ export async function presencaAction(form: FormData) {
 }
 
 // ---------------------------------------------------------------- Sobre a equipe + pedidos (DS 10.13–10.14)
+/** "Rascunho com o Pinu" (DS 10.13): a draft of the four sections; nothing is saved here. */
+export async function rascunhoSobreAction(equipe: string, atual: Record<string, string>): Promise<{ rascunho?: Record<string, string>; error?: string }> {
+  const me = await requireUser();
+  const e = getEquipes().find((x) => x.id === String(equipe));
+  if (!e || e.contatos || !can.gerirEquipe(me, e.id)) return { error: "Sem permissão" };
+  try {
+    const { rascunhoSobre } = await import("@/lib/v2/rascunhoSobre");
+    const limpo = Object.fromEntries(Object.entries(atual ?? {}).map(([k, v]) => [k, String(v ?? "").slice(0, 1500)]));
+    return { rascunho: await rascunhoSobre(me, e.id, limpo) };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
 export async function sobreEquipeAction(form: FormData) {
   const me = await requireUser();
   const e = getEquipes().find((x) => x.id === String(form.get("equipe")));

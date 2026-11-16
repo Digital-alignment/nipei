@@ -868,3 +868,7 @@ Pedido do Ashuan ("haz la revisión automática y luego Pedidos").
 ## 2026-11-16 — Medir as sugestões do Pinu (§10.14, §10.26)
 
 Pedido do Ashuan ("haz el punto 1, las dos cosas"): saber em 1–2 semanas se a sugestão acerta, sem depender de impressões. Registro (`.jobs/eventos`, só o tipo de ação): mostrou, outra, usou e, ao criar, "manteve N/M · mudou …" comparando o que o Pinu preencheu com o que foi criado. Módulo do Painel "Sugestões do Pinu" (7/30/90 dias): mostradas, usadas, criadas com a sugestão, campos mantidos e o que mais mudam. Auditoria de 16/11 em produção: as 4 equipes têm `temas`, nenhuma tem o Sobre escrito — o Pinu decide só pelo nome e pelos temas.
+
+## 2026-11-16 — Rascunho do Sobre da equipe com o Pinu (§10.13)
+
+Pedido do Ashuan. Nenhuma das 4 equipes tem o Sobre escrito, e é dele que o Pinu tira a equipe certa nas sugestões de tarefa e pedido. Para não começar do zero: botão "Rascunho com o Pinu" na edição do Sobre (quem já edita: coordenação da equipe ou gestão), que propõe as quatro seções a partir dos temas, das tarefas (abertas e feitas nos últimos 120 dias), dos pedidos recebidos e dos fatos confirmados da equipe. Texto já escrito é mantido e completado. Preenche os campos; só "Salvar" grava. Usa o limite diário da IA das tarefas.
