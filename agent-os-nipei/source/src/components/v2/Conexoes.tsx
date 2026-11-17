@@ -12,6 +12,7 @@ import { backupAgoraAction, chaveIAAction, desconectarGoogleAction, revogarAppAc
 import { PROVEDORES } from "@/lib/v2/motorIA";
 import CopiarBotao from "./CopiarBotao";
 import RolarAoAbrir from "./RolarAoAbrir";
+import SkillsIA from "./SkillsIA";
 import { concessoesDe } from "@/lib/v2/oauthMcp";
 import { getConexoes } from "@/lib/v2/conexoes";
 import { googleConfigurado, temGmail } from "@/lib/v2/google";
@@ -118,6 +119,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
           </ul>
         )}
       </Cartao></div>
+      <SkillsIA t={t} gestao={gestao} />
 
       {gestao && (
         <Cartao className="grid gap-3">

@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-17 — Skills para o app de IA em Conexões (10.27, v2.119)
+
+- Cartão novo em Conexões com as skills oficiais (Material do Santuário, Ata de reunião, Guardar no Conhecimento, Meu dia, Mensagens, Perguntar à base; Finanças só gestão), cada uma com Nome, Quando usar e Instruções para copiar. Texto em `lib/v2/skillsIA.ts` (versionado).
+
 ## 2026-11-16 — Público ou interno nos fatos (10.28, v2.116)
 
 - `/conhecimento/publico`: triagem em lote de visibilidade (público/interno) e uso de cada fato confirmado, pré-selecionada pelo Pinu; atalho no Mapa do Conhecimento.
