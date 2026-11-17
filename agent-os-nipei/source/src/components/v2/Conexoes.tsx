@@ -2,6 +2,7 @@ import Icone from "@/components/ds/Icone";
 import Campo from "@/components/ds/Campo";
 import Cartao from "@/components/ds/Cartao";
 import Botao from "@/components/ds/Botao";
+import Chip from "@/components/ds/Chip";
 import BotaoEnviar from "./BotaoEnviar";
 import InterruptorAcao from "./InterruptorAcao";
 import { ListaConfiguracoes } from "@/components/ds/Controles";
@@ -10,6 +11,7 @@ import ConfirmarBotao from "./ConfirmarBotao";
 import { backupAgoraAction, chaveIAAction, desconectarGoogleAction, revogarAppAction, salvarChaveIAAction } from "@/app/(v2)/actions";
 import { PROVEDORES } from "@/lib/v2/motorIA";
 import CopiarBotao from "./CopiarBotao";
+import RolarAoAbrir from "./RolarAoAbrir";
 import { concessoesDe } from "@/lib/v2/oauthMcp";
 import { getConexoes } from "@/lib/v2/conexoes";
 import { googleConfigurado, temGmail } from "@/lib/v2/google";
@@ -76,7 +78,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
         )}
       </Cartao>
 
-      <Cartao className="grid gap-3">
+      <div id="apps-ia" className="scroll-mt-20"><RolarAoAbrir id="apps-ia" /><Cartao className="grid gap-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-interno bg-s2 flex items-center justify-center"><Icone nome="gerar-outra"  tamanho={17} /></span>
           <div className="flex-1 min-w-0"><p className="font-medium">{c.iaTitulo}</p><p className="text-xs text-t2">{c.iaSub}</p></div>
@@ -85,11 +87,22 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
           <code className="rounded-interno bg-s2 px-2.5 py-1.5 text-sm select-all">https://os.nipeihu.app/mcp</code>
           <CopiarBotao texto="https://os.nipeihu.app/mcp" label={c.copiarUrl} copiado={t.copiado} />
         </div>
-        <ul className="grid gap-1 text-sm text-t2">
-          <li><strong>Claude</strong>: {c.comoClaude}</li>
-          <li><strong>Gemini</strong>: {c.comoGemini}</li>
-          <li><strong>ChatGPT</strong>: {c.comoChatgpt}</li>
-        </ul>
+        <div className="grid gap-2">
+          {c.guias.map((g) => (
+            <details key={g.app} className="group rounded-interno bg-s2">
+              <summary className="anel-foco flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-x-2 rounded-interno px-3 py-2 font-texto text-sm font-semibold">
+                <Icone nome="avancar" tamanho={16} className="transition-transform duration-150 group-open:rotate-90" />{g.app}
+                <span className="meta font-normal text-t2">{g.plano}</span>
+              </summary>
+              <ol className="corpo grid list-decimal gap-1 pb-2 pl-9 pr-3 text-t2">{g.passos.map((x) => <li key={x}>{x}</li>)}</ol>
+              <p className="meta px-3 pb-3 text-t2">{c.noCelular}</p>
+            </details>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="meta text-t2">{c.paraComecar}</span>
+          {c.exemplos.map((x) => <Chip key={x}>{x}</Chip>)}
+        </div>
         <p className="text-xs text-t2">{c.iaAviso}</p>
         {apps.length > 0 && (
           <ul className="grid gap-2 border-t border-s2 pt-3">
@@ -104,7 +117,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
             ))}
           </ul>
         )}
-      </Cartao>
+      </Cartao></div>
 
       {gestao && (
         <Cartao className="grid gap-3">

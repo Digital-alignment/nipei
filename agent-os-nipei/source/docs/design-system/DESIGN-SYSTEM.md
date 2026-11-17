@@ -602,6 +602,11 @@ O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), com
 - **Barra de ações** fixa acima da barra do celular, numa linha só, com o fundo da página: Primário em folha ("Criar" / "Salvar") · tonal curto ("Outra" no celular, "Criar e adicionar outra" no computador; só ao criar) · Botão de ícone ✕ "Cancelar" à direita.
 - **Evento**: título; início e fim lado a lado; hora; equipe e estado em coluna única no celular (duas a partir de `sm`); Primário "Salvar" + fantasma "Cancelar".
 
+### 10.27 Apps de IA (MCP): guia de conexão e painel
+- **Conexões → cartão "Seu Claude, Gemini ou ChatGPT"** (id `apps-ia`, para o link `/conectar` rolar até ele): endereço + "Copiar endereço" como antes; abaixo, um `<details>` por app no padrão "O que reunir antes" (10.25: `rounded-interno bg-s2`, resumo com ícone `avancar` que gira 90°): resumo = nome do app + `meta` com o plano necessário; aberto = passos numerados (`corpo`, lista ordenada) e, no fim, `meta` "Depois de conectar, aparece também no app do celular". Abaixo dos três, `meta` "Para começar, peça:" + 3 Chips de exemplo (só texto, sem link) e a linha de aviso de sempre. Os apps conectados seguem embaixo.
+- **`/conectar`**: atalho para mandar a qualquer membro (WhatsApp, convite): abre a própria ficha na aba Conexões no cartão `apps-ia`.
+- **Painel → "Apps de IA"** (`/controle?m=apps`, só admin): Chips 7/30/90 dias; 4 Cartões `kpi` (Pessoas conectadas "N de M com acesso", Chamadas, Mudanças feitas, Rascunhos confirmados "N de M"); Tabela 10.8 "Conexões" (Pessoa · App · Conectado em · Último uso · Chamadas · Mudanças); Tabela "Ferramentas mais usadas" (Ferramenta · Chamadas · Mudanças); "Ainda não conectaram" = `meta` com os nomes de quem tem acesso e nenhum app; Cartão "Convite" com o texto pronto para WhatsApp e `CopiarBotao`. Nunca mostra o conteúdo das chamadas.
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

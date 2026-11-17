@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Apps de IA: guia de conexão, /conectar e painel (10.27, v2.114)
+
+- Conexões: o cartão dos apps de IA ganhou um passo a passo recolhível por app (Claude, Gemini, ChatGPT) com o plano necessário e exemplos de pedidos; `/conectar` leva qualquer membro direto a ele.
+- Painel de controle: módulo "Apps de IA" (conexões, uso, mudanças, rascunhos, ferramentas, quem falta e convite para copiar).
+
 ## 2026-11-16 — Sem a v1: código e CSS (v2.112)
 
 - A v1 "Mission Control" saiu do código (páginas, ~300 rotas de API, ~90 libs, Shell/Sidebar, contextos, 10 dependências). O layout raiz renderiza só a v2.

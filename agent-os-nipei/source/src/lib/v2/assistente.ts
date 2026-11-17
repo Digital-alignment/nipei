@@ -693,6 +693,8 @@ const escritasMcp = new Map<string, number[]>();
 // ponytail: drafts live in memory (15 min); a restart drops them and the app simply drafts again.
 const RASCUNHO_TTL = 15 * 60_000;
 const rascunhosMcp = new Map<string, { dono: string; acao: AcaoProposta; em: number }>();
+/** A tool call that changes something (or confirms a draft), for the panel's count of changes. */
+export const ehEscritaMcp = (nome: string) => nome === "confirmar" || PROPOSTAS.has(nome);
 const SO_MINHAS = new Set(["mudar_status", "mudar_prazo", "mudar_prioridade", "comentar"]);
 /** Whether an MCP change needs the person's explicit yes: anything outside the platform, money, the knowledge base,
  *  other people's tasks or other people's inbox. Own-scope changes (memory, sources that go to review, own tasks) run at once. */

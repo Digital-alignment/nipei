@@ -9,6 +9,7 @@ import VerComo from "./VerComo";
 import Operacao from "./Operacao";
 import Custos from "./Custos";
 import SugestoesPinu from "./SugestoesPinu";
+import AppsIA from "./AppsIA";
 import Erros from "./Erros";
 import Funcoes from "./Funcoes";
 import Relatorios from "./Relatorios";
@@ -27,6 +28,7 @@ export const MODULOS: Modulo[] = [
   { id: "operacao", titulo: "Operação", descricao: "Alertas no seu WhatsApp e ações rápidas de manutenção.", icone: "configuracoes", Componente: Operacao },
   { id: "erros", titulo: "Erros", descricao: "Erros do servidor que ninguém veria: páginas, botões, rotas e IA fora do ar.", icone: "erro", Componente: Erros },
   { id: "custos", titulo: "Custos de IA", descricao: "Chamadas, tokens e custo da IA por mês, pessoa, uso e modelo.", icone: "gerar-outra", Componente: Custos },
+  { id: "apps", titulo: "Apps de IA", descricao: "Quem conectou Claude, Gemini ou ChatGPT, quanto usa, o que mudou por eles e quem falta; convite pronto.", icone: "abrir-fora", Componente: AppsIA },
   { id: "pinu", titulo: "Sugestões do Pinu", descricao: "Se as sugestões do Pinu na Nova tarefa e nos Pedidos ajudam: mostradas, usadas e o que as pessoas mantiveram.", icone: "gerar-outra", Componente: SugestoesPinu },
   { id: "funcoes", titulo: "Funções", descricao: "Ligar ou desligar funções para todos ou para uma pessoa.", icone: "filtrar", Componente: Funcoes },
   { id: "relatorios", titulo: "Relatórios", descricao: "Baixar atividade, uso, acessos, custos e erros em CSV.", icone: "baixar", Componente: Relatorios },

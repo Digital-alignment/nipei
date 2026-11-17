@@ -13,6 +13,19 @@ export const dynamic = "force-dynamic";
 const VERSOES = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 type Rpc = { jsonrpc: "2.0"; id?: string | number | null; method: string; params?: Record<string, unknown> };
 
+// Ready-made requests: Claude and others show them as shortcuts, so a person who doesn't know what to ask has a start.
+type Prompt = { name: string; title: string; description: string; arguments?: { name: string; description: string; required: boolean }[]; texto: (a: Record<string, string>) => string };
+const PROMPTS: Prompt[] = [
+  { name: "minha_semana", title: "Minha semana", description: "Atrasadas, hoje, esta semana e a agenda, com o que fazer primeiro.",
+    texto: () => "Use o Nipëi para me mostrar minha semana: tarefas atrasadas, de hoje e dos próximos 7 dias, e os eventos da agenda. Termine sugerindo as 3 coisas que devo fazer primeiro." },
+  { name: "pendencias", title: "O que está pendente", description: "Tarefas, pedidos para minhas equipes e fatos para revisar.",
+    texto: () => "O que está pendente para mim no Nipëi? Minhas tarefas atrasadas e de hoje, pedidos para as equipes que coordeno e fatos do Conhecimento esperando minha revisão. Seja curto." },
+  { name: "resumo_equipe", title: "Resumo da equipe", description: "Como está a semana de uma equipe.", arguments: [{ name: "equipe", description: "nome ou número da equipe (vazio = a minha)", required: false }],
+    texto: (a) => `Resuma a semana da ${a.equipe ? `equipe ${a.equipe}` : "minha equipe"} no Nipëi: o que foi feito, o que está atrasado, o que está sem responsável e os próximos eventos.` },
+  { name: "perguntar_base", title: "Perguntar à base", description: "Responde só com o conhecimento confirmado do Santuário.", arguments: [{ name: "pergunta", description: "o que você quer saber", required: true }],
+    texto: (a) => `Responda usando só a base de conhecimento confirmada do Nipëi (buscar_conhecimento). Se não estiver lá, diga que não está e sugira perguntar à comunidade. Pergunta: ${a.pergunta ?? ""}` },
+];
+
 const resposta = (id: Rpc["id"], result: unknown) => ({ jsonrpc: "2.0", id, result });
 const erro = (id: Rpc["id"], code: number, message: string) => ({ jsonrpc: "2.0", id: id ?? null, error: { code, message } });
 
@@ -36,7 +49,7 @@ export async function POST(req: Request) {
     if (m.method === "initialize") {
       const pedida = String(m.params?.protocolVersion ?? "");
       return resposta(m.id, {
-        protocolVersion: VERSOES.includes(pedida) ? pedida : VERSOES[1], capabilities: { tools: { listChanged: false } },
+        protocolVersion: VERSOES.includes(pedida) ? pedida : VERSOES[1], capabilities: { tools: { listChanged: false }, prompts: { listChanged: false } },
         serverInfo: { name: "nipei", title: "Nipëi OS", version: "1.0.0" }, instructions: instrucoesMCP(me),
       });
     }
@@ -46,14 +59,21 @@ export async function POST(req: Request) {
       const nome = String(m.params?.name ?? ""), args = (m.params?.arguments ?? {}) as Record<string, unknown>;
       try {
         const r = await chamarMCP(me, nome, args, quem);
-        registrarEvento(g.pessoa, "app de IA", `${g.nomeCliente}: ${nome}${r.ok ? "" : " (erro)"}`, "mcp");
+        const rascunho = !!(r.dados && typeof r.dados === "object" && "precisa_confirmar" in r.dados);
+        registrarEvento(g.pessoa, "app de IA", `${g.nomeCliente}: ${nome}${!r.ok ? " (erro)" : rascunho ? " (rascunho)" : ""}`, "mcp");
         return resposta(m.id, { content: [{ type: "text", text: JSON.stringify({ hoje: today(), ...(r.dados && typeof r.dados === "object" && !Array.isArray(r.dados) ? r.dados : { resultado: r.dados }) }) }], isError: !r.ok });
       } catch (e) {
         return resposta(m.id, { content: [{ type: "text", text: `Erro: ${(e as Error).message}` }], isError: true });
       }
     }
     if (m.method === "resources/list") return resposta(m.id, { resources: [] });
-    if (m.method === "prompts/list") return resposta(m.id, { prompts: [] });
+    if (m.method === "prompts/list") return resposta(m.id, { prompts: PROMPTS.map(({ texto: _, ...p }) => p) });
+    if (m.method === "prompts/get") {
+      const p = PROMPTS.find((x) => x.name === m.params?.name);
+      if (!p) return erro(m.id, -32602, "Prompt desconhecido");
+      const args = Object.fromEntries(Object.entries((m.params?.arguments ?? {}) as Record<string, unknown>).map(([k, v]) => [k, String(v ?? "").slice(0, 500)]));
+      return resposta(m.id, { description: p.description, messages: [{ role: "user", content: { type: "text", text: p.texto(args) } }] });
+    }
     return erro(m.id, -32601, `Método não suportado: ${m.method}`);
   };
 

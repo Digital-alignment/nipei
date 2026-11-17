@@ -16,7 +16,7 @@ const PUBLIC_PAGES = ["/login", "/entrar", "/cadastro", "/privacidade", "/google
 
 // A "member" session (non-gestão teams) only reaches these pages; the rest (/controle, /design)
 // and the internal API (Hermes skill: /api/agent-kanban, /api/venu/kanban-action) stay gestão-only.
-const MEMBER_PAGES = ["/hoje", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/pedidos", "/google", "/financas"]; // /financas: each page/route/action checks podeFinancas (Equipe 1 or the panel switch). /google = each person's own Google connection
+const MEMBER_PAGES = ["/hoje", "/conectar", "/agenda", "/equipes", "/projetos", "/objetivos", "/pessoas", "/tarefas", "/acervo", "/eventos", "/conhecimento", "/diagnosticos", "/pulso", "/pedidos", "/google", "/financas"]; // /financas: each page/route/action checks podeFinancas (Equipe 1 or the panel switch). /google = each person's own Google connection
 const isMemberPage = (p: string) => p === "/" || MEMBER_PAGES.some((m) => p === m || p.startsWith(m + "/"));
 
 export function proxy(req: NextRequest) {
