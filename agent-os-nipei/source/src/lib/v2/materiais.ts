@@ -29,9 +29,18 @@ const listar = async (id: string): Promise<Item[]> => {
   if (!r.ok) throw new Error(`Drive ${r.status}`);
   return lerPasta(await r.text());
 };
+const MARCA_SECAO = /fundament|tipogra|typograph|cor(es)?\b|color|paleta|palette|tom\b|tono|tone|voz|voice|logo|marca|brand|regra|regla|rule/i;
+/** A long guide (e.g. a site's DESIGN.md) keeps only its brand sections (headings about type, color, tone, logo…). Pure. */
+export function resumirGuia(txt: string, max = 8000): string {
+  const t = txt.replace(/^﻿/, "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  if (t.length <= max) return t;
+  const secoes = t.split(/\n(?=#{1,3} )/);
+  const uteis = secoes.filter((s) => MARCA_SECAO.test(s.split("\n")[0]));
+  return (uteis.length ? uteis.join("\n\n") : t).slice(0, max);
+}
 const textoDoc = async (id: string) => {
   const r = await fetch(`https://docs.google.com/document/d/${id}/export?format=txt`, { signal: AbortSignal.timeout(10_000) });
-  return r.ok ? (await r.text()).replace(/^﻿/, "").trim().slice(0, 6000) : "";
+  return r.ok ? resumirGuia(await r.text()) : "";
 };
 
 let cache: { em: number; pasta: string; m: Materiais } | null = null;
