@@ -476,6 +476,42 @@ export async function salvarProjetosFatosAction(form: FormData) {
   redirect(`/conhecimento/projetos?ok=${n}${de ? `&de=${de}` : ""}`);
 }
 
+// Public or internal (DS 10.28, gestão): what a fact may be used for in material for outsiders.
+const FILTROS_PUBLICO = ["classificar", "publicos", "internos", "todos"];
+const filtroPublico = (form: FormData) => { const f = String(form.get("f") ?? ""); return FILTROS_PUBLICO.includes(f) ? f : "classificar"; };
+
+export async function sugerirPublicoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { getFatos } = await import("@/lib/v2/conhecimento");
+  const { sugerirPublico } = await import("@/lib/v2/publico");
+  const { vault } = await import("@/lib/v2/data");
+  const nomes = new Map(getProjetos().map((p) => [p.id, p.nome]));
+  const lista = getFatos().filter((f) => f.status === "confirmado" && f.publico === null).slice(0, 300);
+  await tentar(async () => { await sugerirPublico(vault(), lista, (id) => nomes.get(id) ?? id); });
+  revalidatePath("/conhecimento/publico");
+  redirect(`/conhecimento/publico?f=${filtroPublico(form)}`);
+}
+
+export async function salvarPublicoAction(form: FormData) {
+  const me = await requireUser();
+  if (!me.gestao) return;
+  const { getFatos, definirPublicoFato } = await import("@/lib/v2/conhecimento");
+  const { USOS } = await import("@/lib/v2/publico");
+  const fatos = new Map(getFatos().filter((f) => f.status === "confirmado").map((f) => [f.id, f]));
+  let n = 0;
+  for (const [k, v] of form.entries()) {
+    if (!k.startsWith("v_")) continue;
+    const f = fatos.get(k.slice(2));
+    if (!f || (v !== "p" && v !== "i")) continue;
+    const publico = v === "p", u = String(form.get(`u_${f.id}`) ?? ""), uso = (USOS as readonly string[]).includes(u) ? u : "outro";
+    if (f.publico !== null && f.publico === publico && f.uso === uso) continue; // classified and unchanged
+    definirPublicoFato(f.id, publico, uso, actorName(me)); n++;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/conhecimento/publico?ok=${n}&f=${filtroPublico(form)}`);
+}
+
 // ---------------------------------------------------------------- Reunião fixa (DS 10.16)
 export async function reuniaoFixaAction(form: FormData) {
   const me = await requireUser();

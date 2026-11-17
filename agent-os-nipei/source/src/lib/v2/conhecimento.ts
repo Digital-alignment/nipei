@@ -45,6 +45,8 @@ export type Fato = {
   motivo: string; // "duplicado" when discarded only for repeating a confirmed fact (not a correction)
   corrige: string; // id of the confirmed fact this one corrected (D10: the old one stays, "substituido")
   equipeDefinidaPor: string; equipeDefinidaEm: string;
+  // DS 10.28: may it appear in material for outsiders (null = not classified yet), and what it is for
+  publico: boolean | null; uso: string; publicoDefinidoPor: string;
 };
 
 const s = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -77,6 +79,7 @@ export function getFatos(): Fato[] {
     status: (s(fm.status) || "proposto") as StatusFato, criadoEm: s(fm.criado_em), revisadoPor: s(fm.revisado_por), revisadoEm: s(fm.revisado_em),
     substituidoPor: s(fm.substituido_por), motivo: s(fm.descartado_motivo), corrige: s(fm.corrige),
     equipeDefinidaPor: s(fm.equipe_definida_por), equipeDefinidaEm: s(fm.equipe_definida_em),
+    publico: fm.publico === true ? true : fm.publico === false ? false : null, uso: s(fm.uso), publicoDefinidoPor: s(fm.publico_definido_por),
   }));
 }
 
@@ -516,6 +519,13 @@ export function definirProjetosFato(id: string, projetos: string[], quem: string
   const f = getFatos().find((x) => x.id === id);
   if (!f) throw new Error("Fato não encontrado");
   updateNote(f.file, { projetos: [...new Set(projetos)], projetos_definidos_por: quem, projetos_definidos_em: new Date().toISOString() });
+}
+
+/** Visibility and use of a fact (DS 10.28); never touches the status or the text. */
+export function definirPublicoFato(id: string, publico: boolean, uso: string, quem: string) {
+  const f = getFatos().find((x) => x.id === id);
+  if (!f) throw new Error("Fato não encontrado");
+  updateNote(f.file, { publico, uso, publico_definido_por: quem, publico_definido_em: new Date().toISOString() });
 }
 
 export function revisarFato(id: string, acao: "confirmar" | "descartar", quem: string, texto?: string) {

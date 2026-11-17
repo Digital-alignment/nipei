@@ -5,8 +5,8 @@ import { avanco } from "./objetivos";
 // Dossier: everything confirmed about a topic in ONE call, grouped, for an AI that has to produce something
 // (slides, proposal, web text, welcome material). `buscar_conhecimento` returns 8 facts by shared words; this
 // returns all of them, ordered, plus the projects' "Sobre", numbers and what the base doesn't know.
-// "externo" = material for people outside the community. ponytail: until each fact has its own public/internal
-// mark (phase 2), externo leaves out contacts, Financeiro, Jurídico and private projects.
+// "externo" = material for people outside the community: facts marked public on /conhecimento/publico (DS 10.28);
+// a fact not classified yet falls back to the old rule (no contacts, Financeiro, Jurídico). Private projects never.
 
 export type Para = "interno" | "externo";
 const SO_INTERNO_PROJETOS = new Set(["financeiro", "juridico"]);
@@ -14,6 +14,7 @@ const TUDO = new Set(["santuario", "nipeihu", "nipei", "geral", "tudo", "todo", 
 /** Empty topic, or only words like "santuário nipeihu" / "tudo" = the whole base. */
 const ehGeral = (alvo: Set<string>) => [...alvo].every((w) => TUDO.has(w));
 const ORDEM_TIPO = ["valor", "decisao", "fato", "prazo", "procedimento", "contato"];
+const ORDEM_USO = ["identidade", "historia", "oferta", "pessoas", "numeros", "precos", "regras", "procedimento", "outro", ""];
 const ROTULO_TIPO: Record<string, string> = { valor: "valor", decisao: "decisão", prazo: "prazo", procedimento: "procedimento", contato: "contato" };
 const LIMITE = 45_000;
 
@@ -24,7 +25,10 @@ export function selecionarFatos(fatos: Fato[], tema: string, para: Para, ocultos
   return fatos.filter((f) => {
     if (f.status !== "confirmado") return false;
     if (f.projetos.some((p) => ocultos.has(p))) return false;
-    if (para === "externo" && (f.tipo === "contato" || f.projetos.some((p) => SO_INTERNO_PROJETOS.has(p) || privados.has(p)))) return false;
+    if (para === "externo") {
+      if (f.publico === false || f.projetos.some((p) => privados.has(p))) return false;
+      if (f.publico === null && (f.tipo === "contato" || f.projetos.some((p) => SO_INTERNO_PROJETOS.has(p)))) return false;
+    }
     if (geral) return true;
     if (projeto) return f.projetos.includes(projeto.id);
     const w = palavras(`${f.texto} ${titulos.get(f.fonte) ?? ""}`);
@@ -50,9 +54,10 @@ export function montarDossie(me: Me, temaBruto: string, para: Para): string {
     const g = projeto ? projeto.nome : (f.projetos.map((p) => nomeProjeto.get(p)).find(Boolean) ?? "Geral");
     grupos.set(g, [...(grupos.get(g) ?? []), f]);
   }
-  const linha = (f: Fato) => `- ${ROTULO_TIPO[f.tipo] ? `(${ROTULO_TIPO[f.tipo]}) ` : ""}${f.texto.replace(/\s+/g, " ").trim()}${f.dataReferencia ? ` [ref. ${f.dataReferencia}]` : ""}`;
+  const rotulo = (f: Fato) => f.uso ? `(${f.uso}) ` : ROTULO_TIPO[f.tipo] ? `(${ROTULO_TIPO[f.tipo]}) ` : "";
+  const linha = (f: Fato) => `- ${rotulo(f)}${f.texto.replace(/\s+/g, " ").trim()}${f.dataReferencia ? ` [ref. ${f.dataReferencia}]` : ""}`;
   const blocos = [...grupos].sort((a, b) => b[1].length - a[1].length).map(([g, fs]) =>
-    `### ${g} (${fs.length})\n${[...fs].sort((a, b) => ORDEM_TIPO.indexOf(a.tipo) - ORDEM_TIPO.indexOf(b.tipo)).map(linha).join("\n")}`);
+    `### ${g} (${fs.length})\n${[...fs].sort((a, b) => ORDEM_USO.indexOf(a.uso) - ORDEM_USO.indexOf(b.uso) || ORDEM_TIPO.indexOf(a.tipo) - ORDEM_TIPO.indexOf(b.tipo)).map(linha).join("\n")}`);
 
   // the projects this dossier touches: their "Sobre" (written by people) is the best narrative base
   const ids = projeto ? [projeto.id] : [...new Set(fatos.flatMap((f) => f.projetos))];
@@ -87,7 +92,7 @@ export function montarDossie(me: Me, temaBruto: string, para: Para): string {
 
   const partes = [
     `# Dossiê: ${projeto?.nome ?? (geral ? "Santuário Nipeihu (toda a base)" : tema)} · ${para === "externo" ? "para público EXTERNO" : "uso INTERNO"} · ${hoje}`,
-    `Use só o que está aqui para escrever. O que faltar, não invente: marque [falta: …] e diga quem poderia saber. ${para === "externo" ? "Material externo: sem contatos, finanças, questões jurídicas nem projetos privados (já foram tirados)." : "Material interno: pode conter procedimentos e números da gestão; não use em material público."}`,
+    `Use só o que está aqui para escrever. O que faltar, não invente: marque [falta: …] e diga quem poderia saber. ${para === "externo" ? "Material externo: só fatos marcados como públicos (os ainda não classificados entram sem contatos, finanças e jurídico); projetos privados foram tirados." : "Material interno: pode conter procedimentos e números da gestão; não use em material público."}`,
     sobre.length ? `## Sobre os projetos (escrito pela equipe)\n${sobre.join("\n")}` : "",
     `## Números\n${numeros.join("\n")}`,
     `## Fatos confirmados\n${blocos.join("\n\n") || "(nada confirmado sobre este tema)"}`,

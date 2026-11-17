@@ -295,6 +295,14 @@ const pt = {
     tarefasLigadas: "Tarefas ligadas", fechar: "Fechar objetivo", motivo: "Motivo", fechado: "Fechado", nenhum: "Nenhum objetivo aqui", checkinDe: "Check-in",
     vazioAjuda: "Um objetivo é um resultado com prazo, responsável e uma meta que dá para medir.",
   },
+  pb: {
+    titulo: "Público ou interno", link: "Público ou interno", ajuda: "Defina o que pode aparecer em materiais para quem é de fora. Nada muda até você salvar.",
+    filtros: { classificar: "Por classificar", publicos: "Públicos", internos: "Internos", todos: "Todos" } as Record<string, string>,
+    sugerirAjuda: "O Pinu lê cada fato e pré-seleciona se é público ou interno e para que serve; você confere antes de salvar. Na dúvida, ele marca interno.",
+    sugerir: "Sugerir com o Pinu", sugeridos: "sugeridos", sugerido: "sugerido", visibilidade: "Visibilidade", publico: "Público", interno: "Interno", uso: "Uso",
+    usos: { identidade: "Identidade", historia: "História", oferta: "Oferta", precos: "Preços", pessoas: "Pessoas", numeros: "Números", regras: "Regras", procedimento: "Procedimento", outro: "Outro" } as Record<string, string>,
+    salvar: "Salvar", salvos: "Fatos salvos", nenhum: "Nenhum fato neste filtro.", geral: "Geral",
+  },
   pj: {
     novo: "Novo projeto", editar: "Editar projeto", salvar: "Salvar projeto", nome: "Nome do projeto", descricao: "Descrição", equipes: "Equipes", lider: "Líder", semLider: "Sem líder",
     estado: "Estado", estados: { ativo: "Ativo", ideia: "Ideia", pausado: "Pausado", concluido: "Concluído" } as Record<string, string>,
@@ -672,6 +680,14 @@ const en: Dict = {
     oQueAvancou: "What moved? (one line)", registrar: "Log check-in", historico: "Check-ins", semCheckins: "No check-ins yet.", atualizou: "updated",
     tarefasLigadas: "Linked tasks", fechar: "Close goal", motivo: "Reason", fechado: "Closed", nenhum: "No goals here", checkinDe: "Check-in",
     vazioAjuda: "A goal is a result with a deadline, an owner and a target you can measure.",
+  },
+  pb: {
+    titulo: "Public or internal", link: "Public or internal", ajuda: "Decide what may appear in material for people outside. Nothing changes until you save.",
+    filtros: { classificar: "To classify", publicos: "Public", internos: "Internal", todos: "All" } as Record<string, string>,
+    sugerirAjuda: "Pinu reads each fact and preselects whether it is public or internal and what it is for; you check before saving. When unsure, it marks internal.",
+    sugerir: "Suggest with Pinu", sugeridos: "suggested", sugerido: "suggested", visibilidade: "Visibility", publico: "Public", interno: "Internal", uso: "Use",
+    usos: { identidade: "Identity", historia: "History", oferta: "Offering", precos: "Prices", pessoas: "People", numeros: "Numbers", regras: "Rules", procedimento: "Procedure", outro: "Other" } as Record<string, string>,
+    salvar: "Save", salvos: "Facts saved", nenhum: "No facts in this filter.", geral: "General",
   },
   pj: {
     novo: "New project", editar: "Edit project", salvar: "Save project", nome: "Project name", descricao: "Description", equipes: "Teams", lider: "Lead", semLider: "No lead",

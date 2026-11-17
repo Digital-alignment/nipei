@@ -74,7 +74,7 @@ export default function Mapa({ ctx }: { ctx: Ctx }) {
           </tbody>
         </table>
       </div>
-      {ctx.me.gestao && <Botao href="/conhecimento/projetos?de=santuario" variante="fantasma" tamanho="M" icone="avancar" className="mt-3">{t.pj.fatosLink}</Botao>}
+      {ctx.me.gestao && <div className="mt-3 flex flex-wrap gap-2"><Botao href="/conhecimento/projetos?de=santuario" variante="fantasma" tamanho="M" icone="avancar">{t.pj.fatosLink}</Botao><Botao href="/conhecimento/publico" variante="fantasma" tamanho="M" icone="avancar">{t.pb.link}</Botao></div>}
     </div>
   );
 }

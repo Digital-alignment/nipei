@@ -607,6 +607,11 @@ O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), com
 - **`/conectar`**: atalho para mandar a qualquer membro (WhatsApp, convite): abre a própria ficha na aba Conexões no cartão `apps-ia`.
 - **Painel → "Apps de IA"** (`/controle?m=apps`, só admin): Chips 7/30/90 dias; 4 Cartões `kpi` (Pessoas conectadas "N de M com acesso", Chamadas, Mudanças feitas, Rascunhos confirmados "N de M"); Tabela 10.8 "Conexões" (Pessoa · App · Conectado em · Último uso · Chamadas · Mudanças); Tabela "Ferramentas mais usadas" (Ferramenta · Chamadas · Mudanças); "Ainda não conectaram" = `meta` com os nomes de quem tem acesso e nenhum app; Cartão "Convite" com o texto pronto para WhatsApp e `CopiarBotao`. Nunca mostra o conteúdo das chamadas.
 
+### 10.28 Público ou interno (fatos para materiais)
+- **`/conhecimento/publico`** (gestão; Botão fantasma M "Público ou interno" com ícone `avancar` ao lado de "Organizar fatos por projeto" no Mapa): mesmo padrão de "Fatos por projeto" (10.21). CabecalhoPagina (rótulo Conhecimento, título "Público ou interno", subtítulo "N · Defina o que pode aparecer em materiais para quem é de fora. Nada muda até você salvar."); Chips de filtro "Por classificar" (padrão, com contagem) · "Públicos" · "Internos" · "Todos".
+- Cartão `pinu` com o texto de ajuda e Botão tonal "Sugerir com o Pinu" (`gerar-outra`); `meta` "N sugeridos". Fatos confirmados depois chegam já com sugestão (o lote das propostas do Conhecimento chama a mesma sugestão).
+- Lista em `rounded-cartao bg-s1` agrupada por projeto (Seção com título + contagem): cada linha = texto do fato (link para a ficha, 3 linhas) e, à direita (embaixo no celular), Chip `pinu` "sugerido" quando a sugestão difere do salvo + dois selects compactos: **Visibilidade** (Público / Interno) e **Uso** (Identidade, História, Oferta, Preços, Pessoas, Números, Regras, Procedimento, Outro). Botão primário fixo "Salvar" no fim. Em "Por classificar", salvar aprova o que está nos selects (inclusive a sugestão sem mudança).
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:

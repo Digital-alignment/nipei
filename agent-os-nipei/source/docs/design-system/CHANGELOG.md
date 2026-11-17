@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-16 — Público ou interno nos fatos (10.28, v2.116)
+
+- `/conhecimento/publico`: triagem em lote de visibilidade (público/interno) e uso de cada fato confirmado, pré-selecionada pelo Pinu; atalho no Mapa do Conhecimento.
+
 ## 2026-11-16 — Apps de IA: guia de conexão, /conectar e painel (10.27, v2.114)
 
 - Conexões: o cartão dos apps de IA ganhou um passo a passo recolhível por app (Claude, Gemini, ChatGPT) com o plano necessário e exemplos de pedidos; `/conectar` leva qualquer membro direto a ele.

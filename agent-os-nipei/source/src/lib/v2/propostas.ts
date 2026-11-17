@@ -207,6 +207,17 @@ export async function esvaziarFilaPropostas(agora = false) {
   const lote = f.ids.slice(0, 40), resto = f.ids.slice(40); // proporMudancas reads at most 40 facts per call
   gravarFila({ ids: resto, desde: resto.length ? new Date().toISOString() : "" }); // before the call: a second trigger finds it empty
   await proporMudancas(lote).catch((e) => console.warn("[propostas]", (e as Error).message));
+  // DS 10.28: the same batch of newly confirmed facts arrives at /conhecimento/publico already suggested
+  await sugerirNovos(lote).catch((e) => console.warn("[publico]", (e as Error).message));
+}
+
+async function sugerirNovos(ids: string[]) {
+  const { getFatos } = await import("./conhecimento");
+  const { sugerirPublico, getSugestoesPublico } = await import("./publico");
+  const { getProjetos, vault } = await import("./data");
+  const ja = getSugestoesPublico(vault()), nomes = new Map(getProjetos().map((p) => [p.id, p.nome]));
+  const novos = getFatos().filter((f) => ids.includes(f.id) && f.status === "confirmado" && f.publico === null && !ja[f.id]);
+  await sugerirPublico(vault(), novos, (id) => nomes.get(id) ?? id);
 }
 
 // ---------------------------------------------------------------- deciding
