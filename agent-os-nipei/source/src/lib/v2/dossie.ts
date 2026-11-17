@@ -1,6 +1,7 @@
 import { getAcervo, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefas, projetosVisiveis, today, type Me, type Projeto } from "./data";
 import { getFatos, getFontes, palavras, projetosOcultos, registrarUsoFatos, semResposta, type Fato } from "./conhecimento";
 import { avanco } from "./objetivos";
+import { getMateriais, secaoMateriais } from "./materiais";
 
 // Dossier: everything confirmed about a topic in ONE call, grouped, for an AI that has to produce something
 // (slides, proposal, web text, welcome material). `buscar_conhecimento` returns 8 facts by shared words; this
@@ -36,7 +37,7 @@ export function selecionarFatos(fatos: Fato[], tema: string, para: Para, ocultos
   });
 }
 
-export function montarDossie(me: Me, temaBruto: string, para: Para): string {
+export async function montarDossie(me: Me, temaBruto: string, para: Para): Promise<string> {
   const tema = temaBruto.trim().slice(0, 200), hoje = today();
   const visiveis = projetosVisiveis(me);
   const n = (t: string) => t.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
@@ -95,6 +96,7 @@ export function montarDossie(me: Me, temaBruto: string, para: Para): string {
     `Use só o que está aqui para escrever. O que faltar, não invente: marque [falta: …] e diga quem poderia saber. ${para === "externo" ? "Material externo: só fatos marcados como públicos (os ainda não classificados entram sem contatos, finanças e jurídico); projetos privados foram tirados." : "Material interno: pode conter procedimentos e números da gestão; não use em material público."}`,
     sobre.length ? `## Sobre os projetos (escrito pela equipe)\n${sobre.join("\n")}` : "",
     `## Números\n${numeros.join("\n")}`,
+    secaoMateriais(await getMateriais(), projeto?.nome ?? tema, geral),
     `## Fatos confirmados\n${blocos.join("\n\n") || "(nada confirmado sobre este tema)"}`,
     ...interno,
     acervo.length ? `## Arquivos no Acervo (links do Google Drive; podem ser privados)\n${acervo.map((a) => `- ${a.titulo} (${a.tipo}${a.ano ? `, ${a.ano}` : ""}): ${a.url}`).join("\n")}` : "",
