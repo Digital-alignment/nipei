@@ -20,7 +20,8 @@ import { custoFixo, getFixos, previsaoCaixa } from "./fixos";
 import { getNaturezas, montarDRE } from "./dre";
 import { contaPessoalNoPeriodo, resumoRecursos } from "./separacoes";
 import { compararAnual, getOrcamentoAnual } from "./orcamentoAnual";
-import { CATEGORIAS as CATEGORIAS_FIN, UNIDADES, aReembolsar, createLancamento, getContas, pessoasReembolso } from "./data";
+import { ACERVO_TIPOS, CATEGORIAS as CATEGORIAS_FIN, UNIDADES, aReembolsar, createAcervo, createLancamento, getContas, pessoasReembolso } from "./data";
+import { chaveLink } from "./acervoLinks";
 import { STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault, type Me, type Status, type Tarefa, podeVerProjeto, projetosVisiveis } from "./data";
 
 // The Nipëi assistant (Equipe 1): one OpenRouter tool-calling loop over the platform's own getters
@@ -49,6 +50,7 @@ export type Acao =
   | { tipo: "esquecer"; id: string }
   | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string }
   | { tipo: "pedir_equipe"; equipe: string; titulo: string; descricao?: string; prazo?: string }
+  | { tipo: "adicionar_acervo"; titulo: string; url: string; categoria: string; projeto: string; ano: string; descricao: string }
   | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string; conta?: string; reembolsar?: string; unidade?: string; recurso?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
@@ -230,6 +232,7 @@ const TOOLS = [
   fn("lembrar", "PROPÕE guardar na sua memória algo estável sobre a pessoa que fala com você (preferência de resposta, do que ela cuida, rotina, contexto). Uma frase curta na 3ª pessoa.", {
     texto: { type: "string", description: "ex.: \"Prefere respostas curtas, em tópicos\"" }, categoria: { type: "string", enum: [...CATEGORIAS] },
   }, ["texto", "categoria"]),
+  fn("adicionar_acervo", "PROPÕE registrar no Acervo um link do Google Drive (ex.: uma apresentação ou documento que a pessoa acabou de exportar), para a equipe achar depois. Só links https; um link que já está no Acervo é recusado. Material gerado a partir da base vai ao Acervo, nunca ao Conhecimento.", { titulo: { type: "string" }, url: { type: "string", description: "link https do arquivo ou pasta" }, categoria: { type: "string", enum: ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] }, projeto: { type: "string" }, ano: { type: "string", description: "AAAA (vazio = este ano)" }, descricao: { type: "string" } }, ["titulo", "url"]),
   fn("pedir_equipe", "PROPÕE fazer um pedido a uma equipe quando a pessoa precisa de algo e não sabe quem faz (vira tarefa da equipe sem responsável; a coordenação escolhe quem faz). Veja antes o Sobre da equipe (ferramenta equipe).", { equipe: { type: "string" }, titulo: { type: "string", description: "o que precisa, curto" }, descricao: { type: "string" }, prazo: DATA }, ["equipe", "titulo"]),
   fn("registrar_conversa", "PROPÕE registrar uma conversa com um contato da Pontes (o que foi conversado e, se houver, o novo próximo passo).", { pessoa: { type: "string", description: "nome ou id do contato" }, texto: { type: "string" }, proximo_passo: { type: "string" } }, ["pessoa", "texto"]),
   fn("registrar_lancamento", "PROPÕE registrar um lançamento em Finanças (só gestão): um gasto ou um recebimento que a pessoa contou (\"gastei 120 de gasolina\", \"a Maria pagou a inscrição do retiro\"). Um cartão por lançamento.", {
@@ -243,7 +246,7 @@ const TOOLS = [
   }, ["tipo", "valor", "categoria"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe", "registrar_lancamento"]);
+const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe", "registrar_lancamento", "adicionar_acervo"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
@@ -451,6 +454,20 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     return { tipo: "guardar_conhecimento", titulo, ...(url ? { url } : { texto }), equipe: equipe || undefined, projeto: projeto || undefined, tarefa: t?.id,
       resumo: `Guardar no Conhecimento: ${titulo}`, detalhe: url || (texto.length > 300 ? `${texto.slice(0, 300)}…` : texto) };
   }
+  if (nome === "adicionar_acervo") {
+    if (!me.gestao && !me.coordena.length) return { erro: "só a gestão ou a coordenação de uma equipe adiciona ao Acervo" };
+    const titulo = s(a.titulo).slice(0, 150), url = s(a.url), ano = s(a.ano) || today().slice(0, 4);
+    if (!titulo) return { erro: "falta um título" };
+    if (!/^https:\/\/\S+$/.test(url)) return { erro: "o link precisa começar com https://" };
+    const repetido = getAcervo().find((i) => chaveLink(i.url) === chaveLink(url));
+    if (repetido) return { erro: `esse link já está no Acervo: "${repetido.titulo}"` };
+    const pr = s(a.projeto) ? acharProjeto(s(a.projeto)) : undefined;
+    if (pr && !podeVerProjeto(me, pr)) return { erro: "projeto não encontrado" };
+    if (!/^\d{4}$/.test(ano)) return { erro: "ano deve ser AAAA" };
+    const categoria = (ACERVO_TIPOS as readonly string[]).includes(s(a.categoria)) ? s(a.categoria) : "documentos";
+    return { tipo: "adicionar_acervo", titulo, url, categoria, projeto: pr?.id ?? "", ano, descricao: s(a.descricao).slice(0, 300),
+      resumo: `Acervo: ${titulo}`, detalhe: [categoria, pr?.nome, ano, url].filter(Boolean).join(" · ") };
+  }
   if (nome === "pedir_equipe") {
     const e = s(a.equipe) ? acharEquipe(s(a.equipe)) : undefined, titulo = s(a.titulo).slice(0, 200), prazo = s(a.prazo);
     if (!e || e.contatos) return { erro: "equipe não encontrada" };
@@ -610,6 +627,10 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     return `/conhecimento/${id}`;
   }
   if (v.tipo === "nota_projeto") { anotarProjeto(v.projeto, v.texto, quem); return `/projetos/${v.projeto}`; }
+  if (v.tipo === "adicionar_acervo") {
+    const id = createAcervo({ titulo: v.titulo, url: v.url, tipo: v.categoria, projeto: v.projeto, ano: v.ano, descricao: v.descricao }, me.pessoa?.id ?? me.username);
+    return `/acervo#${id}`;
+  }
   if (v.tipo === "pedir_equipe") {
     const id = createTarefa({ title: v.titulo, equipe: v.equipe, prazo: v.prazo ?? "", responsaveis: [], projeto: "", objetivo: "", recorrencia: "", pedidoPor: me.pessoa!.id }, quem, { descricao: v.descricao, semAviso: true });
     const e = getEquipes().find((x) => x.id === v.equipe)!;
@@ -779,7 +800,7 @@ export function instrucoesMCP(me: Me) {
   return `Nipëi OS: plataforma da comunidade do Santuário Nipeihu (povo Yawanawá). Você está conectado como ${p?.name ?? me.username}${me.gestao ? " (gestão, Equipe 1)" : ""}; equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}.
 Fuso: America/Bahia (consulte a data atual antes de usar "hoje", "amanhã"). Equipes: ${listaEquipes(equipes)}.
 ${mem.length ? `Memória aprovada pela pessoa (siga isto):\n${mem.map((x) => `- (${x.categoria}) ${x.texto}`).join("\n")}` : "Ainda não há memória sobre a pessoa."}
-Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência. Para produzir algo (apresentação, proposta, texto, análise), comece por dossie (externo para quem é de fora). Mudanças que saem da plataforma ou mexem com outras pessoas voltam como rascunho (precisa_confirmar): mostre o rascunho e só chame confirmar depois do sim dela.
+Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência. Para produzir algo (apresentação, proposta, texto, análise), comece por dossie (externo para quem é de fora). Depois que a pessoa salvar o material no Google Drive, ofereça registrar o link no Acervo (adicionar_acervo); nunca mande material gerado ao Conhecimento. Mudanças que saem da plataforma ou mexem com outras pessoas voltam como rascunho (precisa_confirmar): mostre o rascunho e só chame confirmar depois do sim dela.
 Memória: use lembrar só quando a pessoa pedir ou concordar; nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas.${me.gestao ? "\nNotas internas (notas_internas) são confidenciais da gestão: nunca as copie para mensagens, tarefas, projetos ou memória." : ""}`;
 }
 
