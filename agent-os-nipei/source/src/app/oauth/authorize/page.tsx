@@ -30,7 +30,7 @@ export default async function Autorizar({ searchParams }: { searchParams: Promis
           <>
             <p className="corpo"><strong>{cliente!.nome}</strong> quer usar o Nipëi como <strong>{nome}</strong>.</p>
             <ul className="corpo grid gap-1.5 text-t2">
-              {["Ver o que você já vê no Nipëi: tarefas, agenda, equipes, projetos, conhecimento", "Criar e mudar tarefas, eventos e comentários em seu nome (o app pede sua confirmação antes)", "Ler e atualizar a memória do assistente sobre você", "Nada além das suas permissões; você desconecta quando quiser em Perfil → Conexões"].map((x) => (
+              {["Ver o que você já vê no Nipëi: tarefas, agenda, equipes, projetos, conhecimento", "Criar e mudar tarefas, eventos e comentários em seu nome (mensagens, e-mails e mudanças que afetam outras pessoas só depois do seu sim)", "Ler e atualizar a memória do assistente sobre você", "Nada além das suas permissões; você desconecta quando quiser em Perfil → Conexões"].map((x) => (
                 <li key={x} className="flex gap-2"><Icone nome="sucesso" tamanho={16} className="mt-0.5 shrink-0 text-ac-text" />{x}</li>
               ))}
             </ul>

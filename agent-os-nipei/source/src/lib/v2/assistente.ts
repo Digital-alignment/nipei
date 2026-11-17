@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { randomBytes } from "crypto";
 import { avanco, ritmo } from "./objetivos";
 import { quemSabe } from "./pessoasFicha";
 import { buscarConhecimento, chaveTrecho, criarFonte, formatarConhecimento, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "./conhecimento";
@@ -687,6 +688,33 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
 const SO_GESTAO = new Set(["pulso_equipes", "notas_internas", "financas_resumo", "registrar_lancamento", "gmail_buscar", "gmail_ler", "gmail_enviar", "guardar_email"]);
 const escritasMcp = new Map<string, number[]>();
 
+// Not every MCP client asks the person before each call (Claude does; Gemini and ChatGPT may not), so changes that
+// leave the platform or touch other people come back as a draft with a code; only `confirmar` with that code runs it.
+// ponytail: drafts live in memory (15 min); a restart drops them and the app simply drafts again.
+const RASCUNHO_TTL = 15 * 60_000;
+const rascunhosMcp = new Map<string, { dono: string; acao: AcaoProposta; em: number }>();
+const SO_MINHAS = new Set(["mudar_status", "mudar_prazo", "mudar_prioridade", "comentar"]);
+/** Whether an MCP change needs the person's explicit yes: anything outside the platform, money, the knowledge base,
+ *  other people's tasks or other people's inbox. Own-scope changes (memory, sources that go to review, own tasks) run at once. */
+export function precisaConfirmar(me: Me, v: AcaoProposta): boolean {
+  const eu = me.pessoa?.id ?? "";
+  if (v.tipo === "lembrar" || v.tipo === "esquecer" || v.tipo === "guardar_conhecimento" || v.tipo === "guardar_email" || v.tipo === "registrar_conversa") return false;
+  if (v.tipo === "gmail_enviar") return !v.rascunho;
+  if (v.tipo === "evento_google") return !!v.convidados?.length;
+  if (v.tipo === "criar_tarefa") return !(eu && (v.responsaveis ?? []).every((r) => r === eu));
+  if (SO_MINHAS.has(v.tipo)) {
+    const tar = getTarefas().find((x) => x.id === (v as { id: string }).id);
+    return !(eu && tar && tar.responsaveis.length && tar.responsaveis.every((r) => r === eu));
+  }
+  return true; // enviar_whatsapp, atribuir, criar_evento, nota_projeto, revisar_fato, pedir_equipe, registrar_lancamento
+}
+const CONFIRMAR_TOOL = {
+  name: "confirmar",
+  description: "Executa uma mudança que voltou como rascunho (precisa_confirmar). Só chame DEPOIS de mostrar o rascunho à pessoa e ela dizer sim nesta conversa; nunca por conta própria.",
+  inputSchema: { type: "object", properties: { codigo: { type: "string", description: "o código do rascunho" } }, required: ["codigo"] },
+  annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+};
+
 export function ferramentasMCP(me: Me) {
   const lista = TOOLS.filter((t) => me.gestao || !SO_GESTAO.has(t.function.name)).map((t) => {
     const escreve = PROPOSTAS.has(t.function.name);
@@ -696,23 +724,40 @@ export function ferramentasMCP(me: Me) {
       annotations: { readOnlyHint: !escreve, destructiveHint: false, openWorldHint: t.function.name === "enviar_whatsapp" || t.function.name === "evento_google" },
     };
   });
-  return [...lista, { name: "minha_memoria", description: "O que o assistente do Nipëi sabe sobre a pessoa (itens aprovados por ela, com id para esquecer).", inputSchema: { type: "object", properties: {}, required: [] as string[] }, annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false } }];
+  return [...lista, CONFIRMAR_TOOL, { name: "minha_memoria", description: "O que o assistente do Nipëi sabe sobre a pessoa (itens aprovados por ela, com id para esquecer).", inputSchema: { type: "object", properties: {}, required: [] as string[] }, annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false } }];
 }
 
 export async function chamarMCP(me: Me, nome: string, args: Record<string, unknown>, quem: string): Promise<{ ok: boolean; dados: unknown }> {
   if (nome === "minha_memoria") return { ok: true, dados: getMemoria(donoMemoria(me)) };
+  const dono = donoMemoria(me), agora = Date.now();
+  for (const [k, x] of rascunhosMcp) if (agora - x.em > RASCUNHO_TTL) rascunhosMcp.delete(k);
+  if (nome === "confirmar") {
+    const codigo = String(args.codigo ?? "").trim(), r = rascunhosMcp.get(codigo);
+    if (!r || r.dono !== dono) return { ok: false, dados: { erro: "rascunho não encontrado ou vencido (15 min); proponha de novo" } };
+    rascunhosMcp.delete(codigo);
+    return executarMcp(me, r.acao, quem, dono, agora);
+  }
   if (SO_GESTAO.has(nome) && !me.gestao) return { ok: false, dados: { erro: "só a gestão" } };
   if (!PROPOSTAS.has(nome)) {
     if (!TOOLS.some((t) => t.function.name === nome)) return { ok: false, dados: { erro: `ferramenta desconhecida: ${nome}` } };
     const r = await ler(me, nome, args);
     return { ok: !(r && typeof r === "object" && "erro" in r), dados: r };
   }
-  // at most 40 changes per hour per person through MCP
-  const dono = donoMemoria(me), agora = Date.now();
-  const recentes = (escritasMcp.get(dono) ?? []).filter((x) => agora - x < 3600_000);
-  if (recentes.length >= 40) return { ok: false, dados: { erro: "limite de 40 mudanças por hora pelo app; tente mais tarde ou use a plataforma" } };
   const v = validar(me, nome, args);
   if ("erro" in v) return { ok: false, dados: v };
+  if (precisaConfirmar(me, v)) {
+    const codigo = randomBytes(4).toString("hex");
+    rascunhosMcp.set(codigo, { dono, acao: v, em: agora });
+    return { ok: true, dados: { precisa_confirmar: true, codigo, rascunho: v.resumo, detalhe: v.detalhe ?? null,
+      instrucao: "Nada foi feito ainda. Mostre o rascunho completo à pessoa e pergunte se pode fazer. Só se ela disser sim, chame confirmar com este código (vale 15 min)." } };
+  }
+  return executarMcp(me, v, quem, dono, agora);
+}
+
+/** Runs a validated change; at most 40 per hour per person through MCP. */
+async function executarMcp(me: Me, v: AcaoProposta, quem: string, dono: string, agora: number): Promise<{ ok: boolean; dados: unknown }> {
+  const recentes = (escritasMcp.get(dono) ?? []).filter((x) => agora - x < 3600_000);
+  if (recentes.length >= 40) return { ok: false, dados: { erro: "limite de 40 mudanças por hora pelo app; tente mais tarde ou use a plataforma" } };
   escritasMcp.set(dono, [...recentes, agora]);
   const link = await executarAcao(me, v, quem);
   return { ok: true, dados: { feito: v.resumo, detalhe: v.detalhe ?? null, link: link ? `https://os.nipeihu.app${link.startsWith("/") ? link : ""}` : null } };
@@ -729,7 +774,7 @@ export function instrucoesMCP(me: Me) {
   return `Nipëi OS: plataforma da comunidade do Santuário Nipeihu (povo Yawanawá). Você está conectado como ${p?.name ?? me.username}${me.gestao ? " (gestão, Equipe 1)" : ""}; equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}.
 Fuso: America/Bahia (consulte a data atual antes de usar "hoje", "amanhã"). Equipes: ${listaEquipes(equipes)}.
 ${mem.length ? `Memória aprovada pela pessoa (siga isto):\n${mem.map((x) => `- (${x.categoria}) ${x.texto}`).join("\n")}` : "Ainda não há memória sobre a pessoa."}
-Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência.
+Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência. Mudanças que saem da plataforma ou mexem com outras pessoas voltam como rascunho (precisa_confirmar): mostre o rascunho e só chame confirmar depois do sim dela.
 Memória: use lembrar só quando a pessoa pedir ou concordar; nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas.${me.gestao ? "\nNotas internas (notas_internas) são confidenciais da gestão: nunca as copie para mensagens, tarefas, projetos ou memória." : ""}`;
 }
 
