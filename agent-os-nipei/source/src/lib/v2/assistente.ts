@@ -5,6 +5,7 @@ import { avanco, ritmo } from "./objetivos";
 import { quemSabe } from "./pessoasFicha";
 import { buscarConhecimento, chaveTrecho, criarFonte, formatarConhecimento, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "./conhecimento";
 import { getAlertas } from "./auditor";
+import { montarDossie } from "./dossie";
 import { agendaDoDia, pulso } from "./hoje";
 import { missaoDaSemana } from "./missaoDados";
 import { erroLegivel, motorIA, registrarUsoIA } from "./motorIA";
@@ -179,6 +180,7 @@ const TOOLS = [
   fn("agenda", "Eventos dos próximos dias (com hora quando houver).", { dias: { type: "number" } }),
   fn("google_agenda", "Agenda PESSOAL do Google Calendar de quem fala com você (reuniões, compromissos), para ver disponibilidade. Só se a pessoa conectou a conta Google.", { dias: { type: "number", description: "padrão 7, máx. 31" } }),
   fn("buscar_conhecimento", "Base de conhecimento (só fatos confirmados). Para perguntas sobre o santuário, retiros, regras, valores, pessoas, projetos, empresas.", { pergunta: { type: "string" } }, ["pergunta"]),
+  fn("dossie", "Dossiê para PRODUZIR algo (apresentação, proposta, texto para web/redes, material de boas-vindas, análise): TUDO o que está confirmado sobre um tema ou projeto numa chamada, agrupado, com o Sobre dos projetos, números, arquivos do Acervo e o que a base não sabe. Use isto em vez de várias buscas. tema vazio ou \"santuário\" = a base inteira.", { tema: { type: "string", description: "projeto ou assunto (ex.: Inî Rau, retiros, BioLab); vazio = tudo" }, para: { type: "string", enum: ["externo", "interno"], description: "externo = material para quem é de fora (tira contatos, finanças, jurídico e projetos privados); interno = para a equipe" } }, ["para"]),
   fn("acervo", "Acervo: índice de links do Google Drive (fotos, vídeos, áudios, cursos, documentos, marca). Para achar ONDE está um arquivo ou pasta e dar o link.", { busca: { type: "string" }, tipo: { type: "string", enum: ["fotos", "videos", "audios", "cursos", "documentos", "marca", "outros"] } }),
   fn("conhecimento_pendente", "Fatos propostos esperando revisão (com id) e alertas do auditor abertos.", { equipe: { type: "string" }, texto: { type: "string" } }),
   fn("pessoas", "Pessoas da comunidade: nome, id, equipes, função e carga de tarefas.", { texto: { type: "string" }, equipe: { type: "string" } }),
@@ -315,6 +317,7 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
     const lista = getAcervo().filter((i) => (!a.tipo || i.tipo === s(a.tipo)) && (!ws.length || ws.some((w) => n(`${i.titulo} ${i.descricao}`).includes(w))));
     return lista.length ? lista.slice(0, 15).map((i) => ({ titulo: i.titulo, url: i.url, tipo: i.tipo, ano: i.ano || null, projeto: i.projeto || null, descricao: i.descricao || null })) : { aviso: "nada no acervo com isso" };
   }
+  if (nome === "dossie") return { dossie: montarDossie(me, s(a.tema), s(a.para) === "interno" ? "interno" : "externo") };
   if (nome === "buscar_conhecimento") {
     const p = s(a.pergunta);
     const fatos = buscarConhecimento(p, { origem: "pinu", limite: 8, me });
@@ -776,7 +779,7 @@ export function instrucoesMCP(me: Me) {
   return `Nipëi OS: plataforma da comunidade do Santuário Nipeihu (povo Yawanawá). Você está conectado como ${p?.name ?? me.username}${me.gestao ? " (gestão, Equipe 1)" : ""}; equipes: ${(p?.equipes ?? []).map(nomeEq).join(", ") || "-"}.
 Fuso: America/Bahia (consulte a data atual antes de usar "hoje", "amanhã"). Equipes: ${listaEquipes(equipes)}.
 ${mem.length ? `Memória aprovada pela pessoa (siga isto):\n${mem.map((x) => `- (${x.categoria}) ${x.texto}`).join("\n")}` : "Ainda não há memória sobre a pessoa."}
-Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência. Mudanças que saem da plataforma ou mexem com outras pessoas voltam como rascunho (precisa_confirmar): mostre o rascunho e só chame confirmar depois do sim dela.
+Regras: leia com as ferramentas antes de afirmar algo (nunca invente tarefas, pessoas, datas ou valores); quem é de qual equipe só pelas ferramentas pessoas/equipe; fale por títulos e nomes, não por ids; antes de mudar uma tarefa, ache o id com buscar_tarefas; cada mudança fica registrada em nome da pessoa — confirme com ela antes de várias mudanças em sequência. Para produzir algo (apresentação, proposta, texto, análise), comece por dossie (externo para quem é de fora). Mudanças que saem da plataforma ou mexem com outras pessoas voltam como rascunho (precisa_confirmar): mostre o rascunho e só chame confirmar depois do sim dela.
 Memória: use lembrar só quando a pessoa pedir ou concordar; nunca guarde saúde, senhas, dinheiro pessoal ou opiniões sobre outras pessoas.${me.gestao ? "\nNotas internas (notas_internas) são confidenciais da gestão: nunca as copie para mensagens, tarefas, projetos ou memória." : ""}`;
 }
 
