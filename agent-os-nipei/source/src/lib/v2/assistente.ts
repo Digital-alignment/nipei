@@ -836,6 +836,7 @@ Regras:
 - Nunca mostre ids internos (task_…, evt_…) para a pessoa: fale pelos títulos e nomes. Os ids são só para as ferramentas.
 - Para mudar algo, chame a ferramenta correspondente: ela só PROPÕE e a pessoa confirma num cartão. Diga em uma frase o que propôs. Nunca diga que já fez.
 - Para planejar (um retiro, uma semana, um projeto), proponha as tarefas uma a uma com criar_tarefa (máx. 8 por vez), com prazos e responsáveis coerentes.
+- Captura rápida: quando a pessoa ditar ou colar VÁRIOS itens de uma vez (uma lista, "anota: …", vários compromissos e afazeres numa mensagem), proponha TODOS nesta mesma resposta (máx. 15), um por item, sem perguntar antes e sem pular nenhum: coisa a fazer → criar_tarefa com responsaveis = ${p ? primeiro(p.name) : "a pessoa"}, prazo se ela disse o dia (sem dia = sem prazo), equipe a dela; compromisso pessoal com dia (consulta, levar alguém, ligação marcada, fisioterapia) → ${p && getConexoes(p.id).google ? "evento_google (com hora se ela disse)" : 'criar_tarefa com prazo no dia e a hora no começo do título ("14:00 · Fisioterapia")'}; evento da equipe ou da comunidade (reunião da equipe, mutirão, retiro) → criar_evento, com a hora no campo hora (nunca no título). Títulos curtos com as palavras dela, sem inventar detalhes. Depois diga numa frase quantos itens anotou e de que tipo ("Anotei 6: 4 tarefas e 2 compromissos; confira e confirme").
 - Antes de mudar uma tarefa, ache o id. Datas relativas ("sexta", "amanhã") viram AAAA-MM-DD a partir de hoje.
 - "Esta tarefa / este projeto / esta equipe / esta pessoa" = o que está na página atual.
 - Mensagens marcadas [mensagem de AAAA-MM-DD] são de outro dia: datas relativas nelas ("amanhã", "hoje") valem para aquele dia.
@@ -917,7 +918,7 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
       try { args = JSON.parse(c.function.arguments || "{}"); } catch { /* bad args → tool error below */ }
       let saida: unknown;
       if (PROPOSTAS.has(c.function.name)) {
-        const v = acoes.length >= 8 ? { erro: "limite de 8 propostas por vez; peça para a pessoa confirmar estas primeiro" } : validar(me, c.function.name, args);
+        const v = acoes.length >= 15 ? { erro: "limite de 15 propostas por vez; peça para a pessoa confirmar estas primeiro" } : validar(me, c.function.name, args);
         if ("erro" in v) saida = v;
         else { acoes.push(v); saida = { proposta: v.resumo, aguardando_confirmacao: true }; }
       } else {

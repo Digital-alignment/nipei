@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — Captura rápida no Pinu (10.11)
+
+- Regra de captura no prompt do assistente (tarefa / Google Agenda / Agenda), limite de 15 propostas por resposta, `decidirTodasAction` (confirmar ou cancelar todas numa chamada), ícone do tipo em cada item do cartão e a linha "Anotar várias coisas de uma vez" no início do Pinu.
+
 ## 2026-11-22 — Conversa do Pinu mais limpa (10.11, 9.7)
 
 - Respostas do Pinu sem balão, na largura toda (recuadas sob o mini-anel); ações completas só na última resposta (gerar outra, útil, não ajudou, ⋯ com ouvir/copiar/editar a pergunta), nas anteriores só ⋯; proposta cancelada riscada com o novo `BadgeEstado estado="cancelada"`.

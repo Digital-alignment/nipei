@@ -1805,6 +1805,30 @@ export async function avaliarRespostaAction(msg: number, nota: "boa" | "ruim") {
   }
 }
 
+/** Confirm (or cancel) every pending card of one answer in one call (DS 10.11, quick capture): one save and one refresh. */
+export async function decidirTodasAction(msg: number, confirmar: boolean) {
+  try {
+    const { me, id } = await assistenteDono();
+    const { executarAcao, getConversa, salvarConversa } = await import("@/lib/v2/assistente");
+    const { registrarEvento } = await import("@/lib/v2/eventos");
+    const msgs = getConversa(id);
+    let feito = false;
+    for (const c of msgs[msg]?.cartoes ?? []) {
+      if (c.estado !== "pendente") continue;
+      if (!confirmar) c.estado = "cancelado";
+      else {
+        try { c.link = await executarAcao(me, c, `${actorName(me)} (via assistente)`); c.estado = "feito"; feito = true; } catch (e) { c.estado = "erro"; c.erro = (e as Error).message; }
+      }
+      registrarEvento(me.pessoa?.id, confirmar ? (c.estado === "erro" ? "proposta falhou" : "confirmou proposta") : "cancelou proposta", c.resumo, "assistente");
+    }
+    salvarConversa(id, msgs);
+    if (feito) revalidatePath("/", "layout");
+    return { msgs };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
 export async function decidirCartaoAction(msg: number, cartao: number, confirmar: boolean) {
   try {
     const { me, id } = await assistenteDono();

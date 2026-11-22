@@ -915,3 +915,7 @@ Pedido do Ashuan (próximo passo da análise do Pinu). O WhatsApp já lia fotos 
 
 Pedido do Ashuan antes de testar o Pinu em produção ("ve el ui del pinu y mejóralo"). Decidido: as respostas do Pinu saem do balão verde e vão direto sobre o fundo na largura toda (como os apps de chat atuais; listas e respostas longas respiram); as ações aparecem só na última resposta (nas anteriores, só ⋯); proposta cancelada fica riscada com o badge "Cancelada". O balão da pessoa continua.
 
+## 2026-11-22 — Captura rápida no Pinu (§10.11)
+
+Pedido do Ashuan. O uso real mostrou o Jordão ditando compromissos soltos ("Levar crianças na escola", "Fisioterapia", "Ligar Tashka") que viraram tarefas uma a uma. Decidido: uma lista ditada vira uma resposta só com até 15 propostas (antes 8); o Pinu separa tarefa, compromisso pessoal (Google Agenda quando conectado) e evento da comunidade; "Confirmar todas" passa a ser uma chamada só no servidor (antes uma por item); cada item mostra o ícone do tipo. Planejar (retiro, semana) continua com até 8 tarefas por vez.
+

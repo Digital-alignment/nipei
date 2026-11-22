@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { assistenteAction, assistenteConversaAction, avaliarRespostaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
+import { assistenteAction, assistenteConversaAction, avaliarRespostaAction, decidirCartaoAction, decidirTodasAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
 import Campo from "@/components/ds/Campo";
 import Chip, { BadgeEstado } from "@/components/ds/Chip";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
-import Icone from "@/components/ds/Icone";
+import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Cartao from "@/components/ds/Cartao";
 import MenuAcoes from "@/components/ds/MenuAcoes";
 import { MiniAnelPinu, OrbePinu, type EstadoPinu } from "@/components/ds/Pinu";
@@ -24,10 +24,12 @@ type Labels = {
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
   comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
-  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string;
+  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string; anotarVarias: string; anotarDica: string; anotePrefixo: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
+// icon of each proposal kind in the card (DS 10.11, quick capture)
+const ICONE_PROPOSTA: Record<string, NomeIcone> = { criar_tarefa: "tarefa", criar_evento: "calendario", evento_google: "calendario", mudar_prazo: "prazo", enviar_whatsapp: "mensagem", gmail_enviar: "mensagem", comentar: "mensagem", atribuir: "pessoa", pedir_equipe: "enviar", guardar_conhecimento: "informacao", adicionar_acervo: "pasta", registrar_lancamento: "planilha" };
 // hints that travel with a WhatsApp receipt for the model only (whatsappEntrada.ts): never in the person's balloon (DS 10.11)
 const DICA_INTERNA = /\n?\[(?:anexou um comprovante|lido do comprovante pela IA)[^\]]*\]/g;
 const semDicas = (s: string) => s.replace(DICA_INTERNA, "").trim();
@@ -226,15 +228,11 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
     if ("error" in r && r.error) return setErro(r.error);
     setMsgs((r as { msgs: MsgSalva[] }).msgs);
   });
-  const todas = (mi: number) => start(async () => {
-    const cs = msgs?.[mi]?.cartoes ?? [];
-    let ultimo: MsgSalva[] | null = null;
-    for (let ci = 0; ci < cs.length; ci++) {
-      if (cs[ci].estado !== "pendente") continue;
-      const r = await decidirCartaoAction(mi, ci, true).catch(() => null);
-      if (r && "msgs" in r && r.msgs) ultimo = r.msgs;
-    }
-    if (ultimo) setMsgs(ultimo);
+  // confirm or cancel every pending card of one answer in one server call (DS 10.11, quick capture)
+  const todas = (mi: number, confirmar = true) => start(async () => {
+    const r = await decidirTodasAction(mi, confirmar).catch(() => ({ error: "Falha de conexão" } as { error: string }));
+    if ("error" in r && r.error) return setErro(r.error);
+    setMsgs((r as { msgs: MsgSalva[] }).msgs);
   });
   const verMemoria = () => start(async () => {
     const r = await memoriaAction().catch(() => ({ error: "Falha de conexão" } as { error: string }));
@@ -257,16 +255,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   const ultimaPergunta = [...(msgs ?? [])].reverse().find((m) => m.role === "user")?.content ?? "";
   const ultimaResposta = msgs ? msgs.map((m) => m.role).lastIndexOf("assistant") : -1;
   const ajustar = (resumo: string) => { setTexto(`${labels.ajustarTexto} ${resumo}: `); setTimeout(() => campo.current?.focus(), 30); };
-  const cancelarTodas = (mi: number) => start(async () => {
-    const cs = msgs?.[mi]?.cartoes ?? [];
-    let ultimo: MsgSalva[] | null = null;
-    for (let ci = 0; ci < cs.length; ci++) {
-      if (cs[ci].estado !== "pendente") continue;
-      const r = await decidirCartaoAction(mi, ci, false).catch(() => null);
-      if (r && "msgs" in r && r.msgs) ultimo = r.msgs;
-    }
-    if (ultimo) setMsgs(ultimo);
-  });
+  const cancelarTodas = (mi: number) => todas(mi, false);
 
   // campo do Pinu: grande no início, em pílula na conversa; ouvindo = o orbe toma o lugar do texto
   const campoPinu = (grande: boolean) => (
@@ -344,7 +333,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
             </div>
           ) : vazio ? (
             // início: saudação em dois tons · bento (Falar com o Pinu em folha = o destaque) · Recentes · campo grande
-            <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
+            <div className="flex flex-1 flex-col gap-5 overflow-y-auto overflow-x-hidden px-4 pb-4">
               <h2 className="saudacao mt-2"><span className="text-t1">{labels.oi}, {nome}.</span><br /><span className="text-t2">{labels.ajudar}</span></h2>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={falar}
@@ -361,8 +350,14 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                   </button>
                 ))}
               </div>
+              {/* captura rápida (DS 10.11): uma lista ditada ou colada vira várias propostas de uma vez */}
+              <button type="button" onClick={() => { setTexto(labels.anotePrefixo); setTimeout(() => { campo.current?.focus(); campo.current?.setSelectionRange(labels.anotePrefixo.length, labels.anotePrefixo.length); }, 30); }}
+                className="anel-foco flex min-h-12 items-center gap-3 rounded-[14px] bg-s1 px-3 text-left font-texto text-sm text-t1 hover:bg-s2">
+                <span className="grid size-8 shrink-0 place-items-center rounded-interno bg-s3"><Icone nome="tarefa" tamanho={17} /></span>
+                <span className="grid min-w-0 flex-1"><span className="font-medium">{labels.anotarVarias}</span><span className="meta text-t2">{labels.anotarDica}</span></span>
+              </button>
               {recentes.length > 0 && (
-                <div className="grid gap-2">
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
                   <p className="titulo-cartao">{labels.recentes}</p>
                   {recentes.map((r) => (
                     <button key={r} type="button" onClick={() => enviar(r)} disabled={pending}
@@ -377,7 +372,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
               <div className="mt-auto">{campoPinu(true)}</div>
             </div>
           ) : (<>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pb-3" aria-live="polite">
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto overflow-x-hidden px-4 pb-3" aria-live="polite">
               {msgs === null && <div className="grid gap-2"><Skeleton largura="70%" /><Skeleton largura="40%" /></div>}
               {msgs?.map((m, mi) => m.role === "user" ? (
                 // a pessoa: balão tonal à direita
@@ -409,7 +404,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                                 {c.estado === "feito" && <Icone nome="confirmar" tamanho={12} />}{c.estado === "erro" && <Icone nome="erro" tamanho={12} />}
                               </span>
                               <span className="grid min-w-0 flex-1 gap-0.5">
-                                {cs.length > 1 && <span className={`font-texto text-sm font-medium ${c.estado === "cancelado" ? "text-t3 line-through" : "text-t1"}`}>{c.resumo}</span>}
+                                {cs.length > 1 && <span className={`flex items-center gap-1.5 font-texto text-sm font-medium ${c.estado === "cancelado" ? "text-t3 line-through" : "text-t1"}`}><Icone nome={ICONE_PROPOSTA[c.tipo] ?? "tarefa"} tamanho={15} className="shrink-0 text-t2" />{c.resumo}</span>}
                                 {c.detalhe && <span className="meta line-clamp-4 whitespace-pre-wrap text-t2">{c.detalhe}</span>}
                                 {c.estado === "erro" && <span className="meta text-err">{c.erro}</span>}
                                 {c.estado === "feito" && c.link && <Link href={c.link} onClick={() => setAberto(false)} className="meta inline-flex items-center gap-1 text-ac-text underline"><Icone nome="abrir-fora" tamanho={14} />{labels.abrir}</Link>}
@@ -420,7 +415,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                         </ul>
                         {pend > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            <Botao type="button" icone="confirmar" tamanho="M" carregando={pending} onClick={() => (pend > 1 ? todas(mi) : decidir(mi, cs.findIndex((c) => c.estado === "pendente"), true))}>{pend > 1 ? labels.confirmarTodas : labels.confirmar}</Botao>
+                            <Botao type="button" icone="confirmar" tamanho="M" carregando={pending} onClick={() => (pend > 1 ? todas(mi) : decidir(mi, cs.findIndex((c) => c.estado === "pendente"), true))}>{pend > 1 ? `${labels.confirmarTodas} (${pend})` : labels.confirmar}</Botao>
                             <Botao type="button" variante="tonal" icone="editar" tamanho="M" desativado={pending} onClick={() => ajustar(cs.length === 1 ? cs[0].resumo : labels.propostas.replace("{n}", String(cs.length)))}>{labels.ajustar}</Botao>
                             <Botao type="button" variante="fantasma" icone="fechar" tamanho="M" desativado={pending} onClick={() => cancelarTodas(mi)}>{labels.cancelar}</Botao>
                           </div>
