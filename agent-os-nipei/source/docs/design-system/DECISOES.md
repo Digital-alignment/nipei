@@ -911,3 +911,7 @@ Pedido do Ashuan (próximo passo da análise do Pinu). O WhatsApp já lia fotos 
 - Guardar no Conhecimento guarda o arquivo original (fonte de arquivo, lida como um envio normal), nunca uma transcrição do Pinu. Recibo da gestão → lançamento com o arquivo como comprovante (o mesmo caminho do WhatsApp).
 - O arquivo fica 24 h num espaço por pessoa em `.jobs/assistente/anexos/` (fora do git), trocado pelo próximo. Evento "anexou no Pinu" só com o tipo (foto, PDF, texto).
 
+## 2026-11-22 — Conversa do Pinu mais limpa (§10.11)
+
+Pedido do Ashuan antes de testar o Pinu em produção ("ve el ui del pinu y mejóralo"). Decidido: as respostas do Pinu saem do balão verde e vão direto sobre o fundo na largura toda (como os apps de chat atuais; listas e respostas longas respiram); as ações aparecem só na última resposta (nas anteriores, só ⋯); proposta cancelada fica riscada com o badge "Cancelada". O balão da pessoa continua.
+

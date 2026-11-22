@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — Conversa do Pinu mais limpa (10.11, 9.7)
+
+- Respostas do Pinu sem balão, na largura toda (recuadas sob o mini-anel); ações completas só na última resposta (gerar outra, útil, não ajudou, ⋯ com ouvir/copiar/editar a pergunta), nas anteriores só ⋯; proposta cancelada riscada com o novo `BadgeEstado estado="cancelada"`.
+
 ## 2026-11-22 — Anexar foto ou arquivo no Pinu (10.11)
 
 - `AssistenteGlobal`: botão anexar no campo, prévia com miniatura/nome e ×, anexo no balão. `assistenteAction(texto, pagina, form)` → `lib/v2/pinuAnexo.ts` (bytes conferidos, 10 MB, 24 h, autoteste) → `conversar(…, anexo)` manda imagem/PDF/texto ao modelo; `guardar_conhecimento` aceita `anexo: true` (fonte de arquivo); recibo com `registrar_lancamento` fica como comprovante.

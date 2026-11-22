@@ -315,7 +315,7 @@ Pílula `superfície 2` com ícones; ativo = `superfície 3` + contorno de 1 px.
 
 ### 9.7 Badge
 - **Contagem**: círculo vermelho com número (ou só ponto) no canto do ícone, com anel da cor do fundo.
-- **Estado**: Pendente = **hachurado** + ampulheta · Em andamento = azul suave + enviar · Feita = verde suave + sucesso · Atrasada = vermelho suave + atenção · Nota interna = tonal + cadeado · Aviso = âmbar suave + ampulheta (ex.: "Reconectar", 10.12).
+- **Estado**: Pendente = **hachurado** + ampulheta · Em andamento = azul suave + enviar · Feita = verde suave + sucesso · Atrasada = vermelho suave + atenção · Nota interna = tonal + cadeado · Aviso = âmbar suave + ampulheta (ex.: "Reconectar", 10.12). · Cancelada = `superfície 3` + `t2` + fechar (proposta do Pinu cancelada, 10.11).
 
 ### 9.8 Avatar
 Tamanhos 24 · 32 · 40 · 56 · 80. Foto ou iniciais (Outfit 600) sobre a cor da equipe. Ponto de acento = online. Selo da equipe no canto (56+). Grupo sobreposto (−6 px) com "+N". Linha pessoa = avatar + nome (600) + "equipe · função".
@@ -495,10 +495,11 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
   - campo grande com anexar (ícone `imagem`) / microfone (ou enviar).
 - **Conversa**:
   - pessoa = **balão tonal à direita**;
-  - Pinu = **balão tingido de verde à esquerda**, com mini-anel + nome em cima;
-  - ações da resposta: gerar outra · editar · **útil / não ajudou** (ícones `gostei` / `nao-gostei`, botões de ícone fantasma de 40 px; escolhido = `ac-soft`/`ac-text` para útil e `superfície 3` para não ajudou; tocar de novo desfaz; embaixo, em `meta t3`, "Obrigado: isso ajuda a melhorar o Pinu.") · ⋯. A nota fica na mensagem e vira o evento "avaliou o Pinu" com as ferramentas que ele consultou (nunca o texto), contado no Painel → Sugestões do Pinu (2026-11-22);
+  - Pinu = **texto direto sobre o fundo, na largura toda** (sem balão; 2026-11-22: o balão verde de 88 % apertava as respostas longas e listas), com mini-anel + nome em cima;
+  - ações **só na última resposta** (2026-11-22: os 5 botões se repetiam embaixo de cada resposta): gerar outra · útil · não ajudou · ⋯ (ouvir, copiar, editar a pergunta); nas anteriores, só o ⋯ (com útil / não ajudou dentro) e, se já avaliada, o polegar escolhido. Ações de resposta: **útil / não ajudou** (ícones `gostei` / `nao-gostei`, botões de ícone fantasma de 40 px; escolhido = `ac-soft`/`ac-text` para útil e `superfície 3` para não ajudou; tocar de novo desfaz; embaixo, em `meta t3`, "Obrigado: isso ajuda a melhorar o Pinu.") · ⋯. A nota fica na mensagem e vira o evento "avaliou o Pinu" com as ferramentas que ele consultou (nunca o texto), contado no Painel → Sugestões do Pinu (2026-11-22);
   - sugestões de continuação em chips acima do campo.
 - **Anexar foto ou arquivo** (2026-11-22): botão de ícone fantasma `imagem` no campo (no início e na conversa) abre o seletor — foto JPG/PNG/WebP, PDF ou texto TXT/MD/CSV, até 10 MB, um por mensagem. O anexo esperando aparece em cima do texto: miniatura de 40 px (foto) ou quadrado `superfície 4` com `documento`, nome truncado e × para tirar; com anexo o campo vira coluna (como o grande). Dá para enviar só o anexo. No balão da pessoa, o anexo é uma linha `meta t2` com `imagem`/`documento` + nome acima do texto. O Pinu vê o arquivo naquela resposta; guardar no Conhecimento guarda o original (vira fonte de arquivo) e um recibo da gestão fica anexado ao lançamento confirmado. O arquivo fica 24 h no espaço da pessoa (um por vez).
+- **Proposta cancelada**: o item fica riscado em `t3` e o cartão mostra o badge `cancelada` ("Cancelada", ícone `fechar`, `superfície 3` + `t2`; estado novo do BadgeEstado, 9.7) (antes ficava igual a uma pendente).
 - **Cartão de proposta**: gradiente verde suave + brilho · ícone + "Criar 3 tarefas" + badge "Proposta" · lista do que será feito (responsável e prazo) · **Confirmar** (primário) · **Ajustar** (tonal) · **Cancelar** (fantasma).
 - **Pensando**: mini-orbe + o que ele está fazendo agora ("Lendo suas tarefas…", "Buscando no Conhecimento…", "Preparando a proposta…"; antes do primeiro passo, "Pensando…") + os passos já feitos em `meta t3` com ✓ (até 4) + skeleton de 2 linhas. O painel pergunta os passos a `/api/assistente/passos` a cada 0,7 s enquanto espera (2026-11-22: antes só "Pensando", com respostas de até ~20 s).
 - Adiado: modo voz em tela cheia, o que abre primeiro (voz ou chat), textura de curvas de nível, lista "o que o Pinu sabe fazer", deslizar para confirmar.

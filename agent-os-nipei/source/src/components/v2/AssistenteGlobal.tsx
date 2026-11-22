@@ -24,7 +24,7 @@ type Labels = {
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
   comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
-  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string;
+  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
@@ -388,22 +388,19 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                     {falando === mi ? <OrbePinu estado="falando" tamanho={20} /> : <MiniAnelPinu tamanho={18} />}Pinu
                   </span>
                   {m.content && (
-                    // o Pinu: balão tingido de verde à esquerda
-                    <div className="max-w-[88%] self-start rounded-[18px_18px_18px_6px] px-3.5 py-2.5 font-texto text-[15px] leading-relaxed text-t1 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ac)_14%,transparent)]"
-                      style={{ background: "linear-gradient(160deg, color-mix(in srgb, var(--ac) 16%, transparent), var(--s1) 80%)" }}>
-                      <Md>{m.content}</Md>
-                    </div>
+                    // o Pinu: texto direto sobre o fundo, na largura toda (DS 10.11)
+                    <div className="pl-7 font-texto text-[15px] leading-relaxed text-t1"><Md>{m.content}</Md></div>
                   )}
                   {(m.cartoes?.length ?? 0) > 0 && (() => {
                     const cs = m.cartoes!;
                     const pend = cs.filter((c) => c.estado === "pendente").length;
                     return (
                       // cartão de proposta: título + "Proposta" · o que será feito · Confirmar / Ajustar / Cancelar
-                      <Cartao variante="pinu" className="max-w-[94%] self-start">
+                      <Cartao variante="pinu" className="ml-7">
                         <div className="flex items-center gap-2">
                           <Icone nome="tarefa" tamanho={20} className="text-ac-text" />
-                          <span className="titulo-cartao min-w-0 flex-1">{cs.length === 1 ? cs[0].resumo : labels.propostas.replace("{n}", String(cs.length))}</span>
-                          {pend > 0 ? <BadgeEstado estado="andamento">{labels.proposta}</BadgeEstado> : cs.some((c) => c.estado === "feito") && <BadgeEstado estado="feita">{labels.feito}</BadgeEstado>}
+                          <span className={`titulo-cartao min-w-0 flex-1 ${cs.every((c) => c.estado === "cancelado") ? "text-t3 line-through" : ""}`}>{cs.length === 1 ? cs[0].resumo : labels.propostas.replace("{n}", String(cs.length))}</span>
+                          {pend > 0 ? <BadgeEstado estado="andamento">{labels.proposta}</BadgeEstado> : cs.some((c) => c.estado === "feito") ? <BadgeEstado estado="feita">{labels.feito}</BadgeEstado> : <BadgeEstado estado="cancelada">{labels.cancelada}</BadgeEstado>}
                         </div>
                         <ul className="grid gap-2">
                           {cs.map((c, ci) => (
@@ -431,22 +428,28 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                       </Cartao>
                     );
                   })()}
-                  {m.content && (
-                    // ações da resposta: gerar outra · editar (a pergunta) · ⋯ (ouvir, copiar)
-                    <div className="-ml-2 flex items-center gap-0.5 text-t3">
-                      {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="gerar-outra" aria-label={labels.gerarOutra} tamanho={40} variante="fantasma" disabled={pending} onClick={() => enviar(ultimaPergunta)} />}
-                      {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="editar" aria-label={labels.editarPergunta} tamanho={40} variante="fantasma" onClick={() => { setTexto(semDicas(ultimaPergunta)); setTimeout(() => campo.current?.focus(), 30); }} />}
-                      <BotaoIcone icone="gostei" aria-label={labels.util} aria-pressed={m.nota === "boa"} tamanho={40} variante="fantasma" disabled={pending} onClick={() => avaliar(mi, "boa")} className={m.nota === "boa" ? "bg-ac-soft text-ac-text" : ""} />
-                      <BotaoIcone icone="nao-gostei" aria-label={labels.naoAjudou} aria-pressed={m.nota === "ruim"} tamanho={40} variante="fantasma" disabled={pending} onClick={() => avaliar(mi, "ruim")} className={m.nota === "ruim" ? "bg-s3 text-t1" : ""} />
-                      <MenuAcoes rotulo={labels.maisOpcoes} alinhar="esquerda" itens={[
-                        falando === mi
-                          ? { icone: "fechar", rotulo: labels.parar, onSelect: pararFala }
-                          : { icone: "microfone", rotulo: labels.ouvir, onSelect: () => { desbloquear(); porVoz.current = false; void falarMsg(m, mi); } },
-                        { icone: "baixar", rotulo: labels.copiar, onSelect: () => { void navigator.clipboard?.writeText(m.content); } },
-                      ]} />
-                    </div>
-                  )}
-                  {m.content && m.nota && <p className="meta -mt-1 text-t3">{labels.obrigado}</p>}
+                  {m.content && (() => {
+                    // ações (DS 10.11): completas só na última resposta; nas anteriores só o ⋯ (e o polegar já escolhido)
+                    const ultima = mi === ultimaResposta;
+                    const polegar = (nota: "boa" | "ruim") => <BotaoIcone icone={nota === "boa" ? "gostei" : "nao-gostei"} aria-label={nota === "boa" ? labels.util : labels.naoAjudou} aria-pressed={m.nota === nota} tamanho={40} variante="fantasma" disabled={pending} onClick={() => avaliar(mi, nota)}
+                      className={m.nota === nota ? (nota === "boa" ? "bg-ac-soft text-ac-text" : "bg-s3 text-t1") : ""} />;
+                    return (
+                      <div className="flex items-center gap-0.5 pl-5 text-t3">
+                        {ultima && ultimaPergunta && <BotaoIcone icone="gerar-outra" aria-label={labels.gerarOutra} tamanho={40} variante="fantasma" disabled={pending} onClick={() => enviar(ultimaPergunta)} />}
+                        {(ultima || m.nota === "boa") && polegar("boa")}
+                        {(ultima || m.nota === "ruim") && polegar("ruim")}
+                        <MenuAcoes rotulo={labels.maisOpcoes} alinhar="esquerda" itens={[
+                          falando === mi
+                            ? { icone: "fechar", rotulo: labels.parar, onSelect: pararFala }
+                            : { icone: "microfone", rotulo: labels.ouvir, onSelect: () => { desbloquear(); porVoz.current = false; void falarMsg(m, mi); } },
+                          { icone: "baixar", rotulo: labels.copiar, onSelect: () => { void navigator.clipboard?.writeText(m.content); } },
+                          ...(ultima && ultimaPergunta ? [{ icone: "editar" as const, rotulo: labels.editarPergunta, onSelect: () => { setTexto(semDicas(ultimaPergunta)); setTimeout(() => campo.current?.focus(), 30); } }] : []),
+                          ...(!ultima && !m.nota ? [{ icone: "gostei" as const, rotulo: labels.util, onSelect: () => avaliar(mi, "boa") }, { icone: "nao-gostei" as const, rotulo: labels.naoAjudou, onSelect: () => avaliar(mi, "ruim") }] : []),
+                        ]} />
+                        {ultima && m.nota && <span className="meta ml-1 text-t3">{labels.obrigado}</span>}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
               {pending && msgs !== null && (

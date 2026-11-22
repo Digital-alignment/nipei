@@ -118,7 +118,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
             vozLigar: t.vozLigar, vozDesligar: t.vozDesligar, ouvir: t.ouvirLbl, parar: t.pararLbl, propostasFala: t.propostasFala,
             comprovanteAnexado: t.comprovanteAnexado, oi: t.pinuOi, ajudar: t.pinuAjudar, recentes: t.pinuRecentes, falarPinu: t.falarPinu, enviar: t.enviarLbl, gerarOutra: t.gerarOutra, editarPergunta: t.editarPergunta,
             maisOpcoes: t.maisOpcoes, copiar: t.copiarTexto, proposta: t.propostaLbl, propostas: t.propostasN, ajustar: t.ajustarLbl, ajustarTexto: t.ajustarTexto,
-            passos: t.pinuPassos, util: t.pinuUtil, naoAjudou: t.pinuNaoAjudou, obrigado: t.pinuObrigado, anexar: t.pinuAnexar, tirarAnexo: t.pinuTirarAnexo }} />
+            passos: t.pinuPassos, util: t.pinuUtil, naoAjudou: t.pinuNaoAjudou, obrigado: t.pinuObrigado, anexar: t.pinuAnexar, tirarAnexo: t.pinuTirarAnexo, cancelada: t.pinuCancelada }} />
         </Suspense>
       )}
      </ProvedorAvisos>
