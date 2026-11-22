@@ -876,3 +876,12 @@ Pedido do Ashuan. Nenhuma das 4 equipes tem o Sobre escrito, e é dele que o Pin
 ## 2026-11-16 — 14 ícones funcionais que faltavam (§7)
 
 Pedido do Ashuan ("sí, haz los íconos"). Desenhados por Claude no traço do conjunto (§7.2–7.3): um path, preenchimento, contorno de ~2,4 px com bordas levemente arqueadas, pontas redondas, ponto como assinatura onde cabe; conferidos a 18 e 44 px ao lado de `calendario`, `tarefa` e `cadeado`. `quadro` (três colunas), `grade` (quatro quadrados), `semana` (calendário + faixa), `mes` (calendário + grade), `copiar`, `ver`/`ocultar` (olho; ocultar com a barra), `sem-conexao` (wi-fi cortado), `documento` (folha com dobra e linhas), `planilha`, `apresentacao` (quadro com pé), `video`, `audio`, `pasta`. Trocam os provisórios em Tarefas, Agenda, Acervo, Exportar para o Google, Login, aviso sem conexão, Copiar e Relatório de Finanças. Se o Ashuan quiser outro desenho, troca-se o SVG e roda `npm run icones`.
+
+## 2026-11-22 — Hoje mais limpo (§10.5.1)
+
+Pedido do Ashuan ("quiero que sea más limpio"). Antes de ver uma tarefa, Hoje mostrava saudação, resumo, até 9 Chips de pendências em dois grupos, a semana e o foco sugerido; e repetia "nada pendente" duas vezes. Decidido (recomendações 1–3 aprovadas por ele):
+
+- Pendências: até 3 = Chips direto; 4+ = uma linha "N para você · M da equipe" que abre os grupos.
+- Foco sugerido com Agora vazia vira o estado vazio da aba Agora ("Começar por estas?"), em vez de uma lista acima que contradizia o "Nada pendente".
+- Sem "Nada pendente para hoje." no topo; estado vazio sem emoji; aba Novidades só quando se chega por ela (o sino já leva); "Nova tarefa" sai do "+" de Hoje (o campo rápido de Agora cria).
+- Ficam para depois (recomendações 4–5, não pedidas agora): semana mais fina e ações da linha só no hover.

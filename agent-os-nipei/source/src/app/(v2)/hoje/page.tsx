@@ -236,6 +236,14 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   ].sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
   const proximoId = linhaTempo.find((x) => x.hora && x.hora >= agoraHM)?.id;
   const amanha = semana[1].abertasDia;
+  // empty Agora and no chosen focus: the suggestion is Agora's empty state, not a second list above it (DS 10.5.1)
+  const focoNaAgora = !foco.length && agora.length === 0 && sugestao.length > 0 && !fechouDia;
+  const usarSugestao = (rotulo: string) => (
+    <form action={focoAction} className="mt-2">
+      {sugestao.map((x) => <input key={x.id} type="hidden" name="ids" value={x.id} />)}
+      <BotaoEnviar enviando="…" icone="inicio" variante="fantasma" tamanho="P">{rotulo}</BotaoEnviar>
+    </form>
+  );
   // linhas de atividade (Novidades, Esperando você): tarefa + quem fez o quê, quando
   const atividades = (itens: typeof novidades) => (
     <ul className="overflow-hidden rounded-cartao bg-s1">
@@ -275,14 +283,31 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             nHoje > 0 && <span key="h">{nHoje} {t.hj.resumoHoje}</span>,
             nEv > 0 && <span key="e">{nEv} {nEv === 1 ? t.hj.resumoEvento : t.hj.resumoEventos}</span>,
           ].filter(Boolean);
-          return <p className="corpo text-t2">{partes.length ? partes.map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>) : t.hj.nadaHoje}</p>;
+          return partes.length > 0 && <p className="corpo text-t2">{partes.map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>;
         })()}
-        {/* pending items in two groups (DS 10.5.1): for you (events first, then by urgency) and team/management */}
-        {([["voce", t.hj.paraVoce, [
-          ...proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>),
-          ...paraVoce.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>),
-        ]], ["equipe", t.hj.equipeGestao, daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents">{x.equipe ? <Chip href={x.href} tipo="equipe" equipe={x.equipe}>{x.texto}</Chip> : <Chip href={x.href} icone={x.icone}>{x.texto}</Chip>}</span>)]] as const)
-          .filter(([, , chips]) => chips.length > 0).map(([id, rotulo, chips]) => <FilaPendencias key={id} rotulo={rotulo} itens={[...chips]} />)}
+        {/* pending items (DS 10.5.1): up to 3 = chips; 4+ = one summary line that opens the two groups */}
+        {(() => {
+          const chipsVoce = [
+            ...proximos.map((e) => <Chip key={e.id} href={linkEvento(e)} icone="prazo">{e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}{e.hora && ` ${e.hora}`} · {e.titulo}</Chip>),
+            ...paraVoce.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents"><Chip href={x.href} icone={x.icone}>{x.texto}</Chip></span>),
+          ];
+          const chipsEquipe = daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents">{x.equipe ? <Chip href={x.href} tipo="equipe" equipe={x.equipe}>{x.texto}</Chip> : <Chip href={x.href} icone={x.icone}>{x.texto}</Chip>}</span>);
+          const total = chipsVoce.length + chipsEquipe.length;
+          if (!total) return null;
+          if (total <= 3) return <div className="flex flex-wrap gap-2">{chipsVoce}{chipsEquipe}</div>;
+          const resumo = [chipsVoce.length && `${chipsVoce.length} ${t.hj.pendVoce}`, chipsEquipe.length && `${chipsEquipe.length} ${t.hj.pendEquipe}`].filter(Boolean).join(" · ");
+          return (
+            <details className="group">
+              <summary className="anel-foco w-fit cursor-pointer list-none rounded-pilula [&::-webkit-details-marker]:hidden">
+                <Chip icone="abrir" className="group-hover:bg-s3 group-hover:text-t1 group-open:bg-s3 group-open:text-t1">{resumo}</Chip>
+              </summary>
+              <div className="mt-3 grid gap-3">
+                {chipsVoce.length > 0 && <FilaPendencias rotulo={t.hj.paraVoce} itens={chipsVoce} />}
+                {chipsEquipe.length > 0 && <FilaPendencias rotulo={t.hj.equipeGestao} itens={chipsEquipe} />}
+              </div>
+            </details>
+          );
+        })()}
       </header>
 
       {linhaTempo.length > 0 && !doDia && (
@@ -465,18 +490,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         </section>
       )}
 
-      {me && !doDia && !triagem && (foco.length > 0 || sugestaoUtil) && (
+      {me && !doDia && !triagem && (foco.length > 0 || (sugestaoUtil && !focoNaAgora)) && (
         // foco de hoje (seção 10.5.1): até 3 tarefas; vazio = sugestão da ordem inteligente com "Usar estas"
         <section aria-label={t.focoHoje} className="mb-6">
           <GrupoTarefas titulo={<>{t.focoHoje}{!foco.length && <span className="meta ml-2 font-normal text-t3">{t.focoSugestao}</span>}</>} contagem={foco.length ? foco.length : undefined}>
             {(foco.length ? foco : sugestao).map((x) => linha(x, "datadas"))}
           </GrupoTarefas>
-          {!foco.length && (
-            <form action={focoAction} className="mt-2">
-              {sugestao.map((x) => <input key={x.id} type="hidden" name="ids" value={x.id} />)}
-              <BotaoEnviar enviando="…" icone="inicio" variante="fantasma" tamanho="P">{t.focoUsar}</BotaoEnviar>
-            </form>
-          )}
+          {!foco.length && usarSugestao(t.focoUsar)}
         </section>
       )}
 
@@ -493,10 +513,12 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                   acaoDireita={<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" />} />
               </form>
             )}
-            {grupos(agora, "datadas", oAgora.selos, [
-              { id: "atrasadas", titulo: t.atrasadas, dentro: (x) => x.prazo < hoje, alerta: true },
-              { id: "hoje", titulo: t.grpHoje, dentro: (x) => x.prazo === hoje },
-            ])}
+            {focoNaAgora
+              ? <><GrupoTarefas titulo={<>{t.hj.comecarPor}<span className="meta ml-2 font-normal text-t3">{t.focoSugestao}</span></>}>{sugestao.map((x) => linha(x, "datadas"))}</GrupoTarefas>{usarSugestao(t.focoUsar)}</>
+              : grupos(agora, "datadas", oAgora.selos, [
+                { id: "atrasadas", titulo: t.atrasadas, dentro: (x) => x.prazo < hoje, alerta: true },
+                { id: "hoje", titulo: t.grpHoje, dentro: (x) => x.prazo === hoje },
+              ])}
           </> },
           { id: "proximas", rotulo: t.proximas, contagem: proximas.length, conteudo: grupos(proximas, "datadas", oProx.selos, [
             { id: "amanha", titulo: t.grpAmanha, dentro: (x) => x.prazo === dia(1) },
@@ -506,7 +528,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           { id: "semdata", rotulo: t.semData, contagem: semData.length, conteudo: grupos(semData, "semdata", oSem.selos, [{ id: "semdata", titulo: t.semData, dentro: () => true }]) },
           // esperando você: só aparece quando há algo (comentários que pedem resposta minha)
           ...(esperando.length ? [{ id: "esperando", rotulo: t.esperandoTitulo, contagem: esperando.length, alerta: true, conteudo: atividades(esperando) }] : []),
-          { id: "novidades", rotulo: t.novidades, contagem: novidades.length, conteudo: novidades.length ? atividades(novidades) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> },
+          // novidades: only when arriving through it (bell or the "N novidades" chip); always visible it repeated the bell
+          ...(q.aba === "novidades" ? [{ id: "novidades", rotulo: t.novidades, contagem: novidades.length, conteudo: novidades.length ? atividades(novidades) : <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> }] : []),
         ]} />
       )}
 
@@ -554,7 +577,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       {/* "+" flutuante: ações de criação (acima da barra do celular) */}
       <div className="print:hidden fixed bottom-[calc(7.25rem+env(safe-area-inset-bottom))] right-4 z-30 md:bottom-8 md:right-8">
         <MenuAcoes gatilho="criar" rotulo={t.criarLbl} itens={[
-          { icone: "tarefa", rotulo: t.novaTarefa, href: "/tarefas/nova" },
           { icone: "calendario", rotulo: t.novoEvento, href: "/eventos/novo" },
           { icone: "enviar", rotulo: t.eq.pedirA, href: "/pedidos/novo" },
           { icone: "enviar", rotulo: t.novaFonteConhecimento, href: "/conhecimento#enviar" },
