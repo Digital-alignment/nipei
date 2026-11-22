@@ -902,3 +902,12 @@ Pedido do Ashuan, depois da análise de uso (12 conversas com o Pinu em ~4 seman
 - Cada resposta tem útil / não ajudou. Guardado na mensagem e como evento só com as ferramentas consultadas, para achar onde ele erra sem ler conversas. Os números aparecem no Painel → Sugestões do Pinu.
 - Dois ícones novos, `gostei` e `nao-gostei` (polegar), desenhados por Claude no traço do conjunto (contorno de ~2 px, cantos arredondados, punho cheio). Se o Ashuan quiser outro desenho, troca-se o SVG e roda `npm run icones`.
 
+## 2026-11-22 — Anexar foto ou arquivo no Pinu (§10.11)
+
+Pedido do Ashuan (próximo passo da análise do Pinu). O WhatsApp já lia fotos e PDFs; o painel não recebia nada ("Não há +/imagem no campo"). Decidido:
+
+- Um anexo por mensagem: foto, PDF ou texto (os mesmos formatos do Conhecimento), até 10 MB; o servidor confere os bytes, não o tipo do navegador.
+- O modelo vê o anexo só na resposta daquela mensagem (custo); depois fica "[anexou: nome]" no histórico e, se a pessoa voltar a ele, o Pinu pede para anexar de novo.
+- Guardar no Conhecimento guarda o arquivo original (fonte de arquivo, lida como um envio normal), nunca uma transcrição do Pinu. Recibo da gestão → lançamento com o arquivo como comprovante (o mesmo caminho do WhatsApp).
+- O arquivo fica 24 h num espaço por pessoa em `.jobs/assistente/anexos/` (fora do git), trocado pelo próximo. Evento "anexou no Pinu" só com o tipo (foto, PDF, texto).
+

@@ -1756,19 +1756,28 @@ export async function assistenteConversaAction() {
   }
 }
 
-export async function assistenteAction(texto: string, pagina: string) {
+export async function assistenteAction(texto: string, pagina: string, form?: FormData) {
   try {
     const { me, id } = await assistenteDono();
-    const q = String(texto ?? "").trim().slice(0, 2000);
+    // a photo/file attached in the panel (DS 10.11): saved in the person's slot, then shown to the model in this answer
+    const arquivo = form?.get("anexo");
+    const anexoPinu = await import("@/lib/v2/pinuAnexo");
+    const anexo = arquivo instanceof File && arquivo.size ? anexoPinu.salvarAnexo(id, arquivo.name, Buffer.from(await arquivo.arrayBuffer())) : null;
+    const q = (String(texto ?? "").trim() || (anexo ? (await getT()).t.pinuVejaAnexo : "")).slice(0, 2000);
     if (!q) return { error: "Mensagem vazia" };
     const { conversar, getConversa, paraModelo, salvarConversa } = await import("@/lib/v2/assistente");
     const { getLang } = await import("@/lib/v2/i18n");
     contarUso(id);
-    const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString() }];
+    const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString(), ...(anexo ? { anexo: { nome: anexo.nome, mime: anexo.mime } } : {}) }];
     const passos = await import("@/lib/v2/pinuPassos");
     passos.iniciarPassos(id);
-    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300), (f) => passos.anotarPasso(id, f))
+    const ax = anexo ? anexoPinu.getAnexo(id) : null;
+    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300), (f) => passos.anotarPasso(id, f), ax ? anexoPinu.parteDoAnexo(ax) : undefined)
       .finally(() => passos.encerrarPassos(id));
+    // a receipt: the photo/PDF waits for the entry the person confirms (same path as WhatsApp, comprovantes.ts)
+    if (ax && me.pessoa && (ax.mime === "application/pdf" || ax.mime.startsWith("image/")) && r.acoes.some((a) => a.tipo === "registrar_lancamento"))
+      (await import("@/lib/v2/comprovantes")).guardarReciboPendente(me.pessoa.id, ax.bytes.toString("base64"), ax.mime);
+    if (anexo) (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "anexou no Pinu", anexo.mime.startsWith("image/") ? "foto" : anexo.mime === "application/pdf" ? "PDF" : "texto", "assistente");
     msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), ...(r.consultas.length ? { consultas: r.consultas } : {}), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
     (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "usou o assistente", r.acoes.length ? `${r.acoes.length} proposta(s)` : "consulta", "assistente");
     salvarConversa(id, msgs);

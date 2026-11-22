@@ -492,12 +492,13 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
   - saudação em dois tons;
   - bento com **"Falar com o Pinu" em folha preenchida** (o destaque da tela) + 2 sugestões;
   - Recentes;
-  - campo grande com + / imagem / microfone.
+  - campo grande com anexar (ícone `imagem`) / microfone (ou enviar).
 - **Conversa**:
   - pessoa = **balão tonal à direita**;
   - Pinu = **balão tingido de verde à esquerda**, com mini-anel + nome em cima;
   - ações da resposta: gerar outra · editar · **útil / não ajudou** (ícones `gostei` / `nao-gostei`, botões de ícone fantasma de 40 px; escolhido = `ac-soft`/`ac-text` para útil e `superfície 3` para não ajudou; tocar de novo desfaz; embaixo, em `meta t3`, "Obrigado: isso ajuda a melhorar o Pinu.") · ⋯. A nota fica na mensagem e vira o evento "avaliou o Pinu" com as ferramentas que ele consultou (nunca o texto), contado no Painel → Sugestões do Pinu (2026-11-22);
   - sugestões de continuação em chips acima do campo.
+- **Anexar foto ou arquivo** (2026-11-22): botão de ícone fantasma `imagem` no campo (no início e na conversa) abre o seletor — foto JPG/PNG/WebP, PDF ou texto TXT/MD/CSV, até 10 MB, um por mensagem. O anexo esperando aparece em cima do texto: miniatura de 40 px (foto) ou quadrado `superfície 4` com `documento`, nome truncado e × para tirar; com anexo o campo vira coluna (como o grande). Dá para enviar só o anexo. No balão da pessoa, o anexo é uma linha `meta t2` com `imagem`/`documento` + nome acima do texto. O Pinu vê o arquivo naquela resposta; guardar no Conhecimento guarda o original (vira fonte de arquivo) e um recibo da gestão fica anexado ao lançamento confirmado. O arquivo fica 24 h no espaço da pessoa (um por vez).
 - **Cartão de proposta**: gradiente verde suave + brilho · ícone + "Criar 3 tarefas" + badge "Proposta" · lista do que será feito (responsável e prazo) · **Confirmar** (primário) · **Ajustar** (tonal) · **Cancelar** (fantasma).
 - **Pensando**: mini-orbe + o que ele está fazendo agora ("Lendo suas tarefas…", "Buscando no Conhecimento…", "Preparando a proposta…"; antes do primeiro passo, "Pensando…") + os passos já feitos em `meta t3` com ✓ (até 4) + skeleton de 2 linhas. O painel pergunta os passos a `/api/assistente/passos` a cada 0,7 s enquanto espera (2026-11-22: antes só "Pensando", com respostas de até ~20 s).
 - Adiado: modo voz em tela cheia, o que abre primeiro (voz ou chat), textura de curvas de nível, lista "o que o Pinu sabe fazer", deslizar para confirmar.

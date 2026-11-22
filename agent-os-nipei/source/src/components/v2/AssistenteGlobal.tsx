@@ -24,7 +24,7 @@ type Labels = {
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
   comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
-  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string;
+  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
@@ -72,6 +72,15 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   const [aberto, setAberto] = useState(false);
   const [msgs, setMsgs] = useState<MsgSalva[] | null>(null);
   const [passos, setPassos] = useState<string[]>([]);
+  // photo/file attached to the next message (DS 10.11); images get a thumbnail in the field
+  const [anexo, setAnexo] = useState<File | null>(null);
+  const arquivo = useRef<HTMLInputElement>(null);
+  const [miniatura, setMiniatura] = useState("");
+  useEffect(() => {
+    if (!anexo || !anexo.type.startsWith("image/")) { setMiniatura(""); return; }
+    const u = URL.createObjectURL(anexo); setMiniatura(u);
+    return () => URL.revokeObjectURL(u);
+  }, [anexo]);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [ouvindo, setOuvindo] = useState(false);
@@ -146,22 +155,25 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
 
   const enviar = useCallback((conteudo: string) => {
     const q = conteudo.trim();
-    if (!q) return;
-    setTexto(""); setErro("");
-    setMsgs((m) => [...(m ?? []), { role: "user", content: q, em: new Date().toISOString() }]);
-    setRecentes((r) => { const n = [q.slice(0, 140), ...r.filter((x) => x !== q.slice(0, 140))].slice(0, 4); try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(n)); } catch { /* private mode */ } return n; });
+    const ax = anexo;
+    if (!q && !ax) return;
+    setTexto(""); setErro(""); setAnexo(null);
+    setMsgs((m) => [...(m ?? []), { role: "user", content: q, em: new Date().toISOString(), ...(ax ? { anexo: { nome: ax.name, mime: ax.type } } : {}) }]);
+    if (q) setRecentes((r) => { const n = [q.slice(0, 140), ...r.filter((x) => x !== q.slice(0, 140))].slice(0, 4); try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(n)); } catch { /* private mode */ } return n; });
     setPassos([]);
     start(async () => {
       // what the Pinu is doing (DS 10.11): poll its steps while the answer is prepared
       const poll = setInterval(() => { void fetch("/api/assistente/passos", { cache: "no-store" }).then((x) => (x.ok ? x.json() : null)).then((j) => { if (j?.passos) setPassos(j.passos); }).catch(() => {}); }, 700);
-      const r = await assistenteAction(q, pagina).catch(() => ({ error: "Falha de conexão" } as { error: string })).finally(() => { clearInterval(poll); setPassos([]); });
+      const form = ax ? new FormData() : undefined;
+      if (ax) form!.set("anexo", ax);
+      const r = await assistenteAction(q, pagina, form).catch(() => ({ error: "Falha de conexão" } as { error: string })).finally(() => { clearInterval(poll); setPassos([]); });
       if ("error" in r && r.error) return setErro(r.error);
       const novas = (r as { msgs: MsgSalva[] }).msgs;
       setMsgs(novas);
       const ultima = novas.length - 1;
       if (vozRef.current && novas[ultima]?.role === "assistant") void falarMsg(novas[ultima], ultima);
     });
-  }, [pagina, falarMsg]);
+  }, [pagina, falarMsg, anexo]);
 
   // open from anywhere (phone bar, Hoje's field), optionally with a first message
   useEffect(() => {
@@ -259,7 +271,19 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   // campo do Pinu: grande no início, em pílula na conversa; ouvindo = o orbe toma o lugar do texto
   const campoPinu = (grande: boolean) => (
     <form onSubmit={(e) => { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); }}
-      className={`flex shrink-0 gap-2 bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      className={`flex shrink-0 gap-2 bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande || anexo ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      {anexo && (
+        // the attachment waiting to go with the message: thumbnail (photo) or icon + name, and remove
+        <span className="flex items-center gap-2.5 self-start rounded-interno bg-s3 py-1.5 pl-1.5 pr-1">
+          {miniatura
+            ? <img src={miniatura} alt="" className="size-10 rounded-[8px] object-cover" />
+            : <span className="grid size-10 place-items-center rounded-[8px] bg-s4 text-t1"><Icone nome="documento" tamanho={18} /></span>}
+          <span className="meta max-w-[180px] truncate text-t1">{anexo.name}</span>
+          <BotaoIcone icone="fechar" aria-label={labels.tirarAnexo} tamanho={40} variante="fantasma" onClick={() => setAnexo(null)} />
+        </span>
+      )}
+      <input ref={arquivo} type="file" hidden accept="image/jpeg,image/png,image/webp,application/pdf,.txt,.md,.csv"
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (!f) return; if (f.size > 10 * 1024 * 1024) return setErro("Arquivo grande demais (máx. 10 MB)"); setErro(""); setAnexo(f); }} />
       {ouvindo ? (
         <span className="flex min-h-11 flex-1 items-center gap-3" aria-live="polite">
           <OrbePinu estado="ouvindo" tamanho={40} /><span className="corpo text-t1">{labels.ouvindo}</span>
@@ -268,10 +292,11 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
         <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={grande ? 2 : 1} maxLength={2000} aria-label={labels.placeholder}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
           placeholder={labels.placeholder}
-          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande ? "min-h-12" : "max-h-32 min-h-11 self-center py-2.5"}`} />
+          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande || anexo ? "min-h-12 w-full" : "max-h-32 min-h-11 self-center py-2.5"}`} />
       )}
-      <span className="flex items-center justify-end gap-1.5">
-        {texto.trim() && !ouvindo
+      <span className={`flex items-center gap-1.5 ${grande || anexo ? "justify-between" : "justify-end"}`}>
+        {!ouvindo && <BotaoIcone icone="imagem" aria-label={labels.anexar} tamanho={44} variante="fantasma" disabled={pending} onClick={() => arquivo.current?.click()} />}
+        {(texto.trim() || anexo) && !ouvindo
           ? <BotaoIcone type="submit" icone="enviar" aria-label={labels.enviar} tamanho={44} variante="acento" disabled={pending} />
           : <BotaoIcone icone={ouvindo ? "fechar" : "microfone"} aria-label={ouvindo ? labels.parar : labels.falarPinu} tamanho={44} variante="acento" onClick={falar} />}
       </span>
@@ -356,7 +381,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
               {msgs === null && <div className="grid gap-2"><Skeleton largura="70%" /><Skeleton largura="40%" /></div>}
               {msgs?.map((m, mi) => m.role === "user" ? (
                 // a pessoa: balão tonal à direita
-                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{semDicas(m.content)}{/\[anexou um comprovante/.test(m.content) && <span className="meta mt-1 block text-t2">({labels.comprovanteAnexado})</span>}</p>
+                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{m.anexo && <span className="meta mb-1 flex items-center gap-1.5 text-t2"><Icone nome={m.anexo.mime.startsWith("image/") ? "imagem" : "documento"} tamanho={16} /><span className="truncate">{m.anexo.nome}</span></span>}{semDicas(m.content)}{/\[anexou um comprovante/.test(m.content) && <span className="meta mt-1 block text-t2">({labels.comprovanteAnexado})</span>}</p>
               ) : (
                 <div key={mi} className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 font-display text-sm font-semibold">
@@ -378,7 +403,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                         <div className="flex items-center gap-2">
                           <Icone nome="tarefa" tamanho={20} className="text-ac-text" />
                           <span className="titulo-cartao min-w-0 flex-1">{cs.length === 1 ? cs[0].resumo : labels.propostas.replace("{n}", String(cs.length))}</span>
-                          {pend > 0 ? <BadgeEstado estado="andamento">{labels.proposta}</BadgeEstado> : <BadgeEstado estado="feita">{labels.feito}</BadgeEstado>}
+                          {pend > 0 ? <BadgeEstado estado="andamento">{labels.proposta}</BadgeEstado> : cs.some((c) => c.estado === "feito") && <BadgeEstado estado="feita">{labels.feito}</BadgeEstado>}
                         </div>
                         <ul className="grid gap-2">
                           {cs.map((c, ci) => (
