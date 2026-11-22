@@ -23,7 +23,7 @@ import { custoFixo, getFixos, previsaoCaixa } from "./fixos";
 import { getNaturezas, montarDRE } from "./dre";
 import { contaPessoalNoPeriodo, resumoRecursos } from "./separacoes";
 import { compararAnual, getOrcamentoAnual } from "./orcamentoAnual";
-import { ACERVO_TIPOS, CATEGORIAS as CATEGORIAS_FIN, UNIDADES, aReembolsar, createAcervo, createLancamento, getContas, pessoasReembolso } from "./data";
+import { ACERVO_TIPOS, adicionarPassos, CATEGORIAS as CATEGORIAS_FIN, UNIDADES, aReembolsar, createAcervo, createLancamento, getContas, pessoasReembolso } from "./data";
 import { chaveLink } from "./acervoLinks";
 import { STATUS_RAW, anotarProjeto, can, registrarConversa, comentar, createEvento, getAcervo, createTarefa, getEquipes, getEventos, getLancamentos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, mudarTarefa, progresso, today, updateTarefa, vault, type Me, type Status, type Tarefa, podeVerProjeto, projetosVisiveis } from "./data";
 
@@ -38,6 +38,7 @@ export type Acao =
   | { tipo: "criar_tarefa"; titulo: string; prazo?: string; equipe?: string; responsaveis?: string[]; projeto?: string; prioridade?: string; descricao?: string; checklist?: string[] }
   | { tipo: "mudar_status"; id: string; status: Status }
   | { tipo: "mudar_prazo"; id: string; prazo: string }
+  | { tipo: "adicionar_passos"; id: string; passos: string[] }
   | { tipo: "mudar_prioridade"; id: string; prioridade: string }
   | { tipo: "comentar"; id: string; texto: string }
   | { tipo: "atribuir"; id: string; pessoa: string }
@@ -249,12 +250,15 @@ const TOOLS = [
     unidade: { type: "string", enum: Object.keys(UNIDADES), description: "unidade de negócio, se a pessoa disser (vazio = a da conta ou Geral)" }, recurso: { type: "string", description: "recurso com destino (doação/grant com fim definido) que recebeu ou pagou este valor; prefira um já usado" },
     pago_por: { type: "string", description: "só despesa: quem pagou com dinheiro PRÓPRIO e precisa ser reembolsado pelo Santuário (nome; \"eu\" = quem fala). Vazio = o Santuário pagou" },
   }, ["tipo", "valor", "categoria"]),
+  fn("adicionar_passos", "PROPÕE adicionar passos ao checklist de uma tarefa existente (dividir em passos): até 10 passos curtos, cada um começando com verbo.", {
+    id: { type: "string" }, passos: { type: "array", items: { type: "string" } },
+  }, ["id", "passos"]),
   fn("definir_foco", "PROPÕE o Foco de hoje de quem fala com você: até 3 tarefas DELA (ids de minhas_tarefas) para fazer primeiro hoje. Substitui o foco atual.", {
     ids: { type: "array", items: { type: "string" }, description: "ids das tarefas, na ordem de prioridade (máx. 3)" },
   }, ["ids"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["definir_foco", "criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe", "registrar_lancamento", "adicionar_acervo"]);
+const PROPOSTAS = new Set(["adicionar_passos", "definir_foco", "criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe", "registrar_lancamento", "adicionar_acervo"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
@@ -609,6 +613,11 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     if (!["todo", "doing", "done"].includes(st)) return { erro: "status inválido" };
     return { tipo: "mudar_status", id: t.id, status: st, resumo: `"${t.title}"`, detalhe: `${STATUS_RAW[t.status]} → ${STATUS_RAW[st]}` };
   }
+  if (nome === "adicionar_passos") {
+    const passos = (Array.isArray(a.passos) ? a.passos : []).map((x) => s(x).replace(/\s+/g, " ").slice(0, 120)).filter(Boolean).slice(0, 10);
+    if (!passos.length) return { erro: "faltam os passos (lista de textos curtos)" };
+    return { tipo: "adicionar_passos", id: t.id, passos, resumo: `Passos em "${t.title}"`, detalhe: passos.map((x, i) => `${i + 1}. ${x}`).join(" · ") };
+  }
   if (nome === "mudar_prazo") {
     if (!ISO.test(s(a.prazo))) return { erro: "prazo deve ser AAAA-MM-DD" };
     return { tipo: "mudar_prazo", id: t.id, prazo: s(a.prazo), resumo: `"${t.title}"`, detalhe: `prazo ${t.prazo ? dm(t.prazo) : "sem data"} → ${dm(s(a.prazo))}` };
@@ -726,6 +735,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
   const t = getTarefas().find((x) => x.id === v.id)!;
   const base = { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo: t.prazo, responsaveis: t.responsaveis, status: t.status, recorrencia: t.recorrencia };
   if (v.tipo === "mudar_status") updateTarefa(t.id, { ...base, status: v.status }, quem);
+  if (v.tipo === "adicionar_passos") { adicionarPassos(t.id, v.passos, quem); return `/tarefas/${t.id}`; }
   if (v.tipo === "mudar_prazo") updateTarefa(t.id, { ...base, prazo: v.prazo }, quem);
   if (v.tipo === "mudar_prioridade") mudarTarefa(t.id, { priority: v.prioridade }, quem);
   if (v.tipo === "atribuir") updateTarefa(t.id, { ...base, responsaveis: [...new Set([...t.responsaveis, v.pessoa])] }, quem);
@@ -747,7 +757,7 @@ const RASCUNHO_TTL = 15 * 60_000;
 const rascunhosMcp = new Map<string, { dono: string; acao: AcaoProposta; em: number }>();
 /** A tool call that changes something (or confirms a draft), for the panel's count of changes. */
 export const ehEscritaMcp = (nome: string) => nome === "confirmar" || PROPOSTAS.has(nome);
-const SO_MINHAS = new Set(["mudar_status", "mudar_prazo", "mudar_prioridade", "comentar"]);
+const SO_MINHAS = new Set(["mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "adicionar_passos"]);
 /** Whether an MCP change needs the person's explicit yes: anything outside the platform, money, the knowledge base,
  *  other people's tasks or other people's inbox. Own-scope changes (memory, sources that go to review, own tasks) run at once. */
 export function precisaConfirmar(me: Me, v: AcaoProposta): boolean {

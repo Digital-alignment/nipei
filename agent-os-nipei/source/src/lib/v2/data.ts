@@ -949,6 +949,13 @@ export function getTarefaDetalhe(id: string): { tarefa: Tarefa; doc: TarefaDoc; 
   return { tarefa, doc, anexos: (Array.isArray(doc.fm.anexos) ? doc.fm.anexos : []).map(toAnexo) };
 }
 
+/** Adds steps to a task's checklist (the Pinu's "Dividir em passos", DS 10.5.1); steps already there are skipped. */
+export function adicionarPassos(id: string, passos: string[], actor: string) {
+  editarTarefa(id, actor, (d) => {
+    for (const x of passos) if (x.trim() && !d.checklist.some((c) => c.texto === x.trim())) d.checklist.push({ feito: false, texto: x.trim() });
+  }, [`adicionou ${passos.length} passo(s) ao checklist`]);
+}
+
 function editarTarefa(id: string, actor: string, mutate: (d: TarefaDoc) => void, extra: string[] = []) {
   const t = getTarefas().find((x) => x.id === id);
   if (!t) throw new Error("Tarefa não encontrada");

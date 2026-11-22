@@ -927,3 +927,7 @@ Pedido do Ashuan. As skills escritas para Gemini/Claude/ChatGPT (v2.119) passam 
 
 Pedido do Ashuan ("que o Pinu seja a base principal de interação, começando por Hoje"). Fase 1 aprovada: campo do Pinu com 3 atalhos no topo de Hoje, "Resolver com o Pinu" nas pendências e "Planejar meu dia" (skill nova + ferramenta `definir_foco`). Regra mantida: nada de IA ao carregar a página (o "Bom dia" saiu em 2026-10-24 pelo custo e pela demora); o Pinu trabalha só quando a pessoa toca. Fases 2 (Pinu no ⋯ de cada tarefa, microfone no campo rápido) e 3 (resumo sob demanda, fechamento do dia guiado) ficam para depois de ver o uso.
 
+## 2026-11-22 — Pinu como base de Hoje, fase 2 (§10.5.1, §9.19)
+
+Pedido do Ashuan ("haz la fase 2"). Decidido: o ⋯ das minhas tarefas em Hoje ganha Dividir em passos, Escrever mensagem e Pedir ao Pinu…; o campo rápido de Agora ganha microfone que dita para o Pinu como captura rápida (digitar continua criando a tarefa direto, sem IA). Para dividir em passos, ferramenta nova `adicionar_passos` (proposta; no MCP só executa direto em tarefa só da pessoa). O item de menu ganha o campo `pinu` porque as linhas de tarefa são desenhadas no servidor e não podem levar funções.
+

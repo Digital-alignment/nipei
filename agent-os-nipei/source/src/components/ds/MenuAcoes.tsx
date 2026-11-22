@@ -19,6 +19,8 @@ export type ItemMenu = {
   soCelular?: boolean;
   /** Ação que tira algo: vai depois de um divisor. */
   sensivel?: boolean;
+  /** Abre o Pinu com um pedido (DS 9.19/10.5.1): serializável, serve em listas desenhadas no servidor. */
+  pinu?: { texto?: string; preencher?: string; atalho?: string };
   /** Pergunta antes (ex.: Remover…): só chama onSelect se a pessoa confirmar. */
   confirmar?: PedidoConfirmacao;
 };
@@ -99,6 +101,7 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
     fechar(false);
     if (item.confirmar && !(await confirmar(item.confirmar))) { botao.current?.focus(); return; }
     if (item.href) router.push(item.href);
+    if (item.pinu) window.dispatchEvent(new CustomEvent("nipei:assistente", { detail: item.pinu })); // ABRIR_ASSISTENTE (components/v2)
     item.onSelect?.();
     if (item.acao) {
       const f = new FormData();

@@ -41,6 +41,7 @@ import MenuAcoes from "@/components/ds/MenuAcoes";
 import { funcaoLigada, podeFinancas } from "@/lib/v2/funcoes";
 import CampoPinuHoje from "@/components/v2/CampoPinuHoje";
 import PedirPinu from "@/components/v2/PedirPinu";
+import DitarPinu from "@/components/v2/DitarPinu";
 import { getFixos, previsaoCaixa } from "@/lib/v2/fixos";
 import { compararAnual, getOrcamentoAnual } from "@/lib/v2/orcamentoAnual";
 import { BarraProgresso } from "@/components/ds/Progresso";
@@ -207,8 +208,14 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       ...(can.editTarefa(user, x) ? OPCOES[grupo].map((o) => ({ icone: "prazo" as const, rotulo: `${t.hj.prazoMenu}: ${o.label}`, acao: prazoRapidoAction, campos: { id: x.id, prazo: o.data } })) : []),
     ];
   };
+  // the Pinu on this task (DS 10.5.1, phase 2): split into steps, write a message, or ask anything — by title, never the id
+  const acoesPinu = (x: Tarefa): ItemMenu[] => [
+    { icone: "tarefa", rotulo: t.hj.pinuPassos, pinu: { texto: t.hj.pinuPassosTexto.replace("{t}", x.title) } },
+    { icone: "mensagem", rotulo: t.hj.pinuMensagem, pinu: { texto: t.hj.pinuMensagemTexto.replace("{t}", x.title) } },
+    { icone: "enviar", rotulo: t.hj.pinuPedir, pinu: { preencher: t.hj.pinuPedirTexto.replace("{t}", x.title) } },
+  ];
   const linha = (x: Tarefa, grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
-    <TaskRow key={x.id} t={x} {...props} extra={comPrazo(grupo)} acoesCelular={acoesCelular(x, grupo)} selos={selos && legiveis(selos)[x.id]} />;
+    <TaskRow key={x.id} t={x} {...props} extra={comPrazo(grupo)} acoesCelular={acoesCelular(x, grupo)} acoesExtra={pinu ? acoesPinu(x) : undefined} selos={selos && legiveis(selos)[x.id]} />;
   // Agrupada por Atrasadas / Hoje / Amanhã / … com contagem (seção 10.3); a ordem inteligente vale dentro de cada grupo
   const grupos = (ts: Tarefa[], grupo: keyof typeof OPCOES, selos: Record<string, Selo[]> | undefined, defs: { id: string; titulo: string; dentro: (x: Tarefa) => boolean; alerta?: boolean }[]) => {
     const gs = defs.map((d) => ({ ...d, itens: ts.filter(d.dentro) })).filter((g) => g.itens.length);
@@ -508,7 +515,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                 <input type="hidden" name="responsaveis" value={me!.id} />
                 <input type="hidden" name="back" value="/hoje" />
                 <Campo tipo="busca" iconeEsquerda="mais" name="title" rotulo={t.tarefaRapidaPh} required maxLength={200} autoComplete="off"
-                  acaoDireita={<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" />} />
+                  acaoDireita={<span className="flex items-center gap-1">{pinu && <DitarPinu rotulo={t.hj.ditarPinu} prefixo={t.pinuAnotePrefixo} />}<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" /></span>} />
               </form>
             )}
             {focoNaAgora

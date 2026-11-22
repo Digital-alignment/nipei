@@ -23,7 +23,8 @@ export function Section({ title, count, children }: { title: ReactNode; count?: 
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
 /** acoesCelular: quick actions that, on phones, go into the ⋯ instead of `extra` (DS 10.3). */
-export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar, acoesCelular }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string; acoesCelular?: ItemMenu[] } & RowProps) {
+/** acoesExtra: more ⋯ items on every screen size (Hoje: the Pinu on this task, DS 10.5.1). */
+export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar, acoesCelular, acoesExtra }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string; acoesCelular?: ItemMenu[]; acoesExtra?: ItemMenu[] } & RowProps) {
   const en = lang === "en";
   const eq = equipes.find((e) => e.id === t.equipe);
   const pessoa = (id: string) => {
@@ -54,7 +55,7 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arr
         : <span aria-hidden="true" className="-mx-2 grid size-11 shrink-0 place-items-center"><span className="size-[26px] rounded-pilula border-2 border-dashed border-s4" /></span>}
       antes={selecionar && <input type="checkbox" name="ids" value={t.id} form={selecionar} aria-label={t.title} className="lote-caixa size-4 shrink-0 accent-ac" />}
       extra={extra?.(t)} extraSoComputador={!!acoesCelular?.length}
-      acoes={[{ icone: "avancar", rotulo: en ? "Open" : "Abrir", href: `/tarefas/${t.id}` }, ...(editar ? [{ icone: "editar" as const, rotulo: en ? "Edit" : "Editar", href: `/tarefas/${t.id}/editar` }] : []), ...(acoesCelular ?? []).map((i) => ({ ...i, soCelular: true }))]}
+      acoes={[{ icone: "avancar", rotulo: en ? "Open" : "Abrir", href: `/tarefas/${t.id}` }, ...(editar ? [{ icone: "editar" as const, rotulo: en ? "Edit" : "Editar", href: `/tarefas/${t.id}/editar` }] : []), ...(acoesExtra ?? []), ...(acoesCelular ?? []).map((i) => ({ ...i, soCelular: true }))]}
       draggable={arrastavel || undefined} data-tarefa={arrastavel ? t.id : undefined} />
   );
 }

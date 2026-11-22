@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — Pinu como base de Hoje, fase 2 (10.5.1, 9.19)
+
+- `MenuAcoes`: item com `pinu` abre o Pinu. `TaskRow acoesExtra`; em Hoje, nas minhas tarefas: Dividir em passos / Escrever mensagem / Pedir ao Pinu…. Ferramenta `adicionar_passos` (checklist; `adicionarPassos` em `data.ts`). Microfone no campo rápido de Agora (`DitarPinu`) → Pinu ouvindo com prefixo "Anote: ".
+
 ## 2026-11-22 — Pinu como base de Hoje, fase 1 (10.5.1)
 
 - Refeito: o campo e os atalhos viram um só Cartão `pinu` no celular (orbe + campo + divisor + atalhos neutros com ícone numa linha que rola); no computador, só a linha de atalhos. `PedirPinu` aceita `icone` (Chip neutro).

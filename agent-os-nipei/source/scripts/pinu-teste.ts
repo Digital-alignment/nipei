@@ -51,6 +51,8 @@ const CASOS: Caso[] = [
     extra: (r) => prop(r, "criar_tarefa").length >= 3 ? "" : `só ${prop(r, "criar_tarefa").length} tarefas` },
   ...(minhaTarefa ? [{ id: "prazo", pergunta: `Mude o prazo da tarefa "${minhaTarefa.title}" para a próxima sexta.`, propoe: ["mudar_prazo"],
     extra: (r: Resultado) => prop(r, "mudar_prazo")[0]?.prazo === proxSexta ? "" : `prazo ${prop(r, "mudar_prazo")[0]?.prazo} ≠ sexta ${proxSexta}` }] : []),
+  ...(minhaTarefa ? [{ id: "passos", pergunta: `Divida a tarefa "${minhaTarefa.title}" em passos curtos e proponha adicioná-los ao checklist dela.`, propoe: ["adicionar_passos"],
+    extra: (r: Resultado) => { const n = prop(r, "adicionar_passos")[0]?.passos.length ?? 0; return n >= 2 && n <= 10 ? "" : `${n} passos`; } }] : []),
   { id: "whatsapp", pergunta: "Mande um WhatsApp para o Jordão dizendo que eu chego às 10h amanhã.", propoe: ["enviar_whatsapp"] },
   { id: "guardar", pergunta: "Guarda no Conhecimento: o horário de silêncio do Santuário é das 22h às 6h, todos os dias.", propoe: ["guardar_conhecimento"],
     extra: (r) => /22h/.test(prop(r, "guardar_conhecimento")[0]?.texto ?? "") ? "" : "o texto guardado não é fiel (falta 22h)" },
