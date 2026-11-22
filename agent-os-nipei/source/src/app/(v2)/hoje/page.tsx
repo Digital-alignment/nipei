@@ -400,7 +400,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
 
       {me && (
         // faixa da semana (seção 10.5): sempre fina; pontos = tarefas abertas / eventos / Google
-        <nav aria-label={t.semanaLbl} className={`-mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-7 md:gap-2 md:px-0 mb-4 mt-4`}>
+        <nav aria-label={t.semanaLbl} className="mb-4 mt-4 grid grid-cols-7 gap-1 sm:gap-2">
           {semana.map((x, i) => {
             // always the thin strip (DS 10.5): day + number side by side, dots = open tasks / events / Google; progress only in aria-label
             const data = new Date(`${x.d}T12:00:00Z`);
@@ -408,16 +408,14 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             const rotulo = `${data.toLocaleDateString(locale, { weekday: "long", day: "numeric", timeZone: "UTC" })}: ${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}${x.googleDia > 0 ? `, ${x.googleDia} ${t.googleAgenda}` : ""}${cheio ? ` · ${t.diaCarregado}` : ""}`;
             return (
               <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined} aria-label={rotulo}
-                className={`anel-foco flex h-11 min-w-16 flex-1 items-center justify-center gap-1.5 rounded-pilula transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : cheio ? "bg-warn-bg text-t1" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
-                <span className={`meta uppercase ${cheio ? "font-semibold text-warn" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
-                <span className="font-semibold tabular-nums">{data.getUTCDate()}</span>
-                {(x.abertasDia > 0 || x.eventosDia > 0 || x.googleDia > 0) && (
-                  <span className="flex gap-0.5" aria-hidden="true">
-                    {x.abertasDia > 0 && <span className="size-1.5 rounded-pilula bg-ac" />}
-                    {x.eventosDia > 0 && <span className="size-1.5 rounded-pilula bg-info" />}
-                    {x.googleDia > 0 && <span className="size-1.5 rounded-pilula bg-t2" />}
-                  </span>
-                )}
+                className={`anel-foco flex h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-pilula transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : cheio ? "bg-warn-bg text-t1" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
+                <span className={`text-xs uppercase leading-none ${cheio ? "font-semibold text-warn" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
+                <span className="font-semibold leading-tight tabular-nums">{data.getUTCDate()}</span>
+                <span className="flex h-[5px] gap-0.5" aria-hidden="true">
+                  {x.abertasDia > 0 && <span className="size-[5px] rounded-pilula bg-ac" />}
+                  {x.eventosDia > 0 && <span className="size-[5px] rounded-pilula bg-info" />}
+                  {x.googleDia > 0 && <span className="size-[5px] rounded-pilula bg-t2" />}
+                </span>
               </Link>
             );
           })}
@@ -571,8 +569,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         <MenuAcoes gatilho="criar" rotulo={t.criarLbl} itens={[
           { icone: "calendario", rotulo: t.novoEvento, href: "/eventos/novo" },
           { icone: "enviar", rotulo: t.eq.pedirA, href: "/pedidos/novo" },
-          { icone: "enviar", rotulo: t.novaFonteConhecimento, href: "/conhecimento#enviar" },
-          ...(user.gestao || user.coordena.length ? [{ icone: "mais" as const, rotulo: t.adicionarAcervo, href: "/acervo#novo" }] : []),
+          { icone: "informacao", rotulo: t.novaFonteConhecimento, href: "/conhecimento#enviar" },
+          ...(user.gestao || user.coordena.length ? [{ icone: "pasta" as const, rotulo: t.adicionarAcervo, href: "/acervo#novo" }] : []),
         ]} />
       </div>
     </>

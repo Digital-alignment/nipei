@@ -885,3 +885,12 @@ Pedido do Ashuan ("quiero que sea más limpio"). Antes de ver uma tarefa, Hoje m
 - Foco sugerido com Agora vazia vira o estado vazio da aba Agora ("Começar por estas?"), em vez de uma lista acima que contradizia o "Nada pendente".
 - Sem "Nada pendente para hoje." no topo; estado vazio sem emoji; aba Novidades só quando se chega por ela (o sino já leva); "Nova tarefa" sai do "+" de Hoje (o campo rápido de Agora cria).
 - Recomendações 4–5 aprovadas no mesmo dia ("haz también la 4 y la 5"): faixa da semana sempre fina em Hoje (pontos no lugar dos anéis) e, no computador, ações rápidas da linha (foco, prazo) só ao passar o mouse ou com foco.
+
+## 2026-11-22 — "+" em acento, menu de criar e semana sem rolagem (§9.19, §10.5)
+
+Pedido do Ashuan (com capturas: o "+" branco por cima do botão verde do campo rápido; a faixa da semana rolando de lado no celular). Decidido:
+
+- O "+" deixa de ser o único botão claro (`t1`): passa a acento, com anel da cor do fundo que o separa do conteúdo por baixo, e sombra. Branco puro sobre o escuro chamava mais atenção que as tarefas.
+- O menu do "+" ganha fundo escurecido com desfoque, título "Criar", itens maiores com o ícone num quadrado e entrada suave; Conhecimento e Acervo ganham ícones próprios (antes repetiam `enviar` e `mais`). Era o "menu com o fundo escurecido" que o §10.10 já previa.
+- A faixa da semana em Hoje vira grade de 7 colunas também no celular (dia em cima, número embaixo, pontos), sem rolagem lateral.
+

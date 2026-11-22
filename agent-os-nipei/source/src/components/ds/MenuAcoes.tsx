@@ -25,7 +25,8 @@ export type ItemMenu = {
 
 /**
  * `alinhar` é só o lado inicial: ao abrir, o menu vai na direção do centro da tela.
- * `gatilho="criar"`: o "+" flutuante (56 px no computador, 48 no celular, claro sobre o fundo) que abre as ações de criação; o menu abre para cima.
+ * `gatilho="criar"`: o "+" flutuante (56 px no computador, 48 no celular, acento com anel do fundo) que abre o menu de criar
+ * (fundo escurecido, título, itens com ícone em quadrado); o menu abre para cima.
  * No celular some enquanto a página desce e volta ao subir (não fica por cima do que se lê).
  */
 export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "direita", gatilho = "mais-opcoes" }: { itens: ItemMenu[]; rotulo?: string; alinhar?: "direita" | "esquerda"; gatilho?: "mais-opcoes" | "criar" }) {
@@ -114,19 +115,26 @@ export default function MenuAcoes({ itens, rotulo = "Mais opções", alinhar = "
         onClick={() => (aberto ? setAberto(false) : abrir())}
         onKeyDown={(e) => { if (!aberto && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); abrir(); } }}
         className={criar
-          ? `anel-foco inline-grid size-12 place-items-center rounded-pilula bg-t1 text-bg md:size-14 transition-[transform,box-shadow] duration-150 active:scale-95 ${aberto ? "shadow-[0_0_0_3px_var(--bg),0_0_0_4.5px_var(--ac)]" : ""}`
+          ? "anel-foco relative z-50 inline-grid size-12 place-items-center rounded-pilula bg-ac text-ac-ink shadow-[0_0_0_4px_var(--bg),0_10px_28px_-8px_var(--bg)] transition-transform duration-150 hover:bg-ac-press active:scale-95 md:size-14"
           : `anel-foco inline-grid size-11 place-items-center rounded-pilula text-t1 transition-[background-color,box-shadow] duration-150 lg:size-10 ${aberto ? "bg-s2 shadow-[0_0_0_1.5px_var(--ac)]" : "hover:bg-s2"}`}>
         <Icone nome={criar ? "mais" : "mais-opcoes"} tamanho={criar ? 24 : 20} className={criar ? `transition-transform duration-150 ${aberto ? "rotate-45" : ""}` : undefined} />
       </button>
+      {/* criar: the page dims and blurs behind the menu (a tap outside closes it, via the pointerdown listener) */}
+      {aberto && criar && <div aria-hidden="true" className="fixed inset-0 z-40 bg-bg/70 backdrop-blur-sm transition-opacity duration-150 starting:opacity-0" />}
       {aberto && (
         <div id={id} role="menu" aria-label={rotulo} style={criar ? undefined : pos}
-          className={`z-50 flex max-h-[420px] min-w-[230px] flex-col overflow-y-auto rounded-[16px] bg-s2 p-1.5 shadow-[0_0_0_1px_var(--s3)] ${criar ? `absolute bottom-full mb-3 ${lado === "direita" ? "right-0" : "left-0"}` : "fixed"}`}>
+          className={criar
+            ? `absolute bottom-full z-50 mb-4 flex w-[264px] flex-col rounded-bloco bg-s2 p-2 shadow-[0_0_0_1px_var(--s3)] transition-[opacity,transform] duration-150 starting:translate-y-2 starting:opacity-0 ${lado === "direita" ? "right-0" : "left-0"}`
+            : "fixed z-50 flex max-h-[420px] min-w-[230px] flex-col overflow-y-auto rounded-[16px] bg-s2 p-1.5 shadow-[0_0_0_1px_var(--s3)]"}>
+          {criar && <p className="rotulo-maiusculo px-3 pb-1 pt-2 text-t2">{rotulo}</p>}
           {ordenados.map((item, i) => (
             <div key={i} className="contents">
               {i === primeiroSensivel && i > 0 && <hr className="mx-1.5 my-1 h-px border-0 bg-s3" />}
               <button type="button" role="menuitem" tabIndex={-1} onClick={() => escolher(item)}
-                className={`flex min-h-11 items-center gap-2.5 rounded-[10px] px-3 text-left font-texto text-sm font-medium text-t1 outline-none hover:bg-s3 focus:bg-s3 ${item.soCelular ? "sm:hidden" : ""}`}>
-                <Icone nome={item.icone} tamanho={18} className="text-t2" />
+                className={`group/item flex items-center text-left font-texto font-medium text-t1 outline-none hover:bg-s3 focus:bg-s3 ${criar ? "min-h-[52px] gap-3 rounded-interno px-2 text-[15px]" : "min-h-11 gap-2.5 rounded-[10px] px-3 text-sm"} ${item.soCelular ? "sm:hidden" : ""}`}>
+                {criar
+                  ? <span className="grid size-9 shrink-0 place-items-center rounded-interno bg-s3 text-t1 group-hover/item:bg-s4 group-focus/item:bg-s4"><Icone nome={item.icone} tamanho={18} /></span>
+                  : <Icone nome={item.icone} tamanho={18} className="text-t2" />}
                 {item.rotulo}
               </button>
             </div>

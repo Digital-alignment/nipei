@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — "+" em acento, menu de criar e semana sem rolagem (9.19, 10.5)
+
+- `MenuAcoes gatilho="criar"`: botão em acento com anel do fundo e sombra; menu com fundo escurecido/desfocado, título "Criar", itens de 52 px com ícone em quadrado e entrada suave (`starting:`). Vale em todas as telas com o "+" (Hoje, Agenda, Tarefas…).
+- Hoje: faixa da semana em grade de 7 colunas também no celular (dia em cima, número, pontos); ícones `informacao` (Conhecimento) e `pasta` (Acervo) no menu.
+
 ## 2026-11-22 — Hoje mais limpo (10.5.1)
 
 - Pendências numa linha de resumo (4+) que abre os grupos; até 3 direto. Foco sugerido dentro da aba Agora quando ela está vazia. Sem "Nada pendente para hoje." no topo, sem emoji no estado vazio, aba Novidades só via sino/Chip, "+" sem "Nova tarefa". Só `app/(v2)/hoje/page.tsx` e `i18n.ts`.
