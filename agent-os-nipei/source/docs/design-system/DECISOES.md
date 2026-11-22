@@ -923,3 +923,7 @@ Pedido do Ashuan. O uso real mostrou o Jordão ditando compromissos soltos ("Lev
 
 Pedido do Ashuan. As skills escritas para Gemini/Claude/ChatGPT (v2.119) passam a valer também no Pinu, sem texto novo: a pessoa escolhe um atalho e a resposta segue os passos da skill (a parte comum que fala de "app conectado" e da ferramenta confirmar fica de fora; no Pinu as mudanças já são cartões). Uma só fonte para os dois lugares: mudar a skill muda os dois (sobe `VERSAO_SKILLS`). "Anotar várias coisas" (captura rápida) entra como o primeiro atalho em vez de uma linha à parte.
 
+## 2026-11-22 — Pinu como base de Hoje, fase 1 (§10.5.1)
+
+Pedido do Ashuan ("que o Pinu seja a base principal de interação, começando por Hoje"). Fase 1 aprovada: campo do Pinu com 3 atalhos no topo de Hoje, "Resolver com o Pinu" nas pendências e "Planejar meu dia" (skill nova + ferramenta `definir_foco`). Regra mantida: nada de IA ao carregar a página (o "Bom dia" saiu em 2026-10-24 pelo custo e pela demora); o Pinu trabalha só quando a pessoa toca. Fases 2 (Pinu no ⋯ de cada tarefa, microfone no campo rápido) e 3 (resumo sob demanda, fechamento do dia guiado) ficam para depois de ver o uso.
+

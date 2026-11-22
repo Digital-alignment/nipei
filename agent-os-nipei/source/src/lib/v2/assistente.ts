@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { avanco, ritmo } from "./objetivos";
 import { quemSabe } from "./pessoasFicha";
 import { getAnexo } from "./pinuAnexo";
+import { MAX_FOCO, salvarFoco } from "./foco";
 import type { Parte } from "./ia";
 import { buscarConhecimento, chaveTrecho, criarFonte, formatarConhecimento, getFatos, getFontes, podeRevisar, processarFonte, revisarFato } from "./conhecimento";
 import { getAlertas } from "./auditor";
@@ -50,6 +51,7 @@ export type Acao =
   | { tipo: "evento_google"; titulo: string; dia: string; hora?: string; duracaoMin?: number; descricao?: string; convidados?: string[] }
   | { tipo: "lembrar"; texto: string; categoria: Categoria }
   | { tipo: "esquecer"; id: string }
+  | { tipo: "definir_foco"; ids: string[] }
   | { tipo: "registrar_conversa"; pessoa: string; texto: string; proximo?: string }
   | { tipo: "pedir_equipe"; equipe: string; titulo: string; descricao?: string; prazo?: string }
   | { tipo: "adicionar_acervo"; titulo: string; url: string; categoria: string; projeto: string; ano: string; descricao: string }
@@ -247,9 +249,12 @@ const TOOLS = [
     unidade: { type: "string", enum: Object.keys(UNIDADES), description: "unidade de negócio, se a pessoa disser (vazio = a da conta ou Geral)" }, recurso: { type: "string", description: "recurso com destino (doação/grant com fim definido) que recebeu ou pagou este valor; prefira um já usado" },
     pago_por: { type: "string", description: "só despesa: quem pagou com dinheiro PRÓPRIO e precisa ser reembolsado pelo Santuário (nome; \"eu\" = quem fala). Vazio = o Santuário pagou" },
   }, ["tipo", "valor", "categoria"]),
+  fn("definir_foco", "PROPÕE o Foco de hoje de quem fala com você: até 3 tarefas DELA (ids de minhas_tarefas) para fazer primeiro hoje. Substitui o foco atual.", {
+    ids: { type: "array", items: { type: "string" }, description: "ids das tarefas, na ordem de prioridade (máx. 3)" },
+  }, ["ids"]),
   fn("esquecer", "PROPÕE apagar um item da sua memória sobre a pessoa (id da lista em 'O que você sabe').", { id: { type: "string" } }, ["id"]),
 ];
-const PROPOSTAS = new Set(["criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe", "registrar_lancamento", "adicionar_acervo"]);
+const PROPOSTAS = new Set(["definir_foco", "criar_tarefa", "mudar_status", "mudar_prazo", "mudar_prioridade", "comentar", "atribuir", "criar_evento", "nota_projeto", "guardar_conhecimento", "guardar_email", "revisar_fato", "enviar_whatsapp", "evento_google", "gmail_enviar", "lembrar", "esquecer", "registrar_conversa", "pedir_equipe", "registrar_lancamento", "adicionar_acervo"]);
 
 /** Runs a reading tool. */
 function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
@@ -582,6 +587,15 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     if (mem.some((x) => n(x.texto) === n(texto))) return { erro: "isso já está na memória" };
     return { tipo: "lembrar", texto, categoria, resumo: "Lembrar sobre você", detalhe: texto };
   }
+  if (nome === "definir_foco") {
+    // DS 10.5.1 "Planejar meu dia": only the person's own open tasks, up to MAX_FOCO
+    if (!me.pessoa) return { erro: "só para quem tem ficha" };
+    const pedidos = (Array.isArray(a.ids) ? a.ids : [a.ids]).map(s).filter(Boolean);
+    const ts = pedidos.map((id) => getTarefas().find((x) => x.id === id && x.status !== "done" && x.responsaveis.includes(me.pessoa!.id))).filter((x): x is NonNullable<typeof x> => !!x);
+    const unicas = [...new Map(ts.map((x) => [x.id, x])).values()].slice(0, MAX_FOCO);
+    if (!unicas.length) return { erro: "nenhuma tarefa aberta da pessoa com esses ids: use minhas_tarefas" };
+    return { tipo: "definir_foco", ids: unicas.map((x) => x.id), resumo: "Foco de hoje", detalhe: unicas.map((x, i) => `${i + 1}. ${x.title}`).join(" · ") };
+  }
   if (nome === "esquecer") {
     const item = getMemoria(donoMemoria(me)).find((x) => x.id === s(a.id));
     if (!item) return { erro: "item não encontrado na memória" };
@@ -674,6 +688,7 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     return "";
   }
   if (v.tipo === "esquecer") { esquecer(donoMemoria(me), v.id); return ""; }
+  if (v.tipo === "definir_foco") { if (me.pessoa) salvarFoco(me.pessoa.id, today(), v.ids); return "/hoje"; }
   if (v.tipo === "evento_google") return await criarEventoGoogle(me.pessoa!.id, v);
   if (v.tipo === "gmail_enviar") return await gmailEnviar(me.pessoa!.id, v);
   if (v.tipo === "guardar_email") {
@@ -737,7 +752,7 @@ const SO_MINHAS = new Set(["mudar_status", "mudar_prazo", "mudar_prioridade", "c
  *  other people's tasks or other people's inbox. Own-scope changes (memory, sources that go to review, own tasks) run at once. */
 export function precisaConfirmar(me: Me, v: AcaoProposta): boolean {
   const eu = me.pessoa?.id ?? "";
-  if (v.tipo === "lembrar" || v.tipo === "esquecer" || v.tipo === "guardar_conhecimento" || v.tipo === "guardar_email" || v.tipo === "registrar_conversa") return false;
+  if (v.tipo === "lembrar" || v.tipo === "esquecer" || v.tipo === "definir_foco" || v.tipo === "guardar_conhecimento" || v.tipo === "guardar_email" || v.tipo === "registrar_conversa") return false;
   if (v.tipo === "gmail_enviar") return !v.rascunho;
   if (v.tipo === "evento_google") return !!v.convidados?.length;
   if (v.tipo === "criar_tarefa") return !(eu && (v.responsaveis ?? []).every((r) => r === eu));

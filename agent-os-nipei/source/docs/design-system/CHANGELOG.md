@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — Pinu como base de Hoje, fase 1 (10.5.1)
+
+- Hoje: `CampoPinuHoje` (campo + microfone + atalhos Anotar / Planejar meu dia / Meu dia) abaixo da saudação; Chip "Resolver com o Pinu" no fim de cada grupo de pendências (`PedirPinu`). O evento `nipei:assistente` aceita `atalho` e `preencher`. Skill nova "Planejar meu dia" (`VERSAO_SKILLS` v2) e ferramenta `definir_foco` (proposta; no MCP executa sem rascunho, é só da pessoa).
+
 ## 2026-11-22 — Atalhos (skills) no Pinu (10.11)
 
 - `skillsIA.ts` separa `passos` (o que o Pinu segue) do texto para apps externos e ganha `curto`, `icone`, `dica`; o layout passa os atalhos permitidos (Finanças só gestão) ao `AssistenteGlobal`: seção "Atalhos" no início, menu "Atalhos" no campo, Chip do atalho ativo; `assistenteAction` recebe `skill` e `conversar` acrescenta os passos ao sistema; o balão mostra o atalho.

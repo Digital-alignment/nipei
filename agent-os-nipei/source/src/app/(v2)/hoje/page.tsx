@@ -38,7 +38,9 @@ import Cartao from "@/components/ds/Cartao";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import Botao from "@/components/ds/Botao";
 import MenuAcoes from "@/components/ds/MenuAcoes";
-import { podeFinancas } from "@/lib/v2/funcoes";
+import { funcaoLigada, podeFinancas } from "@/lib/v2/funcoes";
+import CampoPinuHoje from "@/components/v2/CampoPinuHoje";
+import PedirPinu from "@/components/v2/PedirPinu";
 import { getFixos, previsaoCaixa } from "@/lib/v2/fixos";
 import { compararAnual, getOrcamentoAnual } from "@/lib/v2/orcamentoAnual";
 import { BarraProgresso } from "@/components/ds/Progresso";
@@ -255,6 +257,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     </ul>
   );
   const nome = (me?.name ?? user.username).split(/[\s(]/)[0];
+  const pinu = funcaoLigada("assistente", user); // the same rule as the panel itself (layout)
   const passosFeitos = passos.filter((x) => x.feito).length;
 
   return (
@@ -284,6 +287,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           ].filter(Boolean);
           return partes.length > 0 && <p className="corpo text-t2">{partes.map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>;
         })()}
+        {/* the Pinu at the centre of Hoje (DS 10.5.1): ask, speak or tap a shortcut; nothing runs on page load */}
+        {pinu && <CampoPinuHoje l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl, anotar: t.pinuAnotarVarias, anotePrefixo: t.pinuAnotePrefixo, planejar: t.hj.planejarDia, meuDia: t.hj.meuDia }} />}
         {/* pending items (DS 10.5.1): up to 3 = chips; 4+ = one summary line that opens the two groups */}
         {(() => {
           const chipsVoce = [
@@ -293,7 +298,10 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           const chipsEquipe = daEquipe.map((x) => <span key={x.href + x.texto} title={x.titulo} className="contents">{x.equipe ? <Chip href={x.href} tipo="equipe" equipe={x.equipe}>{x.texto}</Chip> : <Chip href={x.href} icone={x.icone}>{x.texto}</Chip>}</span>);
           const total = chipsVoce.length + chipsEquipe.length;
           if (!total) return null;
-          if (total <= 3) return <div className="flex flex-wrap gap-2">{chipsVoce}{chipsEquipe}</div>;
+          // "Resolver com o Pinu" (DS 10.5.1): the panel opens asking for help with exactly these pending items
+          const textosVoce = [...proximos.map((e) => `${e.inicio === dia(1) ? t.amanhaLbl : fmtDate(e.inicio, lang)}${e.hora ? ` ${e.hora}` : ""} · ${e.titulo}`), ...paraVoce.map((x) => x.texto)];
+          const resolver = (grupo: string, itens: string[]) => pinu && <PedirPinu rotulo={t.hj.resolverPinu} texto={t.hj.resolverTexto.replace("{grupo}", grupo).replace("{itens}", itens.join("; "))} />;
+          if (total <= 3) return <div className="flex flex-wrap gap-2">{chipsVoce}{chipsEquipe}{resolver(t.hj.paraVoce, [...textosVoce, ...daEquipe.map((x) => x.texto)])}</div>;
           const resumo = [chipsVoce.length && `${chipsVoce.length} ${t.hj.pendVoce}`, chipsEquipe.length && `${chipsEquipe.length} ${t.hj.pendEquipe}`].filter(Boolean).join(" · ");
           return (
             <details className="group">
@@ -301,8 +309,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                 <Chip icone="abrir" className="group-hover:bg-s3 group-hover:text-t1 group-open:bg-s3 group-open:text-t1 [&_svg]:transition-transform group-open:[&_svg]:rotate-180">{resumo}</Chip>
               </summary>
               <div className="mt-3 grid gap-3">
-                {chipsVoce.length > 0 && <FilaPendencias rotulo={t.hj.paraVoce} itens={chipsVoce} />}
-                {chipsEquipe.length > 0 && <FilaPendencias rotulo={t.hj.equipeGestao} itens={chipsEquipe} />}
+                {chipsVoce.length > 0 && <><FilaPendencias rotulo={t.hj.paraVoce} itens={chipsVoce} /><div>{resolver(t.hj.paraVoce, textosVoce)}</div></>}
+                {chipsEquipe.length > 0 && <><FilaPendencias rotulo={t.hj.equipeGestao} itens={chipsEquipe} /><div>{resolver(t.hj.equipeGestao, daEquipe.map((x) => x.texto))}</div></>}
               </div>
             </details>
           );

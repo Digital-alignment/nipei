@@ -3,7 +3,7 @@
 // public/internal) stays on the server. Never put Santuário data here: it would go stale; the skill calls the tools.
 // The official text lives here and is shown in Conexões with a copy button. Change the text → bump VERSAO.
 
-export const VERSAO_SKILLS = "v1 · 17/11/2026";
+export const VERSAO_SKILLS = "v2 · 22/11/2026";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** texto = what the person pastes into an external AI app (BASE + passos); passos = what the Pinu itself follows when the
@@ -42,6 +42,15 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
 2. Guarde com guardar_conhecimento: título curto e claro; o texto FIEL ao que a pessoa trouxe (não resuma nem reescreva) ou o link (só http/https público); equipe e projeto quando ficarem claros. E-mails do Gmail vão com guardar_email.
 3. Explique: a IA do Nipëi vai ler a fonte e propor fatos, e uma pessoa da equipe revisa antes de virar verdade para todos.
 4. Não guarde: material gerado por IA (apresentações, textos, resumos seus), opiniões sobre pessoas, senhas, dados de saúde ou documentos pessoais. Material gerado vai ao Acervo (adicionar_acervo), não ao Conhecimento.`,
+  },
+  {
+    id: "planejar", curto: "Planejar meu dia", icone: "inicio", dica: "Planeje meu dia de hoje", nome: "Nipëi · Planejar meu dia",
+    quando: "Quando a pessoa pedir para planejar o dia, montar o foco de hoje, decidir o que fazer primeiro ou organizar a agenda do dia.",
+    passos: `Passos:
+1. Chame minhas_tarefas e agenda (e google_agenda se a pessoa tiver Google conectado) para hoje e os próximos 7 dias.
+2. Escolha até 3 tarefas para o Foco de hoje: primeiro as atrasadas e as de hoje mais importantes (prioridade alta, prazo vencido, quem está esperando por ela), depois as que destravam outras pessoas; considere o tempo livre entre os compromissos do dia.
+3. Proponha definir_foco com essas tarefas e, para as atrasadas que não cabem hoje, mudar_prazo para datas realistas (sem lotar um dia; no máximo 5 mudanças).
+4. Responda curto: o plano do dia em até 3 linhas (o quê e por quê) e os compromissos com hora. Nada muda sem o sim da pessoa no cartão.`,
   },
   {
     id: "dia", curto: "Meu dia", icone: "calendario", dica: "O que tenho hoje e nesta semana?", nome: "Nipëi · Meu dia",

@@ -29,7 +29,7 @@ type Labels = {
 
 const CHAVE_VOZ = "nipei:voz";
 // icon of each proposal kind in the card (DS 10.11, quick capture)
-const ICONE_PROPOSTA: Record<string, NomeIcone> = { criar_tarefa: "tarefa", criar_evento: "calendario", evento_google: "calendario", mudar_prazo: "prazo", enviar_whatsapp: "mensagem", gmail_enviar: "mensagem", comentar: "mensagem", atribuir: "pessoa", pedir_equipe: "enviar", guardar_conhecimento: "informacao", adicionar_acervo: "pasta", registrar_lancamento: "planilha" };
+const ICONE_PROPOSTA: Record<string, NomeIcone> = { definir_foco: "inicio", criar_tarefa: "tarefa", criar_evento: "calendario", evento_google: "calendario", mudar_prazo: "prazo", enviar_whatsapp: "mensagem", gmail_enviar: "mensagem", comentar: "mensagem", atribuir: "pessoa", pedir_equipe: "enviar", guardar_conhecimento: "informacao", adicionar_acervo: "pasta", registrar_lancamento: "planilha" };
 // hints that travel with a WhatsApp receipt for the model only (whatsappEntrada.ts): never in the person's balloon (DS 10.11)
 const DICA_INTERNA = /\n?\[(?:anexou um comprovante|lido do comprovante pela IA)[^\]]*\]/g;
 const semDicas = (s: string) => s.replace(DICA_INTERNA, "").trim();
@@ -185,7 +185,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   const captura: Atalho = { id: "captura", curto: labels.anotarVarias, icone: "tarefa", dica: labels.anotarDica };
   const todosAtalhos = [captura, ...atalhos];
   const escolherAtalho = (a: Atalho) => {
-    if (a.id === "dia") return enviar(a.dica, a);
+    if (a.id === "dia" || a.id === "planejar") return enviar(a.dica, a); // these ask nothing more: send at once
     const focar = (fim?: number) => setTimeout(() => { campo.current?.focus(); if (fim != null) campo.current?.setSelectionRange(fim, fim); }, 30);
     if (a.id === "captura") { setAtalho(null); setTexto(labels.anotePrefixo); return focar(labels.anotePrefixo.length); }
     setAtalho(a); focar();
@@ -195,8 +195,12 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   useEffect(() => {
     const abrir = (e: Event) => {
       setAberto(true);
-      const d = (e as CustomEvent<{ texto?: string; voz?: boolean }>).detail;
-      if (d?.texto) enviar(d.texto);
+      // texto = send now · atalho = pick a shortcut (Hoje's chips) · preencher = put text in the field · voz = open listening
+      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; preencher?: string }>).detail;
+      const at = d?.atalho ? todosAtalhos.find((x) => x.id === d.atalho) : undefined;
+      if (at) escolherAtalho(at);
+      else if (d?.preencher) { setTexto(d.preencher); setTimeout(() => { campo.current?.focus(); campo.current?.setSelectionRange(d.preencher!.length, d.preencher!.length); }, 80); }
+      else if (d?.texto) enviar(d.texto);
       else if (d?.voz) ouvirDeNovo.current(); // microfone do campo do cabeçalho
     };
     window.addEventListener(ABRIR_ASSISTENTE, abrir);
