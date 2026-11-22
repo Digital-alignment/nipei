@@ -159,7 +159,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     return a.status === "aberta" && (f ? podeRevisar(user, f) : user.gestao);
   }).length + getPropostas().filter((p) => p.status === "aberta" && podeDecidir(user, p)).length;
   if (revisar) pilulas.push({ href: "/conhecimento/revisar", icone: "informacao", texto: `${revisar} ${t.aRevisar}`, titulo: t.conhecimento, ordem: 4 });
-  if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${t.alertasLbl}`, titulo: t.conhecimento, grupo: "equipe", ordem: 3 });
+  if (alertas) pilulas.push({ href: "/conhecimento/alertas", icone: "atencao", texto: `${alertas} ${alertas === 1 ? t.alertaLbl : t.alertasLbl}`, titulo: t.conhecimento, grupo: "equipe", ordem: 3 });
   if (esperando.length) pilulas.push({ href: "/hoje?aba=esperando", icone: "mensagem", texto: `${esperando.length} ${t.esperandoVoce}`, titulo: t.esperandoTitulo, ordem: 1 });
   const novas24h = novidadesPara(user, 1).length;
   if (novas24h) pilulas.push({ href: "/hoje?aba=novidades", icone: "notificacao", texto: `${novas24h} ${t.novidades.toLowerCase()}`, titulo: t.novidades, ordem: 1.5 });
@@ -298,7 +298,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           return (
             <details className="group">
               <summary className="anel-foco w-fit cursor-pointer list-none rounded-pilula [&::-webkit-details-marker]:hidden">
-                <Chip icone="abrir" className="group-hover:bg-s3 group-hover:text-t1 group-open:bg-s3 group-open:text-t1">{resumo}</Chip>
+                <Chip icone="abrir" className="group-hover:bg-s3 group-hover:text-t1 group-open:bg-s3 group-open:text-t1 [&_svg]:transition-transform group-open:[&_svg]:rotate-180">{resumo}</Chip>
               </summary>
               <div className="mt-3 grid gap-3">
                 {chipsVoce.length > 0 && <FilaPendencias rotulo={t.hj.paraVoce} itens={chipsVoce} />}

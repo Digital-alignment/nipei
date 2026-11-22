@@ -6,6 +6,7 @@ Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nip�
 
 - Pendências numa linha de resumo (4+) que abre os grupos; até 3 direto. Foco sugerido dentro da aba Agora quando ela está vazia. Sem "Nada pendente para hoje." no topo, sem emoji no estado vazio, aba Novidades só via sino/Chip, "+" sem "Nova tarefa". Só `app/(v2)/hoje/page.tsx` e `i18n.ts`.
 - Faixa da semana sempre fina (pontos acento/azul/cinza no lugar dos anéis). Ações rápidas da linha de tarefa (foco, prazo) no computador só com hover/foco (`acoes-hover` em `globals.css`, usado por `LinhaTarefa` com `extraSoComputador`).
+- Detalhes: a seta do resumo de pendências gira ao abrir; "1 alerta" no singular.
 
 ## 2026-11-17 — Skills para o app de IA em Conexões (10.27, v2.119)
 
