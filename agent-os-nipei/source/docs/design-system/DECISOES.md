@@ -919,3 +919,7 @@ Pedido do Ashuan antes de testar o Pinu em produção ("ve el ui del pinu y mej�
 
 Pedido do Ashuan. O uso real mostrou o Jordão ditando compromissos soltos ("Levar crianças na escola", "Fisioterapia", "Ligar Tashka") que viraram tarefas uma a uma. Decidido: uma lista ditada vira uma resposta só com até 15 propostas (antes 8); o Pinu separa tarefa, compromisso pessoal (Google Agenda quando conectado) e evento da comunidade; "Confirmar todas" passa a ser uma chamada só no servidor (antes uma por item); cada item mostra o ícone do tipo. Planejar (retiro, semana) continua com até 8 tarefas por vez.
 
+## 2026-11-22 — Atalhos (skills) dentro do Pinu (§10.11)
+
+Pedido do Ashuan. As skills escritas para Gemini/Claude/ChatGPT (v2.119) passam a valer também no Pinu, sem texto novo: a pessoa escolhe um atalho e a resposta segue os passos da skill (a parte comum que fala de "app conectado" e da ferramenta confirmar fica de fora; no Pinu as mudanças já são cartões). Uma só fonte para os dois lugares: mudar a skill muda os dois (sobe `VERSAO_SKILLS`). "Anotar várias coisas" (captura rápida) entra como o primeiro atalho em vez de uma linha à parte.
+

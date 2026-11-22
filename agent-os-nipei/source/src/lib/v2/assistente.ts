@@ -56,7 +56,7 @@ export type Acao =
   | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string; conta?: string; reembolsar?: string; unidade?: string; recurso?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
-export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[]; nota?: "boa" | "ruim"; anexo?: { nome: string; mime: string } };
+export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[]; nota?: "boa" | "ruim"; anexo?: { nome: string; mime: string }; atalho?: string };
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^\d{2}:\d{2}$/;
@@ -872,9 +872,14 @@ export function paraModelo(salvas: MsgSalva[]): Msg[] {
 }
 
 /** One assistant turn: the model may read several times; changes come back as proposals to confirm. */
-export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje", onPasso?: (ferramenta: string) => void, anexo?: Parte): Promise<{ resposta: string; acoes: AcaoProposta[]; consultas: string[] }> {
+export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje", onPasso?: (ferramenta: string) => void, anexo?: Parte, atalho?: { nome: string; passos: string }): Promise<{ resposta: string; acoes: AcaoProposta[]; consultas: string[] }> {
   let motor = motorIA(me.pessoa?.id);
-  const msgs: ApiMsg[] = [{ role: "system", content: SISTEMA(me, lang, pagina) }, ...historico.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))];
+  // a shortcut picked in the panel (DS 10.11): the skill's steps guide this answer only
+  const sistema = SISTEMA(me, lang, pagina) + (atalho ? `
+
+A pessoa escolheu o atalho "${atalho.nome}" para esta mensagem. Siga estes passos nesta resposta (as mudanças continuam sendo propostas em cartões):
+${atalho.passos}` : "");
+  const msgs: ApiMsg[] = [{ role: "system", content: sistema }, ...historico.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))];
   // the file attached to this message (DS 10.11) travels with the last user message, as image/PDF/text parts
   const ultima = msgs.at(-1);
   if (anexo && ultima?.role === "user") ultima.content = [{ type: "text", text: s(ultima.content) }, anexo];

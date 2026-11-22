@@ -1768,15 +1768,19 @@ export async function assistenteAction(texto: string, pagina: string, form?: For
     const { conversar, getConversa, paraModelo, salvarConversa } = await import("@/lib/v2/assistente");
     const { getLang } = await import("@/lib/v2/i18n");
     contarUso(id);
-    const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString(), ...(anexo ? { anexo: { nome: anexo.nome, mime: anexo.mime } } : {}) }];
+    // a shortcut (skill) picked in the panel: only the ones this person may use (Finanças = gestão)
+    const { SKILLS_IA } = await import("@/lib/v2/skillsIA");
+    const skill = SKILLS_IA.find((x) => x.id === String(form?.get("atalho") ?? "") && (me.gestao || !x.soGestao));
+    const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString(), ...(anexo ? { anexo: { nome: anexo.nome, mime: anexo.mime } } : {}), ...(skill ? { atalho: skill.curto } : {}) }];
     const passos = await import("@/lib/v2/pinuPassos");
     passos.iniciarPassos(id);
     const ax = anexo ? anexoPinu.getAnexo(id) : null;
-    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300), (f) => passos.anotarPasso(id, f), ax ? anexoPinu.parteDoAnexo(ax) : undefined)
+    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300), (f) => passos.anotarPasso(id, f), ax ? anexoPinu.parteDoAnexo(ax) : undefined, skill ? { nome: skill.curto, passos: skill.passos } : undefined)
       .finally(() => passos.encerrarPassos(id));
     // a receipt: the photo/PDF waits for the entry the person confirms (same path as WhatsApp, comprovantes.ts)
     if (ax && me.pessoa && (ax.mime === "application/pdf" || ax.mime.startsWith("image/")) && r.acoes.some((a) => a.tipo === "registrar_lancamento"))
       (await import("@/lib/v2/comprovantes")).guardarReciboPendente(me.pessoa.id, ax.bytes.toString("base64"), ax.mime);
+    if (skill) (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "usou atalho do Pinu", skill.curto, "assistente");
     if (anexo) (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "anexou no Pinu", anexo.mime.startsWith("image/") ? "foto" : anexo.mime === "application/pdf" ? "PDF" : "texto", "assistente");
     msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), ...(r.consultas.length ? { consultas: r.consultas } : {}), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
     (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "usou o assistente", r.acoes.length ? `${r.acoes.length} proposta(s)` : "consulta", "assistente");

@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — Atalhos (skills) no Pinu (10.11)
+
+- `skillsIA.ts` separa `passos` (o que o Pinu segue) do texto para apps externos e ganha `curto`, `icone`, `dica`; o layout passa os atalhos permitidos (Finanças só gestão) ao `AssistenteGlobal`: seção "Atalhos" no início, menu "Atalhos" no campo, Chip do atalho ativo; `assistenteAction` recebe `skill` e `conversar` acrescenta os passos ao sistema; o balão mostra o atalho.
+
 ## 2026-11-22 — Captura rápida no Pinu (10.11)
 
 - Regra de captura no prompt do assistente (tarefa / Google Agenda / Agenda), limite de 15 propostas por resposta, `decidirTodasAction` (confirmar ou cancelar todas numa chamada), ícone do tipo em cada item do cartão e a linha "Anotar várias coisas de uma vez" no início do Pinu.

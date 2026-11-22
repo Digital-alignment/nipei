@@ -24,7 +24,7 @@ type Labels = {
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
   comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
-  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string; anotarVarias: string; anotarDica: string; anotePrefixo: string;
+  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string; anotarVarias: string; anotarDica: string; anotePrefixo: string; atalhos: string; tirarAtalho: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
@@ -67,7 +67,9 @@ const SUGESTOES: Record<string, { pt: string[]; en: string[] }> = {
  * `window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail: { texto } }))`.
  * It sends the current page with each message; the conversation is stored per person on the server.
  */
-export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | "en"; nome: string; labels: Labels }) {
+type Atalho = { id: string; curto: string; icone: NomeIcone; dica: string };
+
+export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang: "pt" | "en"; nome: string; labels: Labels; atalhos: Atalho[] }) {
   const path = usePathname() ?? "/hoje";
   const busca = useSearchParams();
   const pagina = path + (busca?.toString() ? `?${busca}` : "");
@@ -76,6 +78,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   const [passos, setPassos] = useState<string[]>([]);
   // photo/file attached to the next message (DS 10.11); images get a thumbnail in the field
   const [anexo, setAnexo] = useState<File | null>(null);
+  const [atalho, setAtalho] = useState<Atalho | null>(null); // skill picked for the next message (DS 10.11)
   const arquivo = useRef<HTMLInputElement>(null);
   const [miniatura, setMiniatura] = useState("");
   useEffect(() => {
@@ -155,19 +158,20 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
     setMsgs((r as { msgs: MsgSalva[] }).msgs);
   }), []);
 
-  const enviar = useCallback((conteudo: string) => {
+  const enviar = useCallback((conteudo: string, at: Atalho | null = atalho) => {
     const q = conteudo.trim();
     const ax = anexo;
     if (!q && !ax) return;
-    setTexto(""); setErro(""); setAnexo(null);
-    setMsgs((m) => [...(m ?? []), { role: "user", content: q, em: new Date().toISOString(), ...(ax ? { anexo: { nome: ax.name, mime: ax.type } } : {}) }]);
+    setTexto(""); setErro(""); setAnexo(null); setAtalho(null);
+    setMsgs((m) => [...(m ?? []), { role: "user", content: q, em: new Date().toISOString(), ...(ax ? { anexo: { nome: ax.name, mime: ax.type } } : {}), ...(at ? { atalho: at.curto } : {}) }]);
     if (q) setRecentes((r) => { const n = [q.slice(0, 140), ...r.filter((x) => x !== q.slice(0, 140))].slice(0, 4); try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(n)); } catch { /* private mode */ } return n; });
     setPassos([]);
     start(async () => {
       // what the Pinu is doing (DS 10.11): poll its steps while the answer is prepared
       const poll = setInterval(() => { void fetch("/api/assistente/passos", { cache: "no-store" }).then((x) => (x.ok ? x.json() : null)).then((j) => { if (j?.passos) setPassos(j.passos); }).catch(() => {}); }, 700);
-      const form = ax ? new FormData() : undefined;
+      const form = ax || at ? new FormData() : undefined;
       if (ax) form!.set("anexo", ax);
+      if (at) form!.set("atalho", at.id);
       const r = await assistenteAction(q, pagina, form).catch(() => ({ error: "Falha de conexão" } as { error: string })).finally(() => { clearInterval(poll); setPassos([]); });
       if ("error" in r && r.error) return setErro(r.error);
       const novas = (r as { msgs: MsgSalva[] }).msgs;
@@ -175,7 +179,17 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
       const ultima = novas.length - 1;
       if (vozRef.current && novas[ultima]?.role === "assistant") void falarMsg(novas[ultima], ultima);
     });
-  }, [pagina, falarMsg, anexo]);
+  }, [pagina, falarMsg, anexo, atalho]);
+
+  // shortcuts (DS 10.11): captura rápida first (it only pre-fills "Anote: "), then the official skills; "Meu dia" sends at once
+  const captura: Atalho = { id: "captura", curto: labels.anotarVarias, icone: "tarefa", dica: labels.anotarDica };
+  const todosAtalhos = [captura, ...atalhos];
+  const escolherAtalho = (a: Atalho) => {
+    if (a.id === "dia") return enviar(a.dica, a);
+    const focar = (fim?: number) => setTimeout(() => { campo.current?.focus(); if (fim != null) campo.current?.setSelectionRange(fim, fim); }, 30);
+    if (a.id === "captura") { setAtalho(null); setTexto(labels.anotePrefixo); return focar(labels.anotePrefixo.length); }
+    setAtalho(a); focar();
+  };
 
   // open from anywhere (phone bar, Hoje's field), optionally with a first message
   useEffect(() => {
@@ -260,7 +274,14 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   // campo do Pinu: grande no início, em pílula na conversa; ouvindo = o orbe toma o lugar do texto
   const campoPinu = (grande: boolean) => (
     <form onSubmit={(e) => { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); }}
-      className={`flex shrink-0 gap-2 bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande || anexo ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      className={`flex shrink-0 gap-2 overflow-x-clip bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande || anexo || atalho ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      {atalho && (
+        // the shortcut picked for this message: its name, and × to drop it
+        <span className="flex items-center gap-1 self-start">
+          <Chip tipo="pinu">{atalho.curto}</Chip>
+          <BotaoIcone icone="fechar" aria-label={labels.tirarAtalho} tamanho={40} variante="fantasma" onClick={() => setAtalho(null)} />
+        </span>
+      )}
       {anexo && (
         // the attachment waiting to go with the message: thumbnail (photo) or icon + name, and remove
         <span className="flex items-center gap-2.5 self-start rounded-interno bg-s3 py-1.5 pl-1.5 pr-1">
@@ -280,11 +301,16 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
       ) : (
         <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={grande ? 2 : 1} maxLength={2000} aria-label={labels.placeholder}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
-          placeholder={labels.placeholder}
-          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande || anexo ? "min-h-12 w-full" : "max-h-32 min-h-11 self-center py-2.5"}`} />
+          placeholder={atalho?.dica ?? labels.placeholder}
+          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande || anexo || atalho ? "min-h-12 w-full" : "max-h-32 min-h-11 self-center py-2.5"}`} />
       )}
-      <span className={`flex items-center gap-1.5 ${grande || anexo ? "justify-between" : "justify-end"}`}>
-        {!ouvindo && <BotaoIcone icone="imagem" aria-label={labels.anexar} tamanho={44} variante="fantasma" disabled={pending} onClick={() => arquivo.current?.click()} />}
+      <span className={`flex items-center gap-1.5 ${grande || anexo || atalho ? "justify-between" : "justify-end"}`}>
+        {!ouvindo && (
+          <span className="flex items-center">
+            <BotaoIcone icone="imagem" aria-label={labels.anexar} tamanho={44} variante="fantasma" disabled={pending} onClick={() => arquivo.current?.click()} />
+            <MenuAcoes rotulo={labels.atalhos} alinhar="esquerda" itens={todosAtalhos.map((a) => ({ icone: a.icone, rotulo: a.curto, onSelect: () => escolherAtalho(a) }))} />
+          </span>
+        )}
         {(texto.trim() || anexo) && !ouvindo
           ? <BotaoIcone type="submit" icone="enviar" aria-label={labels.enviar} tamanho={44} variante="acento" disabled={pending} />
           : <BotaoIcone icone={ouvindo ? "fechar" : "microfone"} aria-label={ouvindo ? labels.parar : labels.falarPinu} tamanho={44} variante="acento" onClick={falar} />}
@@ -350,12 +376,19 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                   </button>
                 ))}
               </div>
-              {/* captura rápida (DS 10.11): uma lista ditada ou colada vira várias propostas de uma vez */}
-              <button type="button" onClick={() => { setTexto(labels.anotePrefixo); setTimeout(() => { campo.current?.focus(); campo.current?.setSelectionRange(labels.anotePrefixo.length, labels.anotePrefixo.length); }, 30); }}
-                className="anel-foco flex min-h-12 items-center gap-3 rounded-[14px] bg-s1 px-3 text-left font-texto text-sm text-t1 hover:bg-s2">
-                <span className="grid size-8 shrink-0 place-items-center rounded-interno bg-s3"><Icone nome="tarefa" tamanho={17} /></span>
-                <span className="grid min-w-0 flex-1"><span className="font-medium">{labels.anotarVarias}</span><span className="meta text-t2">{labels.anotarDica}</span></span>
-              </button>
+              {/* atalhos (DS 10.11): as skills oficiais + captura rápida; a resposta segue os passos da skill */}
+              <div className="grid gap-2">
+                <p className="titulo-cartao">{labels.atalhos}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {todosAtalhos.map((a) => (
+                    <button key={a.id} type="button" onClick={() => escolherAtalho(a)} disabled={pending}
+                      className="anel-foco flex min-h-12 min-w-0 items-center gap-2.5 rounded-[14px] bg-s1 px-2.5 text-left font-texto text-sm font-medium text-t1 hover:bg-s2">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-interno bg-s3"><Icone nome={a.icone} tamanho={17} /></span>
+                      <span className="min-w-0 leading-snug">{a.curto}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               {recentes.length > 0 && (
                 <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
                   <p className="titulo-cartao">{labels.recentes}</p>
@@ -376,7 +409,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
               {msgs === null && <div className="grid gap-2"><Skeleton largura="70%" /><Skeleton largura="40%" /></div>}
               {msgs?.map((m, mi) => m.role === "user" ? (
                 // a pessoa: balão tonal à direita
-                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{m.anexo && <span className="meta mb-1 flex items-center gap-1.5 text-t2"><Icone nome={m.anexo.mime.startsWith("image/") ? "imagem" : "documento"} tamanho={16} /><span className="truncate">{m.anexo.nome}</span></span>}{semDicas(m.content)}{/\[anexou um comprovante/.test(m.content) && <span className="meta mt-1 block text-t2">({labels.comprovanteAnexado})</span>}</p>
+                <p key={mi} className="max-w-[80%] self-end whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-s3 px-3.5 py-2.5 font-texto text-[15px] text-t1">{m.atalho && <span className="meta mb-1 flex items-center gap-1.5 text-ac-text"><MiniAnelPinu tamanho={14} />{m.atalho}</span>}{m.anexo && <span className="meta mb-1 flex items-center gap-1.5 text-t2"><Icone nome={m.anexo.mime.startsWith("image/") ? "imagem" : "documento"} tamanho={16} /><span className="truncate">{m.anexo.nome}</span></span>}{semDicas(m.content)}{/\[anexou um comprovante/.test(m.content) && <span className="meta mt-1 block text-t2">({labels.comprovanteAnexado})</span>}</p>
               ) : (
                 <div key={mi} className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 font-display text-sm font-semibold">
