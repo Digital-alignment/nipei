@@ -1765,10 +1765,31 @@ export async function assistenteAction(texto: string, pagina: string) {
     const { getLang } = await import("@/lib/v2/i18n");
     contarUso(id);
     const msgs = [...getConversa(id), { role: "user" as const, content: q, em: new Date().toISOString() }];
-    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300));
+    const passos = await import("@/lib/v2/pinuPassos");
+    passos.iniciarPassos(id);
+    const r = await conversar(me, paraModelo(msgs), await getLang(), String(pagina || "/hoje").slice(0, 300), (f) => passos.anotarPasso(id, f))
+      .finally(() => passos.encerrarPassos(id));
     msgs.push({ role: "assistant", content: r.resposta, em: new Date().toISOString(), ...(r.consultas.length ? { consultas: r.consultas } : {}), cartoes: r.acoes.map((a) => ({ ...a, estado: "pendente" as const })) });
     (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "usou o assistente", r.acoes.length ? `${r.acoes.length} proposta(s)` : "consulta", "assistente");
     salvarConversa(id, msgs);
+    return { msgs };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
+/** 👍/👎 on one Pinu answer (DS 10.11): saved on the message (tap again = undo) and counted as an event with the tools it read, never the text. */
+export async function avaliarRespostaAction(msg: number, nota: "boa" | "ruim") {
+  try {
+    const { me, id } = await assistenteDono();
+    const { getConversa, salvarConversa } = await import("@/lib/v2/assistente");
+    const msgs = getConversa(id);
+    const m = msgs[msg];
+    if (!m || m.role !== "assistant" || (nota !== "boa" && nota !== "ruim")) return { msgs };
+    const desfazer = m.nota === nota;
+    m.nota = desfazer ? undefined : nota;
+    salvarConversa(id, msgs);
+    if (!desfazer) (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "avaliou o Pinu", `${nota === "boa" ? "útil" : "não ajudou"} · ${m.consultas?.join(", ") || "sem consulta"}${m.cartoes?.length ? ` · ${m.cartoes.length} proposta(s)` : ""}`, "assistente");
     return { msgs };
   } catch (e) {
     return { error: (e as Error).message };

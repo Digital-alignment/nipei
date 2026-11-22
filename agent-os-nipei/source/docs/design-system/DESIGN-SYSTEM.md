@@ -221,7 +221,7 @@ Cada forma tem **um** papel. Não usar fora dele.
 
 ### 7.4 Funcionais prontos (48)
 
-`mais · fechar · confirmar · editar (pena) · lixeira · buscar · filtrar · enviar · baixar · mais-opcoes · abrir-fora · gerar-outra · microfone · voltar · avancar · abrir · inicio · sucesso · atencao · erro · informacao · cadeado · tarefa · prazo (ampulheta) · calendario · pessoa · pessoas · mensagem · imagem · notificacao · configuracoes · tema-escuro · tema-claro · tema-sistema`
+`mais · fechar · confirmar · editar (pena) · lixeira · buscar · filtrar · enviar · baixar · mais-opcoes · abrir-fora · gerar-outra · gostei · nao-gostei · microfone · voltar · avancar · abrir · inicio · sucesso · atencao · erro · informacao · cadeado · tarefa · prazo (ampulheta) · calendario · pessoa · pessoas · mensagem · imagem · notificacao · configuracoes · tema-escuro · tema-claro · tema-sistema`
 
 v2.111 (desenhados no mesmo traço: contorno de ~2,4 px com bordas levemente curvas, pontas redondas, vazados com o sentido oposto): `quadro · grade · semana · mes · copiar · ver · ocultar · sem-conexao · documento · planilha · apresentacao · video · audio · pasta`
 
@@ -496,10 +496,10 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 - **Conversa**:
   - pessoa = **balão tonal à direita**;
   - Pinu = **balão tingido de verde à esquerda**, com mini-anel + nome em cima;
-  - ações da resposta: gerar outra · editar · ⋯;
+  - ações da resposta: gerar outra · editar · **útil / não ajudou** (ícones `gostei` / `nao-gostei`, botões de ícone fantasma de 40 px; escolhido = `ac-soft`/`ac-text` para útil e `superfície 3` para não ajudou; tocar de novo desfaz; embaixo, em `meta t3`, "Obrigado: isso ajuda a melhorar o Pinu.") · ⋯. A nota fica na mensagem e vira o evento "avaliou o Pinu" com as ferramentas que ele consultou (nunca o texto), contado no Painel → Sugestões do Pinu (2026-11-22);
   - sugestões de continuação em chips acima do campo.
 - **Cartão de proposta**: gradiente verde suave + brilho · ícone + "Criar 3 tarefas" + badge "Proposta" · lista do que será feito (responsável e prazo) · **Confirmar** (primário) · **Ajustar** (tonal) · **Cancelar** (fantasma).
-- **Pensando**: mini-orbe + "Pinu está pensando…" + skeleton de 2 linhas.
+- **Pensando**: mini-orbe + o que ele está fazendo agora ("Lendo suas tarefas…", "Buscando no Conhecimento…", "Preparando a proposta…"; antes do primeiro passo, "Pensando…") + os passos já feitos em `meta t3` com ✓ (até 4) + skeleton de 2 linhas. O painel pergunta os passos a `/api/assistente/passos` a cada 0,7 s enquanto espera (2026-11-22: antes só "Pensando", com respostas de até ~20 s).
 - Adiado: modo voz em tela cheia, o que abre primeiro (voz ou chat), textura de curvas de nível, lista "o que o Pinu sabe fazer", deslizar para confirmar.
 
 ---

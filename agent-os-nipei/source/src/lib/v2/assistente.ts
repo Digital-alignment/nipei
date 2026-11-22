@@ -54,7 +54,7 @@ export type Acao =
   | { tipo: "registrar_lancamento"; lancTipo: "entrada" | "despesa"; valor: number; data: string; categoria: string; descricao?: string; evento?: string; participante?: string; pendente?: boolean; projeto?: string; conta?: string; reembolsar?: string; unidade?: string; recurso?: string };
 export type AcaoProposta = Acao & { resumo: string; detalhe?: string };
 export type Cartao = AcaoProposta & { estado: "pendente" | "feito" | "cancelado" | "erro"; erro?: string; link?: string };
-export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[] };
+export type MsgSalva = Msg & { em: string; cartoes?: Cartao[]; consultas?: string[]; nota?: "boa" | "ruim" };
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const HORA = /^\d{2}:\d{2}$/;
@@ -856,7 +856,7 @@ export function paraModelo(salvas: MsgSalva[]): Msg[] {
 }
 
 /** One assistant turn: the model may read several times; changes come back as proposals to confirm. */
-export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje"): Promise<{ resposta: string; acoes: AcaoProposta[]; consultas: string[] }> {
+export async function conversar(me: Me, historico: Msg[], lang: string, pagina = "/hoje", onPasso?: (ferramenta: string) => void): Promise<{ resposta: string; acoes: AcaoProposta[]; consultas: string[] }> {
   let motor = motorIA(me.pessoa?.id);
   const msgs: ApiMsg[] = [{ role: "system", content: SISTEMA(me, lang, pagina) }, ...historico.slice(-12).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))];
   const acoes: AcaoProposta[] = [];
@@ -894,6 +894,7 @@ export async function conversar(me: Me, historico: Msg[], lang: string, pagina =
     if (!calls.length) return { resposta: s(m.content).replace(/\n?\[(consultou|propostas):[^\]]*\]/g, "").replace(/^\[mensagem de [^\]]*\]\s*/, "").trim(), acoes, consultas: [...consultas] };
     msgs.push({ role: "assistant", content: m.content ?? null, tool_calls: calls });
     for (const c of calls) {
+      onPasso?.(c.function.name);
       let args: Record<string, unknown> = {};
       try { args = JSON.parse(c.function.arguments || "{}"); } catch { /* bad args → tool error below */ }
       let saida: unknown;

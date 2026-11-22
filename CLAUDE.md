@@ -38,7 +38,7 @@ c:\Users\ondig\Code\Nipei\nipei-control\
 │   └── source/                  <-- CÓDIGO FONTE NEXT.JS (só a v2 desde 2026-11-16)
 │       ├── src/
 │       │   ├── app/(v2)/        <-- todas as telas (Hoje, Agenda, Tarefas, Equipes, Pessoas, Projetos, Finanças…)
-│       │   ├── app/api/         <-- só 9 rotas: auth (2), uso, assistente/voz, agenda/ics, whatsapp/webhook,
+│       │   ├── app/api/         <-- só 10 rotas: auth (2), uso, assistente/voz, assistente/passos (o painel do Pinu pergunta o que ele está fazendo), agenda/ics, whatsapp/webhook,
 │       │   │                        tarefas/entregavel (worker do Hermes), agent-kanban (GET) e venu/kanban-action
 │       │   │                        (create/update/assign) — essas duas para a skill do Hermes nipei-os
 │       │   ├── app/{login,cadastro,entrar,google,mcp,oauth,.well-known,privacidade,ver-como}

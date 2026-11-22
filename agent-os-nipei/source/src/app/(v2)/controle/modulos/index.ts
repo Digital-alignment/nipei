@@ -29,7 +29,7 @@ export const MODULOS: Modulo[] = [
   { id: "erros", titulo: "Erros", descricao: "Erros do servidor que ninguém veria: páginas, botões, rotas e IA fora do ar.", icone: "erro", Componente: Erros },
   { id: "custos", titulo: "Custos de IA", descricao: "Chamadas, tokens e custo da IA por mês, pessoa, uso e modelo.", icone: "gerar-outra", Componente: Custos },
   { id: "apps", titulo: "Apps de IA", descricao: "Quem conectou Claude, Gemini ou ChatGPT, quanto usa, o que mudou por eles e quem falta; convite pronto.", icone: "abrir-fora", Componente: AppsIA },
-  { id: "pinu", titulo: "Sugestões do Pinu", descricao: "Se as sugestões do Pinu na Nova tarefa e nos Pedidos ajudam: mostradas, usadas e o que as pessoas mantiveram.", icone: "gerar-outra", Componente: SugestoesPinu },
+  { id: "pinu", titulo: "Sugestões do Pinu", descricao: "Se o Pinu ajuda: respostas avaliadas com útil/não ajudou e, na Nova tarefa e nos Pedidos, sugestões mostradas, usadas e mantidas.", icone: "gerar-outra", Componente: SugestoesPinu },
   { id: "funcoes", titulo: "Funções", descricao: "Ligar ou desligar funções para todos ou para uma pessoa.", icone: "filtrar", Componente: Funcoes },
   { id: "relatorios", titulo: "Relatórios", descricao: "Baixar atividade, uso, acessos, custos e erros em CSV.", icone: "baixar", Componente: Relatorios },
   { id: "registro", titulo: "Registro do painel", descricao: "Cada abertura do painel e cada ação feita aqui.", icone: "editar", Componente: Registro },

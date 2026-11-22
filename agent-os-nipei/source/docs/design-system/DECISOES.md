@@ -894,3 +894,11 @@ Pedido do Ashuan (com capturas: o "+" branco por cima do botão verde do campo r
 - O menu do "+" ganha fundo escurecido com desfoque, título "Criar", itens maiores com o ícone num quadrado e entrada suave; Conhecimento e Acervo ganham ícones próprios (antes repetiam `enviar` e `mais`). Era o "menu com o fundo escurecido" que o §10.10 já previa.
 - A faixa da semana em Hoje vira grade de 7 colunas também no celular (dia em cima, número embaixo, pontos), sem rolagem lateral.
 
+## 2026-11-22 — Pinu: o que está fazendo e útil / não ajudou (§10.11, §7)
+
+Pedido do Ashuan, depois da análise de uso (12 conversas com o Pinu em ~4 semanas; Claude/Gemini pelo MCP, 74 chamadas). Decidido:
+
+- Enquanto prepara a resposta, o Pinu diz o que está fazendo, passo a passo, a partir das ferramentas que chama. Sem streaming do texto (o modelo responde com ferramentas em várias voltas; o texto final é curto): os passos já tiram a sensação de espera.
+- Cada resposta tem útil / não ajudou. Guardado na mensagem e como evento só com as ferramentas consultadas, para achar onde ele erra sem ler conversas. Os números aparecem no Painel → Sugestões do Pinu.
+- Dois ícones novos, `gostei` e `nao-gostei` (polegar), desenhados por Claude no traço do conjunto (contorno de ~2 px, cantos arredondados, punho cheio). Se o Ashuan quiser outro desenho, troca-se o SVG e roda `npm run icones`.
+

@@ -2,6 +2,11 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-22 — Pinu: passos ao vivo e útil / não ajudou (10.11)
+
+- `AssistenteGlobal`: "Pensando" mostra o passo atual e os feitos (consulta `/api/assistente/passos` a cada 0,7 s; `lib/v2/pinuPassos.ts` guarda em memória os passos de `conversar(…, onPasso)`); botões útil / não ajudou em cada resposta (`avaliarRespostaAction`, evento "avaliou o Pinu"). Painel → Sugestões do Pinu ganhou "Conversas com o Pinu" (respostas, avaliadas, úteis, as que não ajudaram com o que consultou).
+- Ícones `gostei` e `nao-gostei` (50 funcionais).
+
 ## 2026-11-22 — "+" em acento, menu de criar e semana sem rolagem (9.19, 10.5)
 
 - `MenuAcoes gatilho="criar"`: botão em acento com anel do fundo e sombra; menu com fundo escurecido/desfocado, título "Criar", itens de 52 px com ícone em quadrado e entrada suave (`starting:`). Vale em todas as telas com o "+" (Hoje, Agenda, Tarefas…).

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { assistenteAction, assistenteConversaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
+import { assistenteAction, assistenteConversaAction, avaliarRespostaAction, decidirCartaoAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
 import Campo from "@/components/ds/Campo";
 import Chip, { BadgeEstado } from "@/components/ds/Chip";
@@ -24,6 +24,7 @@ type Labels = {
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
   comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
+  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
@@ -70,6 +71,7 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   const pagina = path + (busca?.toString() ? `?${busca}` : "");
   const [aberto, setAberto] = useState(false);
   const [msgs, setMsgs] = useState<MsgSalva[] | null>(null);
+  const [passos, setPassos] = useState<string[]>([]);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [ouvindo, setOuvindo] = useState(false);
@@ -148,8 +150,11 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
     setTexto(""); setErro("");
     setMsgs((m) => [...(m ?? []), { role: "user", content: q, em: new Date().toISOString() }]);
     setRecentes((r) => { const n = [q.slice(0, 140), ...r.filter((x) => x !== q.slice(0, 140))].slice(0, 4); try { localStorage.setItem(CHAVE_RECENTES, JSON.stringify(n)); } catch { /* private mode */ } return n; });
+    setPassos([]);
     start(async () => {
-      const r = await assistenteAction(q, pagina).catch(() => ({ error: "Falha de conexão" } as { error: string }));
+      // what the Pinu is doing (DS 10.11): poll its steps while the answer is prepared
+      const poll = setInterval(() => { void fetch("/api/assistente/passos", { cache: "no-store" }).then((x) => (x.ok ? x.json() : null)).then((j) => { if (j?.passos) setPassos(j.passos); }).catch(() => {}); }, 700);
+      const r = await assistenteAction(q, pagina).catch(() => ({ error: "Falha de conexão" } as { error: string })).finally(() => { clearInterval(poll); setPassos([]); });
       if ("error" in r && r.error) return setErro(r.error);
       const novas = (r as { msgs: MsgSalva[] }).msgs;
       setMsgs(novas);
@@ -200,6 +205,10 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
   }
   ouvirDeNovo.current = falar;
 
+  const avaliar = (mi: number, nota: "boa" | "ruim") => start(async () => {
+    const r = await avaliarRespostaAction(mi, nota).catch(() => null);
+    if (r && "msgs" in r && r.msgs) setMsgs(r.msgs);
+  });
   const decidir = (mi: number, ci: number, confirmar: boolean) => start(async () => {
     const r = await decidirCartaoAction(mi, ci, confirmar).catch(() => ({ error: "Falha de conexão" } as { error: string }));
     if ("error" in r && r.error) return setErro(r.error);
@@ -402,6 +411,8 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                     <div className="-ml-2 flex items-center gap-0.5 text-t3">
                       {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="gerar-outra" aria-label={labels.gerarOutra} tamanho={40} variante="fantasma" disabled={pending} onClick={() => enviar(ultimaPergunta)} />}
                       {mi === ultimaResposta && ultimaPergunta && <BotaoIcone icone="editar" aria-label={labels.editarPergunta} tamanho={40} variante="fantasma" onClick={() => { setTexto(semDicas(ultimaPergunta)); setTimeout(() => campo.current?.focus(), 30); }} />}
+                      <BotaoIcone icone="gostei" aria-label={labels.util} aria-pressed={m.nota === "boa"} tamanho={40} variante="fantasma" disabled={pending} onClick={() => avaliar(mi, "boa")} className={m.nota === "boa" ? "bg-ac-soft text-ac-text" : ""} />
+                      <BotaoIcone icone="nao-gostei" aria-label={labels.naoAjudou} aria-pressed={m.nota === "ruim"} tamanho={40} variante="fantasma" disabled={pending} onClick={() => avaliar(mi, "ruim")} className={m.nota === "ruim" ? "bg-s3 text-t1" : ""} />
                       <MenuAcoes rotulo={labels.maisOpcoes} alinhar="esquerda" itens={[
                         falando === mi
                           ? { icone: "fechar", rotulo: labels.parar, onSelect: pararFala }
@@ -410,12 +421,18 @@ export default function AssistenteGlobal({ lang, nome, labels }: { lang: "pt" | 
                       ]} />
                     </div>
                   )}
+                  {m.content && m.nota && <p className="meta -mt-1 text-t3">{labels.obrigado}</p>}
                 </div>
               ))}
               {pending && msgs !== null && (
-                // pensando: mini-orbe + frase + skeleton de 2 linhas
-                <div className="grid gap-2">
-                  <span className="flex items-center gap-2 font-display text-sm font-semibold"><OrbePinu estado="pensando" tamanho={20} />{labels.pensando}</span>
+                // pensando (DS 10.11): mini-orbe + o que está fazendo agora; os passos já feitos ficam com ✓ embaixo
+                <div className="grid gap-2" aria-live="polite">
+                  <span className="flex items-center gap-2 font-display text-sm font-semibold"><OrbePinu estado="pensando" tamanho={20} />{passos.length ? `${labels.passos[passos.at(-1)!] ?? labels.passos._proposta}…` : labels.pensando}</span>
+                  {passos.length > 1 && (
+                    <ul className="meta grid gap-1 pl-7 text-t3">
+                      {passos.slice(0, -1).slice(-4).map((x, i) => <li key={`${x}${i}`} className="flex items-center gap-1.5"><Icone nome="confirmar" tamanho={14} className="text-ac-text" />{labels.passos[x] ?? labels.passos._proposta}</li>)}
+                    </ul>
+                  )}
                   <Skeleton largura="70%" altura={10} /><Skeleton largura="40%" altura={10} />
                 </div>
               )}

@@ -31,6 +31,7 @@ Estilo decidido: **ancestral também dentro dos botões** · motivos de **nature
 | baixar | Download, FileDown | P2 |
 | enviar arquivo | HardDriveUpload | P2 |
 | copiar | Copy → ✅ `copiar` (v2.111) | P2 |
+| útil / não ajudou (Pinu) | ThumbsUp, ThumbsDown → ✅ `gostei` · `nao-gostei` (2026-11-22) | P2 |
 | link | Link2 | P2 |
 | abrir fora | ExternalLink | P2 |
 | atualizar | RefreshCw | P2 |
