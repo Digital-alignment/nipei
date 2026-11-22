@@ -4,6 +4,8 @@ Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nip�
 
 ## 2026-11-22 — Pinu como base de Hoje, fase 1 (10.5.1)
 
+- Refeito: o campo e os atalhos viram um só Cartão `pinu` no celular (orbe + campo + divisor + atalhos neutros com ícone numa linha que rola); no computador, só a linha de atalhos. `PedirPinu` aceita `icone` (Chip neutro).
+
 - Hoje: `CampoPinuHoje` (campo + microfone + atalhos Anotar / Planejar meu dia / Meu dia) abaixo da saudação; Chip "Resolver com o Pinu" no fim de cada grupo de pendências (`PedirPinu`). O evento `nipei:assistente` aceita `atalho` e `preencher`. Skill nova "Planejar meu dia" (`VERSAO_SKILLS` v2) e ferramenta `definir_foco` (proposta; no MCP executa sem rascunho, é só da pessoa).
 
 ## 2026-11-22 — Atalhos (skills) no Pinu (10.11)

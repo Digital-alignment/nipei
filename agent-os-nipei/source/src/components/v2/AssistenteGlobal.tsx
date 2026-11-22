@@ -182,7 +182,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   }, [pagina, falarMsg, anexo, atalho]);
 
   // shortcuts (DS 10.11): captura rápida first (it only pre-fills "Anote: "), then the official skills; "Meu dia" sends at once
-  const captura: Atalho = { id: "captura", curto: labels.anotarVarias, icone: "tarefa", dica: labels.anotarDica };
+  const captura: Atalho = { id: "captura", curto: labels.anotarVarias, icone: "editar", dica: labels.anotarDica };
   const todosAtalhos = [captura, ...atalhos];
   const escolherAtalho = (a: Atalho) => {
     if (a.id === "dia" || a.id === "planejar") return enviar(a.dica, a); // these ask nothing more: send at once

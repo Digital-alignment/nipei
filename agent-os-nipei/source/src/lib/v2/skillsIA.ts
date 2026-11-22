@@ -44,7 +44,7 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
 4. Não guarde: material gerado por IA (apresentações, textos, resumos seus), opiniões sobre pessoas, senhas, dados de saúde ou documentos pessoais. Material gerado vai ao Acervo (adicionar_acervo), não ao Conhecimento.`,
   },
   {
-    id: "planejar", curto: "Planejar meu dia", icone: "inicio", dica: "Planeje meu dia de hoje", nome: "Nipëi · Planejar meu dia",
+    id: "planejar", curto: "Planejar meu dia", icone: "tarefa", dica: "Planeje meu dia de hoje", nome: "Nipëi · Planejar meu dia",
     quando: "Quando a pessoa pedir para planejar o dia, montar o foco de hoje, decidir o que fazer primeiro ou organizar a agenda do dia.",
     passos: `Passos:
 1. Chame minhas_tarefas e agenda (e google_agenda se a pessoa tiver Google conectado) para hoje e os próximos 7 dias.
