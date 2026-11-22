@@ -884,4 +884,4 @@ Pedido do Ashuan ("quiero que sea más limpio"). Antes de ver uma tarefa, Hoje m
 - Pendências: até 3 = Chips direto; 4+ = uma linha "N para você · M da equipe" que abre os grupos.
 - Foco sugerido com Agora vazia vira o estado vazio da aba Agora ("Começar por estas?"), em vez de uma lista acima que contradizia o "Nada pendente".
 - Sem "Nada pendente para hoje." no topo; estado vazio sem emoji; aba Novidades só quando se chega por ela (o sino já leva); "Nova tarefa" sai do "+" de Hoje (o campo rápido de Agora cria).
-- Ficam para depois (recomendações 4–5, não pedidas agora): semana mais fina e ações da linha só no hover.
+- Recomendações 4–5 aprovadas no mesmo dia ("haz también la 4 y la 5"): faixa da semana sempre fina em Hoje (pontos no lugar dos anéis) e, no computador, ações rápidas da linha (foco, prazo) só ao passar o mouse ou com foco.

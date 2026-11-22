@@ -24,6 +24,11 @@ html, body {
 /* bulk-selection checkboxes appear only after tapping "Selecionar" (components/v2/LoteBarra.tsx) */
 .v2 .lote-caixa { display: none; }
 html[data-lote] .v2 .lote-caixa { display: block; }
+/* task-row quick actions (focus, due date) only on hover/focus, with a mouse; open date picker keeps them (DS 10.3) */
+@media (hover: hover) and (pointer: fine) {
+  .v2 .acoes-hover :is(button, input, a) { opacity: 0; transition: opacity 150ms; }
+  .v2 li:is(:hover, :focus-within, :has([aria-expanded="true"])) .acoes-hover :is(button, input, a) { opacity: 1; }
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Nipëi OS — Design System v1 (docs/design-system/DESIGN-SYSTEM.md, seção 13.1)

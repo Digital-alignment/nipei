@@ -68,7 +68,7 @@ export default function LinhaTarefa({ href, titulo, equipe, nomeEquipe, prazo, p
       )}
       {pessoas.length > 0 && <span className={`${feita ? "opacity-50" : ""} ${pessoasSoComputador ? "hidden sm:inline-flex" : ""}`}><GrupoAvatares pessoas={pessoas} tamanho={24} anel="s1" /></span>}
       {estado && <span className="hidden md:inline-flex"><BadgeEstado estado={estado} /></span>}
-      {extra && (extraSoComputador ? <span className="hidden sm:contents">{extra}</span> : extra)}
+      {extra && (extraSoComputador ? <span className="acoes-hover hidden sm:contents">{extra}</span> : extra)}
       {acoes && acoes.length > 0 && <MenuAcoes itens={acoes} />}
     </li>
   );

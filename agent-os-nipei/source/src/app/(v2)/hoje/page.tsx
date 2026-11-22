@@ -41,7 +41,7 @@ import MenuAcoes from "@/components/ds/MenuAcoes";
 import { podeFinancas } from "@/lib/v2/funcoes";
 import { getFixos, previsaoCaixa } from "@/lib/v2/fixos";
 import { compararAnual, getOrcamentoAnual } from "@/lib/v2/orcamentoAnual";
-import { AnelProgresso, BarraProgresso } from "@/components/ds/Progresso";
+import { BarraProgresso } from "@/components/ds/Progresso";
 import { GrupoTarefas } from "@/components/ds/padroes/LinhaTarefa";
 
 // Hoje, compact: what matters today (agenda, pending pills), one place to ask,
@@ -83,7 +83,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const carregado = (x: (typeof semana)[number]) => x.abertasDia >= Math.max(4, 2 * media);
   const diaLeve = semana.slice(1).reduce((a, b) => (b.abertasDia < a.abertasDia ? b : a));
   const diaSel = q.dia && semana.some((x) => x.d === q.dia) ? q.dia : "";
-  const semanaVazia = semana.every((x) => !x.tarefasDia && !x.eventosDia && !x.googleDia);
   const selCarregado = semana.find((x) => x.d === diaSel && carregado(x));
 
   const OPCOES = {
@@ -400,32 +399,25 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       })}
 
       {me && (
-        // faixa da semana em anéis (seção 10.5): anel = minhas tarefas do dia feitas/total, número no centro; ponto azul = evento.
-        // Semana vazia: linha fina (dia + número lado a lado), sem os 7 anéis vazios.
-        <nav aria-label={t.semanaLbl} className={`-mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-7 md:gap-2 md:px-0 ${semanaVazia ? "mb-4 mt-4" : "mb-5 mt-6"}`}>
+        // faixa da semana (seção 10.5): sempre fina; pontos = tarefas abertas / eventos / Google
+        <nav aria-label={t.semanaLbl} className={`-mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-7 md:gap-2 md:px-0 mb-4 mt-4`}>
           {semana.map((x, i) => {
-            if (semanaVazia) {
-              const d0 = new Date(`${x.d}T12:00:00Z`), sel0 = x.d === diaSel;
-              return (
-                <Link key={x.d} href={sel0 ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel0 ? "date" : undefined}
-                  className={`anel-foco flex h-11 min-w-16 flex-1 items-center justify-center gap-1.5 rounded-pilula transition-colors duration-150 ${sel0 ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
-                  <span className="meta uppercase">{d0.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
-                  <span className="font-semibold tabular-nums">{d0.getUTCDate()}</span>
-                </Link>
-              );
-            }
+            // always the thin strip (DS 10.5): day + number side by side, dots = open tasks / events / Google; progress only in aria-label
             const data = new Date(`${x.d}T12:00:00Z`);
             const sel = x.d === diaSel, cheio = carregado(x);
+            const rotulo = `${data.toLocaleDateString(locale, { weekday: "long", day: "numeric", timeZone: "UTC" })}: ${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}${x.googleDia > 0 ? `, ${x.googleDia} ${t.googleAgenda}` : ""}${cheio ? ` · ${t.diaCarregado}` : ""}`;
             return (
-              <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined}
-                className={`anel-foco flex min-w-16 flex-1 flex-col items-center gap-1.5 rounded-pilula py-3 transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : cheio ? "bg-warn-bg text-t1" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
-                <span className={`meta uppercase ${cheio ? "font-semibold text-warn" : sel || i === 0 ? "text-t1" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
-                <span className={x.tarefasDia ? "" : "opacity-40"}><AnelProgresso tamanho={48} valor={x.feitasDia} max={x.tarefasDia} centro={<span className="text-xl">{data.getUTCDate()}</span>}
-                  rotulo={`${x.feitasDia} / ${x.tarefasDia} ${t.tarefas}${x.eventosDia > 0 ? `, ${x.eventosDia} ${t.agenda}` : ""}${x.googleDia > 0 ? `, ${x.googleDia} ${t.googleAgenda}` : ""}${cheio ? ` · ${t.diaCarregado}` : ""}`} /></span>
-                <span className="flex h-1.5 gap-1" aria-hidden="true">
-                  {x.eventosDia > 0 && <span className="size-1.5 rounded-pilula bg-info" />}
-                  {x.googleDia > 0 && <span className="size-1.5 rounded-pilula bg-t2" />}
-                </span>
+              <Link key={x.d} href={sel ? "/hoje" : `/hoje?dia=${x.d}`} scroll={false} aria-current={sel ? "date" : undefined} aria-label={rotulo}
+                className={`anel-foco flex h-11 min-w-16 flex-1 items-center justify-center gap-1.5 rounded-pilula transition-colors duration-150 ${sel ? "bg-s3 text-t1 shadow-[inset_0_0_0_2px_var(--ac)]" : cheio ? "bg-warn-bg text-t1" : i === 0 ? "bg-s2 text-t1" : "bg-s1 text-t2 hover:bg-s2 hover:text-t1"}`}>
+                <span className={`meta uppercase ${cheio ? "font-semibold text-warn" : ""}`}>{data.toLocaleDateString(locale, { weekday: "short", timeZone: "UTC" }).replace(".", "").slice(0, 3)}</span>
+                <span className="font-semibold tabular-nums">{data.getUTCDate()}</span>
+                {(x.abertasDia > 0 || x.eventosDia > 0 || x.googleDia > 0) && (
+                  <span className="flex gap-0.5" aria-hidden="true">
+                    {x.abertasDia > 0 && <span className="size-1.5 rounded-pilula bg-ac" />}
+                    {x.eventosDia > 0 && <span className="size-1.5 rounded-pilula bg-info" />}
+                    {x.googleDia > 0 && <span className="size-1.5 rounded-pilula bg-t2" />}
+                  </span>
+                )}
               </Link>
             );
           })}
