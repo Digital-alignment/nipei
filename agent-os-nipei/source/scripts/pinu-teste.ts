@@ -26,8 +26,7 @@ type Caso = {
 
 const dia = (n: number) => new Date(Date.parse(`${today()}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const proxSexta = (() => { for (let i = 1; i <= 7; i++) if (new Date(`${dia(i)}T12:00:00Z`).getUTCDay() === 5) return dia(i); return dia(7); })();
-const gestao = meDaPessoa("ashuan_web");
-if (!gestao) throw new Error("ashuan_web não encontrado no vault local");
+const gestao = meDaPessoa("ashuan_web") ?? (() => { throw new Error("ashuan_web não encontrado no vault local"); })();
 // a member outside gestão; while only Equipe 1 has access, the same person with gestão off stands in for one
 const membro = getPessoas().map((p) => meDaPessoa(p.id)).find((m) => m && !m.gestao && m.pessoa && !m.pessoa.contato) ?? { ...gestao, gestao: false, coordena: [] };
 const minhaTarefa = getTarefas().find((t) => t.status !== "done" && t.responsaveis.includes("ashuan_web") && t.title.length < 70);
