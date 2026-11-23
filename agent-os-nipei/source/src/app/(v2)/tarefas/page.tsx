@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { EstadoVazio } from "@/components/ds/Estados";
-import { TaskRow } from "@/components/v2/ui";
+import { TaskRow, acoesPinuTarefa } from "@/components/v2/ui";
+import CampoPinu from "@/components/v2/CampoPinu";
+import PedirPinu from "@/components/v2/PedirPinu";
+import DitarPinu from "@/components/v2/DitarPinu";
+import { funcaoLigada } from "@/lib/v2/funcoes";
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import QuadroTarefas from "@/components/v2/QuadroTarefas";
 import { AbasLinks, SegmentadoLinks } from "@/components/v2/VistaLinks";
@@ -65,7 +69,8 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
       ...(can.editTarefa(user, x) ? opcoesPrazo.map((o) => ({ icone: "prazo" as const, rotulo: `${t.hj.prazoMenu}: ${o.label}`, acao: prazoRapidoAction, campos: { id: x.id, prazo: o.data } })) : []),
     ];
   };
-  const linha = (x: Tarefa) => <TaskRow key={x.id} t={x} {...props} acoesCelular={acoesCelular(x)}
+  const pinu = funcaoLigada("assistente", user); // the Pinu as the base of Tarefas (DS 10.6.1), same rule as the panel
+  const linha = (x: Tarefa) => <TaskRow key={x.id} t={x} {...props} acoesCelular={acoesCelular(x)} acoesExtra={pinu && can.editTarefa(user, x) ? acoesPinuTarefa(x.title, t.hj) : undefined}
     extra={(tt) => (can.editTarefa(user, tt) ? <PrazoRapido id={tt.id} opcoes={opcoesPrazo} outraData={t.outraData} rotulo={t.reprogramar} /> : null)} />;
   // quick task (same field as Hoje): no date, with me, in my first team
   const equipeRapida = user.equipes.find((id) => equipes.some((e) => e.id === id)) ?? "";
@@ -124,13 +129,24 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
         </>}
       />
 
+      {pinu && (
+        // the Pinu block (DS 10.6.1): order my priorities, share out the ownerless ones (who runs a team), jot down tasks
+        <div className="mb-4">
+          <CampoPinu l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl }}>
+            <PedirPinu rotulo={t.tf.ordenarPrioridades} icone="filtrar" atalho="prioridades" />
+            {(user.gestao || user.coordena.length > 0) && <PedirPinu rotulo={t.tf.repartirSemDono} icone="pessoas" texto={t.tf.repartirTexto} />}
+            <PedirPinu rotulo={t.tf.anotarTarefas} icone="editar" preencher={t.pinuAnotePrefixo} />
+          </CampoPinu>
+        </div>
+      )}
+
       {podeRapida && vista !== "quadro" && (
         <form action={createTarefaAction} className="mb-4">
           <input type="hidden" name="equipe" value={equipeRapida} />
           <input type="hidden" name="responsaveis" value={me!.id} />
           <input type="hidden" name="back" value={url({})} />
           <Campo tipo="busca" iconeEsquerda="mais" name="title" rotulo={t.tarefaRapidaSemPrazo} required maxLength={200} autoComplete="off"
-            acaoDireita={<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" />} />
+            acaoDireita={<span className="flex items-center gap-1">{pinu && <DitarPinu rotulo={t.hj.ditarPinu} prefixo={t.pinuAnotePrefixo} />}<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" /></span>} />
         </form>
       )}
 
@@ -173,7 +189,17 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
         <div>
           {GRUPOS.map((g) => {
             const itens = ordem.tarefas.filter(g.dentro);
-            return itens.length ? <GrupoTarefas key={g.id} titulo={g.titulo} contagem={itens.length} alerta={g.alerta}>{itens.slice(0, 80).map(linha)}</GrupoTarefas> : null;
+            if (!itens.length) return null;
+            // the Pinu at the end of Atrasadas / Sem data (DS 10.6.1): realistic dates for the ones this person can change
+            const editaveis = itens.filter((x) => can.editTarefa(user, x)).length;
+            const chip = pinu && editaveis > 0 && (g.id === "atrasadas" ? <PedirPinu rotulo={t.ag.reprogramarPinu} texto={t.ag.reprogramarTexto.replace("{n}", String(editaveis))} />
+              : g.id === "semdata" ? <PedirPinu rotulo={t.tf.darPrazoPinu} texto={t.tf.darPrazoTexto.replace("{n}", String(editaveis))} /> : null);
+            return (
+              <div key={g.id}>
+                <GrupoTarefas titulo={g.titulo} contagem={itens.length} alerta={g.alerta}>{itens.slice(0, 80).map(linha)}</GrupoTarefas>
+                {chip && <div className="mt-2">{chip}</div>}
+              </div>
+            );
           })}
         </div>
       )}

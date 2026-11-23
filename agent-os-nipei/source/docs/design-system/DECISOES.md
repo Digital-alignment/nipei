@@ -939,3 +939,7 @@ Pedido do Ashuan ("haz la fase 3"). Decidido: o resumo do dia é gerado só quan
 
 Pedido do Ashuan ("lleva el pinu como base a la agenda"). Mesmo padrão de Hoje: o bloco do Pinu vira um componente só (`CampoPinu`, com os atalhos de cada página), e a Agenda ganha Organizar minha semana (skill `semana`), Achar um horário, Anotar compromissos, "Reprogramar com o Pinu" nas atrasadas e "Organizar este dia" na vista Dia. O lote "Mover as N para…" continua (é instantâneo e sem IA); o Pinu é a opção que distribui com critério.
 
+## 2026-11-23 — Pinu como base de Tarefas (§10.6.1)
+
+Pedido do Ashuan ("lleva el pinu como base a tarefas"). Mesmo padrão de Hoje e Agenda: bloco do Pinu com atalhos da página (Ordenar prioridades — skill nova —, Repartir as sem dono para quem gere equipe, Anotar tarefas), Chips do Pinu no fim das Atrasadas e Sem data, os itens do Pinu no ⋯ (agora um helper só, `acoesPinuTarefa`, usado em Hoje e Tarefas) e microfone no campo rápido.
+

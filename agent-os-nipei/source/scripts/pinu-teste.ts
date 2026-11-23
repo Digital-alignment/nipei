@@ -71,6 +71,8 @@ const CASOS: Caso[] = [
     extra: (r) => prop(r, "definir_foco")[0]?.dia === "amanha" ? "" : "o foco não é de amanhã" },
   { id: "atalho-semana", atalho: "semana", pergunta: "Organize minha semana", leu: [["minhas_tarefas"], ["agenda"]],
     extra: (r) => r.acoes.every((a) => a.tipo === "mudar_prazo") ? (r.acoes.length <= 8 ? "" : `${r.acoes.length} mudanças (máx. 8)`) : `propôs outra coisa: ${tipos(r).join(", ")}` },
+  { id: "atalho-prioridades", atalho: "prioridades", pergunta: "Ordene minhas prioridades", leu: [["minhas_tarefas"]],
+    extra: (r) => r.acoes.every((a) => a.tipo === "mudar_prioridade" || a.tipo === "definir_foco") ? (prop(r, "mudar_prioridade").length <= 6 ? "" : "mais de 6 mudanças de prioridade") : `propôs outra coisa: ${tipos(r).join(", ")}` },
   { id: "atalho-material", atalho: "material", pergunta: "Apresentação do Santuário para parceiros", leu: [["dossie"]] },
   // permissions: members don't register finances
   { id: "membro-gasto", quem: "membro", pergunta: "Gastei 50 reais de gasolina.", extra: (r) => tipos(r).includes("registrar_lancamento") ? "propôs lançamento para quem não é da gestão" : "" },

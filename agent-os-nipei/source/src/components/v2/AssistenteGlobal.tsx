@@ -186,7 +186,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   const captura: Atalho = { id: "captura", curto: labels.anotarVarias, icone: "editar", dica: labels.anotarDica };
   const todosAtalhos = [captura, ...atalhos];
   const escolherAtalho = (a: Atalho) => {
-    if (a.id === "dia" || a.id === "planejar" || a.id === "amanha" || a.id === "semana") return enviar(a.dica, a); // these ask nothing more: send at once
+    if (a.id === "dia" || a.id === "planejar" || a.id === "amanha" || a.id === "semana" || a.id === "prioridades") return enviar(a.dica, a); // these ask nothing more: send at once
     const focar = (fim?: number) => setTimeout(() => { campo.current?.focus(); if (fim != null) campo.current?.setSelectionRange(fim, fim); }, 30);
     if (a.id === "captura") { setAtalho(null); setTexto(labels.anotePrefixo); return focar(labels.anotePrefixo.length); }
     setAtalho(a); focar();

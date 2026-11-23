@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AbasComPainel } from "@/components/ds/Abas";
 import { EstadoVazio } from "@/components/ds/Estados";
-import { TaskRow, byPrazo } from "@/components/v2/ui";
+import { TaskRow, acoesPinuTarefa, byPrazo } from "@/components/v2/ui";
 
 import PrazoRapido from "@/components/v2/PrazoRapido";
 import { prontosPara } from "@/lib/v2/trabalhos";
@@ -213,13 +213,8 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     ];
   };
   // the Pinu on this task (DS 10.5.1, phase 2): split into steps, write a message, or ask anything — by title, never the id
-  const acoesPinu = (x: Tarefa): ItemMenu[] => [
-    { icone: "tarefa", rotulo: t.hj.pinuPassos, pinu: { texto: t.hj.pinuPassosTexto.replace("{t}", x.title) } },
-    { icone: "mensagem", rotulo: t.hj.pinuMensagem, pinu: { texto: t.hj.pinuMensagemTexto.replace("{t}", x.title) } },
-    { icone: "enviar", rotulo: t.hj.pinuPedir, pinu: { preencher: t.hj.pinuPedirTexto.replace("{t}", x.title) } },
-  ];
   const linha = (x: Tarefa, grupo: keyof typeof OPCOES, selos?: Record<string, Selo[]>) =>
-    <TaskRow key={x.id} t={x} {...props} extra={comPrazo(grupo)} acoesCelular={acoesCelular(x, grupo)} acoesExtra={pinu ? acoesPinu(x) : undefined} selos={selos && legiveis(selos)[x.id]} />;
+    <TaskRow key={x.id} t={x} {...props} extra={comPrazo(grupo)} acoesCelular={acoesCelular(x, grupo)} acoesExtra={pinu ? acoesPinuTarefa(x.title, t.hj) : undefined} selos={selos && legiveis(selos)[x.id]} />;
   // Agrupada por Atrasadas / Hoje / Amanhã / … com contagem (seção 10.3); a ordem inteligente vale dentro de cada grupo
   const grupos = (ts: Tarefa[], grupo: keyof typeof OPCOES, selos: Record<string, Selo[]> | undefined, defs: { id: string; titulo: string; dentro: (x: Tarefa) => boolean; alerta?: boolean }[]) => {
     const gs = defs.map((d) => ({ ...d, itens: ts.filter(d.dentro) })).filter((g) => g.itens.length);

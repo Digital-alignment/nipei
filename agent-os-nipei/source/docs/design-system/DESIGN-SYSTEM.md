@@ -455,6 +455,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 - **Busca de tarefas**: no celular é um campo em pílula que ocupa a linha das ações, ao lado de "Nova tarefa" (com o texto "Buscar tarefas…" visível) — não um segundo botão de lupa, para não confundir com a lupa do cabeçalho (o Pinu). No computador, campo de 224 px.
 - **Tarefa rápida** no topo da Lista (mesmo campo de Hoje, 10.5.1): cria a tarefa sem prazo, comigo, na minha primeira equipe.
 - Linhas iguais às de Hoje: no celular foco e prazo vão para o ⋯ (`acoesCelular`).
+- **Pinu em Tarefas** (2026-11-23): abaixo do cabeçalho, o bloco do Pinu (`CampoPinu`) com **Ordenar prioridades** (`filtrar`, skill `prioridades`: as 5 mais importantes com o porquê, mudar prioridade e, se fizer sentido, o Foco de hoje), **Repartir as sem dono** (`pessoas`, só gestão ou coordenação: propõe a quem atribuir pela carga e pelo papel) e **Anotar tarefas** (`editar`: "Anote: "). No fim dos grupos **Atrasadas** e **Sem data** da Lista, Chips `pinu` "Reprogramar com o Pinu" / "Dar prazo com o Pinu". O ⋯ das tarefas que a pessoa pode editar ganha os mesmos itens de Hoje (Dividir em passos, Escrever mensagem, Pedir ao Pinu…) e o campo rápido ganha o microfone (dita como captura rápida).
 
 ### 10.7 Quadro (kanban)
 - Uma coluna por estado (`superfície 1`) com o badge do estado, contagem e "+".

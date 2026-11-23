@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-23 — Pinu como base de Tarefas (10.6.1)
+
+- Tarefas: `CampoPinu` com Ordenar prioridades (skill `prioridades`), Repartir as sem dono (gestão/coordenação), Anotar tarefas; Chips do Pinu nas Atrasadas e Sem data; `acoesPinuTarefa` (ui.tsx) no ⋯ das linhas editáveis (Hoje passa a usar o mesmo helper); `DitarPinu` no campo rápido. `VERSAO_SKILLS` v5.
+
 ## 2026-11-23 — Pinu como base da Agenda (10.6)
 
 - `CampoPinuHoje` virou `CampoPinu` (os atalhos vêm de cada página). Agenda: bloco do Pinu com Organizar minha semana / Achar um horário / Anotar compromissos; "Reprogramar com o Pinu" nas atrasadas; "Organizar este dia" na vista Dia. Skill `semana` (`VERSAO_SKILLS` v4).

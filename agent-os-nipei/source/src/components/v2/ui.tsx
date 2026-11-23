@@ -22,6 +22,16 @@ export function Section({ title, count, children }: { title: ReactNode; count?: 
 /** One task as the design system's <LinhaTarefa>; the circle (StatusBotao) marks it done and works offline. */
 export type RowProps = { equipes: Equipe[]; pessoas: Pessoa[]; lang: Lang; hoje: string; me: Me };
 
+/** The Pinu on one task (DS 10.5.1 / 10.6.1), for the row's ⋯: split into steps, write a message, or ask anything.
+ *  By title only — the id never reaches the person's balloon. `hj` = the `t.hj` texts. */
+export function acoesPinuTarefa(titulo: string, hj: { pinuPassos: string; pinuPassosTexto: string; pinuMensagem: string; pinuMensagemTexto: string; pinuPedir: string; pinuPedirTexto: string }): ItemMenu[] {
+  return [
+    { icone: "tarefa", rotulo: hj.pinuPassos, pinu: { texto: hj.pinuPassosTexto.replace("{t}", titulo) } },
+    { icone: "mensagem", rotulo: hj.pinuMensagem, pinu: { texto: hj.pinuMensagemTexto.replace("{t}", titulo) } },
+    { icone: "enviar", rotulo: hj.pinuPedir, pinu: { preencher: hj.pinuPedirTexto.replace("{t}", titulo) } },
+  ];
+}
+
 /** acoesCelular: quick actions that, on phones, go into the ⋯ instead of `extra` (DS 10.3). */
 /** acoesExtra: more ⋯ items on every screen size (Hoje: the Pinu on this task, DS 10.5.1). */
 export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arrastavel, selecionar, acoesCelular, acoesExtra }: { t: Tarefa; extra?: (t: Tarefa) => ReactNode; selos?: string[]; arrastavel?: boolean; selecionar?: string; acoesCelular?: ItemMenu[]; acoesExtra?: ItemMenu[] } & RowProps) {

@@ -3,7 +3,7 @@
 // public/internal) stays on the server. Never put Santuário data here: it would go stale; the skill calls the tools.
 // The official text lives here and is shown in Conexões with a copy button. Change the text → bump VERSAO.
 
-export const VERSAO_SKILLS = "v4 · 23/11/2026";
+export const VERSAO_SKILLS = "v5 · 23/11/2026";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** texto = what the person pastes into an external AI app (BASE + passos); passos = what the Pinu itself follows when the
@@ -69,6 +69,15 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
 2. Veja, dia a dia, quantas tarefas e compromissos há; um dia com 5 ou mais tarefas, ou cheio de compromissos, está carregado. Atrasadas também precisam de data.
 3. Proponha mudar_prazo (no máximo 8) para equilibrar: atrasadas para dias com folga a partir de hoje, tarefas de dias carregados para os mais leves; nunca deixe um dia com mais de 4 tarefas novas e não mova o que tem compromisso marcado no dia.
 4. Responda curto: a semana dia a dia (uma linha cada: tarefas e compromissos) e, em uma frase, o que você propõe mudar e por quê. Nada muda sem o sim da pessoa no cartão.`,
+  },
+  {
+    id: "prioridades", curto: "Ordenar prioridades", icone: "filtrar", dica: "Ordene minhas prioridades", nome: "Nipëi · Ordenar prioridades",
+    quando: "Quando a pessoa disser que tem muita coisa, pedir o que é mais importante, para priorizar ou ordenar suas tarefas.",
+    passos: `Passos:
+1. Chame minhas_tarefas (todas); se ajudar, objetivos (os ativos dela).
+2. Escolha as 5 mais importantes, nesta ordem de peso: atrasadas, prazo nos próximos dias, prioridade alta/urgente, alguém esperando por ela (pedido ou comentário), ligação com um objetivo ativo.
+3. Proponha mudar_prioridade (no máximo 6) só onde a prioridade atual não bate com isso (alta/urgente para as críticas, baixa para as que podem esperar) e, se fizer sentido, definir_foco com as 3 primeiras.
+4. Responda curto: a lista 1 a 5, uma linha cada com o porquê. Nada muda sem o sim da pessoa no cartão.`,
   },
   {
     id: "dia", curto: "Meu dia", icone: "calendario", dica: "O que tenho hoje e nesta semana?", nome: "Nipëi · Meu dia",
