@@ -42,6 +42,10 @@ import { funcaoLigada, podeFinancas } from "@/lib/v2/funcoes";
 import CampoPinuHoje from "@/components/v2/CampoPinuHoje";
 import PedirPinu from "@/components/v2/PedirPinu";
 import DitarPinu from "@/components/v2/DitarPinu";
+import GerarResumo from "@/components/v2/GerarResumo";
+import Md from "@/components/v2/Md";
+import { MiniAnelPinu } from "@/components/ds/Pinu";
+import { getResumoDia } from "@/lib/v2/resumoDia";
 import { getFixos, previsaoCaixa } from "@/lib/v2/fixos";
 import { compararAnual, getOrcamentoAnual } from "@/lib/v2/orcamentoAnual";
 import { BarraProgresso } from "@/components/ds/Progresso";
@@ -265,6 +269,9 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   );
   const nome = (me?.name ?? user.username).split(/[\s(]/)[0];
   const pinu = funcaoLigada("assistente", user); // the same rule as the panel itself (layout)
+  // phase 3: today's summary (only if the person asked for it today) and the evening switch to "Planejar amanhã"
+  const resumoHoje = pinu ? getResumoDia(me?.id ?? user.username, hoje) : null;
+  const noite = fechouDia || Number(new Date().toLocaleTimeString("sv-SE", { timeZone: "America/Bahia" }).slice(0, 2)) >= 17;
   const passosFeitos = passos.filter((x) => x.feito).length;
 
   return (
@@ -295,7 +302,20 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           return partes.length > 0 && <p className="corpo text-t2">{partes.map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>;
         })()}
         {/* the Pinu at the centre of Hoje (DS 10.5.1): ask, speak or tap a shortcut; nothing runs on page load */}
-        {pinu && <CampoPinuHoje l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl, anotar: t.pinuAnotarVarias, anotePrefixo: t.pinuAnotePrefixo, planejar: t.hj.planejarDia, meuDia: t.hj.meuDia }} />}
+        {pinu && <CampoPinuHoje noite={noite} l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl, anotar: t.pinuAnotarVarias, anotePrefixo: t.pinuAnotePrefixo, planejar: t.hj.planejarDia, planejarAmanha: t.hj.planejarAmanha, resumo: t.hj.resumoDia, resumindo: t.hj.resumindo }} />}
+        {pinu && resumoHoje && (
+          // the Pinu's summary of the day (DS 10.5.1, phase 3): generated on tap, kept for today, no AI on page load
+          <section aria-label={t.hj.resumoDia} className="grid gap-2 rounded-cartao bg-s1 p-4">
+            <p className="meta flex items-center gap-2 text-t2"><MiniAnelPinu tamanho={16} />{t.hj.resumoDoPinu} · {new Date(resumoHoje.em).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "America/Bahia" })}</p>
+            {/* cut to ~6 lines so the tasks stay near the top; "Ver tudo" (checkbox peer, no JS) opens the rest */}
+            <input id="resumo-mais" type="checkbox" className="peer sr-only" />
+            <div className="corpo max-h-40 overflow-hidden text-t1 [mask-image:linear-gradient(#000_55%,transparent)] peer-checked:max-h-none peer-checked:[mask-image:none]"><Md>{resumoHoje.texto}</Md></div>
+            <div className="flex flex-wrap items-center gap-2 peer-checked:[&>label]:hidden">
+              <label htmlFor="resumo-mais" className="anel-foco inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-pilula px-3 font-texto text-sm font-medium text-t1 hover:bg-s2"><Icone nome="abrir" tamanho={16} />{t.hj.verResumo}</label>
+              <GerarResumo comoBotao rotulo={t.hj.atualizarResumo} gerando={t.hj.resumindo} />
+            </div>
+          </section>
+        )}
         {/* pending items (DS 10.5.1): up to 3 = chips; 4+ = one summary line that opens the two groups */}
         {(() => {
           const chipsVoce = [
@@ -475,6 +495,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           <GrupoTarefas titulo={<>{t.hj.focoAmanha}{!focoAmanhaIds.length && <span className="meta ml-2 font-normal text-t3">{t.focoSugestao}</span>}</>} contagem={focoAmanhaIds.length || undefined}>
             {focoAmanha.map((x) => <TaskRow key={x.id} t={x} {...props} />)}
           </GrupoTarefas>
+          {pinu && <div className="mt-2"><PedirPinu rotulo={t.hj.planejarAmanhaPinu} atalho="amanha" /></div>}
           {!focoAmanhaIds.length && (
             <form action={focoAction} className="mt-2">
               <input type="hidden" name="amanha" value={dia(1)} />

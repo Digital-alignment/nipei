@@ -3,7 +3,7 @@
 // public/internal) stays on the server. Never put Santuário data here: it would go stale; the skill calls the tools.
 // The official text lives here and is shown in Conexões with a copy button. Change the text → bump VERSAO.
 
-export const VERSAO_SKILLS = "v2 · 22/11/2026";
+export const VERSAO_SKILLS = "v3 · 23/11/2026";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** texto = what the person pastes into an external AI app (BASE + passos); passos = what the Pinu itself follows when the
@@ -51,6 +51,15 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
 2. Escolha até 3 tarefas para o Foco de hoje: primeiro as atrasadas e as de hoje mais importantes (prioridade alta, prazo vencido, quem está esperando por ela), depois as que destravam outras pessoas; considere o tempo livre entre os compromissos do dia.
 3. Proponha definir_foco com essas tarefas e, para as atrasadas que não cabem hoje, mudar_prazo para datas realistas (sem lotar um dia; no máximo 5 mudanças).
 4. Responda curto: o plano do dia em até 3 linhas (o quê e por quê) e os compromissos com hora. Nada muda sem o sim da pessoa no cartão.`,
+  },
+  {
+    id: "amanha", curto: "Planejar amanhã", icone: "tarefa", dica: "Planeje meu dia de amanhã", nome: "Nipëi · Planejar amanhã",
+    quando: "No fim do dia, quando a pessoa pedir para planejar amanhã, fechar o dia ou escolher o que fazer primeiro no dia seguinte.",
+    passos: `Passos:
+1. Chame minhas_tarefas e agenda (e google_agenda se a pessoa tiver Google conectado) para amanhã e os próximos dias.
+2. Diga em uma linha o que ficou aberto hoje (atrasadas e de hoje não concluídas).
+3. Escolha até 3 tarefas para o Foco de amanhã (primeiro o que ficou de hoje e é importante, depois as de amanhã) e proponha definir_foco com dia "amanha"; para o que não cabe amanhã, proponha mudar_prazo para datas realistas (no máximo 5 mudanças).
+4. Responda curto: o plano de amanhã em até 3 linhas e os compromissos de amanhã com hora. Nada muda sem o sim da pessoa no cartão.`,
   },
   {
     id: "dia", curto: "Meu dia", icone: "calendario", dica: "O que tenho hoje e nesta semana?", nome: "Nipëi · Meu dia",

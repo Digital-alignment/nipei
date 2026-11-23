@@ -67,6 +67,8 @@ const CASOS: Caso[] = [
   { id: "atalho-mensagem", atalho: "mensagens", pergunta: "avisar o Paulo Roberto que o mutirão é no sábado às 8h", propoe: ["enviar_whatsapp"] },
   { id: "atalho-planejar", atalho: "planejar", pergunta: "Planeje meu dia de hoje", leu: [["minhas_tarefas"]], propoe: ["definir_foco"],
     extra: (r) => (prop(r, "definir_foco")[0]?.ids.length ?? 0) <= 3 ? "" : "mais de 3 tarefas no foco" },
+  { id: "atalho-amanha", atalho: "amanha", pergunta: "Planeje meu dia de amanhã", leu: [["minhas_tarefas"]], propoe: ["definir_foco"],
+    extra: (r) => prop(r, "definir_foco")[0]?.dia === "amanha" ? "" : "o foco não é de amanhã" },
   { id: "atalho-material", atalho: "material", pergunta: "Apresentação do Santuário para parceiros", leu: [["dossie"]] },
   // permissions: members don't register finances
   { id: "membro-gasto", quem: "membro", pergunta: "Gastei 50 reais de gasolina.", extra: (r) => tipos(r).includes("registrar_lancamento") ? "propôs lançamento para quem não é da gestão" : "" },

@@ -931,3 +931,7 @@ Pedido do Ashuan ("que o Pinu seja a base principal de interação, começando p
 
 Pedido do Ashuan ("haz la fase 2"). Decidido: o ⋯ das minhas tarefas em Hoje ganha Dividir em passos, Escrever mensagem e Pedir ao Pinu…; o campo rápido de Agora ganha microfone que dita para o Pinu como captura rápida (digitar continua criando a tarefa direto, sem IA). Para dividir em passos, ferramenta nova `adicionar_passos` (proposta; no MCP só executa direto em tarefa só da pessoa). O item de menu ganha o campo `pinu` porque as linhas de tarefa são desenhadas no servidor e não podem levar funções.
 
+## 2026-11-22 — Pinu como base de Hoje, fase 3 (§10.5.1)
+
+Pedido do Ashuan ("haz la fase 3"). Decidido: o resumo do dia é gerado só quando a pessoa toca "Resumo do dia" e fica guardado para o dia (aparece em Hoje sem nova chamada à IA; "Atualizar" gera de novo) — o oposto do antigo "Bom dia", que gerava a cada abertura. No fim do dia (17 h ou dia fechado), "Planejar meu dia" vira "Planejar amanhã", usando o Foco de amanhã que já existia (`definir_foco` ganha `dia`). "Meu dia" continua nos atalhos do painel.
+

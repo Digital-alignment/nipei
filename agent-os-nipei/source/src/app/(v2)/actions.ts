@@ -1791,6 +1791,26 @@ export async function assistenteAction(texto: string, pagina: string, form?: For
   }
 }
 
+/** "Resumo do dia" in Hoje (DS 10.5.1, phase 3): the Pinu writes the day's summary (skill Meu dia) and it is kept for today. */
+export async function resumoDiaAction() {
+  try {
+    const { me, id } = await assistenteDono();
+    contarUso(id);
+    const { conversar } = await import("@/lib/v2/assistente");
+    const { SKILLS_IA } = await import("@/lib/v2/skillsIA");
+    const { getLang } = await import("@/lib/v2/i18n");
+    const sk = SKILLS_IA.find((x) => x.id === "dia")!;
+    const r = await conversar(me, [{ role: "user", content: "Faça o resumo do meu dia de hoje e dos próximos dias. Não proponha mudanças." }], await getLang(), "/hoje", undefined, undefined, { nome: sk.curto, passos: sk.passos });
+    if (!r.resposta) return { error: "O Pinu não conseguiu resumir agora; tente de novo." };
+    (await import("@/lib/v2/resumoDia")).salvarResumoDia(id, today(), r.resposta);
+    (await import("@/lib/v2/eventos")).registrarEvento(me.pessoa?.id, "resumo do dia", r.consultas.join(", ") || "sem consulta", "assistente");
+    revalidatePath("/hoje");
+    return { ok: true };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
 /** 👍/👎 on one Pinu answer (DS 10.11): saved on the message (tap again = undo) and counted as an event with the tools it read, never the text. */
 export async function avaliarRespostaAction(msg: number, nota: "boa" | "ruim") {
   try {
