@@ -527,6 +527,14 @@ Pessoas da equipe **Pontes** (`contatos: true`): fornecedores, aliados possívei
 ### 10.13 Sobre a equipe
 Primeira aba da página da equipe. Quatro Cartões em grade bento (2 colunas a partir de `sm`): **Propósito** · **O que decide** · **O que não faz** · **Como pedir**, cada um com rótulo `rotulo-maiusculo` e texto `corpo`. Coordenação e gestão veem "Editar" (Botão tonal com ícone `editar`) no topo da aba → página com os quatro Campos área de texto. Sem nada escrito: Estado vazio (selo da equipe) com a ação "Escrever" para quem pode editar; os outros veem só a frase, e a aba Sobre vai para o fim (a equipe abre em Tarefas). **Rascunho com o Pinu** (na página de editar, acima dos campos): Botão tonal com ícone `gerar-outra` que preenche as quatro áreas com uma proposta feita a partir dos temas, das tarefas e pedidos da equipe e dos fatos confirmados dela; o que já está escrito vira a base (o Pinu completa, não apaga) e nada é salvo até "Salvar" — a linha `meta` abaixo do botão diz isso.
 
+### 10.13.1 Pinu na equipe (2026-11-23, plano `docs/planos/pinu-equipes-2026-11.md`, fase 1)
+Na página da equipe, entre os números e as abas, o bloco do Pinu (`CampoPinu`), com atalhos conforme quem olha:
+- **Como vai a equipe?** (`pessoas`, membros, coordenação e gestão): o Pinu lê a equipe, os objetivos e a carga e diz em 3–5 linhas o que avançou, o que está atrasado, objetivos em risco e quem está sobrecarregado. Não propõe nada.
+- **Preparar a reunião** (`calendario`, coordenação e gestão): lê a pauta (`pauta_reuniao`: pendentes da última ata, feitas, atrasadas, próximos 7 dias, sem responsável) e propõe a pauta em tópicos; se a pessoa pedir, `criar_evento`.
+- **Repartir a carga** (`tarefa`, coordenação e gestão): lê `carga_equipe` (as sugestões de "Equilibrar carga", sem IA) e o papel/referente de cada pessoa e propõe `atribuir` (no máximo 8).
+- **Pedir algo à equipe** (`enviar`, quem não é da equipe): abre o Pinu com "Peça à <equipe>: " → `pedir_equipe`.
+Os atalhos enviam a mensagem já com o nome da equipe. Nada de IA ao abrir a página.
+
 ### 10.14 Pedidos à equipe
 Quem não sabe a quem pedir, pede à equipe.
 - **Pedir algo**: Botão de ícone `enviar` (rótulo "Pedir algo") no cabeçalho da equipe, junto de Reunião e Pessoas, e item no "+" de Hoje → página com Campo título "O que você precisa?" primeiro (a sugestão do Pinu preenche a equipe abaixo), Campo seleção de equipe (quando não veio da equipe), Campo área "Detalhes" e Campo data "Até quando?" (opcional). Primário "Enviar pedido" (ícone `enviar`).

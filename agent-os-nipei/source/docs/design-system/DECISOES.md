@@ -943,3 +943,7 @@ Pedido do Ashuan ("lleva el pinu como base a la agenda"). Mesmo padrão de Hoje:
 
 Pedido do Ashuan ("lleva el pinu como base a tarefas"). Mesmo padrão de Hoje e Agenda: bloco do Pinu com atalhos da página (Ordenar prioridades — skill nova —, Repartir as sem dono para quem gere equipe, Anotar tarefas), Chips do Pinu no fim das Atrasadas e Sem data, os itens do Pinu no ⋯ (agora um helper só, `acoesPinuTarefa`, usado em Hoje e Tarefas) e microfone no campo rápido.
 
+## 2026-11-23 — Pinu como base de Equipes, fase 1 (§10.13.1)
+
+Pedido do Ashuan, depois de organizar pessoas e equipes e escrever o Sobre de todas. Fase 1 do plano `docs/planos/pinu-equipes-2026-11.md`: bloco do Pinu na equipe com Como vai a equipe?, Preparar a reunião, Repartir a carga (coordenação/gestão) e Pedir algo à equipe (quem é de fora). Duas ferramentas de leitura para o Pinu não refazer contas que o código já faz: `carga_equipe` (= `balancear()`, só quem gere a equipe) e `pauta_reuniao` (= `pauta()`, membros, coordenação e gestão). Skills `equipe`, `reuniao`, `carga` (também para Gemini/Claude pelo MCP). Reunião fixa ainda sem data: "Preparar a reunião" só propõe evento se a pessoa pedir.
+

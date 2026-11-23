@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-23 — Pinu como base de Equipes, fase 1 (10.13.1)
+
+- `/equipes/[id]`: `CampoPinu` com Como vai a equipe? / Preparar a reunião / Repartir a carga (gestão ou coordenação) / Pedir algo à equipe (quem é de fora). Ferramentas `carga_equipe` e `pauta_reuniao`; skills `equipe`, `reuniao`, `carga` (`VERSAO_SKILLS` v6). O evento `nipei:assistente` aceita `atalho` + `texto` (a mensagem com o nome da equipe, seguindo os passos do atalho).
+
 ## 2026-11-23 — Pinu como base de Tarefas (10.6.1)
 
 - Tarefas: `CampoPinu` com Ordenar prioridades (skill `prioridades`), Repartir as sem dono (gestão/coordenação), Anotar tarefas; Chips do Pinu nas Atrasadas e Sem data; `acoesPinuTarefa` (ui.tsx) no ⋯ das linhas editáveis (Hoje passa a usar o mesmo helper); `DitarPinu` no campo rápido. `VERSAO_SKILLS` v5.

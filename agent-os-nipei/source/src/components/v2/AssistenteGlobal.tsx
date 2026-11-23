@@ -197,9 +197,11 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
     const abrir = (e: Event) => {
       setAberto(true);
       // texto = send now · atalho = pick a shortcut (Hoje's chips) · preencher = put text in the field · voz = open listening
-      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; preencher?: string; prefixo?: string }>).detail;
-      const at = d?.atalho ? todosAtalhos.find((x) => x.id === d.atalho) : undefined;
-      if (at) escolherAtalho(at);
+      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; rotulo?: string; preencher?: string; prefixo?: string }>).detail;
+      // atalho + texto: a page-only shortcut (the team page) sends its own message, following the skill's steps (DS 10.13.1)
+      const at = d?.atalho ? todosAtalhos.find((x) => x.id === d.atalho) ?? (d.texto ? { id: d.atalho, curto: d.rotulo ?? d.atalho, icone: "tarefa" as const, dica: d.texto } : undefined) : undefined;
+      if (at && d?.texto) enviar(d.texto, at);
+      else if (at) escolherAtalho(at);
       else if (d?.preencher) { setTexto(d.preencher); setTimeout(() => { campo.current?.focus(); campo.current?.setSelectionRange(d.preencher!.length, d.preencher!.length); }, 80); }
       else if (d?.texto) enviar(d.texto);
       else if (d?.voz) { prefixoVoz.current = d.prefixo ?? ""; ouvirDeNovo.current(); } // microfone do cabeçalho / do campo rápido

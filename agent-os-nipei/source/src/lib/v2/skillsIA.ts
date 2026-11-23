@@ -3,12 +3,14 @@
 // public/internal) stays on the server. Never put Santuário data here: it would go stale; the skill calls the tools.
 // The official text lives here and is shown in Conexões with a copy button. Change the text → bump VERSAO.
 
-export const VERSAO_SKILLS = "v5 · 23/11/2026";
+export const VERSAO_SKILLS = "v6 · 23/11/2026";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** texto = what the person pastes into an external AI app (BASE + passos); passos = what the Pinu itself follows when the
  *  person picks the shortcut (DS 10.11); curto, icone and dica = how the shortcut looks in the Pinu. */
-export type SkillIA = { id: string; nome: string; quando: string; passos: string; texto: string; soGestao?: boolean; curto: string; icone: NomeIcone; dica: string };
+export type SkillIA = { id: string; nome: string; quando: string; passos: string; texto: string; soGestao?: boolean; curto: string; icone: NomeIcone; dica: string;
+  /** Only from a page that already knows the context (the team page): not in the Pinu's general shortcut list. */
+  soPagina?: boolean };
 
 const BASE = `Use sempre as ferramentas da app Nipëi OS (conectada como app/conector); nunca responda sobre o Santuário Nipëihu de memória. Fale português do Brasil, a menos que a pessoa use outro idioma. Não mostre ids internos (task_…, fat_…). Mudanças que saem da plataforma ou mexem com outras pessoas voltam como rascunho: mostre o rascunho completo e só chame confirmar depois do sim da pessoa nesta conversa.`;
 
@@ -80,6 +82,30 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
 4. Responda curto: a lista 1 a 5, uma linha cada com o porquê. Nada muda sem o sim da pessoa no cartão.`,
   },
   {
+    id: "equipe", curto: "Como vai a equipe?", icone: "pessoas", dica: "Como vai a equipe?", nome: "Nipëi · Como vai a equipe", soPagina: true,
+    quando: "Quando a pessoa perguntar como vai uma equipe, o que está atrasado nela, como está a carga ou os objetivos da equipe.",
+    passos: `Passos:
+1. Chame equipe (a da mensagem ou da página) e objetivos; se a pessoa coordena a equipe ou é da gestão, também carga_equipe.
+2. Responda em 3 a 5 linhas: o que avançou (feitas recentes), o que está atrasado (quantas e as mais importantes pelo título), objetivos da equipe em risco e quem está sobrecarregado ou com folga.
+3. Não proponha nada nesta resposta; termine oferecendo, em uma frase, repartir a carga ou preparar a reunião se fizer sentido.`,
+  },
+  {
+    id: "reuniao", curto: "Preparar a reunião", icone: "calendario", dica: "Prepare a reunião da equipe", nome: "Nipëi · Preparar a reunião", soPagina: true,
+    quando: "Quando a coordenação pedir para preparar a reunião da equipe, montar a pauta ou saber o que levar à reunião.",
+    passos: `Passos:
+1. Chame pauta_reuniao (a equipe da mensagem ou da página).
+2. Escreva a pauta em tópicos curtos, nesta ordem: encaminhamentos pendentes da última reunião (quem e prazo), atrasadas, o que vence nos próximos 7 dias, sem responsável (para decidir quem faz) e o que foi feito (para reconhecer). Máximo 12 itens; agrupe o que for parecido.
+3. Se a pessoa pedir para marcar a reunião, proponha criar_evento "Reunião <equipe>" na data que ela disser (ou na reunião fixa da equipe, se houver). Não marque sem ela pedir.`,
+  },
+  {
+    id: "carga", curto: "Repartir a carga", icone: "tarefa", dica: "Reparta a carga da equipe", nome: "Nipëi · Repartir a carga", soPagina: true,
+    quando: "Quando a coordenação ou a gestão pedir para repartir ou equilibrar a carga de uma equipe ou dar dono às tarefas sem responsável.",
+    passos: `Passos:
+1. Chame carga_equipe (a equipe da mensagem ou da página) e pessoas da equipe (papel e referente de cada uma).
+2. Parta das sugestões de carga_equipe (não refaça as contas) e ajuste pelo papel: cada tarefa para quem tem a ver com o assunto e folga. Proponha atribuir para cada uma (no máximo 8), usando os ids que carga_equipe devolve.
+3. Responda curto: quem está sobrecarregado ou com folga e, em uma linha por tarefa, para quem vai e por quê. Nada muda sem o sim da pessoa no cartão.`,
+  },
+  {
     id: "dia", curto: "Meu dia", icone: "calendario", dica: "O que tenho hoje e nesta semana?", nome: "Nipëi · Meu dia",
     quando: "Quando a pessoa perguntar o que tem para hoje, para a semana, o que está atrasado, o que fazer primeiro, ou pedir para organizar ou reprogramar suas tarefas.",
     passos: `Passos:
@@ -121,4 +147,4 @@ export const SKILLS_IA: SkillIA[] = SKILLS.map((x) => ({ ...x, texto: `${BASE}
 ${x.passos}` }));
 
 /** The shortcuts this person sees in the Pinu (Finanças only for gestão), without the long texts (DS 10.11). */
-export const atalhosPinu = (gestao: boolean) => SKILLS_IA.filter((x) => gestao || !x.soGestao).map(({ id, curto, icone, dica }) => ({ id, curto, icone, dica }));
+export const atalhosPinu = (gestao: boolean) => SKILLS_IA.filter((x) => (gestao || !x.soGestao) && !x.soPagina).map(({ id, curto, icone, dica }) => ({ id, curto, icone, dica }));

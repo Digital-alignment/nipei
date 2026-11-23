@@ -73,6 +73,13 @@ const CASOS: Caso[] = [
     extra: (r) => r.acoes.every((a) => a.tipo === "mudar_prazo") ? (r.acoes.length <= 8 ? "" : `${r.acoes.length} mudanças (máx. 8)`) : `propôs outra coisa: ${tipos(r).join(", ")}` },
   { id: "atalho-prioridades", atalho: "prioridades", pergunta: "Ordene minhas prioridades", leu: [["minhas_tarefas"]],
     extra: (r) => r.acoes.every((a) => a.tipo === "mudar_prioridade" || a.tipo === "definir_foco") ? (prop(r, "mudar_prioridade").length <= 6 ? "" : "mais de 6 mudanças de prioridade") : `propôs outra coisa: ${tipos(r).join(", ")}` },
+  // team page (DS 10.13.1): the shortcut sends the team's name in the message
+  { id: "equipe-como-vai", atalho: "equipe", pergunta: "Como vai a equipe Manutenção e Logística?", leu: [["equipe"]], semProposta: true },
+  { id: "equipe-reuniao", atalho: "reuniao", pergunta: "Prepare a pauta da próxima reunião da equipe Manutenção e Logística.", leu: [["pauta_reuniao"]],
+    extra: (r) => r.acoes.every((a) => a.tipo === "criar_evento") ? "" : `propôs outra coisa: ${tipos(r).join(", ")}` },
+  { id: "equipe-carga", atalho: "carga", pergunta: "Reparta a carga da equipe Manutenção e Logística: dê dono às tarefas sem responsável e alivie quem está sobrecarregado.", leu: [["carga_equipe"]], propoe: ["atribuir"],
+    extra: (r) => { const at = prop(r, "atribuir"); const ids = at.map((a) => a.id); return r.acoes.length !== at.length ? `propôs outra coisa: ${tipos(r).join(", ")}` : at.length > 8 ? `${at.length} atribuições (máx. 8)` : new Set(ids).size !== ids.length ? "a mesma tarefa proposta duas vezes" : ""; } },
+  { id: "membro-carga", quem: "membro", atalho: "carga", pergunta: "Reparta a carga da equipe Manutenção e Logística.", extra: (r) => prop(r, "atribuir").length ? "membro sem coordenação recebeu atribuições" : "" },
   { id: "atalho-material", atalho: "material", pergunta: "Apresentação do Santuário para parceiros", leu: [["dossie"]] },
   // permissions: members don't register finances
   { id: "membro-gasto", quem: "membro", pergunta: "Gastei 50 reais de gasolina.", extra: (r) => tipos(r).includes("registrar_lancamento") ? "propôs lançamento para quem não é da gestão" : "" },

@@ -8,6 +8,9 @@ import AvatarDS from "@/components/ds/Avatar";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import Campo from "@/components/ds/Campo";
 import Cartao from "@/components/ds/Cartao";
+import CampoPinu from "@/components/v2/CampoPinu";
+import PedirPinu from "@/components/v2/PedirPinu";
+import { funcaoLigada } from "@/lib/v2/funcoes";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
@@ -44,6 +47,8 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const paraRevisar = getFatos().filter((f) => f.status === "proposto" && f.equipe === e.id && podeRevisar(me, f)).length;
   const hoje = today();
   const gerir = can.gerirEquipe(me, id);
+  const pinu = funcaoLigada("assistente", me); // the Pinu as the base of the team page (DS 10.13.1), same rule as the panel
+  const daCasa = me.equipes.includes(id) || me.coordena.includes(id); // members see "Como vai"; outsiders get "Pedir algo"
   const daEquipe = todas.filter((x) => x.equipe === id);
   const abertasEq = daEquipe.filter((x) => x.status !== "done");
 
@@ -387,6 +392,17 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
         <Num v={semDono} label={t.semDonoLbl} cor="text-warn" href={url({ pessoa: "sem" })} />
         <Num v={feitas30.length} label={t.feitas30} cor="text-ok" />
       </div>
+      {pinu && (
+        // the Pinu on the team (DS 10.13.1): shortcuts by who is looking; each sends its message with the team's name
+        <div className="mb-6">
+          <CampoPinu l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl }}>
+            {(daCasa || gerir) && <PedirPinu rotulo={t.eqp.comoVai} icone="pessoas" atalho="equipe" texto={t.eqp.comoVaiTexto.replace("{e}", e.nome)} />}
+            {gerir && <PedirPinu rotulo={t.eqp.reuniao} icone="calendario" atalho="reuniao" texto={t.eqp.reuniaoTexto.replace("{e}", e.nome)} />}
+            {gerir && <PedirPinu rotulo={t.eqp.carga} icone="tarefa" atalho="carga" texto={t.eqp.cargaTexto.replace("{e}", e.nome)} />}
+            {!daCasa && !gerir && <PedirPinu rotulo={t.eqp.pedir} icone="enviar" preencher={t.eqp.pedirTexto.replace("{e}", e.nome)} />}
+          </CampoPinu>
+        </div>
+      )}
       <AbasComPainel id="equipe" inicial={abasIds.includes(q.aba ?? "") ? q.aba : q.pessoa || q.area ? "tarefas" : undefined} abas={[
         // nothing written in Sobre: the tab goes last, so the team opens on Tarefas (DS 10.13)
         ...(temSobre ? [{ id: "sobre", rotulo: t.eq.sobre, contagem: 0, conteudo: sobreAba }] : []),
