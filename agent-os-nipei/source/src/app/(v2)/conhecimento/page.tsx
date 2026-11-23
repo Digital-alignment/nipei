@@ -4,7 +4,7 @@ import Aviso from "@/components/ds/Aviso";
 import Botao from "@/components/ds/Botao";
 import AutoRefresh from "@/components/v2/AutoRefresh";
 import Recolhivel, { AtalhosSecao } from "@/components/ds/SecaoRecolhivel";
-import { currentUser, getEquipes, getPessoas, getProjetos, projetosVisiveis } from "@/lib/v2/data";
+import { currentUser, getEquipes, getPessoas, projetosVisiveis } from "@/lib/v2/data";
 import { buscarConhecimento, getFatos, getFontes, podeRevisar, projetosOcultos } from "@/lib/v2/conhecimento";
 import Campo from "@/components/ds/Campo";
 import { EstadoVazio } from "@/components/ds/Estados";

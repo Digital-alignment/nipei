@@ -85,19 +85,32 @@ export const vault = () => {
 
 export type Note = { file: string; fm: Record<string, unknown>; body: string };
 
+// Parsed notes, kept per file and reused while the file's mtime and size don't change: reading and parsing every note
+// on every call cost ~100 ms per getTarefas/getFatos (several calls per page). Each call still lists the folder and
+// stats each file, so a note written by anyone (app, sync, Obsidian) is re-read on the next call. Callers get a copy.
+// ponytail: one process (the VPS container); the cache lives in memory and grows with the vault (a few MB).
+const notas = new Map<string, { mtime: number; size: number; nota: Note | null }>();
+
 export function readDir(dir: string): Note[] {
   const full = path.join(vault(), dir);
   if (!fs.existsSync(full)) return [];
   return fs.readdirSync(full).filter((f) => f.endsWith(".md")).flatMap((file) => {
-    const text = fs.readFileSync(path.join(full, file), "utf-8");
+    const abs = path.join(full, file);
+    let st: fs.Stats;
+    try { st = fs.statSync(abs); } catch { return []; } // deleted between listing and reading
+    const c = notas.get(abs);
+    if (c && c.mtime === st.mtimeMs && c.size === st.size) return c.nota ? [{ file: c.nota.file, fm: structuredClone(c.nota.fm), body: c.nota.body }] : [];
+    const text = fs.readFileSync(abs, "utf-8");
     const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    let nota: Note | null = null;
     try {
       const fm = (m && yaml.load(m[1])) || {};
-      return typeof fm === "object" ? [{ file: path.join(dir, file), fm: fm as Record<string, unknown>, body: m?.[2] ?? text }] : [];
+      if (typeof fm === "object") nota = { file: path.join(dir, file), fm: fm as Record<string, unknown>, body: m?.[2] ?? text };
     } catch {
       console.warn(`[v2] frontmatter inválido: ${dir}/${file}`);
-      return [];
     }
+    notas.set(abs, { mtime: st.mtimeMs, size: st.size, nota });
+    return nota ? [{ file: nota.file, fm: structuredClone(nota.fm), body: nota.body }] : [];
   });
 }
 

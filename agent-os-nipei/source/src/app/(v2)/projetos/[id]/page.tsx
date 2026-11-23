@@ -11,7 +11,6 @@ import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Campo from "@/components/ds/Campo";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import LinhaDoTempo from "@/components/ds/padroes/LinhaDoTempo";
-import Icone from "@/components/ds/Icone";
 import { notFound } from "next/navigation";
 import { TaskRow } from "@/components/v2/ui";
 
@@ -22,7 +21,7 @@ import Cartao from "@/components/ds/Cartao";
 import { BadgeEstado } from "@/components/ds/Chip";
 import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import { BADGE_RITMO, avanco, ritmo, rotuloAvanco } from "@/lib/v2/objetivos";
-import { PROJETO_SOBRE, podeVerProjeto, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, progresso, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
+import { PROJETO_SOBRE, podeVerProjeto, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, novidadesPara, today, type Tarefa, responsaveisPara } from "@/lib/v2/data";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { getDiagnosticos } from "@/lib/v2/diagnostico";
 import { fmtDate, getT } from "@/lib/v2/i18n";

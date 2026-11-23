@@ -5,7 +5,7 @@ import AcervoForm, { FiltroAuto, type AcervoFormLabels } from "@/components/v2/A
 import CopiarBotao from "@/components/v2/CopiarBotao";
 import ConfirmarBotao from "@/components/v2/ConfirmarBotao";
 import Recolhivel, { BotaoSecao } from "@/components/ds/SecaoRecolhivel";
-import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, getProjetos, podeEditarAcervo, type AcervoItem, projetosVisiveis } from "@/lib/v2/data";
+import { ACERVO_TIPOS, currentUser, getAcervo, getPessoas, podeEditarAcervo, type AcervoItem, projetosVisiveis } from "@/lib/v2/data";
 import { tipoLink } from "@/lib/v2/acervoLinks";
 import { getFatos, getFontes } from "@/lib/v2/conhecimento";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";

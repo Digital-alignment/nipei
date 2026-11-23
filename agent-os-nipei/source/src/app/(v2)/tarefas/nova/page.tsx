@@ -2,7 +2,7 @@ import { ToastAoAbrir } from "@/components/ds/Toast";
 import CabecalhoPagina from "@/components/ds/CabecalhoPagina";
 
 import NovaTarefaForm from "@/components/v2/NovaTarefaForm";
-import { can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefas, projetosVisiveis } from "@/lib/v2/data";
+import { can, currentUser, getEquipes, getObjetivos, getPessoas, getTarefas, projetosVisiveis } from "@/lib/v2/data";
 import { getT } from "@/lib/v2/i18n";
 
 type Q = { equipe?: string; projeto?: string; objetivo?: string; back?: string; prazo?: string; responsavel?: string; criada?: string; status?: string };

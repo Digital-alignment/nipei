@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { assistenteAction, assistenteConversaAction, avaliarRespostaAction, decidirCartaoAction, decidirTodasAction, esquecerMemoriaAction, memoriaAction, novaConversaAction } from "@/app/(v2)/actions";
 import Md from "@/components/v2/Md";
-import Campo from "@/components/ds/Campo";
 import Chip, { BadgeEstado } from "@/components/ds/Chip";
 import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Icone, { type NomeIcone } from "@/components/ds/Icone";
@@ -520,21 +519,5 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
         </section>
       )}
     </>
-  );
-}
-
-/** Hoje's field: the design system's Pinu search field + suggestion chips; opens the global assistant. */
-export function CampoAssistente({ placeholder, sugestoes }: { placeholder: string; sugestoes: string[] }) {
-  const [texto, setTexto] = useState("");
-  const abrir = (detail?: { texto?: string; voz?: boolean }) => window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail }));
-  return (
-    <div className="grid gap-2.5">
-      <form role="search" onSubmit={(e) => { e.preventDefault(); abrir({ texto: texto.trim() || undefined }); setTexto(""); }}>
-        <Campo tipo="busca" pinu rotulo={placeholder} value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={2000} onMicrofone={() => abrir({ voz: true })} />
-      </form>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
-        {sugestoes.map((x) => <Chip key={x} tipo="pinu" onClick={() => abrir({ texto: x })}>{x}</Chip>)}
-      </div>
-    </div>
   );
 }

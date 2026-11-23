@@ -70,9 +70,6 @@ export function TaskRow({ t, equipes, pessoas, lang, hoje, me, extra, selos, arr
   );
 }
 
-export function TaskList({ tarefas, selos, ...rest }: { tarefas: Tarefa[]; extra?: (t: Tarefa) => ReactNode; selos?: Record<string, string[]> } & RowProps) {
-  return <ul className="overflow-hidden rounded-cartao bg-s1">{tarefas.map((t) => <TaskRow key={t.id} t={t} selos={selos?.[t.id]} {...rest} />)}</ul>;
-}
 
 /** Sort: overdue first, then by due date, undated last. */
 export const byPrazo = (a: Tarefa, b: Tarefa) => (a.prazo || "9999").localeCompare(b.prazo || "9999");

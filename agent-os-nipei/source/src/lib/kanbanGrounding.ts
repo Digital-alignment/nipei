@@ -36,14 +36,6 @@ export function parseAgentsFrontmatter(content: string): string[] | null {
   return agents.length ? agents : null;
 }
 
-/** Writes (or replaces) the `agents:` frontmatter line of a task note. */
-export function setAgentsFrontmatter(content: string, agents: string[]): string {
-  const line = `agents: [${agents.map((a) => JSON.stringify(a)).join(", ")}]`;
-  return content.replace(/^---\r?\n([\s\S]*?)\r?\n---/, (block, fm: string) =>
-    /^agents:.*$/m.test(fm) ? block.replace(/^agents:.*$/m, line) : block.replace(/\r?\n---$/, `\n${line}\n---`)
-  );
-}
-
 /**
  * Reads all live tasks from the Vault (Productivity/Tarefas). Squads/ and Todo_Audit_Lists/ were v1 and are archived.
  */
@@ -142,62 +134,6 @@ export function getLiveKanbanTasks(): GlobalTask[] {
   return tasks;
 }
 
-export interface KanbanStats {
-  total: number;
-  byColumn: Record<KanbanColumnId, number>;
-  bySquad: Record<string, number>;
-  byPriority: Record<string, number>;
-  urgentCount: number;
-  inProgressCount: number;
-  agentExecutingCount: number;
-  reviewCount: number;
-  doneCount: number;
-}
-
-export function getKanbanStats(tasks?: GlobalTask[]): KanbanStats {
-  const list = tasks || getLiveKanbanTasks();
-  const byColumn: Record<KanbanColumnId, number> = {
-    triage: 0,
-    todo: 0,
-    in_progress: 0,
-    agent_executing: 0,
-    review: 0,
-    done: 0,
-    archived: 0,
-  };
-  const bySquad: Record<string, number> = {};
-  const byPriority: Record<string, number> = {
-    urgente: 0,
-    alta: 0,
-    media: 0,
-    baixa: 0,
-  };
-
-  for (const t of list) {
-    const col = t.columnStatus || "todo";
-    if (byColumn[col] !== undefined) byColumn[col]++;
-    else byColumn.todo++;
-
-    const sq = t.squad || "squad_1_ceo";
-    bySquad[sq] = (bySquad[sq] || 0) + 1;
-
-    const pri = t.priority || "media";
-    byPriority[pri] = (byPriority[pri] || 0) + 1;
-  }
-
-  return {
-    total: list.length,
-    byColumn,
-    bySquad,
-    byPriority,
-    urgentCount: byPriority.urgente || 0,
-    inProgressCount: byColumn.in_progress || 0,
-    agentExecutingCount: byColumn.agent_executing || 0,
-    reviewCount: byColumn.review || 0,
-    doneCount: byColumn.done || 0,
-  };
-}
-
 /**
  * Search tasks by keyword matching title, project, squad, assignee, description, id
  */
@@ -235,60 +171,6 @@ export function searchKanbanTasks(query: string, maxResults = 8): GlobalTask[] {
     .sort((a, b) => b.score - a.score)
     .slice(0, maxResults)
     .map((s) => s.task);
-}
-
-/**
- * Returns top urgent or actively executing tasks
- */
-export function getTopUrgentTasks(limit = 6): GlobalTask[] {
-  const tasks = getLiveKanbanTasks();
-  return tasks
-    .filter((t) => (t.priority === "urgente" || t.priority === "alta") && t.columnStatus !== "done" && t.columnStatus !== "archived")
-    .slice(0, limit);
-}
-
-/**
- * Formats a clean, high-density Markdown context block for Venu's LLM prompt
- */
-export function formatKanbanGroundingForPrompt(userQuery?: string): string {
-  try {
-    const tasks = getLiveKanbanTasks();
-    if (tasks.length === 0) return "O Kanban de Nipëi OS está atualmente vazio ou o Vault não foi detectado.";
-
-    const stats = getKanbanStats(tasks);
-    const urgent = getTopUrgentTasks(5);
-
-    let context = `### 📋 Nipëi OS Kanban Live Intelligence (${stats.total} tarefas no total)\n`;
-    context += `- **Distribuição por Status**: A Fazer: ${stats.byColumn.todo} | Em Andamento: ${stats.inProgressCount} | Execução por IA: ${stats.agentExecutingCount} | Revisão/Veto: ${stats.reviewCount} | Concluído: ${stats.doneCount} | Triagem: ${stats.byColumn.triage} | Arquivado: ${stats.byColumn.archived}\n`;
-    context += `- **Prioridades**: Urgentes: ${stats.urgentCount} | Altas: ${stats.byPriority.alta || 0} | Médias: ${stats.byPriority.media || 0}\n`;
-    context += `- **Squads com demandas**: ${Object.entries(stats.bySquad).map(([sq, cnt]) => `${sq}: ${cnt}`).join(", ")}\n\n`;
-
-    if (urgent.length > 0) {
-      context += `**Tarefas Críticas Imediatas**:\n`;
-      for (const t of urgent) {
-        context += `- [${t.id}] **${t.title}** (${t.squad} | ${t.priority.toUpperCase()} | Coluna: \`${t.columnStatus}\` | Resp: ${t.assignee || "sem responsável"})\n`;
-      }
-      context += "\n";
-    }
-
-    if (userQuery && userQuery.trim()) {
-      const matches = searchKanbanTasks(userQuery, 6);
-      if (matches.length > 0) {
-        context += `**Tarefas Correspondentes à Consulta do Usuário ("${userQuery.trim()}")**:\n`;
-        for (const m of matches) {
-          context += `- **${m.id}**: "${m.title}" | Squad: ${m.squad} | Status: \`${m.columnStatus}\` | Prioridade: ${m.priority} | Prazo: ${m.dueDate || "sem prazo"} | Resp: ${m.assignee || "sem responsável"}\n`;
-          if (m.description && m.description.length > 10) {
-            context += `  > Resumo: ${m.description.slice(0, 160)}...\n`;
-          }
-        }
-        context += "\n";
-      }
-    }
-
-    return context.trim();
-  } catch (err) {
-    return "Falha ao extrair contexto em tempo real do Kanban.";
-  }
 }
 
 export interface CreateTaskOptions {
