@@ -39,7 +39,7 @@ import SecaoRecolhivel from "@/components/ds/SecaoRecolhivel";
 import Botao from "@/components/ds/Botao";
 import MenuAcoes from "@/components/ds/MenuAcoes";
 import { funcaoLigada, podeFinancas } from "@/lib/v2/funcoes";
-import CampoPinuHoje from "@/components/v2/CampoPinuHoje";
+import CampoPinu from "@/components/v2/CampoPinu";
 import PedirPinu from "@/components/v2/PedirPinu";
 import DitarPinu from "@/components/v2/DitarPinu";
 import GerarResumo from "@/components/v2/GerarResumo";
@@ -302,7 +302,14 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
           return partes.length > 0 && <p className="corpo text-t2">{partes.map((x, k) => <span key={k}>{k > 0 && " · "}{x}</span>)}</p>;
         })()}
         {/* the Pinu at the centre of Hoje (DS 10.5.1): ask, speak or tap a shortcut; nothing runs on page load */}
-        {pinu && <CampoPinuHoje noite={noite} l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl, anotar: t.pinuAnotarVarias, anotePrefixo: t.pinuAnotePrefixo, planejar: t.hj.planejarDia, planejarAmanha: t.hj.planejarAmanha, resumo: t.hj.resumoDia, resumindo: t.hj.resumindo }} />}
+        {pinu && (
+          // Hoje's shortcuts (DS 10.5.1): from 17 h or with the day closed, "Planejar meu dia" becomes "Planejar amanhã"
+          <CampoPinu l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl }}>
+            <PedirPinu rotulo={t.pinuAnotarVarias} icone="editar" preencher={t.pinuAnotePrefixo} />
+            {noite ? <PedirPinu rotulo={t.hj.planejarAmanha} icone="tarefa" atalho="amanha" /> : <PedirPinu rotulo={t.hj.planejarDia} icone="tarefa" atalho="planejar" />}
+            <GerarResumo rotulo={t.hj.resumoDia} gerando={t.hj.resumindo} />
+          </CampoPinu>
+        )}
         {pinu && resumoHoje && (
           // the Pinu's summary of the day (DS 10.5.1, phase 3): generated on tap, kept for today, no AI on page load
           <section aria-label={t.hj.resumoDia} className="grid gap-2 rounded-cartao bg-s1 p-4">

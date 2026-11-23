@@ -935,3 +935,7 @@ Pedido do Ashuan ("haz la fase 2"). Decidido: o ⋯ das minhas tarefas em Hoje g
 
 Pedido do Ashuan ("haz la fase 3"). Decidido: o resumo do dia é gerado só quando a pessoa toca "Resumo do dia" e fica guardado para o dia (aparece em Hoje sem nova chamada à IA; "Atualizar" gera de novo) — o oposto do antigo "Bom dia", que gerava a cada abertura. No fim do dia (17 h ou dia fechado), "Planejar meu dia" vira "Planejar amanhã", usando o Foco de amanhã que já existia (`definir_foco` ganha `dia`). "Meu dia" continua nos atalhos do painel.
 
+## 2026-11-23 — Pinu como base da Agenda (§10.6)
+
+Pedido do Ashuan ("lleva el pinu como base a la agenda"). Mesmo padrão de Hoje: o bloco do Pinu vira um componente só (`CampoPinu`, com os atalhos de cada página), e a Agenda ganha Organizar minha semana (skill `semana`), Achar um horário, Anotar compromissos, "Reprogramar com o Pinu" nas atrasadas e "Organizar este dia" na vista Dia. O lote "Mover as N para…" continua (é instantâneo e sem IA); o Pinu é a opção que distribui com critério.
+

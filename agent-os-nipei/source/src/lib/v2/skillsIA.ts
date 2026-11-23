@@ -3,7 +3,7 @@
 // public/internal) stays on the server. Never put Santuário data here: it would go stale; the skill calls the tools.
 // The official text lives here and is shown in Conexões with a copy button. Change the text → bump VERSAO.
 
-export const VERSAO_SKILLS = "v3 · 23/11/2026";
+export const VERSAO_SKILLS = "v4 · 23/11/2026";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** texto = what the person pastes into an external AI app (BASE + passos); passos = what the Pinu itself follows when the
@@ -60,6 +60,15 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
 2. Diga em uma linha o que ficou aberto hoje (atrasadas e de hoje não concluídas).
 3. Escolha até 3 tarefas para o Foco de amanhã (primeiro o que ficou de hoje e é importante, depois as de amanhã) e proponha definir_foco com dia "amanha"; para o que não cabe amanhã, proponha mudar_prazo para datas realistas (no máximo 5 mudanças).
 4. Responda curto: o plano de amanhã em até 3 linhas e os compromissos de amanhã com hora. Nada muda sem o sim da pessoa no cartão.`,
+  },
+  {
+    id: "semana", curto: "Organizar minha semana", icone: "semana", dica: "Organize minha semana", nome: "Nipëi · Organizar minha semana",
+    quando: "Quando a pessoa pedir para organizar, equilibrar ou reprogramar a semana, aliviar um dia cheio ou dar data às atrasadas.",
+    passos: `Passos:
+1. Chame minhas_tarefas (todas) e agenda (e google_agenda se a pessoa tiver Google conectado) para hoje e os próximos 7 dias.
+2. Veja, dia a dia, quantas tarefas e compromissos há; um dia com 5 ou mais tarefas, ou cheio de compromissos, está carregado. Atrasadas também precisam de data.
+3. Proponha mudar_prazo (no máximo 8) para equilibrar: atrasadas para dias com folga a partir de hoje, tarefas de dias carregados para os mais leves; nunca deixe um dia com mais de 4 tarefas novas e não mova o que tem compromisso marcado no dia.
+4. Responda curto: a semana dia a dia (uma linha cada: tarefas e compromissos) e, em uma frase, o que você propõe mudar e por quê. Nada muda sem o sim da pessoa no cartão.`,
   },
   {
     id: "dia", curto: "Meu dia", icone: "calendario", dica: "O que tenho hoje e nesta semana?", nome: "Nipëi · Meu dia",

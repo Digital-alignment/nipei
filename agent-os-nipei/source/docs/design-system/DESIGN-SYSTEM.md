@@ -448,6 +448,7 @@ Pílulas verticais por dia (dia curto + número display + pontos = quantidade de
 - **Mês**: grade com **pontos na cor de cada equipe**; hoje = círculo de acento; ao tocar, a lista do dia aparece embaixo (celular) ou ao lado (computador).
 - Filtros: chips das equipes. Abas: Dia / Semana / Mês.
 - **No celular** o cabeçalho tem só o botão de ícone "Nova tarefa"; "Novo evento" fica no "+" flutuante (o Botão em folha só a partir de `md`).
+- **Pinu na Agenda** (2026-11-23, "o Pinu como base", depois de Hoje): logo abaixo do cabeçalho, o mesmo bloco do Pinu de Hoje (`CampoPinu`: Cartão `pinu` com orbe + campo + atalhos no celular; só a linha de atalhos no computador), com os atalhos da Agenda: **Organizar minha semana** (`semana`, skill nova: lê tarefas, Agenda e Google dos próximos 7 dias e propõe mudar prazos para não lotar nenhum dia), **Achar um horário** (`calendario`: abre o Pinu com "Encontre um horário para " no campo) e **Anotar compromissos** (`editar`: "Anote: "). Nas **Atrasadas**, ao lado de "Mover as N para…", o Chip `pinu` "Reprogramar com o Pinu" (propõe uma data realista para cada uma, em vez de todas no mesmo dia). Na vista **Dia**, acima da grade, o Chip `pinu` "Organizar este dia". Nada de IA ao abrir a página.
 
 ### 10.6.1 Tarefas (página)
 - Abas **Lista / Quadro** (a Agenda tem página própria, não é aba aqui) e, na mesma linha, o seletor lista/grade (`SegmentadoLinks`, só na Lista).

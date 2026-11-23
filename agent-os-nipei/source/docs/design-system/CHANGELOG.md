@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-23 — Pinu como base da Agenda (10.6)
+
+- `CampoPinuHoje` virou `CampoPinu` (os atalhos vêm de cada página). Agenda: bloco do Pinu com Organizar minha semana / Achar um horário / Anotar compromissos; "Reprogramar com o Pinu" nas atrasadas; "Organizar este dia" na vista Dia. Skill `semana` (`VERSAO_SKILLS` v4).
+
 ## 2026-11-22 — Pinu como base de Hoje, fase 3 (10.5.1)
 
 - Resumo do dia em Hoje (`resumoDiaAction` → `lib/v2/resumoDia.ts`, um por pessoa e dia; Chip "Resumo do dia" com "Resumindo…"; bloco com "Atualizar"). "Planejar amanhã" a partir das 17 h ou com o dia fechado (skill `amanha`, `definir_foco` com `dia`). `VERSAO_SKILLS` v3.

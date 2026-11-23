@@ -23,6 +23,9 @@ import { ordenarAgora, type Selo as SeloOrdem } from "@/lib/v2/ordem";
 import { fmtDate, getT, type Lang } from "@/lib/v2/i18n";
 import { loteAction } from "../actions";
 import { getConexoes } from "@/lib/v2/conexoes";
+import { funcaoLigada } from "@/lib/v2/funcoes";
+import CampoPinu from "@/components/v2/CampoPinu";
+import PedirPinu from "@/components/v2/PedirPinu";
 import { eventosGoogle, type EventoGoogle } from "@/lib/v2/google";
 
 // Agenda (DESIGN-SYSTEM.md 10.5 e 10.6): Dia (faixa da semana + grade de horas), Semana e Lista (dia a dia,
@@ -97,6 +100,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const deHoje = comPrazo.filter((x) => x.prazo === hoje).length + eventos.filter((e) => noDia(e, hoje)).length;
   const proximos7 = comPrazo.filter((x) => x.prazo > hoje && x.prazo <= somar(hoje, 7)).length;
   const podeEvento = equipes.some((e) => can.gerirEquipe(user, e.id));
+  const pinu = funcaoLigada("assistente", user); // the Pinu as the base of the Agenda (DS 10.6), same rule as the panel
   // events with only a month or a year: shown as "to be scheduled" (they don't fit a day)
   const semDia = eventos.filter((e) => e.inicio.length < 10 && e.inicio >= hoje.slice(0, e.inicio.length)).sort((a, b) => a.inicio.localeCompare(b.inicio));
 
@@ -141,6 +145,17 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         </>}
       />
 
+      {pinu && (
+        // the Pinu block (DS 10.6): organise the week, find a time slot, jot down appointments
+        <div className="mb-5 grid gap-2">
+          <CampoPinu l={{ placeholder: t.hj.pinuCampo, falar: t.falarPinu, enviar: t.enviarLbl }}>
+            <PedirPinu rotulo={t.ag.organizarSemana} icone="semana" atalho="semana" />
+            <PedirPinu rotulo={t.ag.acharHorario} icone="calendario" preencher={t.ag.acharHorarioTexto} />
+            <PedirPinu rotulo={t.ag.anotarCompromissos} icone="editar" preencher={t.pinuAnotePrefixo} />
+          </CampoPinu>
+        </div>
+      )}
+
       {atrasadas.length > 0 && (
         <section id="atrasadas" className="mb-6 grid scroll-mt-20 gap-2">
           {reprogramaveis.length > 1 && (
@@ -153,6 +168,8 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
               ))}
             </form>
           )}
+          {/* the Pinu spreads them with judgement (a realistic date each) instead of all on the same day */}
+          {pinu && reprogramaveis.length > 0 && <div><PedirPinu rotulo={t.ag.reprogramarPinu} texto={t.ag.reprogramarTexto.replace("{n}", String(reprogramaveis.length))} /></div>}
           <GrupoTarefas titulo={t.atrasadas} contagem={atrasadas.length} alerta>{linhas(atrasadas)}</GrupoTarefas>
           <p className="meta text-t3">{t.atrasadasAjuda}</p>
         </section>
@@ -161,6 +178,9 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
       {gErro && <p className="meta mb-3 inline-flex items-center gap-1.5 text-warn"><Icone nome="atencao" tamanho={16} />{t.cx.doGoogle}: {gErro}</p>}
       <Suspense><LembrarVista chave="agenda" params={["vista", "quem"]} /></Suspense>
       <ArrastarAgenda dica={t.dicaArrastar} />
+      {vista === "dia" && pinu && (
+        <div className="mb-3"><PedirPinu rotulo={t.ag.organizarDia} texto={t.ag.organizarDiaTexto.replace("{dia}", new Date(`${diaSel}T12:00:00Z`).toLocaleDateString(lang === "en" ? "en-US" : "pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }))} /></div>
+      )}
       {vista === "dia" && <DiaGrade d={diaSel} inicioSemana={semanaIni} diaInteiro={q.horas === "todas"} {...c} />}
       {vista === "semana" && <Semana inicio={semanaIni} {...c} />}
       {vista === "lista" && <Lista {...c} />}
