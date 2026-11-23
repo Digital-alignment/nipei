@@ -947,3 +947,7 @@ Pedido do Ashuan ("lleva el pinu como base a tarefas"). Mesmo padrão de Hoje e 
 
 Pedido do Ashuan, depois de organizar pessoas e equipes e escrever o Sobre de todas. Fase 1 do plano `docs/planos/pinu-equipes-2026-11.md`: bloco do Pinu na equipe com Como vai a equipe?, Preparar a reunião, Repartir a carga (coordenação/gestão) e Pedir algo à equipe (quem é de fora). Duas ferramentas de leitura para o Pinu não refazer contas que o código já faz: `carga_equipe` (= `balancear()`, só quem gere a equipe) e `pauta_reuniao` (= `pauta()`, membros, coordenação e gestão). Skills `equipe`, `reuniao`, `carga` (também para Gemini/Claude pelo MCP). Reunião fixa ainda sem data: "Preparar a reunião" só propõe evento se a pessoa pedir.
 
+## 2026-11-23 — Anexos da tarefa → Conhecimento (§9.x Abas pasta / ficha da tarefa)
+
+Pedido do Ashuan, ao planejar testes: a entrega do "Fazer por mim" (e qualquer anexo) não tinha caminho para o Conhecimento — só a descrição e os comentários tinham. Decidido: botão "Enviar ao Conhecimento" em cada anexo de arquivo legível; nada automático (a tarefa concluída ou a entrega da IA não entram sozinhas: só quem decide envia, e tudo passa pela revisão).
+

@@ -346,7 +346,7 @@ Um só componente que mistura três ideias:
 - ativa = pílula `superfície 3`, ícone em acento e **ponto de acento** embaixo (sem brilho);
 - contagem em pílula.
 
-Variante **pasta**: quando a aba controla o painel logo abaixo, a ativa **se funde ao painel** (cantos invertidos). Uso: fichas (Tarefa: Detalhes / Comentários / Atividade). No celular as abas pasta ficam sem ícone e com 12 px de respiro lateral, para três abas caberem em 390 px. **Aba Detalhes da tarefa**, nesta ordem: Descrição · Checklist · IA (proposta do Pinu + "Fazer por mim") · Anexos (Arquivo, Foto e "+ Link", que abre os campos do link) · Origem.
+Variante **pasta**: quando a aba controla o painel logo abaixo, a ativa **se funde ao painel** (cantos invertidos). Uso: fichas (Tarefa: Detalhes / Comentários / Atividade). No celular as abas pasta ficam sem ícone e com 12 px de respiro lateral, para três abas caberem em 390 px. **Aba Detalhes da tarefa**, nesta ordem: Descrição · Checklist · IA (proposta do Pinu + "Fazer por mim") · Anexos (Arquivo, Foto e "+ Link", que abre os campos do link) · Origem. **Anexo → Conhecimento** (2026-11-23): cada anexo de arquivo que a IA lê (PDF, foto JPG/PNG/WebP, TXT/MD/CSV, até 10 MB) tem, à direita, o botão de ícone fantasma `informacao` "Enviar ao Conhecimento"; já enviado, vira o ícone `sucesso` (link "No Conhecimento" → a fonte). Vale também para a entrega do "Fazer por mim". A fonte é do canal tarefa e passa pela revisão como as outras.
 
 ### 9.12 Seção recolhível
 Título de seção + contagem + ▼ (`abrir`, gira 180° quando aberta). Lembra o estado. Mesmo ritmo de `titulo-secao`.

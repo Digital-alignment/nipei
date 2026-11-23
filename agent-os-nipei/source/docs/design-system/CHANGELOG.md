@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-23 — Anexos da tarefa → Conhecimento
+
+- Ficha da tarefa: "Enviar ao Conhecimento" (ícone) em cada anexo de arquivo legível (`tarefaAnexoConhecimentoAction`: fonte de arquivo do canal tarefa, uma por anexo; já enviado = link para a fonte).
+
 ## 2026-11-23 — Pinu como base de Equipes, fase 1 (10.13.1)
 
 - `/equipes/[id]`: `CampoPinu` com Como vai a equipe? / Preparar a reunião / Repartir a carga (gestão ou coordenação) / Pedir algo à equipe (quem é de fora). Ferramentas `carga_equipe` e `pauta_reuniao`; skills `equipe`, `reuniao`, `carga` (`VERSAO_SKILLS` v6). O evento `nipei:assistente` aceita `atalho` + `texto` (a mensagem com o nome da equipe, seguindo os passos do atalho).

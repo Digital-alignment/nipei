@@ -19,11 +19,11 @@ import { EQUIPES_DS, chaveEquipe } from "@/components/ds/equipes";
 import LinhaDoTempo, { deAtividade } from "@/components/ds/padroes/LinhaDoTempo";
 import { ANEXO_TIPOS, can, currentUser, getEquipes, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, today, type Anexo, type Status } from "@/lib/v2/data";
 import { parseAtividade } from "@/lib/tarefaNote";
-import { chaveTrecho, getFontes } from "@/lib/v2/conhecimento";
+import { anexoLegivel, chaveAnexo, chaveTrecho, getFontes } from "@/lib/v2/conhecimento";
 import { emAndamento } from "@/lib/v2/trabalhos";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import {
-  aplicarIAAction, checklistAction, comentarAction, tarefaConhecimentoAction, descricaoAction, fazerPorMimAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
+  aplicarIAAction, checklistAction, comentarAction, tarefaAnexoConhecimentoAction, tarefaConhecimentoAction, descricaoAction, fazerPorMimAction, linkAction, proporIAAction, removeAnexoAction, setStatusAction, uploadAction,
 } from "../../actions";
 
 const isImg = (a: Anexo) => /\.(jpe?g|png|webp|gif)$/i.test(a.path);
@@ -194,6 +194,14 @@ export default async function TarefaDetalhe({ params, searchParams }: { params: 
                     <p className="truncate font-texto text-[15px] text-t1 hover:underline">{a.titulo}</p>
                     <p className="meta truncate text-t3">{[a.tipo === "link" ? host(a.url) : a.tamanho ? kb(a.tamanho) : "", a.por && nome(a.por).split(" (")[0], a.em && fmtDate(a.em, lang)].filter(Boolean).join(" · ")}</p>
                   </a>
+                  {a.tipo === "arquivo" && anexoLegivel(a.path) && (() => {
+                    // attachment → Conhecimento (e.g. the "Fazer por mim" delivery): one source per attachment
+                    const ja = fontesDaTarefa.find((f) => f.chave === chaveAnexo(id, a.id));
+                    return ja
+                      ? <BotaoIcone href={`/conhecimento/${ja.id}`} icone="sucesso" aria-label={`${t.jaNoConhecimento}: ${a.titulo}`} tamanho={40} variante="fantasma" className="text-ok" />
+                      : <form action={tarefaAnexoConhecimentoAction}><input type="hidden" name="id" value={id} /><input type="hidden" name="anexo" value={a.id} />
+                          <BotaoIcone type="submit" icone="informacao" aria-label={`${t.enviarAoConhecimento}: ${a.titulo}`} tamanho={40} variante="fantasma" /></form>;
+                  })()}
                   {pode && (
                     <form action={removeAnexoAction}>
                       <input type="hidden" name="id" value={id} /><input type="hidden" name="anexo" value={a.id} />

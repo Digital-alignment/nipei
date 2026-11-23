@@ -1,4 +1,5 @@
 "use server";
+import fs from "fs";
 
 import { compararSugestao, detalheCriou, sugerirPedido, sugerirTarefa, TIPO_EVENTO, type Aplicada, type SugestaoTarefa } from "@/lib/v2/sugestaoTarefa";
 import { registrarEvento } from "@/lib/v2/eventos";
@@ -10,7 +11,7 @@ import { LANG_COOKIE, getT } from "@/lib/v2/i18n";
 import { podeFinancas } from "@/lib/v2/funcoes";
 import { NATUREZAS } from "@/lib/v2/dre";
 import { contarUso, proporIA, type ModoIA, type PropostaIA } from "@/lib/v2/ia";
-import { chaveTrecho, corrigirFato, criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, responderComFatos, revisarFato } from "@/lib/v2/conhecimento";
+import { chaveAnexo, chaveTrecho, corrigirFato, criarFonte, definirEquipeFato, getFatos, getFontes, podeRevisar, processarFonte, responderComFatos, revisarFato } from "@/lib/v2/conhecimento";
 import { ACOES, auditoriaSemanal, getAlertas, resolverAlerta, type Acao } from "@/lib/v2/auditor";
 import { decidirProposta, enfileirarPropostas, getPropostas, podeDecidir, proporMudancas } from "@/lib/v2/propostas";
 import {
@@ -25,7 +26,7 @@ import { apagarPrevia, getPrevia, importaveis, numBR, salvarPrevia } from "@/lib
 import { salvarComprovante } from "@/lib/v2/comprovantes";
 import { MAX_FOCO, getFoco, salvarFoco, salvarFocoAmanha } from "@/lib/v2/foco";
 import { RECORRENCIAS, parseAtividade } from "@/lib/tarefaNote";
-import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, alterarLancamento, anularLancamento, editarLancamento, UNIDADES, getContas, getLancamentos, pessoasReembolso, reembolsarLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
+import { ACERVO_TIPOS, CATEGORIAS, addToEquipe, arquivoDaTarefa, alterarLancamento, anularLancamento, editarLancamento, UNIDADES, getContas, getLancamentos, pessoasReembolso, reembolsarLancamento, arquivarAcervo, can, createAcervo, createEvento, getAcervo, podeEditarAcervo, updateAcervo, createLancamento, quitarLancamento, createPessoa, createTarefa, currentUser, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, setEquipeAcesso, setTarefaStatus, updateEvento, updateObjetivo, updateTarefa, type Status, mudarTarefa, today, addArquivo, addLink, aplicarSugestao, comentar, editChecklist, removeAnexo, setAvisosPessoa, setDescricao, setEquipeAvisos, podeVerProjeto } from "@/lib/v2/data";
 
 // Every action re-checks who is calling and what they may do (plan §4.4) — the hidden
 // buttons in the UI are only a convenience, never the guard.
@@ -1308,6 +1309,33 @@ export async function tarefaConhecimentoAction(form: FormData) {
   try {
     id = criarFonte({
       tipo: "texto", titulo: `Tarefa: ${tarefa.title} — ${de}`, texto: `${texto}\n\n(Da tarefa "${tarefa.title}", ${de}.)`,
+      por: me.pessoa?.id ?? me.username, canal: "tarefa", tarefa: tarefa.id, chave, equipe: tarefa.equipe, projeto: tarefa.projeto,
+    });
+  } catch (e) {
+    redirect(`/tarefas/${tarefa.id}?erro=${encodeURIComponent((e as Error).message)}`);
+  }
+  fonteFeita(id);
+  voltarTarefa(tarefa.id);
+}
+
+/** A task attachment → Conhecimento (e.g. the "Fazer por mim" delivery): one source per attachment; again = open it. */
+export async function tarefaAnexoConhecimentoAction(form: FormData) {
+  const me = await requireUser();
+  const det = getTarefaDetalhe(String(form.get("id") ?? ""));
+  if (!det) return;
+  const { tarefa, anexos } = det;
+  const a = anexos.find((x) => x.id === String(form.get("anexo") ?? "") && x.tipo === "arquivo");
+  if (!a) return;
+  const chave = chaveAnexo(tarefa.id, a.id);
+  const ja = getFontes().find((f) => f.tarefa === tarefa.id && f.chave === chave && f.status !== "erro");
+  if (ja) redirect(`/conhecimento/${ja.id}`);
+  const nome = a.path.split("/").pop() ?? "";
+  const arq = arquivoDaTarefa(tarefa.id, nome);
+  let id = "";
+  try {
+    if (!arq) throw new Error("Arquivo do anexo não encontrado");
+    id = criarFonte({
+      tipo: "arquivo", nome, bytes: fs.readFileSync(arq.abs), titulo: `Tarefa: ${tarefa.title} — anexo ${a.titulo}`.slice(0, 150),
       por: me.pessoa?.id ?? me.username, canal: "tarefa", tarefa: tarefa.id, chave, equipe: tarefa.equipe, projeto: tarefa.projeto,
     });
   } catch (e) {

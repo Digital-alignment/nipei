@@ -317,6 +317,11 @@ function escreverFonte(id: string, fm: Record<string, FmValue>, resumo: string, 
   requestSync(vault());
 }
 
+/** Key of a task attachment sent to Conhecimento: one source per attachment (page and action use the same). */
+export const chaveAnexo = (tarefa: string, anexo: string) => chaveTrecho("a", `${tarefa}|${anexo}`);
+/** Whether the AI can read this file name as a source (same formats as an upload in Conhecimento). */
+export const anexoLegivel = (nome: string) => !!FONTE_TIPOS[nome.split(".").pop()?.toLowerCase() ?? ""];
+
 export function criarFonte(input: {
   titulo: string; por: string; acervo?: string;
   /** C7: sent from another place; `chave` = what exactly (e.g. one comment), so the same thing isn't sent twice */
