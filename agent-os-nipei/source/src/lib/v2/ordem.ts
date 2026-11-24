@@ -39,7 +39,7 @@ export function ordenarAgora(ts: Tarefa[], ctx: Ctx) {
 /** Próximas: by date first (it's a calendar), priority and progress break ties. */
 export function ordenarProximas(ts: Tarefa[], ctx: Ctx) {
   const r = ordenar(ts, ctx);
-  return { ...r, tarefas: [...ts].sort((a, b) => a.prazo.localeCompare(b.prazo) || r.score.get(b.id)! - r.score.get(a.id)!) };
+  return { ...r, tarefas: [...ts].sort((a, b) => a.prazo.localeCompare(b.prazo) || r.score.get(b.id)! - r.score.get(a.id)! || a.id.localeCompare(b.id)) };
 }
 
 /** Sem data: score, then the most recently touched (fresh work before forgotten ideas). */
@@ -50,7 +50,7 @@ export function ordenarSemData(ts: Tarefa[], ctx: Ctx) {
 function ordenar(ts: Tarefa[], ctx: Ctx, desempate: (a: Tarefa, b: Tarefa) => number = () => 0) {
   const score = new Map<string, number>(), selos: Record<string, Selo[]> = {};
   for (const t of ts) { const r = pontuar(t, ctx); score.set(t.id, r.p); if (r.selos.length) selos[t.id] = r.selos; }
-  return { tarefas: [...ts].sort((a, b) => score.get(b.id)! - score.get(a.id)! || desempate(a, b)), selos, score };
+  return { tarefas: [...ts].sort((a, b) => score.get(b.id)! - score.get(a.id)! || desempate(a, b) || a.id.localeCompare(b.id)), selos, score }; // id last: a stable order (the file cache re-inserts changed notes at the end)
 }
 
 /** Self-check: node --experimental-strip-types src/lib/v2/ordem.ts */

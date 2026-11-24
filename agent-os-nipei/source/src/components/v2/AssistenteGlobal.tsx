@@ -24,7 +24,7 @@ type Labels = {
   vozLigar: string; vozDesligar: string; ouvir: string; parar: string; propostasFala: string;
   comprovanteAnexado: string; oi: string; ajudar: string; recentes: string; falarPinu: string; enviar: string; gerarOutra: string; editarPergunta: string; maisOpcoes: string;
   copiar: string; proposta: string; propostas: string; ajustar: string; ajustarTexto: string;
-  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string; anotarVarias: string; anotarDica: string; anotePrefixo: string; atalhos: string; tirarAtalho: string;
+  passos: Record<string, string>; util: string; naoAjudou: string; obrigado: string; anexar: string; tirarAnexo: string; cancelada: string; anotarVarias: string; anotarDica: string; anotePrefixo: string; atalhos: string; tirarAtalho: string; sobreTarefa: string; soltarTarefa: string;
 };
 
 const CHAVE_VOZ = "nipei:voz";
@@ -75,6 +75,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   // a request can pin the page the Pinu should consider (the Radar sends /tarefas/<id>); it holds until the panel closes
   // (a ref: the same event may send at once, before a state update would reach `enviar`)
   const paginaRef = useRef<string | null>(null);
+  const [assunto, setAssunto] = useState<{ titulo: string; href: string } | null>(null);
   const pagina = path + (busca?.toString() ? `?${busca}` : "");
   const [aberto, setAberto] = useState(false);
   const [msgs, setMsgs] = useState<MsgSalva[] | null>(null);
@@ -200,8 +201,9 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
     const abrir = (e: Event) => {
       setAberto(true);
       // texto = send now · atalho = pick a shortcut (Hoje's chips) · preencher = put text in the field · voz = open listening
-      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; rotulo?: string; preencher?: string; prefixo?: string; pagina?: string }>).detail;
+      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; rotulo?: string; preencher?: string; prefixo?: string; pagina?: string; assunto?: { titulo: string; href: string } }>).detail;
       if (d?.pagina?.startsWith("/")) paginaRef.current = d.pagina;
+      setAssunto(d?.assunto?.href.startsWith("/") ? d.assunto : null);
       // atalho + texto: a page-only shortcut (the team page) sends its own message, following the skill's steps (DS 10.13.1)
       const at = d?.atalho ? todosAtalhos.find((x) => x.id === d.atalho) ?? (d.texto ? { id: d.atalho, curto: d.rotulo ?? d.atalho, icone: "tarefa" as const, dica: d.texto } : undefined) : undefined;
       if (at && d?.texto) enviar(d.texto, at);
@@ -219,7 +221,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   useEffect(() => {
     if (aberto) { foiAberto.current = true; return; }
     if (!foiAberto.current) return;
-    paginaRef.current = null;
+    paginaRef.current = null; setAssunto(null);
     window.dispatchEvent(new Event(FECHOU_ASSISTENTE));
   }, [aberto]);
   useEffect(() => { if (aberto) setTimeout(() => campo.current?.focus(), 50); else { audio.current?.pause(); try { window.speechSynthesis?.cancel(); } catch { /* none */ } rec.current?.stop(); } }, [aberto]);
@@ -293,7 +295,14 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
   // campo do Pinu: grande no início, em pílula na conversa; ouvindo = o orbe toma o lugar do texto
   const campoPinu = (grande: boolean) => (
     <form onSubmit={(e) => { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); }}
-      className={`flex shrink-0 gap-2 overflow-x-clip bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande || anexo || atalho ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      className={`flex shrink-0 gap-2 overflow-x-clip bg-s2 shadow-brilho-ia transition-shadow focus-within:shadow-foco ${grande || anexo || atalho || assunto ? "flex-col rounded-[22px] p-3" : "items-end rounded-[26px] p-1.5 pl-4"}`}>
+      {assunto && (
+        // the task this conversation is about (the Radar pins it): link to it, × lets go of it
+        <span className="flex min-w-0 max-w-full items-center gap-1 self-start">
+          <Chip href={assunto.href} icone="tarefa">{labels.sobreTarefa}: {assunto.titulo.length > 26 ? `${assunto.titulo.slice(0, 24)}…` : assunto.titulo}</Chip>
+          <BotaoIcone icone="fechar" aria-label={labels.soltarTarefa} tamanho={40} variante="fantasma" onClick={() => { paginaRef.current = null; setAssunto(null); }} />
+        </span>
+      )}
       {atalho && (
         // the shortcut picked for this message: its name, and × to drop it
         <span className="flex items-center gap-1 self-start">
@@ -321,7 +330,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
         <textarea ref={campo} value={texto} onChange={(e) => setTexto(e.target.value)} rows={grande ? 2 : 1} maxLength={2000} aria-label={labels.placeholder}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); desbloquear(); porVoz.current = false; if (!pending) enviar(texto); } }}
           placeholder={atalho?.dica ?? labels.placeholder}
-          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande || anexo || atalho ? "min-h-12 w-full" : "max-h-32 min-h-11 self-center py-2.5"}`} />
+          className={`min-w-0 flex-1 resize-none bg-transparent font-texto text-[15px] leading-snug text-t1 outline-none placeholder:text-t3 ${grande || anexo || atalho || assunto ? "min-h-12 w-full" : "max-h-32 min-h-11 self-center py-2.5"}`} />
       )}
       <span className={`flex items-center gap-1.5 ${grande || anexo || atalho ? "justify-between" : "justify-end"}`}>
         {!ouvindo && (

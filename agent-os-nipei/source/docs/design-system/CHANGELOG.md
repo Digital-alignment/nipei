@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-24 — Radar: ajustes do teste (10.29)
+
+- Entrada = pílula de 56 px com círculo de varredura (`.radar-varredura` em `globals.css`); selo 56/64 px; Chip de foco no cartão; barra de baixo = sugestões + campo + Adiar + Concluir (título vira link; "Abrir tarefa" no ⋯); cartões vizinhos menores/apagados e ✓ animado; cartão final com contagem, pontos em sequência, resumo da passada, "Faltam N" e "Planejar amanhã com o Pinu". Painel do Pinu: Chip "Sobre: <tarefa>" no campo (`assunto` no evento). `ordem.ts`: empate pelo id.
+
 ## 2026-11-24 — Radar, fase 2 (10.29)
 
 - Cartão: 2 Chips do Pinu por regras (`lib/v2/sugestoesPinu.ts`, autoteste) + campo "Diga o que fazer" com microfone; ⋯ com Fazer por mim; Badge "A IA está fazendo". Evento `nipei:assistente` aceita `pagina` (o painel usa essa página até fechar) e o painel avisa `nipei:assistente-fechou` ao fechar (o Radar volta ao mesmo cartão).

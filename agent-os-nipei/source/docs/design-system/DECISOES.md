@@ -959,3 +959,7 @@ Pedido do Ashuan, com imagens de referência no estilo "stories" (título serifa
 
 Pedido do Ashuan ("realiza fase 2"). As 2 sugestões de cada cartão saem de **regras** (título, descrição, passos, quem pediu, prazo), não de IA: custo zero, nada ao abrir, e a medida de uso diz se precisam de IA depois (fase 4). Tudo que vem do cartão chega ao Pinu com a página da tarefa (`pagina`), para ele não ter de procurar a tarefa pelo título. O Radar volta ao mesmo cartão quando o Pinu fecha (antes fechava de vez).
 
+## 2026-11-24 — Radar: ajustes depois do teste do Ashuan (§10.29)
+
+Teste em produção com 3 tarefas TESTE. Pedidos: entrada maior e com animação em loop (vira pílula de 56 px com um círculo de varredura de radar — movimento com propósito, parado com menos movimento; não é brilho, então não conflita com a regra 4); selo menor (120 → 56/64 px); foco num toque no próprio cartão (antes só no ⋯); sugestões do Pinu juntas do campo e das ações, como na referência (o "Abrir tarefa" foi para o título, que vira link, e para o ⋯); passagem entre cartões e concluir com animação leve em CSS; cartão final com contagem, resumo da passada, "Faltam N" e "Planejar amanhã". Ao tocar uma sugestão, o Ashuan esperava ver a tarefa: o Pinu continua sendo o lugar da resposta (ele lê a tarefa sozinho), mas o campo do painel agora mostra "Sobre: <tarefa>" com link — fica claro de que tarefa ele fala e a tarefa está a um toque. Ordem dos cartões estável dentro de cada grupo (empate pelo id).
+

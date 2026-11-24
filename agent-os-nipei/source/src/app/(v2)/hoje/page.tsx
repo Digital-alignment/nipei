@@ -299,13 +299,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         id: x.id, titulo: x.title, rotulo, equipe: chaveEquipe(x.equipe), motivo,
         atraso: x.prazo && x.prazo < hoje ? Math.round((Date.parse(hoje) - Date.parse(x.prazo)) / 86_400_000) : 0,
         descricao: descricao.slice(0, 1200), passos: det?.doc.checklist ?? [], anexos: det?.anexos.length ?? 0, podeEditar: pode,
-        iaRodando: rodando,
+        iaRodando: rodando, noFoco,
         sugestoes: sugestoesPinu({
           titulo: x.title, descricao, passos: det?.doc.checklist.length ?? 0, atrasada: !!x.prazo && x.prazo < hoje, semPrazo: !x.prazo,
           outros: !!x.pedidoPor || x.responsaveis.some((r) => r !== me.id),
         }).map((k) => ({ rotulo: SUG[k][0], texto: SUG[k][1].replace("{t}", x.title) })),
         menu: [
-          ...(noFoco || focoIds.length < MAX_FOCO ? [{ icone: "inicio" as const, rotulo: noFoco ? t.hj.focoMenuTirar : t.hj.focoMenuPor, acao: focoAction, campos: { id: x.id } }] : []),
+          { icone: "abrir-fora" as const, rotulo: t.rd.abrir, href: `/tarefas/${x.id}` },
           ...(pode ? [{ icone: "editar" as const, rotulo: t.rd.editar, href: `/tarefas/${x.id}/editar` }] : []),
           ...(ia && !rodando ? [{ icone: "gerar-outra" as const, rotulo: t.rd.fazerPorMim, acao: fazerPorMimAction, campos: { id: x.id } }] : []),
           ...(descricao.length >= 20 ? [{ icone: "informacao" as const, rotulo: t.rd.conhecimento, acao: tarefaConhecimentoAction, campos: { id: x.id, parte: "descricao" } }] : []),
@@ -362,7 +362,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         )}
         {radar.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            <Radar cartoes={radar} pinu={pinu} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
+            <Radar cartoes={radar} pinu={pinu} foco={{ n: focoIds.length, max: MAX_FOCO }} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
               datas={{ amanha: dia(1), proxSemana: dia(ateSexta + 7) }} fmt={{ [dia(1)]: fmtDate(dia(1), lang), [dia(ateSexta + 7)]: fmtDate(dia(ateSexta + 7), lang) }} />
           </div>
         )}

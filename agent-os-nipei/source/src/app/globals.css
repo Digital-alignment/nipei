@@ -154,6 +154,13 @@ html[data-lote] .v2 .lote-caixa { display: block; }
 /* carregando: arco girando (seção 8 e 9.17); com menos movimento fica parado e o texto diz "Carregando…" */
 @keyframes ds-girar { to { transform: rotate(360deg); } }
 @keyframes entrar-historias { from { opacity: 0; transform: translateY(16px); } }
+/* Radar (seção 10.29): varredura da entrada (gira em loop; parada com menos movimento pela regra global),
+   cartões vizinhos menores e apagados, e o "crescer" do ✓ / dos pontos da semana */
+.v2 .radar-varredura { background: conic-gradient(from 0deg, color-mix(in srgb, var(--ac) 75%, transparent), transparent 100deg); animation: ds-girar 4s linear infinite; }
+.v2 .historia-cartao { transition: transform .3s ease, opacity .3s ease; }
+.v2 .historia-cartao[aria-hidden="true"] { transform: scale(.94); opacity: .55; }
+@keyframes radar-crescer { from { opacity: 0; transform: scale(.4); } }
+.v2 .radar-crescer { animation: radar-crescer .3s ease both; }
 .v2 .arco-girando  { width: 1em; height: 1em; border-radius: 999px; border: 2px solid currentColor; border-top-color: transparent; animation: ds-girar .9s linear infinite; }
 
 /* Pinu: mini-anel (avatar do Pinu em mensagens, campos e chips — seção 10.11). Gradiente fixo do orbe,

@@ -89,7 +89,7 @@ export default function Historias({ titulo, cartoes, atual, onMudar, onFechar, a
         <div ref={trilho} className="flex w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain">
           {cartoes.map((c, i) => (
             <section key={i} data-i={i} aria-hidden={i !== atual} inert={i !== atual} aria-roledescription="cartão"
-              className="flex w-full shrink-0 snap-center flex-col px-4 pb-4">
+              className="historia-cartao flex w-full shrink-0 snap-center flex-col px-4 pb-4">
               {c}
             </section>
           ))}
