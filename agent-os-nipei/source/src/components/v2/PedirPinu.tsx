@@ -5,7 +5,7 @@ import type { NomeIcone } from "@/components/ds/Icone";
 import { ABRIR_ASSISTENTE } from "./AssistenteGlobal";
 
 /** Detail of the "nipei:assistente" event: send a message, pick a shortcut, pre-fill the field or open listening. */
-export type PedidoPinu = { texto?: string; atalho?: string; rotulo?: string; preencher?: string; voz?: boolean; prefixo?: string };
+export type PedidoPinu = { texto?: string; atalho?: string; rotulo?: string; preencher?: string; voz?: boolean; prefixo?: string; /** the page the Pinu should consider (e.g. /tarefas/<id> from the Radar) until the panel closes */ pagina?: string };
 export const abrirPinu = (d: PedidoPinu) => window.dispatchEvent(new CustomEvent(ABRIR_ASSISTENTE, { detail: d }));
 
 /** A chip that opens the Pinu with a request (DS 10.5.1). With `icone`: a neutral chip with that icon (Hoje's shortcuts,

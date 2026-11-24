@@ -955,3 +955,7 @@ Pedido do Ashuan, ao planejar testes: a entrega do "Fazer por mim" (e qualquer a
 
 Pedido do Ashuan, com imagens de referência no estilo "stories" (título serifado, fundo pastel por cartão, desenho grande, rótulo WHATSAPP/GMAIL, timer). Plano em `docs/planos/radar-hoje-2026-11.md`, fase 1 aprovada. Adaptado ao sistema: título em Outfit (sem serifa, regra 11), fundo = cor da equipe misturada no `s1` (funciona nos dois temas, a cor tem sentido), selo da equipe grande no lugar do desenho (lote 1, o mesmo das equipes; nada decorativo sem sentido), sem logos de terceiros e **sem avanço por tempo** (cada cartão espera a pessoa). Componente novo de tela cheia (9.20) em vez de mais uma sobreposição própria. Sem IA nesta fase.
 
+## 2026-11-24 — Radar, fase 2: o Pinu no cartão (§10.29)
+
+Pedido do Ashuan ("realiza fase 2"). As 2 sugestões de cada cartão saem de **regras** (título, descrição, passos, quem pediu, prazo), não de IA: custo zero, nada ao abrir, e a medida de uso diz se precisam de IA depois (fase 4). Tudo que vem do cartão chega ao Pinu com a página da tarefa (`pagina`), para ele não ter de procurar a tarefa pelo título. O Radar volta ao mesmo cartão quando o Pinu fecha (antes fechava de vez).
+

@@ -13,7 +13,9 @@ import Selo from "@/components/ds/Selo";
 import MenuAcoes, { type ItemMenu } from "@/components/ds/MenuAcoes";
 import { BarraProgresso } from "@/components/ds/Progresso";
 import { EQUIPES_DS, type ChaveEquipe } from "@/components/ds/equipes";
-import { ABRIR_ASSISTENTE } from "@/components/v2/AssistenteGlobal";
+import Campo from "@/components/ds/Campo";
+import { ABRIR_ASSISTENTE, FECHOU_ASSISTENTE } from "@/components/v2/AssistenteGlobal";
+import { abrirPinu } from "@/components/v2/PedirPinu";
 
 // Radar (DESIGN-SYSTEM.md seção 10.29): as minhas tarefas do dia, uma por cartão, para resolver ali mesmo.
 // A lista é congelada ao abrir: concluir/adiar marcam o cartão; a página só se atualiza ao fechar.
@@ -23,18 +25,23 @@ export type CartaoRadar = {
   motivo: "foco" | "sugestao" | "atrasada" | "hoje" | "pedido"; atraso: number;
   descricao: string; passos: { texto: string; feito: boolean }[]; anexos: number;
   podeEditar: boolean; menu: ItemMenu[];
+  /** phase 2: the 2 Pinu suggestions (rules, lib/v2/sugestoesPinu.ts) and whether "Fazer por mim" is running */
+  sugestoes: { rotulo: string; texto: string }[]; iaRodando: boolean;
 };
 export type TextosRadar = {
   radar: string; fechar: string; anterior: string; proximo: string; posicao: string; opcoes: string;
   foco: string; sugestao: string; hoje: string; atrasada1: string; atrasadaN: string; verMais: string; passos: string; anexo1: string; anexosN: string;
   adiar: string; amanha: string; proxSemana: string; outraData: string; abrir: string; concluir: string; feito: string; para: string;
   feitasHoje: string; feitaHoje: string; semana: string; fecharDia: string; tudoFeito: string;
+  diga: string; digaPrefixo: string; falar: string; iaFazendo: string;
 };
 
 type Estado = { feito?: boolean; para?: string; passos?: { texto: string; feito: boolean }[] };
 
-export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, t }: {
+export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, t }: {
   cartoes: CartaoRadar[]; feitasHoje: number;
+  /** the person has the assistant (DS 10.29 phase 2: suggestions, "Diga o que fazer") */
+  pinu: boolean;
   semana: { letra: string; nome: string; feito: boolean; hoje: boolean }[];
   datas: { amanha: string; proxSemana: string };
   /** dd/mm de cada data que pode aparecer em "Para …" (amanhã e próxima semana); outra data cai no formato curto */
@@ -43,22 +50,25 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, t }: {
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
+  // while the Pinu panel is open the Radar steps aside, keeping its card; it comes back when the panel closes
+  const [oculto, setOculto] = useState(false);
   const [lista, setLista] = useState<CartaoRadar[]>([]);
   const [atual, setAtual] = useState(0);
   const [estado, setEstado] = useState<Record<string, Estado>>({});
   const [adiando, setAdiando] = useState(false);
   const [, iniciar] = useTransition();
 
-  const abrir = () => { setLista(cartoes); setEstado({}); setAtual(0); setAdiando(false); setAberto(true); };
+  const abrir = () => { setLista(cartoes); setEstado({}); setAtual(0); setAdiando(false); setOculto(false); setAberto(true); };
   const fechar = useCallback(() => { setAberto(false); router.refresh(); }, [router]);
   const mudar = useCallback((i: number) => { setAtual(i); setAdiando(false); }, []);
 
-  // um pedido ao Pinu pelo ⋯ abre o painel do Pinu: o Radar sai da frente (fase 2: voltar ao mesmo cartão)
+  // a request to the Pinu (chips, field, ⋯) opens its panel: the Radar steps aside and returns to the same card after
   useEffect(() => {
     if (!aberto) return;
-    const sair = () => setAberto(false);
+    const sair = () => setOculto(true), voltar = () => setOculto(false);
     window.addEventListener(ABRIR_ASSISTENTE, sair);
-    return () => window.removeEventListener(ABRIR_ASSISTENTE, sair);
+    window.addEventListener(FECHOU_ASSISTENTE, voltar);
+    return () => { window.removeEventListener(ABRIR_ASSISTENTE, sair); window.removeEventListener(FECHOU_ASSISTENTE, voltar); };
   }, [aberto]);
 
   const marcar = (id: string, e: Estado) => setEstado((s) => ({ ...s, [id]: { ...s[id], ...e } }));
@@ -97,6 +107,7 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, t }: {
       : c.motivo === "foco" ? <BadgeEstado estado="andamento">{t.foco}</BadgeEstado>
       : c.motivo === "sugestao" ? <BadgeEstado estado="pendente">{t.sugestao}</BadgeEstado>
       : c.motivo === "hoje" ? <BadgeEstado estado="aviso">{t.hoje}</BadgeEstado> : null;
+    const pagina = `/tarefas/${c.id}`;
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-cartao" style={{ background: fundo }}>
         <div className="grid min-h-0 flex-1 content-start justify-items-center gap-3 overflow-y-auto px-5 pb-4 pt-6 text-center">
@@ -108,6 +119,7 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, t }: {
             {e.feito ? <BadgeEstado estado="feita">{t.feito}</BadgeEstado>
               : e.para ? <BadgeEstado estado="pendente">{t.para.replace("{data}", dataCurta(e.para))}</BadgeEstado>
               : motivo}
+            {c.iaRodando && !e.feito && <BadgeEstado estado="andamento">{t.iaFazendo}</BadgeEstado>}
           </div>
           {c.descricao && (
             <details className="group w-full text-left">
@@ -135,6 +147,23 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, t }: {
           )}
           {c.anexos > 0 && <Chip href={`/tarefas/${c.id}`} icone="pasta">{c.anexos === 1 ? t.anexo1 : t.anexosN.replace("{n}", String(c.anexos))}</Chip>}
         </div>
+        {pinu && !resolvido && !adiando && (
+          // the Pinu on this task (phase 2): 2 rule-based suggestions + "Diga o que fazer", all pinned to /tarefas/<id>
+          <div className="grid gap-2 px-4 pb-3">
+            <div className="flex flex-wrap justify-center gap-2">
+              {c.sugestoes.map((x) => <Chip key={x.rotulo} tipo="pinu" onClick={() => abrirPinu({ texto: x.texto, rotulo: x.rotulo, pagina })}>{x.rotulo}</Chip>)}
+            </div>
+            <form onSubmit={(ev) => {
+              ev.preventDefault();
+              const campo = ev.currentTarget.elements.namedItem("pedido") as HTMLInputElement;
+              const texto = campo.value.trim();
+              if (texto) { campo.value = ""; abrirPinu({ texto: `${t.digaPrefixo.replace("{t}", c.titulo)}${texto}`, pagina }); }
+            }}>
+              <Campo tipo="busca" pinu name="pedido" rotulo={t.diga} autoComplete="off" maxLength={500}
+                onMicrofone={() => abrirPinu({ voz: true, prefixo: t.digaPrefixo.replace("{t}", c.titulo), pagina })} />
+            </form>
+          </div>
+        )}
         {adiando && !resolvido && (
           <div className="flex flex-wrap items-center justify-center gap-2 px-4 pb-3">
             <Chip onClick={() => adiar(c, datas.amanha)} icone="prazo">{t.amanha}</Chip>
@@ -180,7 +209,7 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, t }: {
   return (
     <>
       <Chip onClick={abrir} icone="ver" contagem={cartoes.length}>{t.radar}</Chip>
-      {aberto && (
+      {aberto && !oculto && (
         <Historias titulo={t.radar} atual={atual} onMudar={mudar} onFechar={fechar}
           rotulos={{ fechar: t.fechar, anterior: t.anterior, proximo: t.proximo, posicao: t.posicao }}
           acoes={atualCartao && atualCartao.menu.length > 0 ? <MenuAcoes key={atualCartao.id} itens={atualCartao.menu} rotulo={t.opcoes} /> : undefined}

@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ds/Estados";
 import type { Lembranca, MsgSalva } from "@/lib/v2/assistente";
 
 export const ABRIR_ASSISTENTE = "nipei:assistente"; // window event; detail: { texto?: string }
+export const FECHOU_ASSISTENTE = "nipei:assistente-fechou"; // the panel closed (the Radar comes back, DS 10.29)
 
 type Labels = {
   titulo: string; placeholder: string; ouvindo: string; confirmar: string; confirmarTodas: string; cancelar: string; feito: string;
@@ -71,6 +72,9 @@ type Atalho = { id: string; curto: string; icone: NomeIcone; dica: string };
 export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang: "pt" | "en"; nome: string; labels: Labels; atalhos: Atalho[] }) {
   const path = usePathname() ?? "/hoje";
   const busca = useSearchParams();
+  // a request can pin the page the Pinu should consider (the Radar sends /tarefas/<id>); it holds until the panel closes
+  // (a ref: the same event may send at once, before a state update would reach `enviar`)
+  const paginaRef = useRef<string | null>(null);
   const pagina = path + (busca?.toString() ? `?${busca}` : "");
   const [aberto, setAberto] = useState(false);
   const [msgs, setMsgs] = useState<MsgSalva[] | null>(null);
@@ -172,7 +176,7 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
       const form = ax || at ? new FormData() : undefined;
       if (ax) form!.set("anexo", ax);
       if (at) form!.set("atalho", at.id);
-      const r = await assistenteAction(q, pagina, form).catch(() => ({ error: "Falha de conexão" } as { error: string })).finally(() => { clearInterval(poll); setPassos([]); });
+      const r = await assistenteAction(q, paginaRef.current ?? pagina, form).catch(() => ({ error: "Falha de conexão" } as { error: string })).finally(() => { clearInterval(poll); setPassos([]); });
       if ("error" in r && r.error) return setErro(r.error);
       const novas = (r as { msgs: MsgSalva[] }).msgs;
       setMsgs(novas);
@@ -196,7 +200,8 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
     const abrir = (e: Event) => {
       setAberto(true);
       // texto = send now · atalho = pick a shortcut (Hoje's chips) · preencher = put text in the field · voz = open listening
-      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; rotulo?: string; preencher?: string; prefixo?: string }>).detail;
+      const d = (e as CustomEvent<{ texto?: string; voz?: boolean; atalho?: string; rotulo?: string; preencher?: string; prefixo?: string; pagina?: string }>).detail;
+      if (d?.pagina?.startsWith("/")) paginaRef.current = d.pagina;
       // atalho + texto: a page-only shortcut (the team page) sends its own message, following the skill's steps (DS 10.13.1)
       const at = d?.atalho ? todosAtalhos.find((x) => x.id === d.atalho) ?? (d.texto ? { id: d.atalho, curto: d.rotulo ?? d.atalho, icone: "tarefa" as const, dica: d.texto } : undefined) : undefined;
       if (at && d?.texto) enviar(d.texto, at);
@@ -209,6 +214,14 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
     return () => window.removeEventListener(ABRIR_ASSISTENTE, abrir);
   }, [enviar]);
   useEffect(() => { if (aberto && msgs === null) carregar(); }, [aberto, msgs, carregar]);
+  // closing: forget the pinned page and tell whoever opened us (the Radar returns to its card)
+  const foiAberto = useRef(false);
+  useEffect(() => {
+    if (aberto) { foiAberto.current = true; return; }
+    if (!foiAberto.current) return;
+    paginaRef.current = null;
+    window.dispatchEvent(new Event(FECHOU_ASSISTENTE));
+  }, [aberto]);
   useEffect(() => { if (aberto) setTimeout(() => campo.current?.focus(), 50); else { audio.current?.pause(); try { window.speechSynthesis?.cancel(); } catch { /* none */ } rec.current?.stop(); } }, [aberto]);
   useEffect(() => { fim.current?.scrollIntoView({ block: "end" }); }, [msgs, pending, aberto]);
   useEffect(() => {

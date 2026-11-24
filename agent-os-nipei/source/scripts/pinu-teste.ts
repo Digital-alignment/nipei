@@ -14,6 +14,8 @@ import { SKILLS_IA } from "@/lib/v2/skillsIA";
 type Resultado = { resposta: string; acoes: AcaoProposta[]; consultas: string[] };
 type Caso = {
   id: string; pergunta: string; quem?: "gestao" | "membro"; atalho?: string;
+  /** the page the Pinu sees (default /hoje); the Radar pins /tarefas/<id> (DS 10.29 phase 2) */
+  pagina?: string;
   /** reads it must have made (any of each group) */
   leu?: string[][];
   /** proposal kinds it must make (at least one of each, in any order) */
@@ -53,6 +55,15 @@ const CASOS: Caso[] = [
     extra: (r: Resultado) => prop(r, "mudar_prazo")[0]?.prazo === proxSexta ? "" : `prazo ${prop(r, "mudar_prazo")[0]?.prazo} ≠ sexta ${proxSexta}` }] : []),
   ...(minhaTarefa ? [{ id: "passos", pergunta: `Divida a tarefa "${minhaTarefa.title}" em passos curtos e proponha adicioná-los ao checklist dela.`, propoe: ["adicionar_passos"],
     extra: (r: Resultado) => { const n = prop(r, "adicionar_passos")[0]?.passos.length ?? 0; return n >= 2 && n <= 10 ? "" : `${n} passos`; } }] : []),
+  // Radar, phase 2: the card pins the task page, so "esta tarefa" needs no search by title
+  ...(minhaTarefa ? [
+    { id: "radar-diga", pagina: `/tarefas/${minhaTarefa.id}`, pergunta: `Sobre a tarefa "${minhaTarefa.title}": mude o prazo para a próxima sexta.`, propoe: ["mudar_prazo"],
+      extra: (r: Resultado) => prop(r, "mudar_prazo")[0]?.id === minhaTarefa.id ? "" : "o prazo não foi para a tarefa da página" },
+    { id: "radar-planejar", pagina: `/tarefas/${minhaTarefa.id}`, pergunta: `Planeje a tarefa "${minhaTarefa.title}": proponha um prazo realista e, se precisar, os primeiros passos e um horário na agenda.`,
+      extra: (r: Resultado) => r.acoes.length === 0 ? "não propôs nada" : r.acoes.some((a) => "id" in a && a.id !== minhaTarefa.id) ? "propôs para outra tarefa" : "" },
+    { id: "radar-arquivo", pagina: `/tarefas/${minhaTarefa.id}`, pergunta: `Procure no Acervo e na base de conhecimento o arquivo ou link de que a tarefa "${minhaTarefa.title}" precisa e me diga onde está; se não achar, diga o que falta e quem pode ter.`,
+      leu: [["acervo", "buscar_conhecimento", "dossie", "quem_sabe"]] },
+  ] : []),
   { id: "whatsapp", pergunta: "Mande um WhatsApp para o Jordão dizendo que eu chego às 10h amanhã.", propoe: ["enviar_whatsapp"] },
   { id: "guardar", pergunta: "Guarda no Conhecimento: o horário de silêncio do Santuário é das 22h às 6h, todos os dias.", propoe: ["guardar_conhecimento"],
     extra: (r) => /22h/.test(prop(r, "guardar_conhecimento")[0]?.texto ?? "") ? "" : "o texto guardado não é fiel (falta 22h)" },
@@ -89,7 +100,7 @@ async function rodar(c: Caso) {
   const me = c.quem === "membro" ? membro : gestao;
   const sk = c.atalho ? SKILLS_IA.find((x) => x.id === c.atalho) : undefined;
   const t0 = Date.now();
-  const r = await conversar(me, [{ role: "user", content: c.pergunta }], "pt", "/hoje", undefined, undefined, sk ? { nome: sk.curto, passos: sk.passos } : undefined);
+  const r = await conversar(me, [{ role: "user", content: c.pergunta }], "pt", c.pagina ?? "/hoje", undefined, undefined, sk ? { nome: sk.curto, passos: sk.passos } : undefined);
   const problemas: string[] = [];
   for (const g of c.leu ?? []) if (!g.some((f) => r.consultas.includes(f))) problemas.push(`não leu ${g.join(" ou ")}`);
   for (const t of c.propoe ?? []) if (!tipos(r).includes(t as AcaoProposta["tipo"])) problemas.push(`não propôs ${t}`);

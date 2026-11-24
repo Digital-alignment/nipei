@@ -24,8 +24,10 @@ import Campo from "@/components/ds/Campo";
 import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction, tarefaConhecimentoAction } from "../actions";
+import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction, tarefaConhecimentoAction, fazerPorMimAction } from "../actions";
 import Radar, { type CartaoRadar } from "@/components/v2/Radar";
+import { sugestoesPinu, type SugestaoPinu } from "@/lib/v2/sugestoesPinu";
+import { emAndamento } from "@/lib/v2/trabalhos";
 import type { ItemMenu } from "@/components/ds/MenuAcoes";
 import Chip from "@/components/ds/Chip";
 import { chaveEquipe } from "@/components/ds/equipes";
@@ -281,8 +283,14 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     agora.filter((x) => x.prazo === hoje).forEach(por("hoje"));
     semData.filter((x) => x.pedidoPor).forEach(por("pedido"));
     const projetos = getProjetos();
+    // phase 2: suggestion → label + the message sent to the Pinu (pinned to the task page)
+    const SUG: Record<SugestaoPinu, [string, string]> = {
+      resposta: [t.rd.sugResposta, t.rd.sugRespostaTexto], arquivo: [t.rd.sugArquivo, t.rd.sugArquivoTexto], planejar: [t.rd.sugPlanejar, t.rd.sugPlanejarTexto],
+      mensagem: [t.hj.pinuMensagem, t.hj.pinuMensagemTexto], passos: [t.hj.pinuPassos, t.hj.pinuPassosTexto],
+    };
     return lista.slice(0, 15).map(({ x, motivo }) => {
       const det = getTarefaDetalhe(x.id), pode = can.editTarefa(user, x), noFoco = focoIds.includes(x.id);
+      const ia = can.usarIA(user, x), rodando = ia && emAndamento(x.id).length > 0;
       const descricao = (det?.doc.descricao ?? "").trim();
       const quemPediu = x.pedidoPor && pessoas.find((p) => p.id === x.pedidoPor)?.name.split(" ")[0];
       const rotulo = quemPediu ? t.rd.pedidoDe.replace("{nome}", quemPediu)
@@ -291,9 +299,15 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         id: x.id, titulo: x.title, rotulo, equipe: chaveEquipe(x.equipe), motivo,
         atraso: x.prazo && x.prazo < hoje ? Math.round((Date.parse(hoje) - Date.parse(x.prazo)) / 86_400_000) : 0,
         descricao: descricao.slice(0, 1200), passos: det?.doc.checklist ?? [], anexos: det?.anexos.length ?? 0, podeEditar: pode,
+        iaRodando: rodando,
+        sugestoes: sugestoesPinu({
+          titulo: x.title, descricao, passos: det?.doc.checklist.length ?? 0, atrasada: !!x.prazo && x.prazo < hoje, semPrazo: !x.prazo,
+          outros: !!x.pedidoPor || x.responsaveis.some((r) => r !== me.id),
+        }).map((k) => ({ rotulo: SUG[k][0], texto: SUG[k][1].replace("{t}", x.title) })),
         menu: [
           ...(noFoco || focoIds.length < MAX_FOCO ? [{ icone: "inicio" as const, rotulo: noFoco ? t.hj.focoMenuTirar : t.hj.focoMenuPor, acao: focoAction, campos: { id: x.id } }] : []),
           ...(pode ? [{ icone: "editar" as const, rotulo: t.rd.editar, href: `/tarefas/${x.id}/editar` }] : []),
+          ...(ia && !rodando ? [{ icone: "gerar-outra" as const, rotulo: t.rd.fazerPorMim, acao: fazerPorMimAction, campos: { id: x.id } }] : []),
           ...(descricao.length >= 20 ? [{ icone: "informacao" as const, rotulo: t.rd.conhecimento, acao: tarefaConhecimentoAction, campos: { id: x.id, parte: "descricao" } }] : []),
           ...(pinu ? acoesPinuTarefa(x.title, t.hj) : []),
         ],
@@ -348,7 +362,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         )}
         {radar.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            <Radar cartoes={radar} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
+            <Radar cartoes={radar} pinu={pinu} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
               datas={{ amanha: dia(1), proxSemana: dia(ateSexta + 7) }} fmt={{ [dia(1)]: fmtDate(dia(1), lang), [dia(ateSexta + 7)]: fmtDate(dia(ateSexta + 7), lang) }} />
           </div>
         )}
