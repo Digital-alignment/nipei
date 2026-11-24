@@ -1,6 +1,6 @@
 # Plano — Radar em Hoje (novembro 2026)
 
-Estado: **fase 1 aprovada e feita** (24/11/2026). Fases 2–4 depois de ver o uso. Rotas a partir de `agent-os-nipei/source/`.
+Estado: **fases 1 e 2 feitas** (24/11/2026). Fases 3–4 depois de ver o uso. Rotas a partir de `agent-os-nipei/source/`.
 
 ## A ideia
 
