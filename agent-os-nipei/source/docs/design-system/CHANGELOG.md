@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-24 — Radar em Hoje, fase 1 (9.20, 10.29)
+
+- `components/ds/Historias.tsx` (tela cheia em cartões: segmentos, scroll-snap, teclado, foco preso) e `components/v2/Radar.tsx` (cartões das minhas tarefas: concluir com fila offline, adiar, passos, ⋯; cartão final com as feitas hoje e a semana). Hoje: Chip "Radar · N" abaixo do Pinu; `semanaFeitas` (concluídas por dia da semana).
+
 ## 2026-11-23 — Anexos da tarefa → Conhecimento
 
 - Ficha da tarefa: "Enviar ao Conhecimento" (ícone) em cada anexo de arquivo legível (`tarefaAnexoConhecimentoAction`: fonte de arquivo do canal tarefa, uma por anexo; já enviado = link para a fonte).

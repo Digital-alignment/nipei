@@ -377,6 +377,9 @@ Cartão flutuante `superfície 2` + contorno de 1 px, raio 16, itens de 44 px co
 Um item pode ser um link (`href`), uma função do navegador (`onSelect`) ou uma **ação do servidor** (`acao` + `campos`: o menu fecha, envia e atualiza a página). Ou um **pedido ao Pinu** (`pinu`: `{ texto | preencher | atalho }`): o menu fecha e abre o painel do Pinu com aquilo (serve também em listas desenhadas no servidor, onde funções não passam). `soCelular`: o item só aparece abaixo de `sm` (quando a mesma ação já tem botão próprio no computador).
 **Menu de criar** (gatilho "+", 2026-11-22): o fundo da página escurece e desfoca (`bg` a 70 % + desfoque; toque fora fecha); cartão `superfície 2` raio 20, título `rotulo-maiusculo` "Criar", itens de 52 px com o ícone num quadrado `superfície 3` de 36 px (raio interno) + texto; entra subindo 8 px com opacidade (150 ms). Cada item com ícone próprio (tarefa, calendário, enviar, informação, pasta) — nunca dois iguais.
 
+### 9.20 Tela cheia em cartões (histórias)
+Uma camada que cobre a tela inteira (`role="dialog" aria-modal`, fundo `bg`, áreas seguras do iPhone), para passar por uma sequência de cartões um de cada vez. Topo: segmentos de progresso (`BarraProgresso segmentos`, um por cartão; o atual cheio até ele — só mostra onde está, **nunca avança sozinho**), título `titulo-secao` à esquerda e, à direita, ⋯ (do cartão atual) e ✕ (`BotaoIcone` tonal 44). Cartões lado a lado com **scroll-snap nativo** (`snap-x snap-mandatory`, um cartão = largura da tela; no computador, coluna de 480 px centrada com setas ‹ › nas laterais). Navegar: deslizar, setas do teclado, ‹ ›. Esc fecha; o foco fica preso na camada e volta ao botão que abriu. Entrada: sobe 16 px com opacidade (220 ms); `prefers-reduced-motion` = sem animação. A lista de cartões é **congelada ao abrir**: concluir ou adiar marca o cartão (não o tira), e a página só se atualiza ao fechar.
+
 ---
 
 ## 10. Padrões
@@ -640,6 +643,14 @@ O que a equipe tem de entregar a partir de um diagnóstico (hoje o da Lynn), com
 - Cartão `pinu` com o texto de ajuda e Botão tonal "Sugerir com o Pinu" (`gerar-outra`); `meta` "N sugeridos". Fatos confirmados depois chegam já com sugestão (o lote das propostas do Conhecimento chama a mesma sugestão).
 - Lista em `rounded-cartao bg-s1` agrupada por projeto (Seção com título + contagem): cada linha = texto do fato (link para a ficha, 3 linhas) e, à direita (embaixo no celular), Chip `pinu` "sugerido" quando a sugestão difere do salvo + dois selects compactos: **Visibilidade** (Público / Interno) e **Uso** (Identidade, História, Oferta, Preços, Pessoas, Números, Regras, Procedimento, Outro). Botão primário fixo "Salvar" no fim. Em "Por classificar", salvar aprova o que está nos selects (inclusive a sugestão sem mudança).
 
+### 10.29 Radar (Hoje, 2026-11-24, plano `docs/planos/radar-hoje-2026-11.md`, fase 1)
+Passar o dia a limpo sem abrir tarefa por tarefa, na tela cheia de 9.20.
+- **Entrada**: em Hoje, Chip "Radar · N" (ícone `ver`) na linha do resumo do dia, logo abaixo do bloco do Pinu. Sem cartões, não aparece. Nada é gerado por IA ao abrir.
+- **Cartões** (máx. 15, nesta ordem, sem repetir): foco de hoje (sem foco escolhido: a sugestão da ordem inteligente, selo "Sugestão para hoje") → atrasadas → de hoje → pedidos a mim (`pedidoPor`) sem prazo. Só as minhas tarefas abertas.
+- **Cartão de tarefa**: fundo = cor da equipe misturada no `s1` (`color-mix(in srgb, var(--eq-*) 22%, var(--s1))`, como os blocos da Agenda; sem equipe = `s1`), contraste do texto checado nos dois temas; no centro o **selo da equipe** grande (120 px, `currentColor` em `t1` a 85 %; sem equipe = `broto`), nunca ilustração decorativa sem sentido. Abaixo: `rotulo-maiusculo` (equipe · projeto, ou "PEDIDO DE <nome>"), título `saudacao` centrado (até 3 linhas), selo do motivo (atrasada N dias / hoje / foco) em Badge, descrição em 3 linhas com "Ver mais" (`<details>`), passos (checklist) tocáveis com `BarraProgresso segmentos` e anexos como contagem com link para a ficha.
+- **Ações de baixo** (fixas, 56 px): **Adiar** (`BotaoIcone` tonal com `prazo` → menu Amanhã / Próxima semana / Escolher data), **Abrir** (Botão tonal "Abrir tarefa") e **Concluir** (`BotaoIcone` acento 56 com `confirmar`; funciona sem sinal pela fila do aparelho). Concluir/adiar: o cartão ganha um selo "Feito" / "Para <data>" e passa ao próximo depois de 400 ms. ⋯ do topo = Foco (pôr/tirar), Editar / delegar, Enviar ao Conhecimento (descrição ≥ 20 caracteres), e os itens do Pinu de 10.5.1 quando a pessoa tem o assistente. Quem não pode editar não vê Adiar/Concluir/passos.
+- **Cartão final** (sempre o último): `numero-display` com as feitas hoje + "feitas hoje", a semana (segunda → domingo) em 7 pontos de 32 px (`ac` com ✓ = concluiu algo nesse dia, `s3` = não, hoje com anel), e "Fechar" (Botão primário). Fundo `s1` com o brilho do Pinu no topo (regra 4: é a área de IA/progresso da tela).
+
 ## 11. Tema claro
 
 Mesma estrutura, outros tokens (seção 3). Diferenças de comportamento:
@@ -740,7 +751,7 @@ Situação em 2026-10-26: todas as linhas acima foram cumpridas na v2 (`src/app/
 - Ícones P2/P3 restantes (`ICONES.md`): `quadro`, `grade`, `semana`, `mes`, `copiar`, `ver`/`ocultar`, `sem-conexao`, `documento`, `planilha`, `apresentacao`, `video`, `audio`, `pasta`. No código estão com um provisório e `TODO(ícones)`.
 - Pulso: o ponto de cada equipe ainda usa a cor gravada no vault (`cor` da equipe), não o token `eq-*`.
 - Pinu ainda não recebe arquivos (sem "+"/imagem no campo).
-- Painel do Notificar (ficha da pessoa) e o painel do Pinu usam sobreposição própria; falta um componente de folha/painel lateral no sistema.
+- Painel do Notificar (ficha da pessoa) e o painel do Pinu usam sobreposição própria; a tela cheia em cartões (9.20) existe desde 2026-11-24, falta a folha/painel lateral.
 - Telas v1 (fora de `(v2)`): fora do design system; lucide e as fontes antigas continuam só nelas.
 
 ---

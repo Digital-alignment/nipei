@@ -34,14 +34,25 @@ const PARES = [
   ...["ok", "warn", "err", "info"].flatMap((e) => [[e, `${e}-bg`, 4.5], [e, "bg", 4.5]]),
   // 3.4 — equipes como texto sobre a página
   ...EQUIPES.map((e) => [e, "bg", 4.5]),
+  // 10.29 — Radar: texto sobre a cor da equipe misturada no s1 (color-mix 22 %)
+  ...EQUIPES.flatMap((e) => ["t1", "t2"].map((t) => [t, `mix:${e}:22:s1`, 4.5])),
 ];
+// "mix:a:p:b" = color-mix(in srgb, var(--a) p%, var(--b)) — interpolação dos canais sRGB, como o navegador faz
+const cor = (tk, nome) => {
+  if (!nome.startsWith("mix:")) return tk[nome];
+  const [, a, p, b] = nome.split(":");
+  if (!tk[a] || !tk[b]) return undefined;
+  const ch = (h) => h.replace("#", "").match(/../g).map((x) => parseInt(x, 16));
+  const [x, y] = [ch(tk[a]), ch(tk[b])], w = Number(p) / 100;
+  return "#" + x.map((v, i) => Math.round(v * w + y[i] * (1 - w)).toString(16).padStart(2, "0")).join("");
+};
 
 let falhas = 0;
 for (const [tema, tk] of Object.entries(TEMAS)) {
   console.log(`\n${tema}`);
   for (const [t, f, min] of PARES) {
-    if (!tk[t] || !tk[f]) { console.log(`  ✗ token ausente: --${tk[t] ? f : t}`); falhas++; continue; }
-    const r = razao(tk[t], tk[f]);
+    if (!cor(tk, t) || !cor(tk, f)) { console.log(`  ✗ token ausente: --${cor(tk, t) ? f : t}`); falhas++; continue; }
+    const r = razao(cor(tk, t), cor(tk, f));
     const ok = min == null || r >= min;
     if (!ok) falhas++;
     console.log(`  ${min == null ? "·" : ok ? "✓" : "✗"} ${t.padEnd(12)} sobre ${f.padEnd(11)} ${r.toFixed(2).padStart(5)}:1${min == null ? "  (não usar)" : ok ? "" : `  < ${min}`}`);

@@ -12,7 +12,7 @@ import { getAlertas } from "@/lib/v2/auditor";
 import { getPropostas, podeDecidir } from "@/lib/v2/propostas";
 import { codigoPendente, diagnosticosAbertos, getColetivo, progresso, secoesColetivas } from "@/lib/v2/diagnostico";
 import { agendaDoDia, pulso } from "@/lib/v2/hoje";
-import { aReembolsar, can, currentUser, esperandoPor, getLancamentos, getEquipes, getEventos, getObjetivos, getPessoas, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
+import { aReembolsar, can, currentUser, esperandoPor, getLancamentos, getEquipes, getEventos, getObjetivos, getPessoas, getProjetos, getTarefaDetalhe, getTarefas, linkEvento, novidadesPara, reconectarEm, reconectarPor, reunioesFixas, today, type Tarefa } from "@/lib/v2/data";
 import { fmtDate, getT } from "@/lib/v2/i18n";
 import { ordenarAgora, ordenarProximas, ordenarSemData, type Selo } from "@/lib/v2/ordem";
 import { missaoDaSemana, primeirosPassos } from "@/lib/v2/missaoDados";
@@ -24,7 +24,8 @@ import Campo from "@/components/ds/Campo";
 import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction } from "../actions";
+import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction, tarefaConhecimentoAction } from "../actions";
+import Radar, { type CartaoRadar } from "@/components/v2/Radar";
 import type { ItemMenu } from "@/components/ds/MenuAcoes";
 import Chip from "@/components/ds/Chip";
 import { chaveEquipe } from "@/components/ds/equipes";
@@ -269,6 +270,46 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
   const noite = fechouDia || Number(new Date().toLocaleTimeString("sv-SE", { timeZone: "America/Bahia" }).slice(0, 2)) >= 17;
   const passosFeitos = passos.filter((x) => x.feito).length;
 
+  // Radar (DS 10.29): focus → overdue → today → requests to me without a date; max 15, my open tasks only
+  const radar: CartaoRadar[] = (() => {
+    if (!me) return [];
+    const vistos = new Set<string>(), lista: { x: Tarefa; motivo: CartaoRadar["motivo"] }[] = [];
+    const por = (motivo: CartaoRadar["motivo"]) => (x: Tarefa) => { if (x.status !== "done" && !vistos.has(x.id)) { vistos.add(x.id); lista.push({ x, motivo }); } };
+    foco.forEach(por("foco"));
+    if (!foco.length) sugestao.forEach(por("sugestao")); // no focus chosen: the smart-order suggestion, as in "Começar por estas?"
+    agora.filter((x) => x.prazo < hoje).forEach(por("atrasada"));
+    agora.filter((x) => x.prazo === hoje).forEach(por("hoje"));
+    semData.filter((x) => x.pedidoPor).forEach(por("pedido"));
+    const projetos = getProjetos();
+    return lista.slice(0, 15).map(({ x, motivo }) => {
+      const det = getTarefaDetalhe(x.id), pode = can.editTarefa(user, x), noFoco = focoIds.includes(x.id);
+      const descricao = (det?.doc.descricao ?? "").trim();
+      const quemPediu = x.pedidoPor && pessoas.find((p) => p.id === x.pedidoPor)?.name.split(" ")[0];
+      const rotulo = quemPediu ? t.rd.pedidoDe.replace("{nome}", quemPediu)
+        : [equipes.find((e) => e.id === x.equipe)?.nome, projetos.find((p) => p.id === x.projeto)?.nome].filter(Boolean).join(" · ");
+      return {
+        id: x.id, titulo: x.title, rotulo, equipe: chaveEquipe(x.equipe), motivo,
+        atraso: x.prazo && x.prazo < hoje ? Math.round((Date.parse(hoje) - Date.parse(x.prazo)) / 86_400_000) : 0,
+        descricao: descricao.slice(0, 1200), passos: det?.doc.checklist ?? [], anexos: det?.anexos.length ?? 0, podeEditar: pode,
+        menu: [
+          ...(noFoco || focoIds.length < MAX_FOCO ? [{ icone: "inicio" as const, rotulo: noFoco ? t.hj.focoMenuTirar : t.hj.focoMenuPor, acao: focoAction, campos: { id: x.id } }] : []),
+          ...(pode ? [{ icone: "editar" as const, rotulo: t.rd.editar, href: `/tarefas/${x.id}/editar` }] : []),
+          ...(descricao.length >= 20 ? [{ icone: "informacao" as const, rotulo: t.rd.conhecimento, acao: tarefaConhecimentoAction, campos: { id: x.id, parte: "descricao" } }] : []),
+          ...(pinu ? acoesPinuTarefa(x.title, t.hj) : []),
+        ],
+      };
+    });
+  })();
+  // the Radar's last card: what I finished on each day of this week (Monday → Sunday)
+  const seg = segunda(hoje);
+  const semanaRadar = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.parse(`${seg}T12:00:00Z`) + i * 86_400_000), iso = d.toISOString().slice(0, 10);
+    return {
+      letra: d.toLocaleDateString(locale, { weekday: "narrow", timeZone: "UTC" }), nome: d.toLocaleDateString(locale, { weekday: "long", timeZone: "UTC" }),
+      feito: doMeu.some((x) => x.status === "done" && x.concluidoEm.slice(0, 10) === iso), hoje: iso === hoje,
+    };
+  });
+
   return (
     <>
       <header className="mb-5 grid gap-3">
@@ -304,6 +345,12 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
             {noite ? <PedirPinu rotulo={t.hj.planejarAmanha} icone="tarefa" atalho="amanha" /> : <PedirPinu rotulo={t.hj.planejarDia} icone="tarefa" atalho="planejar" />}
             <GerarResumo rotulo={t.hj.resumoDia} gerando={t.hj.resumindo} />
           </CampoPinu>
+        )}
+        {radar.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <Radar cartoes={radar} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
+              datas={{ amanha: dia(1), proxSemana: dia(ateSexta + 7) }} fmt={{ [dia(1)]: fmtDate(dia(1), lang), [dia(ateSexta + 7)]: fmtDate(dia(ateSexta + 7), lang) }} />
+          </div>
         )}
         {pinu && resumoHoje && (
           // the Pinu's summary of the day (DS 10.5.1, phase 3): generated on tap, kept for today, no AI on page load

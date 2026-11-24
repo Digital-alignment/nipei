@@ -153,6 +153,7 @@ html[data-lote] .v2 .lote-caixa { display: block; }
 .v2 .corte-dir     { border-radius: 18px; clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%); margin-left: -14px; }
 /* carregando: arco girando (seção 8 e 9.17); com menos movimento fica parado e o texto diz "Carregando…" */
 @keyframes ds-girar { to { transform: rotate(360deg); } }
+@keyframes entrar-historias { from { opacity: 0; transform: translateY(16px); } }
 .v2 .arco-girando  { width: 1em; height: 1em; border-radius: 999px; border: 2px solid currentColor; border-top-color: transparent; animation: ds-girar .9s linear infinite; }
 
 /* Pinu: mini-anel (avatar do Pinu em mensagens, campos e chips — seção 10.11). Gradiente fixo do orbe,

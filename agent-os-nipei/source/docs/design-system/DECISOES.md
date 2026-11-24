@@ -951,3 +951,7 @@ Pedido do Ashuan, depois de organizar pessoas e equipes e escrever o Sobre de to
 
 Pedido do Ashuan, ao planejar testes: a entrega do "Fazer por mim" (e qualquer anexo) não tinha caminho para o Conhecimento — só a descrição e os comentários tinham. Decidido: botão "Enviar ao Conhecimento" em cada anexo de arquivo legível; nada automático (a tarefa concluída ou a entrega da IA não entram sozinhas: só quem decide envia, e tudo passa pela revisão).
 
+## 2026-11-24 — Radar em Hoje, fase 1 (§9.20, §10.29)
+
+Pedido do Ashuan, com imagens de referência no estilo "stories" (título serifado, fundo pastel por cartão, desenho grande, rótulo WHATSAPP/GMAIL, timer). Plano em `docs/planos/radar-hoje-2026-11.md`, fase 1 aprovada. Adaptado ao sistema: título em Outfit (sem serifa, regra 11), fundo = cor da equipe misturada no `s1` (funciona nos dois temas, a cor tem sentido), selo da equipe grande no lugar do desenho (lote 1, o mesmo das equipes; nada decorativo sem sentido), sem logos de terceiros e **sem avanço por tempo** (cada cartão espera a pessoa). Componente novo de tela cheia (9.20) em vez de mais uma sobreposição própria. Sem IA nesta fase.
+
