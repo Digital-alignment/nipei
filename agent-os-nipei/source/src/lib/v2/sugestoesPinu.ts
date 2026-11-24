@@ -8,11 +8,11 @@ const EMAIL = /\b(e-?mails?|correos?|responder|resposta|retornar o contato)\b/;
 const ARQUIVO = /\b(pdf|arquivos?|documentos?|fotos?|imagens?|planilhas?|links?|drive|anexos?|subir|upload|contratos?)\b/;
 
 /** Up to 2 suggestions, most specific first; the fallback fills with "planejar" / "mensagem". */
-export function sugestoesPinu(t: { titulo: string; descricao: string; passos: number; outros: boolean; atrasada: boolean; semPrazo: boolean }): SugestaoPinu[] {
+export function sugestoesPinu(t: { titulo: string; descricao: string; passos: number; outros: boolean; atrasada: boolean; semPrazo: boolean; email?: boolean }): SugestaoPinu[] {
   const texto = sem(`${t.titulo} ${t.descricao.slice(0, 400)}`);
   const out: SugestaoPinu[] = [];
   const por = (x: SugestaoPinu, se: boolean) => { if (se && !out.includes(x) && out.length < 2) out.push(x); };
-  por("resposta", EMAIL.test(texto));
+  por("resposta", !!t.email || EMAIL.test(texto)); // born from an e-mail: the reply comes first
   por("arquivo", ARQUIVO.test(texto));
   por("mensagem", t.outros);
   por("passos", t.passos === 0);
@@ -33,4 +33,5 @@ if (process.argv[1]?.endsWith("sugestoesPinu.ts")) {
   assert(sugestoesPinu({ ...base, titulo: "Revisar fotos e documentos", descricao: "mandar resposta por email" }).length === 2, "nunca mais de 2");
   assert(sugestoesPinu({ ...base, titulo: "Organizar a fogueira" }).length === 2, "fallback completa 2");
   assert(!sugestoesPinu({ ...base, titulo: "Subir o PDF" }).includes("passos"), "com passos, nunca 'Dividir em passos'");
+  assert(sugestoesPinu({ ...base, titulo: "Relatório trimestral", email: true })[0] === "resposta", "veio de um e-mail → resposta primeiro");
 }

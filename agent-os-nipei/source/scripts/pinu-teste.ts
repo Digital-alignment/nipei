@@ -64,6 +64,9 @@ const CASOS: Caso[] = [
     { id: "radar-arquivo", pagina: `/tarefas/${minhaTarefa.id}`, pergunta: `Procure no Acervo e na base de conhecimento o arquivo ou link de que a tarefa "${minhaTarefa.title}" precisa e me diga onde está; se não achar, diga o que falta e quem pode ter.`,
       leu: [["acervo", "buscar_conhecimento", "dossie", "quem_sabe"]] },
   ] : []),
+  // Radar phase 4: a task born from an e-mail keeps its id (to answer in the same thread later)
+  { id: "tarefa-email", pergunta: "Acabei de ler o e-mail de id 18c2f4a9b7e1d3aa da Fundação Futuro pedindo o relatório do projeto. Crie uma tarefa para eu responder até sexta.", propoe: ["criar_tarefa"],
+    extra: (r: Resultado) => prop(r, "criar_tarefa")[0]?.email === "18c2f4a9b7e1d3aa" ? "" : `email = ${prop(r, "criar_tarefa")[0]?.email ?? "(vazio)"}` },
   { id: "whatsapp", pergunta: "Mande um WhatsApp para o Jordão dizendo que eu chego às 10h amanhã.", propoe: ["enviar_whatsapp"] },
   { id: "guardar", pergunta: "Guarda no Conhecimento: o horário de silêncio do Santuário é das 22h às 6h, todos os dias.", propoe: ["guardar_conhecimento"],
     extra: (r) => /22h/.test(prop(r, "guardar_conhecimento")[0]?.texto ?? "") ? "" : "o texto guardado não é fiel (falta 22h)" },

@@ -283,6 +283,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     agora.filter((x) => x.prazo === hoje).forEach(por("hoje"));
     semData.filter((x) => x.pedidoPor).forEach(por("pedido"));
     const projetos = getProjetos();
+    // DS 10.29 (phase 4): where the task came from, icon + text; created here ("app") or old tasks show nothing
+    const ORIGEM: Record<string, { rotulo: string; icone: NomeIcone }> = {
+      gmail: { rotulo: t.rd.origem.gmail, icone: "enviar" }, whatsapp: { rotulo: "WhatsApp", icone: "mensagem" }, pinu: { rotulo: "Pinu", icone: "gerar-outra" },
+      mcp: { rotulo: t.rd.origem.mcp, icone: "abrir-fora" }, hermes: { rotulo: "Hermes", icone: "gerar-outra" }, reuniao: { rotulo: t.rd.origem.reuniao, icone: "calendario" },
+      procedimento: { rotulo: t.rd.origem.procedimento, icone: "tarefa" }, diagnostico: { rotulo: t.rd.origem.diagnostico, icone: "informacao" },
+      conhecimento: { rotulo: t.rd.origem.conhecimento, icone: "informacao" }, repeticao: { rotulo: t.rd.origem.repeticao, icone: "prazo" },
+    };
     // phase 2: suggestion → label + the message sent to the Pinu (pinned to the task page)
     const SUG: Record<SugestaoPinu, [string, string]> = {
       resposta: [t.rd.sugResposta, t.rd.sugRespostaTexto], arquivo: [t.rd.sugArquivo, t.rd.sugArquivoTexto], planejar: [t.rd.sugPlanejar, t.rd.sugPlanejarTexto],
@@ -296,13 +303,13 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
       const rotulo = quemPediu ? t.rd.pedidoDe.replace("{nome}", quemPediu)
         : [equipes.find((e) => e.id === x.equipe)?.nome, projetos.find((p) => p.id === x.projeto)?.nome].filter(Boolean).join(" · ");
       return {
-        id: x.id, titulo: x.title, rotulo, equipe: chaveEquipe(x.equipe), motivo,
+        id: x.id, titulo: x.title, rotulo, equipe: chaveEquipe(x.equipe), motivo, origem: ORIGEM[x.canal],
         atraso: x.prazo && x.prazo < hoje ? Math.round((Date.parse(hoje) - Date.parse(x.prazo)) / 86_400_000) : 0,
         descricao: descricao.slice(0, 1200), passos: det?.doc.checklist ?? [], anexos: det?.anexos.length ?? 0, podeEditar: pode,
         ia, hermes: ia ? estadoTrabalho(x.id) : { estado: "nada" as const }, noFoco,
         sugestoes: sugestoesPinu({
           titulo: x.title, descricao, passos: det?.doc.checklist.length ?? 0, atrasada: !!x.prazo && x.prazo < hoje, semPrazo: !x.prazo,
-          outros: !!x.pedidoPor || x.responsaveis.some((r) => r !== me.id),
+          outros: !!x.pedidoPor || x.responsaveis.some((r) => r !== me.id), email: !!x.emailId,
         }).map((k) => ({ id: k, rotulo: SUG[k][0], texto: SUG[k][1].replace("{t}", x.title) })),
         menu: [
           { icone: "abrir-fora" as const, rotulo: t.rd.abrir, href: `/tarefas/${x.id}` },

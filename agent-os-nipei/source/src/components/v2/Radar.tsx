@@ -10,7 +10,7 @@ import Botao, { BotaoIcone } from "@/components/ds/Botao";
 import Chip, { BadgeEstado } from "@/components/ds/Chip";
 import Cartao from "@/components/ds/Cartao";
 import Campo from "@/components/ds/Campo";
-import Icone from "@/components/ds/Icone";
+import Icone, { type NomeIcone } from "@/components/ds/Icone";
 import Selo from "@/components/ds/Selo";
 import MenuAcoes, { type ItemMenu } from "@/components/ds/MenuAcoes";
 import { BarraProgresso } from "@/components/ds/Progresso";
@@ -26,6 +26,8 @@ import type { EstadoTrabalho } from "@/lib/v2/trabalhos";
 
 export type CartaoRadar = {
   id: string; titulo: string; rotulo: string; equipe?: ChaveEquipe;
+  /** where the task came from (DS 10.29 phase 4): label + icon; "" = created in the platform or before 2026-11-24 */
+  origem?: { rotulo: string; icone: NomeIcone };
   motivo: "foco" | "sugestao" | "atrasada" | "hoje" | "pedido"; atraso: number;
   descricao: string; passos: { texto: string; feito: boolean }[]; anexos: number;
   podeEditar: boolean; noFoco: boolean; menu: ItemMenu[];
@@ -183,6 +185,7 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-3 pt-5">
         <div className="my-auto grid justify-items-center gap-3 text-center">
           <Selo nome={c.equipe ? EQUIPES_DS[c.equipe].selo : "broto"} tamanho={64} className="size-14 text-t1 opacity-85 sm:size-16" />
+          {c.origem && <p className="rotulo-maiusculo inline-flex items-center gap-1.5 text-t1"><Icone nome={c.origem.icone} tamanho={14} />{c.origem.rotulo}</p>}
           <p className="rotulo-maiusculo text-t2">{c.rotulo}</p>
           {/* the title opens the task; wrapped because a grid item is blockified and line-clamp needs -webkit-box */}
           <div className="w-full">

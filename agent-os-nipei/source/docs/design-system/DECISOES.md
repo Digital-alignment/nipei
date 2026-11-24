@@ -971,3 +971,7 @@ Teste do Ashuan (itens 15 e 16). O microfone e os chips levavam ao painel do Pin
 
 Pedido do Ashuan: adiantar o que não depende do uso. Decidido: (1) medir o uso do Radar (eventos sem conteúdo, módulo no Painel) para escolher os cartões da fase 3 com dados de todas as pessoas, não só pela memória; (2) gravar o canal de origem de cada tarefa nova (`canal`: app, pinu, whatsapp, mcp, hermes, reuniao, procedimento, diagnostico, conhecimento, repeticao), para a fase 4 já ter histórico quando for mostrar "WHATSAPP"/"GMAIL" no cartão. Nada muda na tela das pessoas.
 
+## 2026-11-24 — Radar, fase 4 adiantada: origem e resposta no fio do e-mail (§10.29)
+
+Pedido do Ashuan. A origem aparece no cartão como na referência ("WHATSAPP", "GMAIL"), mas com ícone do Nipëi + texto (sem logos de terceiros, regra 8) e só quando diz algo (tarefa da própria plataforma não ganha rótulo). Quando o Pinu cria uma tarefa a partir de um e-mail que leu, guarda o id do e-mail na tarefa (`email_id`, canal `gmail`): "Redigir resposta" deixa de procurar o e-mail às cegas e responde no mesmo fio. O id vai só no contexto da página para o Pinu, nunca na tela nem na mensagem da pessoa.
+

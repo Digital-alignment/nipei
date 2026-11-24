@@ -2,9 +2,13 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-24 — Radar: origem no cartão e resposta no fio do e-mail (10.29)
+
+- `criar_tarefa` aceita `email` (id lido com `gmail_ler`) → tarefa com `canal: gmail` e `email_id` (`Tarefa.emailId`); `contextoPagina` da tarefa diz ao Pinu de que e-mail ela veio. Radar: linha de origem (ícone + texto) e "Redigir resposta" primeiro quando há e-mail (`sugestoesPinu` com `email`).
+
 ## 2026-11-24 — Radar: medição e canal das tarefas (10.29)
 
-- Eventos `radar` (`radarEventoAction`, lista fechada de ações) e módulo do Painel "Radar" (`controle/modulos/Radar.tsx`). Tarefas novas gravam `canal` (`canalDoAutor` em `lib/tarefaNote.ts` + valor explícito em reunião, procedimento, diagnóstico, Conhecimento e repetição); `Tarefa.canal`.
+- Eventos `radar` (`radarEventoAction`, lista fechada de ações) e módulo do Painel "Radar" (`controle/modulos/Radar.tsx`). Tarefas novas gravam `canal` (`canalDoAutor` em `lib/tarefaNote.ts` + valor explícito em reunião, procedimento, diagnóstico, Conhecimento, repetição e gmail); `Tarefa.canal`.
 
 ## 2026-11-24 — Radar: Pinu no cartão e estado do Hermes (10.29)
 
