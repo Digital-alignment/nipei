@@ -17,6 +17,9 @@ import { BarraProgresso } from "@/components/ds/Progresso";
 import { EQUIPES_DS, type ChaveEquipe } from "@/components/ds/equipes";
 import { ABRIR_ASSISTENTE, FECHOU_ASSISTENTE } from "@/components/v2/AssistenteGlobal";
 import { abrirPinu } from "@/components/v2/PedirPinu";
+import PinuNoCartao, { type TextosPinuCartao } from "@/components/v2/PinuNoCartao";
+import { estadoTrabalhoAction, fazerPorMimRadarAction } from "@/app/(v2)/actions";
+import type { EstadoTrabalho } from "@/lib/v2/trabalhos";
 
 // Radar (DESIGN-SYSTEM.md seção 10.29): as minhas tarefas do dia, uma por cartão, para resolver ali mesmo.
 // A lista é congelada ao abrir: concluir/adiar marcam o cartão; a página só se atualiza ao fechar.
@@ -27,16 +30,19 @@ export type CartaoRadar = {
   descricao: string; passos: { texto: string; feito: boolean }[]; anexos: number;
   podeEditar: boolean; noFoco: boolean; menu: ItemMenu[];
   /** phase 2: the 2 Pinu suggestions (rules, lib/v2/sugestoesPinu.ts) and whether "Fazer por mim" is running */
-  sugestoes: { rotulo: string; texto: string }[]; iaRodando: boolean;
+  sugestoes: { rotulo: string; texto: string }[];
+  /** "Fazer por mim": whether the person can ask the Hermes here, and the latest job's state */
+  ia: boolean; hermes: EstadoTrabalho;
 };
 export type TextosRadar = {
   radar: string; fechar: string; anterior: string; proximo: string; posicao: string; opcoes: string;
   foco: string; sugestao: string; hoje: string; atrasada1: string; atrasadaN: string; verMais: string; passos: string; anexo1: string; anexosN: string;
   adiar: string; amanha: string; proxSemana: string; outraData: string; abrir: string; concluir: string; feito: string; para: string;
   feitasHoje: string; feitaHoje: string; semana: string; fecharDia: string; tudoFeito: string;
-  diga: string; digaPrefixo: string; falar: string; iaFazendo: string;
+  diga: string; digaPrefixo: string; falar: string; iaFazendo: string; fazerPorMim: string;
   entradaMeta: string; porFoco: string; noFoco: string; passada: string; faltam: string; planejarAmanha: string;
-};
+  hFila: string; hFazendo: string; hTravado: string; hPronto: string; hPrecisa: string; hErro: string; hVer: string; hTentar: string; hFalta: string;
+} & TextosPinuCartao;
 
 type Estado = { feito?: boolean; para?: string; passos?: { texto: string; feito: boolean }[]; foco?: boolean };
 
@@ -58,7 +64,8 @@ function Contagem({ alvo, ativo }: { alvo: number; ativo: boolean }) {
   return <span className="numero-display tabular-nums">{n}</span>;
 }
 
-export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, foco, t }: {
+export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, foco, lang, t }: {
+  lang: "pt" | "en";
   cartoes: CartaoRadar[]; feitasHoje: number;
   /** the person has the assistant (DS 10.29 phase 2: suggestions, "Diga o que fazer") */
   pinu: boolean;
@@ -78,9 +85,24 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
   const [atual, setAtual] = useState(0);
   const [estado, setEstado] = useState<Record<string, Estado>>({});
   const [adiando, setAdiando] = useState(false);
+  const [hermes, setHermes] = useState<Record<string, EstadoTrabalho>>({});
   const [, iniciar] = useTransition();
+  const hermesDe = (c: CartaoRadar) => hermes[c.id] ?? c.hermes;
+  // the Hermes' state is polled every 5 s while some card has a job queued or running (and the Radar is in front)
+  const rodando = lista.filter((c) => ["fila", "fazendo"].includes(hermesDe(c).estado)).map((c) => c.id).join(",");
+  useEffect(() => {
+    if (!aberto || oculto || !rodando) return;
+    const id = setInterval(() => {
+      for (const tid of rodando.split(",")) void estadoTrabalhoAction(tid).then((e) => setHermes((h) => ({ ...h, [tid]: e }))).catch(() => {});
+    }, 5000);
+    return () => clearInterval(id);
+  }, [aberto, oculto, rodando]);
+  const pedirHermes = (c: CartaoRadar) => {
+    setHermes((h) => ({ ...h, [c.id]: { estado: "fila", desde: new Date().toISOString() } }));
+    void fazerPorMimRadarAction(c.id).then((e) => setHermes((h) => ({ ...h, [c.id]: e }))).catch(() => {});
+  };
 
-  const abrir = () => { setLista(cartoes); setEstado({}); setAtual(0); setAdiando(false); setOculto(false); setAberto(true); };
+  const abrir = () => { setLista(cartoes); setEstado({}); setHermes({}); setAtual(0); setAdiando(false); setOculto(false); setAberto(true); };
   const fechar = useCallback(() => { setAberto(false); router.refresh(); }, [router]);
   const mudar = useCallback((i: number) => { setAtual(i); setAdiando(false); }, []);
 
@@ -159,7 +181,6 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
             {e.feito ? <span className="radar-crescer"><BadgeEstado estado="feita">{t.feito}</BadgeEstado></span>
               : e.para ? <span className="radar-crescer"><BadgeEstado estado="pendente">{t.para.replace("{data}", dataCurta(e.para))}</BadgeEstado></span>
               : motivo}
-            {c.iaRodando && !e.feito && <BadgeEstado estado="andamento">{t.iaFazendo}</BadgeEstado>}
             {podeFoco && <Chip icone="inicio" ativo={focado} onClick={() => alternarFoco(c)}>{focado ? t.noFoco : t.porFoco}</Chip>}
           </div>
           {c.descricao && (
@@ -187,40 +208,59 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
             </div>
           )}
           {c.anexos > 0 && <Chip href={pagina} icone="pasta">{c.anexos === 1 ? t.anexo1 : t.anexosN.replace("{n}", String(c.anexos))}</Chip>}
+          {c.ia && hermesDe(c).estado !== "nada" && (() => {
+            // "Fazer por mim" (DS 10.29): the real state of the Hermes' job, polled while it runs
+            const h = hermesDe(c), hora = h.desde ? new Date(h.desde).toLocaleTimeString(lang === "en" ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+            const travado = h.estado === "fazendo" && !!h.desde && Date.now() - Date.parse(h.desde) > 15 * 60_000;
+            return (
+              <section aria-live="polite" className="grid w-full gap-2 rounded-interno bg-s2 p-3 text-left">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="meta font-medium text-t2">Hermes</span>
+                  {h.estado === "fila" && <BadgeEstado estado="pendente">{t.hFila}</BadgeEstado>}
+                  {h.estado === "fazendo" && <BadgeEstado estado="andamento">{t.hFazendo.replace("{h}", hora)}</BadgeEstado>}
+                  {h.estado === "pronto" && <BadgeEstado estado="feita">{t.hPronto}</BadgeEstado>}
+                  {h.estado === "precisa" && <BadgeEstado estado="aviso">{t.hPrecisa}</BadgeEstado>}
+                  {h.estado === "erro" && <BadgeEstado estado="atrasada">{t.hErro}</BadgeEstado>}
+                </div>
+                {travado && <p className="meta text-warn">{t.hTravado}</p>}
+                {h.estado === "erro" && h.erro && <p className="meta text-t2">{h.erro}</p>}
+                {(h.falta?.length ?? 0) > 0 && (
+                  <div className="grid gap-1">
+                    <p className="rotulo-maiusculo text-t3">{t.hFalta}</p>
+                    <ul className="meta list-disc pl-5 text-t1">{h.falta!.map((x, i) => <li key={i} className="line-clamp-2">{x}</li>)}</ul>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {(h.estado === "pronto" || h.estado === "precisa") && <Chip href={pagina} icone="documento">{t.hVer}</Chip>}
+                  {h.estado === "erro" && <Chip icone="gerar-outra" onClick={() => pedirHermes(c)}>{t.hTentar}</Chip>}
+                </div>
+              </section>
+            );
+          })()}
         </div>
         </div>
 
-        {/* bottom bar (DS 10.29): row 1 = Pinu suggestions (or postpone options), row 2 = field + Adiar + Concluir */}
+        {/* bottom bar (DS 10.29): the Pinu answers inside the card (suggestions / postpone options, field + Adiar + Concluir) */}
         {!resolvido && (
-          <div className="grid gap-2 px-3 pb-3 pt-1">
-            {adiando ? (
-              <div className="flex items-center gap-2 overflow-x-auto">
-                <Chip onClick={() => adiar(c, datas.amanha)} icone="prazo">{t.amanha}</Chip>
-                <Chip onClick={() => adiar(c, datas.proxSemana)} icone="prazo">{t.proxSemana}</Chip>
-                <label className="anel-foco inline-flex h-9 shrink-0 items-center rounded-pilula bg-s2 px-3 text-sm font-medium text-t1">
-                  <input type="date" min={datas.amanha} aria-label={t.outraData} onChange={(ev) => adiar(c, ev.target.value)} className="bg-transparent text-t1 outline-none" />
-                </label>
-              </div>
-            ) : pinu && c.sugestoes.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {c.sugestoes.map((x) => <span key={x.rotulo} className="shrink-0"><Chip tipo="pinu" onClick={() => pedirPinu(x.texto, x.rotulo)}>{x.rotulo}</Chip></span>)}
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              {pinu ? (
-                <form className="min-w-0 flex-1" onSubmit={(ev) => {
-                  ev.preventDefault();
-                  const campo = ev.currentTarget.elements.namedItem("pedido") as HTMLInputElement;
-                  const texto = campo.value.trim();
-                  if (texto) { campo.value = ""; pedirPinu(`${t.digaPrefixo.replace("{t}", c.titulo)}${texto}`); }
-                }}>
-                  <Campo tipo="busca" pinu name="pedido" rotulo={t.diga} autoComplete="off" maxLength={500}
-                    onMicrofone={() => abrirPinu({ voz: true, prefixo: t.digaPrefixo.replace("{t}", c.titulo), pagina, assunto: { titulo: c.titulo, href: pagina } })} />
-                </form>
-              ) : <Botao href={pagina} variante="tonal" tamanho="M" icone="abrir-fora" largo className="flex-1">{t.abrir}</Botao>}
-              {c.podeEditar && <BotaoIcone icone="prazo" aria-label={t.adiar} aria-expanded={adiando} tamanho={52} variante={adiando ? "acento" : "tonal"} onClick={() => setAdiando((x) => !x)} />}
-              {c.podeEditar && <BotaoIcone icone="confirmar" aria-label={t.concluir} tamanho={52} variante="acento" onClick={() => concluir(c)} />}
-            </div>
+          <div className="px-3 pb-3 pt-1">
+            {(() => {
+              const opcoesAdiar = adiando ? (
+                <div className="flex items-center gap-2 overflow-x-auto">
+                  <span className="shrink-0"><Chip onClick={() => adiar(c, datas.amanha)} icone="prazo">{t.amanha}</Chip></span>
+                  <span className="shrink-0"><Chip onClick={() => adiar(c, datas.proxSemana)} icone="prazo">{t.proxSemana}</Chip></span>
+                  <label className="anel-foco inline-flex h-9 shrink-0 items-center rounded-pilula bg-s2 px-3 text-sm font-medium text-t1">
+                    <input type="date" min={datas.amanha} aria-label={t.outraData} onChange={(ev) => adiar(c, ev.target.value)} className="bg-transparent text-t1 outline-none" />
+                  </label>
+                </div>
+              ) : undefined;
+              const botoes = <>
+                {c.podeEditar && <BotaoIcone icone="prazo" aria-label={t.adiar} aria-expanded={adiando} tamanho={52} variante={adiando ? "acento" : "tonal"} onClick={() => setAdiando((x) => !x)} />}
+                {c.podeEditar && <BotaoIcone icone="confirmar" aria-label={t.concluir} tamanho={52} variante="acento" onClick={() => concluir(c)} />}
+              </>;
+              return pinu
+                ? <PinuNoCartao key={c.id} titulo={c.titulo} pagina={pagina} sugestoes={c.sugestoes} linhaAcima={opcoesAdiar} direita={botoes} lang={lang} t={t} />
+                : <div className="grid gap-2">{opcoesAdiar}<div className="flex items-center gap-2"><Botao href={pagina} variante="tonal" tamanho="M" icone="abrir-fora" largo className="flex-1">{t.abrir}</Botao>{botoes}</div></div>;
+            })()}
           </div>
         )}
       </div>
@@ -280,7 +320,10 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
       {aberto && !oculto && (
         <Historias titulo={t.radar} atual={atual} onMudar={mudar} onFechar={fechar}
           rotulos={{ fechar: t.fechar, anterior: t.anterior, proximo: t.proximo, posicao: t.posicao }}
-          acoes={atualCartao && atualCartao.menu.length > 0 ? <MenuAcoes key={atualCartao.id} itens={atualCartao.menu} rotulo={t.opcoes} /> : undefined}
+          acoes={atualCartao ? <MenuAcoes key={atualCartao.id} rotulo={t.opcoes} itens={[
+            ...atualCartao.menu,
+            ...(atualCartao.ia && !["fila", "fazendo"].includes(hermesDe(atualCartao).estado) ? [{ icone: "gerar-outra" as const, rotulo: t.fazerPorMim, onSelect: () => pedirHermes(atualCartao) }] : []),
+          ]} /> : undefined}
           cartoes={[...lista.map(cartao), final]} />
       )}
     </>

@@ -24,10 +24,10 @@ import Campo from "@/components/ds/Campo";
 import Aviso from "@/components/ds/Aviso";
 import { BotaoIcone } from "@/components/ds/Botao";
 import BotaoEnviar from "@/components/v2/BotaoEnviar";
-import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction, tarefaConhecimentoAction, fazerPorMimAction } from "../actions";
+import { createTarefaAction, dispensarBoasVindasAction, focoAction, prazoRapidoAction, presencaAction, tarefaConhecimentoAction } from "../actions";
 import Radar, { type CartaoRadar } from "@/components/v2/Radar";
 import { sugestoesPinu, type SugestaoPinu } from "@/lib/v2/sugestoesPinu";
-import { emAndamento } from "@/lib/v2/trabalhos";
+import { estadoTrabalho } from "@/lib/v2/trabalhos";
 import type { ItemMenu } from "@/components/ds/MenuAcoes";
 import Chip from "@/components/ds/Chip";
 import { chaveEquipe } from "@/components/ds/equipes";
@@ -290,7 +290,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
     };
     return lista.slice(0, 15).map(({ x, motivo }) => {
       const det = getTarefaDetalhe(x.id), pode = can.editTarefa(user, x), noFoco = focoIds.includes(x.id);
-      const ia = can.usarIA(user, x), rodando = ia && emAndamento(x.id).length > 0;
+      const ia = can.usarIA(user, x);
       const descricao = (det?.doc.descricao ?? "").trim();
       const quemPediu = x.pedidoPor && pessoas.find((p) => p.id === x.pedidoPor)?.name.split(" ")[0];
       const rotulo = quemPediu ? t.rd.pedidoDe.replace("{nome}", quemPediu)
@@ -299,7 +299,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         id: x.id, titulo: x.title, rotulo, equipe: chaveEquipe(x.equipe), motivo,
         atraso: x.prazo && x.prazo < hoje ? Math.round((Date.parse(hoje) - Date.parse(x.prazo)) / 86_400_000) : 0,
         descricao: descricao.slice(0, 1200), passos: det?.doc.checklist ?? [], anexos: det?.anexos.length ?? 0, podeEditar: pode,
-        iaRodando: rodando, noFoco,
+        ia, hermes: ia ? estadoTrabalho(x.id) : { estado: "nada" as const }, noFoco,
         sugestoes: sugestoesPinu({
           titulo: x.title, descricao, passos: det?.doc.checklist.length ?? 0, atrasada: !!x.prazo && x.prazo < hoje, semPrazo: !x.prazo,
           outros: !!x.pedidoPor || x.responsaveis.some((r) => r !== me.id),
@@ -307,7 +307,6 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         menu: [
           { icone: "abrir-fora" as const, rotulo: t.rd.abrir, href: `/tarefas/${x.id}` },
           ...(pode ? [{ icone: "editar" as const, rotulo: t.rd.editar, href: `/tarefas/${x.id}/editar` }] : []),
-          ...(ia && !rodando ? [{ icone: "gerar-outra" as const, rotulo: t.rd.fazerPorMim, acao: fazerPorMimAction, campos: { id: x.id } }] : []),
           ...(descricao.length >= 20 ? [{ icone: "informacao" as const, rotulo: t.rd.conhecimento, acao: tarefaConhecimentoAction, campos: { id: x.id, parte: "descricao" } }] : []),
           ...(pinu ? acoesPinuTarefa(x.title, t.hj) : []),
         ],
@@ -362,7 +361,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         )}
         {radar.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            <Radar cartoes={radar} pinu={pinu} foco={{ n: focoIds.length, max: MAX_FOCO }} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
+            <Radar cartoes={radar} lang={lang} pinu={pinu} foco={{ n: focoIds.length, max: MAX_FOCO }} feitasHoje={feitasHoje.length} semana={semanaRadar} t={t.rd}
               datas={{ amanha: dia(1), proxSemana: dia(ateSexta + 7) }} fmt={{ [dia(1)]: fmtDate(dia(1), lang), [dia(ateSexta + 7)]: fmtDate(dia(ateSexta + 7), lang) }} />
           </div>
         )}

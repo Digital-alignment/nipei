@@ -874,6 +874,26 @@ export async function fazerPorMimAction(form: FormData) {
   voltarTarefa(t.id);
 }
 
+/** Radar (DS 10.29): the state of the latest "Fazer por mim" of a task, polled by the card every 5 s. */
+export async function estadoTrabalhoAction(id: string) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t || !can.usarIA(me, t)) return { estado: "nada" as const };
+  const { estadoTrabalho } = await import("@/lib/v2/trabalhos");
+  return estadoTrabalho(t.id);
+}
+
+/** Radar: ask the Hermes from the card (or try again) and return the new state, without leaving the Radar. */
+export async function fazerPorMimRadarAction(id: string) {
+  const me = await requireUser();
+  const t = getTarefas().find((x) => x.id === id);
+  if (!t || !can.usarIA(me, t)) return { estado: "nada" as const };
+  const { estadoTrabalho, emAndamento: rodando, pedirTrabalho: pedir } = await import("@/lib/v2/trabalhos");
+  if (!rodando(t.id).length) pedir(t.id, "", me.pessoa?.id ?? me.username, actorName(me));
+  revalidatePath(`/tarefas/${t.id}`);
+  return estadoTrabalho(t.id);
+}
+
 const ORIGEM_IA: Record<string, string> = { detalhar: "Explicar e detalhar", proximo: "O que fazer agora", atualizar: "Atualizar com anexos" };
 
 export async function aplicarIAAction(form: FormData) {
