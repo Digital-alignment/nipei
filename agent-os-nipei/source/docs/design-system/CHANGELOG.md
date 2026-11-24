@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-24 — Pinu como base de Equipes, fase 2 (10.13.1)
+
+- `/equipes/[id]`: "Responder com o Pinu" (Pedidos), "Reprogramar com o Pinu" e "Repartir as sem dono" (Tarefas), "Mensagem com o Pinu" (Membros); `/equipes/[id]/reuniao`: "Escrever a ata com o Pinu". Textos `t.eqp`. Hoje/Tarefas: `key` nos filhos do `acaoDireita` do campo rápido (aviso do React).
+
 ## 2026-11-24 — Radar: origem no cartão e resposta no fio do e-mail (10.29)
 
 - `criar_tarefa` aceita `email` (id lido com `gmail_ler`) → tarefa com `canal: gmail` e `email_id` (`Tarefa.emailId`); `contextoPagina` da tarefa diz ao Pinu de que e-mail ela veio. Radar: linha de origem (ícone + texto) e "Redigir resposta" primeiro quando há e-mail (`sugestoesPinu` com `email`).

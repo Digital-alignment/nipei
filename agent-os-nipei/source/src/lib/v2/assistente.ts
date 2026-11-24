@@ -387,7 +387,8 @@ function ler(me: Me, nome: string, a: Record<string, unknown>): unknown {
       carga: membros.map((p) => ({ nome: primeiro(p.name), ...contagem(ts.filter((t) => t.responsaveis.includes(p.id))) })).sort((x, y) => y.abertas - x.abertas),
       sem_responsavel: ts.filter((t) => !t.responsaveis.length).slice(0, 10).map((t) => curta(t, pessoas, equipes)),
       sobre: Object.fromEntries(Object.entries(e.sobre).filter(([, v]) => v)),
-      pedidos_novos: ts.filter((t) => t.pedidoPor && !t.responsaveis.length).length,
+      // the requests themselves (DS 10.13.1 phase 2: "Responder com o Pinu" works on exactly these), not only a count
+      pedidos_novos: ts.filter((t) => t.pedidoPor && !t.responsaveis.length).slice(0, 10).map((t) => ({ ...curta(t, pessoas, equipes), pedido_por: primeiro(pessoas.find((p) => p.id === t.pedidoPor)?.name ?? t.pedidoPor) })),
     };
   }
   if (nome === "objetivos") {

@@ -975,3 +975,7 @@ Pedido do Ashuan: adiantar o que não depende do uso. Decidido: (1) medir o uso 
 
 Pedido do Ashuan. A origem aparece no cartão como na referência ("WHATSAPP", "GMAIL"), mas com ícone do Nipëi + texto (sem logos de terceiros, regra 8) e só quando diz algo (tarefa da própria plataforma não ganha rótulo). Quando o Pinu cria uma tarefa a partir de um e-mail que leu, guarda o id do e-mail na tarefa (`email_id`, canal `gmail`): "Redigir resposta" deixa de procurar o e-mail às cegas e responde no mesmo fio. O id vai só no contexto da página para o Pinu, nunca na tela nem na mensagem da pessoa.
 
+## 2026-11-24 — Pinu como base de Equipes, fase 2 (§10.13.1)
+
+Pedido do Ashuan (combinado em 23/11 para "em alguns dias"). Como no plano `docs/planos/pinu-equipes-2026-11.md`: Chips do Pinu nos Pedidos, nas Tarefas da equipe, nos Membros e na página da reunião. Ajuste ao plano: na ata, o Pinu só escreve Decisões e Encaminhamentos no formato do formulário e não propõe tarefas, porque salvar a ata já cria uma tarefa por encaminhamento (propor também duplicaria). Em Membros, Chip em vez de item no ⋯: a linha da pessoa é um `<details>` e os links já ficam na parte aberta.
+

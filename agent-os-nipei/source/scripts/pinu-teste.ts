@@ -93,6 +93,15 @@ const CASOS: Caso[] = [
     extra: (r) => r.acoes.every((a) => a.tipo === "criar_evento") ? "" : `propôs outra coisa: ${tipos(r).join(", ")}` },
   { id: "equipe-carga", atalho: "carga", pergunta: "Reparta a carga da equipe Manutenção e Logística: dê dono às tarefas sem responsável e alivie quem está sobrecarregado.", leu: [["carga_equipe"]], propoe: ["atribuir"],
     extra: (r) => { const at = prop(r, "atribuir"); const ids = at.map((a) => a.id); return r.acoes.length !== at.length ? `propôs outra coisa: ${tipos(r).join(", ")}` : at.length > 8 ? `${at.length} atribuições (máx. 8)` : new Set(ids).size !== ids.length ? "a mesma tarefa proposta duas vezes" : ""; } },
+  // Equipes phase 2: answering the team's requests proposes owners or replies, never declines
+  { id: "equipe-pedidos", pergunta: "Veja os pedidos novos da equipe Escritório / Gestão Geral e, para cada um, proponha atribuir a alguém (pelo papel e pela carga de cada pessoa) ou um comentário curto de resposta. Não recuse nenhum: recusar fica com a coordenação.",
+    extra: (r: Resultado) => {
+      const pedidos = new Set(getTarefas().filter((t) => t.equipe === "equipe_1" && t.pedidoPor && !t.responsaveis.length && t.status !== "done").map((t) => t.id));
+      if (r.acoes.length === 0) return "não propôs nada";
+      if (r.acoes.some((a) => !["atribuir", "comentar"].includes(a.tipo))) return `propôs ${tipos(r).join(", ")}`;
+      const fora = r.acoes.filter((a) => "id" in a && !pedidos.has(a.id)).length;
+      return fora ? `${fora} proposta(s) para tarefas que não são pedidos` : "";
+    } },
   { id: "membro-carga", quem: "membro", atalho: "carga", pergunta: "Reparta a carga da equipe Manutenção e Logística.", extra: (r) => prop(r, "atribuir").length ? "membro sem coordenação recebeu atribuições" : "" },
   { id: "atalho-material", atalho: "material", pergunta: "Apresentação do Santuário para parceiros", leu: [["dossie"]] },
   // permissions: members don't register finances

@@ -67,6 +67,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
     && (!q.pessoa || (q.pessoa === "sem" ? !x.responsaveis.length : x.responsaveis.includes(q.pessoa))));
   const atrasadas = abertasEq.filter((x) => x.prazo && x.prazo < hoje).length;
   const semDono = abertasEq.filter((x) => !x.responsaveis.length).length;
+  const atrasadasEditaveis = abertasEq.filter((x) => x.prazo && x.prazo < hoje && can.editTarefa(me, x)).length;
   const feitas30 = daEquipe.filter((x) => x.concluidoEm && x.concluidoEm.slice(0, 10) > new Date(Date.parse(`${hoje}T12:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10));
   const ctx = { hoje, comNovidade: new Set(novidadesPara(me, 3, 50).map((x) => x.tarefaId)) };
   const rotSelo: Record<Selo, string> = { urgente: t.seloUrgente, andamento: t.seloAndamento, novidade: t.seloNovidade, quasePronta: t.seloQuasePronta, parada: t.seloParada };
@@ -118,8 +119,11 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       {filtradas.length === 0 ? <EstadoVazio compacto titulo={<>{t.nadaPendente}</>} /> : (
         <>
           {grupo(t.agora, ordenarAgora(filtradas.filter((x) => x.prazo && x.prazo <= hoje), ctx), true)}
+          {/* DS 10.13.1 (phase 2): the Pinu where there is work to decide */}
+          {pinu && atrasadasEditaveis > 0 && <div className="-mt-3 mb-5"><PedirPinu rotulo={t.eqp.reprogramar} texto={t.eqp.reprogramarTexto.replace("{n}", String(atrasadasEditaveis)).replace("{e}", e.nome)} /></div>}
           {grupo(t.proximas, ordenarProximas(filtradas.filter((x) => x.prazo > hoje), ctx))}
           {grupo(t.semData, ordenarSemData(filtradas.filter((x) => !x.prazo), ctx))}
+          {pinu && gerir && semDono > 0 && (q.pessoa === "sem" || filtradas.some((x) => !x.prazo)) && <div className="-mt-3 mb-5"><PedirPinu rotulo={t.eqp.repartir} texto={t.eqp.repartirTexto.replace("{n}", String(semDono)).replace("{e}", e.nome)} /></div>}
         </>
       )}
       {gerir && <LoteBarra formId="lote-equipe" pessoas={responsaveisPara(id).flatMap((g) => g.pessoas).map((p) => ({ id: p.id, nome: p.name + (p.suspenso ? ` (${t.suspensoLbl})` : "") }))}
@@ -218,6 +222,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
                 <div className="flex flex-wrap gap-3 mt-2 text-xs">
                   {suas.length > 8 && <Link href={url({ pessoa: p.id })} className="underline">{t.verTodas} ({suas.length})</Link>}
                   <Link href={`/pessoas/${p.id}`} className="underline">{t.verFicha}</Link>
+                  {pinu && gerir && p.id !== me.pessoa?.id && <PedirPinu rotulo={t.eqp.mensagem} preencher={t.eqp.mensagemTexto.replace("{p}", p.name.split(" (")[0])} />}
                   {gerir && <Link href={`/tarefas/nova?equipe=${id}&responsavel=${p.id}&back=/equipes/${id}`} className="underline">{t.atribuirTarefa}</Link>}
                 </div>
               </div>
@@ -305,6 +310,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
   const pedidosAba = (
     <div className="mt-3">
       <p className="meta mb-3 text-t2">{t.eq.pedidosAjuda}</p>
+      {pinu && novos.length > 0 && <div className="mb-3"><PedirPinu rotulo={t.eqp.responderPedidos} texto={t.eqp.responderPedidosTexto.replace("{n}", String(novos.length)).replace("{e}", e.nome)} /></div>}
       {novos.length === 0 ? <EstadoVazio compacto titulo={t.eq.semPedidos} /> : (
         <ul className="grid gap-2">
           {novos.map((x) => {

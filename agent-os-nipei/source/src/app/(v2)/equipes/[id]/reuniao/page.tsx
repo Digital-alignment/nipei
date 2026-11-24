@@ -16,6 +16,8 @@ import { fmtDate, getT } from "@/lib/v2/i18n";
 import ExportarGoogle from "@/components/v2/ExportarGoogle";
 import { agendarReuniaoEquipeAction, salvarAtaAction } from "../../../actions";
 import { ToastAoAbrir } from "@/components/ds/Toast";
+import PedirPinu from "@/components/v2/PedirPinu";
+import { funcaoLigada } from "@/lib/v2/funcoes";
 
 
 // Team meeting: live agenda (since the last minutes), schedule it, write the minutes → tasks.
@@ -77,7 +79,11 @@ export default async function ReuniaoEquipe({ params, searchParams }: { params: 
 
       {gerir && (
         <form action={salvarAtaAction} className="rounded-cartao bg-s1 p-4 mb-3">
-          <p className="rotulo-maiusculo text-t3 mb-2">{t.ataLbl}</p>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="rotulo-maiusculo text-t3">{t.ataLbl}</p>
+            {/* DS 10.13.1 (phase 2): the Pinu writes Decisões / Encaminhamentos in this form's format; tasks are born on save */}
+            {funcaoLigada("assistente", me) && <PedirPinu rotulo={t.eqp.ata} preencher={t.eqp.ataTexto.replace("{e}", e.nome)} />}
+          </div>
           <input type="hidden" name="equipe" value={id} />
           <div className="max-w-44"><Campo tipo="data" rotulo={t.data} name="data" defaultValue={hoje} /></div>
           <p className="text-xs text-t2 mb-1">{t.presentes}</p>

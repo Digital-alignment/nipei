@@ -605,7 +605,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
                 <input type="hidden" name="responsaveis" value={me!.id} />
                 <input type="hidden" name="back" value="/hoje" />
                 <Campo tipo="busca" iconeEsquerda="mais" name="title" rotulo={t.tarefaRapidaPh} required maxLength={200} autoComplete="off"
-                  acaoDireita={<span className="flex items-center gap-1">{pinu && <DitarPinu rotulo={t.hj.ditarPinu} prefixo={t.pinuAnotePrefixo} />}<BotaoIcone type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" /></span>} />
+                  acaoDireita={<span className="flex items-center gap-1">{pinu && <DitarPinu key="ditar" rotulo={t.hj.ditarPinu} prefixo={t.pinuAnotePrefixo} />}<BotaoIcone key="enviar" type="submit" icone="enviar" aria-label={t.tarefaRapidaAdd} tamanho={44} variante="acento" /></span>} />
               </form>
             )}
             {focoNaAgora

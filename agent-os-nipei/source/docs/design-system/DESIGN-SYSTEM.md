@@ -537,6 +537,12 @@ Na página da equipe, entre os números e as abas, o bloco do Pinu (`CampoPinu`)
 - **Repartir a carga** (`tarefa`, coordenação e gestão): lê `carga_equipe` (as sugestões de "Equilibrar carga", sem IA) e o papel/referente de cada pessoa e propõe `atribuir` (no máximo 8).
 - **Pedir algo à equipe** (`enviar`, quem não é da equipe): abre o Pinu com "Peça à <equipe>: " → `pedir_equipe`.
 Os atalhos enviam a mensagem já com o nome da equipe. Nada de IA ao abrir a página.
+- **Fase 2 (2026-11-24): onde há trabalho a decidir.** Sempre Chips `pinu` (mini-anel) que abrem o painel do Pinu com o pedido pronto; nada é aplicado sem o cartão confirmado.
+  - **Aba Pedidos** (coordenação/gestão, com pedidos novos): no topo, "Responder com o Pinu" → o Pinu propõe, para cada pedido novo, atribuir a alguém (pelo papel e pela carga) ou um comentário curto de resposta. Recusar continua à mão (precisa do motivo da pessoa).
+  - **Aba Tarefas**: no fim de Agora, "Reprogramar com o Pinu" quando há atrasadas que a pessoa pode editar; no fim de Sem data (ou com o filtro "Sem responsável"), "Repartir as sem dono" para quem gere a equipe. Textos com o nome da equipe.
+  - **Aba Membros** (quem gere a equipe): em cada pessoa aberta, ao lado de "Ver ficha", "Mensagem com o Pinu" → o campo do Pinu já vem com "Mande uma mensagem de WhatsApp para <nome>: " (o envio passa pelos limites do Notificar).
+  - **Página da reunião** (`/equipes/[id]/reuniao`): acima do formulário da ata, "Escrever a ata com o Pinu" → a pessoa cola ou dita as anotações e o Pinu devolve **Decisões** e **Encaminhamentos** já no formato do formulário ("tarefa @Nome até dd/mm"), para colar e salvar. O Pinu **não** propõe as tarefas: elas nascem quando a ata é salva (assim não duplicam).
+
 
 ### 10.14 Pedidos à equipe
 Quem não sabe a quem pedir, pede à equipe.
