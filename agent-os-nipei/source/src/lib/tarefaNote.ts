@@ -323,7 +323,10 @@ function criarProxima(vaultRoot: string, doc: TarefaDoc, actor: string) {
   return { id, prazo };
 }
 
-/** Next sequential id (task_N) and a file name for it. */
+/** The last task id ever handed out (synced with the vault): deleting the newest tasks must not make their ids come back. */
+export const ULTIMO_ID = ".ultimo-id";
+
+/** Next sequential id (task_N) and a file name for it. Never reuses an id: max(notes, last handed out) + 1, then remembered. */
 export function novoTarefaId(vaultRoot: string, title: string) {
   const dir = path.join(vaultRoot, TAREFAS_DIR);
   let n = 0;
@@ -332,7 +335,10 @@ export function novoTarefaId(vaultRoot: string, title: string) {
     const id = fs.readFileSync(path.join(dir, f), "utf-8").match(/^id:\s*"?task_(\d+)"?\s*$/m)?.[1];
     if (id) n = Math.max(n, Number(id));
   }
+  const marca = path.join(dir, ULTIMO_ID);
+  try { n = Math.max(n, Number(fs.readFileSync(marca, "utf-8").trim()) || 0); } catch { /* first time: the notes are enough */ }
   n += 1;
+  fs.writeFileSync(marca, `${n}\n`, "utf-8");
   const slug = title.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "_").slice(0, 40).replace(/^_|_$/g, "");
   return { id: `task_${n}`, relFile: path.join(TAREFAS_DIR, `${n}_${slug || "tarefa"}.md`) };
 }

@@ -75,6 +75,7 @@ O Kanban multidisciplinar, anexos/entregáveis/despacho do Kanban, o HUD Venu e 
 - **Toda** escrita em `Productivity/Tarefas/*.md` passa por `src/lib/tarefaNote.ts` (`createTarefaNote` / `writeTarefa`). Não escreva notas de tarefa com `fs.writeFileSync` direto: v2, kanban v1, `/api/venu/kanban-action`, execute, Hermes 2.0 e workspace já usam o módulo.
 - Formato: frontmatter (fonte única dos dados) + `# título`, `## Descrição`, `## Checklist`, `## Atividade` (mais recente primeiro: `- AAAA-MM-DD HH:MM · quem · o que mudou`), `## Origem`. Seções que alguém criar no Obsidian são preservadas.
 - Cada escrita registra a atividade e chama `requestSync`, que toca `/vault/.sync-request` (gitignored); no VPS a unidade systemd `nipei-vault-sync.path` sincroniza com o GitHub em ~5 s (`scripts/vault-sync-on-write/`). O cron de 5 min continua como reserva. Local: tarefa agendada a cada 2 min.
+- **Ids nunca se repetem (2026-11-24)**: `novoTarefaId` usa o maior entre as notas e `Productivity/Tarefas/.ultimo-id` (sincronizado pelo git) + 1 e grava o novo. Antes era só o maior + 1: apagar as últimas tarefas fazia o id voltar e trabalhos do Hermes / fontes ligados ao id antigo apareciam na tarefa nova.
 - Migração das notas antigas: `node scripts/migrar-tarefas.ts <vaultRoot> [--dry]` (a partir de `nipei-control/`, idempotente, verifica que nenhum dado muda).
 
 ## 3.2 IA nas tarefas (T2/T3)
