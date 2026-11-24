@@ -22,8 +22,10 @@ export type TextosPinuCartao = {
 type Recognition = { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void;
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
 
-export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, direita, lang, t }: {
-  titulo: string; pagina: string; sugestoes: { rotulo: string; texto: string }[];
+export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, direita, lang, t, onEvento }: {
+  titulo: string; pagina: string; sugestoes: { id: string; rotulo: string; texto: string }[];
+  /** usage measurement (the Radar's panel module): kind of action only */
+  onEvento?: (acao: string, detalhe?: string) => void;
   /** replaces the suggestions row (the Radar's postpone options) */
   linhaAcima?: ReactNode;
   /** the card's own buttons to the right of the field (Adiar, Concluir) */
@@ -54,6 +56,7 @@ export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, di
   const decidir = async (confirmar: boolean) => {
     if (!resposta) return;
     setDecidindo(true);
+    onEvento?.(confirmar ? "confirmou" : "cancelou");
     const r = await decidirTodasAction(resposta.mi, confirmar).catch(() => ({ error: "Falha de conexão" }));
     setDecidindo(false);
     if ("error" in r && r.error) return setErro(r.error);
@@ -72,7 +75,7 @@ export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, di
     let ditado = "";
     r.onresult = (e) => { ditado = Array.from(e.results).map((x) => x[0].transcript).join(" "); setTexto(ditado); };
     r.onerror = () => setOuvindo(false);
-    r.onend = () => { setOuvindo(false); rec.current = null; if (ditado.trim()) void perguntar(`${prefixo}${ditado}`); };
+    r.onend = () => { setOuvindo(false); rec.current = null; if (ditado.trim()) { onEvento?.("pergunta", "voz"); void perguntar(`${prefixo}${ditado}`); } };
     rec.current = r; setOuvindo(true); r.start();
   };
 
@@ -117,11 +120,11 @@ export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, di
       )}
       {linhaAcima ?? (sugestoes.length > 0 && !pensando && (
         <div className="flex items-center gap-2 overflow-x-auto">
-          {sugestoes.map((x) => <span key={x.rotulo} className="shrink-0"><Chip tipo="pinu" onClick={() => void perguntar(x.texto)}>{x.rotulo}</Chip></span>)}
+          {sugestoes.map((x) => <span key={x.rotulo} className="shrink-0"><Chip tipo="pinu" onClick={() => { onEvento?.("sugestão", x.id); void perguntar(x.texto); }}>{x.rotulo}</Chip></span>)}
         </div>
       ))}
       <div className="flex items-center gap-2">
-        <form className="min-w-0 flex-1" onSubmit={(e) => { e.preventDefault(); if (texto.trim()) void perguntar(`${prefixo}${texto}`); }}>
+        <form className="min-w-0 flex-1" onSubmit={(e) => { e.preventDefault(); if (texto.trim()) { onEvento?.("pergunta", "campo"); void perguntar(`${prefixo}${texto}`); } }}>
           <Campo tipo="busca" pinu name="pedido" rotulo={ouvindo ? t.ouvindo : t.diga} autoComplete="off" maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} disabled={pensando}
             acaoDireita={<BotaoIcone icone={ouvindo ? "fechar" : "microfone"} aria-label={ouvindo ? t.parar : t.falar} tamanho={44} variante="acento" onClick={falar} />} />
         </form>

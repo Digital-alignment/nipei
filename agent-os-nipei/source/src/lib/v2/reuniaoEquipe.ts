@@ -84,7 +84,7 @@ export function salvarAta(e: Equipe, input: { data: string; presentes: string[];
   const encaminhamentos = input.encaminhamentos.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 30).map((l) => {
     const x = lerEncaminhamento(l, membros);
     if (!x.titulo) return null;
-    const id = createTarefa({ title: x.titulo, equipe: e.id, prazo: x.prazo, responsaveis: x.responsaveis, projeto: "", objetivo: "", recorrencia: "" }, actor,
+    const id = createTarefa({ canal: "reuniao", title: x.titulo, equipe: e.id, prazo: x.prazo, responsaveis: x.responsaveis, projeto: "", objetivo: "", recorrencia: "" }, actor,
       { descricao: `Encaminhamento da reunião da equipe ${e.nome} de ${input.data}.` });
     return { texto: l, tarefa: String(id) };
   }).filter((x): x is Ata["encaminhamentos"][number] => !!x);

@@ -91,7 +91,7 @@ export async function rodarProcedimentos() {
 
 type CriarTarefa = typeof import("./data").createTarefa;
 export function gerarTarefa(createTarefa: CriarTarefa, p: Procedimento, prazo: string, evento?: Evento, actor = "Procedimento") {
-  return createTarefa({ title: evento ? `${p.titulo} · ${evento.titulo}` : p.titulo, equipe: p.equipe, prazo, responsaveis: p.responsavel ? [p.responsavel] : [], projeto: "", objetivo: "", recorrencia: "" },
+  return createTarefa({ canal: "procedimento", title: evento ? `${p.titulo} · ${evento.titulo}` : p.titulo, equipe: p.equipe, prazo, responsaveis: p.responsavel ? [p.responsavel] : [], projeto: "", objetivo: "", recorrencia: "" },
     actor, { checklist: p.passos.map((texto) => ({ feito: false, texto })), descricao: `Gerada pelo procedimento "${p.titulo}" da equipe.` });
 }
 

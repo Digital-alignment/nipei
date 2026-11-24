@@ -303,7 +303,7 @@ export default async function Hoje({ searchParams }: { searchParams: Promise<{ d
         sugestoes: sugestoesPinu({
           titulo: x.title, descricao, passos: det?.doc.checklist.length ?? 0, atrasada: !!x.prazo && x.prazo < hoje, semPrazo: !x.prazo,
           outros: !!x.pedidoPor || x.responsaveis.some((r) => r !== me.id),
-        }).map((k) => ({ rotulo: SUG[k][0], texto: SUG[k][1].replace("{t}", x.title) })),
+        }).map((k) => ({ id: k, rotulo: SUG[k][0], texto: SUG[k][1].replace("{t}", x.title) })),
         menu: [
           { icone: "abrir-fora" as const, rotulo: t.rd.abrir, href: `/tarefas/${x.id}` },
           ...(pode ? [{ icone: "editar" as const, rotulo: t.rd.editar, href: `/tarefas/${x.id}/editar` }] : []),

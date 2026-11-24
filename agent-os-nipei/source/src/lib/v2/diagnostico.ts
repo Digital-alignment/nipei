@@ -331,7 +331,7 @@ export function criarTarefasLacunas(d: Diagnostico, secaoId: string, quem: strin
     const r = c.respostas[q.id];
     if (!r?.falta || r.status === "respondida" || (r.tarefa && abertas.has(r.tarefa))) continue;
     // no WhatsApp per task: a whole section of gaps would be a burst of messages; Hoje shows the owner's section instead
-    const id = createTarefa({
+    const id = createTarefa({ canal: "diagnostico",
       title: `Diagnóstico · ${sec.titulo}: ${q.texto}`.slice(0, 200), equipe: d.equipes[0] ?? "", prazo: "",
       responsaveis: responsavel ? [responsavel] : [], projeto: d.projeto, objetivo: "", recorrencia: "",
     }, quem, {
@@ -393,7 +393,7 @@ export function criarTarefasItens(d: Diagnostico, perguntaId: string, quem: stri
   let n = 0;
   for (const i of c.itens[perguntaId] ?? []) {
     if (i.tarefa) continue;
-    i.tarefa = createTarefa({
+    i.tarefa = createTarefa({ canal: "diagnostico",
       title: i.titulo, equipe: EQUIPE_ITEM[perguntaId] ?? d.equipes[0] ?? "", prazo: "", responsaveis: i.responsavel ? [i.responsavel] : [],
       projeto: d.projeto, objetivo: "", recorrencia: "", priority: PRIORIDADE_TAREFA[i.prioridade],
     }, quem, {
@@ -459,14 +459,14 @@ export function criarTarefasCalendario(d: Diagnostico, quem: string): number {
   let n = 0;
   for (const e of c.calendario.entradas) {
     if (e.tarefa) continue;
-    e.tarefa = createTarefa({ title: `Marketing: ${e.acao}`.slice(0, 200), equipe: d.equipes[0] ?? "", prazo: e.data, responsaveis: e.responsavel ? [e.responsavel] : [], projeto, objetivo: "", recorrencia: "" },
+    e.tarefa = createTarefa({ canal: "diagnostico", title: `Marketing: ${e.acao}`.slice(0, 200), equipe: d.equipes[0] ?? "", prazo: e.data, responsaveis: e.responsavel ? [e.responsavel] : [], projeto, objetivo: "", recorrencia: "" },
       quem, { semAviso: true, descricao: `Calendário de marketing do próximo grande retiro (início ${c.calendario.dataRetiro}), diagnóstico **${d.titulo}**.` });
     n++;
   }
   const inicio = c.calendario.dataRetiro && somarDias(c.calendario.dataRetiro, -120);
   const titulo = "Marketing: revisão semanal de inscrições e divulgação";
   if (inicio && !getTarefas().some((t) => t.title === titulo && t.status !== "done")) {
-    createTarefa({ title: titulo, equipe: d.equipes[0] ?? "", prazo: inicio > today() ? inicio : today(), responsaveis: c.responsaveis.marketing ? [c.responsaveis.marketing] : [], projeto, objetivo: "", recorrencia: "semanal" },
+    createTarefa({ canal: "diagnostico", title: titulo, equipe: d.equipes[0] ?? "", prazo: inicio > today() ? inicio : today(), responsaveis: c.responsaveis.marketing ? [c.responsaveis.marketing] : [], projeto, objetivo: "", recorrencia: "semanal" },
       quem, { semAviso: true, descricao: `Check-in semanal de inscrições e marketing até o retiro (${c.calendario.dataRetiro}). Ao concluir, a próxima é criada sozinha.` });
     n++;
   }

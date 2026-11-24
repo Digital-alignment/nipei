@@ -2,6 +2,10 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-24 — Radar: medição e canal das tarefas (10.29)
+
+- Eventos `radar` (`radarEventoAction`, lista fechada de ações) e módulo do Painel "Radar" (`controle/modulos/Radar.tsx`). Tarefas novas gravam `canal` (`canalDoAutor` em `lib/tarefaNote.ts` + valor explícito em reunião, procedimento, diagnóstico, Conhecimento e repetição); `Tarefa.canal`.
+
 ## 2026-11-24 — Radar: Pinu no cartão e estado do Hermes (10.29)
 
 - `components/v2/PinuNoCartao.tsx`: pergunta (chips, campo, ditado do aparelho) → `assistenteAction` com a página da tarefa → resposta + propostas no cartão (`decidirTodasAction`), "Continuar no Pinu". Bloco Hermes: `estadoTrabalho` (`lib/v2/trabalhos.ts`) + `estadoTrabalhoAction`/`fazerPorMimRadarAction`, sondagem de 5 s; prompt do Hermes com "# Preciso de informação".

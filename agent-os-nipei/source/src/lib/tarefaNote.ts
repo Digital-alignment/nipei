@@ -313,7 +313,7 @@ function criarProxima(vaultRoot: string, doc: TarefaDoc, actor: string) {
   const { id } = createTarefaNote(vaultRoot, {
     title: String(fm.title ?? "Tarefa"),
     ...Object.fromEntries(copiar.filter((k) => k in fm).map((k) => [k, fm[k]])),
-    prazo, recorrencia: rec, recorrencia_de: String(fm.recorrencia_de ?? fm.id ?? ""),
+    prazo, recorrencia: rec, recorrencia_de: String(fm.recorrencia_de ?? fm.id ?? ""), canal: "repeticao",
   }, actor, {
     descricao: doc.descricao,
     checklist: doc.checklist.map((c) => ({ ...c, feito: false })),
@@ -343,6 +343,15 @@ export function novoTarefaId(vaultRoot: string, title: string) {
   return { id: `task_${n}`, relFile: path.join(TAREFAS_DIR, `${n}_${slug || "tarefa"}.md`) };
 }
 
+/** Where a new task came from (DS 10.29, for the Radar's phase 4), read from who created it. Callers that know better pass `canal`. */
+export function canalDoAutor(actor: string): string {
+  if (/\(via WhatsApp\)/i.test(actor)) return "whatsapp";
+  if (/\(via assistente\)/i.test(actor)) return "pinu";
+  if (/\(via [^)]+\)/.test(actor)) return "mcp"; // Claude, Gemini, ChatGPT…
+  if (/hermes|venu|antigravity/i.test(actor)) return "hermes";
+  return "app";
+}
+
 /** Creates a task note in the new format. Missing standard fields get empty values so legacy regexes always hit frontmatter first. */
 export function createTarefaNote(
   vaultRoot: string,
@@ -357,7 +366,8 @@ export function createTarefaNote(
     fm: {
       id, title, type: "tarefa", status: "A fazer", priority: "Média", prazo: "", project: "Geral", responsible: "",
       equipe: "", area: "", projeto: "", objetivo: "", responsaveis: [], anexos: [], tags: ["tarefa", "nipei-os"],
-      ...rest, created_at: now, created_by: actor, updated_at: now, updated_by: actor,
+      ...rest, canal: typeof rest.canal === "string" && rest.canal ? rest.canal : canalDoAutor(actor),
+      created_at: now, created_by: actor, updated_at: now, updated_by: actor,
     },
     descricao: opts.descricao ?? "",
     checklist: opts.checklist ?? [],
@@ -379,4 +389,11 @@ export function migrarTarefa(text: string, quando = agora()): string {
   for (const [k, v] of Object.entries(base)) if (!(k in doc.fm)) doc.fm[k] = v; // missing keys go last, existing order kept
   if (!doc.atividade.some((l) => l.includes("formato v2"))) doc.atividade.unshift(`- ${quando} · migração · nota convertida ao formato v2 (versão anterior no histórico do git)`);
   return renderTarefa(doc);
+}
+
+// Self-test: npx tsx src/lib/tarefaNote.ts
+if (process.argv[1]?.endsWith("tarefaNote.ts")) {
+  const casos: [string, string][] = [["Ashuan (via WhatsApp)", "whatsapp"], ["Ashuan (via assistente)", "pinu"], ["Ashuan (via Claude)", "mcp"], ["Hermes", "hermes"], ["Ashuan", "app"]];
+  for (const [a, c] of casos) { if (canalDoAutor(a) !== c) { console.error("✗ canal", a, canalDoAutor(a)); process.exit(1); } }
+  console.log("✓ canal da tarefa pelo autor");
 }

@@ -236,7 +236,7 @@ export function decidirProposta(id: string, aplicar: boolean, quem: string, ajus
       updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo, responsaveis: t.responsaveis, status: t.status, recorrencia: t.recorrencia }, quem);
       comentar(t.id, `🧠 prazo atualizado ${origem}`, quem);
     } else if (p.tipo === "nova_tarefa") {
-      createTarefa({ title: ajuste.titulo?.trim().slice(0, 200) || p.titulo, equipe: p.equipe, prazo, responsaveis: p.responsaveis, projeto: p.projeto, objetivo: p.objetivo, recorrencia: "" }, quem);
+      createTarefa({ canal: "conhecimento", title: ajuste.titulo?.trim().slice(0, 200) || p.titulo, equipe: p.equipe, prazo, responsaveis: p.responsaveis, projeto: p.projeto, objetivo: p.objetivo, recorrencia: "" }, quem);
     } else if (p.tipo === "comentar_tarefa") {
       comentar(p.tarefa, `🧠 ${texto}`, quem);
     } else if (p.tipo === "nota_projeto") {

@@ -74,7 +74,9 @@ export type Tarefa = {
   checklist: { feitos: number; total: number }; anexos: number; recorrencia: string;
   atualizadoEm: string; // last write to the note (smart order: stale vs fresh)
   concluidoEm: string; // when it was marked done (only since 2026-10-20; older tasks don't have it)
-  pedidoPor: string; pedidoRecusado: string; criadoEm: string; // DS 10.14: requests to a team ("" = not a request)
+  pedidoPor: string; pedidoRecusado: string; criadoEm: string;
+  /** where it came from (app, pinu, whatsapp, mcp, hermes, reuniao, procedimento, diagnostico, conhecimento, repeticao); "" = before 2026-11-24 */
+  canal: string; // DS 10.14: requests to a team ("" = not a request)
 };
 
 export const vault = () => {
@@ -238,6 +240,7 @@ export function getTarefas(): Tarefa[] {
       pedidoPor: fm.pedido === true ? s(fm.pedido_por) || "?" : "", // DS 10.14: a request to the team (no owner yet)
       pedidoRecusado: s(fm.pedido_recusado),
       criadoEm: s(fm.created_at),
+      canal: s(fm.canal),
     };
   });
 }
@@ -401,7 +404,7 @@ export function setTarefaStatus(id: string, status: Status, actor: string) {
   writeTarefa(vault(), t.file, actor, (d) => { d.fm.status = STATUS_RAW[status]; });
 }
 
-export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string; priority?: string; area?: string; pedidoPor?: string }, actor: string, opts: { descricao?: string; checklist?: { feito: boolean; texto: string }[]; semAviso?: boolean } = {}) {
+export function createTarefa(input: { title: string; equipe: string; prazo: string; responsaveis: string[]; projeto: string; objetivo: string; recorrencia: string; priority?: string; area?: string; pedidoPor?: string; canal?: string }, actor: string, opts: { descricao?: string; checklist?: { feito: boolean; texto: string }[]; semAviso?: boolean } = {}) {
   const projeto = getProjetos().find((p) => p.id === input.projeto);
   return createTarefaNote(vault(), {
     title: input.title, prazo: input.prazo, project: projeto?.nome ?? "Geral",
@@ -411,6 +414,7 @@ export function createTarefa(input: { title: string; equipe: string; prazo: stri
     ...(input.priority ? { priority: input.priority } : {}),
     ...(input.area ? { area: input.area } : {}),
     ...(input.pedidoPor ? { pedido: true, pedido_por: input.pedidoPor } : {}),
+    ...(input.canal ? { canal: input.canal } : {}), // else read from the actor (canalDoAutor)
   }, actor, opts).id;
 }
 

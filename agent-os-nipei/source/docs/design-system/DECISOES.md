@@ -967,3 +967,7 @@ Teste em produção com 3 tarefas TESTE. Pedidos: entrada maior e com animação
 
 Teste do Ashuan (itens 15 e 16). O microfone e os chips levavam ao painel do Pinu e fechavam o Radar; ele quer resolver dentro do cartão. Decidido: a resposta e as propostas aparecem no cartão (mesma conversa do painel, mesmos cartões de confirmação; nada é aplicado sem "Confirmar") e o painel fica para continuar a conversa. "Fazer por mim" não mostrava se o Hermes terminou, travou ou não tinha como fazer: o cartão passa a mostrar o estado real (fila, fazendo, pronto, precisa de informação, erro) e o Hermes, quando falta algo essencial, entrega primeiro o que precisa em vez de um modelo genérico.
 
+## 2026-11-24 — Preparar a fase 3 do Radar com dados (§10.29)
+
+Pedido do Ashuan: adiantar o que não depende do uso. Decidido: (1) medir o uso do Radar (eventos sem conteúdo, módulo no Painel) para escolher os cartões da fase 3 com dados de todas as pessoas, não só pela memória; (2) gravar o canal de origem de cada tarefa nova (`canal`: app, pinu, whatsapp, mcp, hermes, reuniao, procedimento, diagnostico, conhecimento, repeticao), para a fase 4 já ter histórico quando for mostrar "WHATSAPP"/"GMAIL" no cartão. Nada muda na tela das pessoas.
+

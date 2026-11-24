@@ -13,6 +13,7 @@ import AppsIA from "./AppsIA";
 import Erros from "./Erros";
 import Funcoes from "./Funcoes";
 import Relatorios from "./Relatorios";
+import Radar from "./Radar";
 
 // The admin panel's modules. To add one: create a component in this folder (it receives the URL's query in
 // `q`) and add a line here. Order here = order of the tabs.
@@ -30,6 +31,7 @@ export const MODULOS: Modulo[] = [
   { id: "custos", titulo: "Custos de IA", descricao: "Chamadas, tokens e custo da IA por mês, pessoa, uso e modelo.", icone: "gerar-outra", Componente: Custos },
   { id: "apps", titulo: "Apps de IA", descricao: "Quem conectou Claude, Gemini ou ChatGPT, quanto usa, o que mudou por eles e quem falta; convite pronto.", icone: "abrir-fora", Componente: AppsIA },
   { id: "pinu", titulo: "Sugestões do Pinu", descricao: "Se o Pinu ajuda: respostas avaliadas com útil/não ajudou e, na Nova tarefa e nos Pedidos, sugestões mostradas, usadas e mantidas.", icone: "gerar-outra", Componente: SugestoesPinu },
+  { id: "radar", titulo: "Radar", descricao: "Como o Radar de Hoje é usado: aberturas, concluídas, adiadas, sugestões do Pinu tocadas e Fazer por mim, por pessoa.", icone: "ver", Componente: Radar },
   { id: "funcoes", titulo: "Funções", descricao: "Ligar ou desligar funções para todos ou para uma pessoa.", icone: "filtrar", Componente: Funcoes },
   { id: "relatorios", titulo: "Relatórios", descricao: "Baixar atividade, uso, acessos, custos e erros em CSV.", icone: "baixar", Componente: Relatorios },
   { id: "registro", titulo: "Registro do painel", descricao: "Cada abertura do painel e cada ação feita aqui.", icone: "editar", Componente: Registro },

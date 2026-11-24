@@ -18,7 +18,7 @@ import { EQUIPES_DS, type ChaveEquipe } from "@/components/ds/equipes";
 import { ABRIR_ASSISTENTE, FECHOU_ASSISTENTE } from "@/components/v2/AssistenteGlobal";
 import { abrirPinu } from "@/components/v2/PedirPinu";
 import PinuNoCartao, { type TextosPinuCartao } from "@/components/v2/PinuNoCartao";
-import { estadoTrabalhoAction, fazerPorMimRadarAction } from "@/app/(v2)/actions";
+import { estadoTrabalhoAction, fazerPorMimRadarAction, radarEventoAction } from "@/app/(v2)/actions";
 import type { EstadoTrabalho } from "@/lib/v2/trabalhos";
 
 // Radar (DESIGN-SYSTEM.md seção 10.29): as minhas tarefas do dia, uma por cartão, para resolver ali mesmo.
@@ -30,7 +30,7 @@ export type CartaoRadar = {
   descricao: string; passos: { texto: string; feito: boolean }[]; anexos: number;
   podeEditar: boolean; noFoco: boolean; menu: ItemMenu[];
   /** phase 2: the 2 Pinu suggestions (rules, lib/v2/sugestoesPinu.ts) and whether "Fazer por mim" is running */
-  sugestoes: { rotulo: string; texto: string }[];
+  sugestoes: { id: string; rotulo: string; texto: string }[];
   /** "Fazer por mim": whether the person can ask the Hermes here, and the latest job's state */
   ia: boolean; hermes: EstadoTrabalho;
 };
@@ -97,13 +97,21 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
     }, 5000);
     return () => clearInterval(id);
   }, [aberto, oculto, rodando]);
+  /** usage for the panel's Radar module (DS 10.29): the kind of action only, fire and forget */
+  const ev = (acao: string, detalhe = "") => { void radarEventoAction(acao, detalhe).catch(() => {}); };
   const pedirHermes = (c: CartaoRadar) => {
+    ev("fazer por mim");
     setHermes((h) => ({ ...h, [c.id]: { estado: "fila", desde: new Date().toISOString() } }));
     void fazerPorMimRadarAction(c.id).then((e) => setHermes((h) => ({ ...h, [c.id]: e }))).catch(() => {});
   };
 
-  const abrir = () => { setLista(cartoes); setEstado({}); setHermes({}); setAtual(0); setAdiando(false); setOculto(false); setAberto(true); };
-  const fechar = useCallback(() => { setAberto(false); router.refresh(); }, [router]);
+  const abrir = () => {
+    ev("abriu", `${cartoes.length} cartoes`); setLista(cartoes); setEstado({}); setHermes({}); setAtual(0); setAdiando(false); setOculto(false); setAberto(true); };
+  const fechar = () => {
+    const feitos = lista.filter((c) => estado[c.id]?.feito).length, adiadosN = lista.filter((c) => estado[c.id]?.para && !estado[c.id]?.feito).length;
+    ev("fechou", `${feitos} concluidas · ${adiadosN} adiadas · ${lista.length - feitos - adiadosN} sem mexer`);
+    setAberto(false); router.refresh();
+  };
   const mudar = useCallback((i: number) => { setAtual(i); setAdiando(false); }, []);
 
   useEffect(() => {
@@ -124,24 +132,27 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
     iniciar(async () => { await acao(f); });
   };
   const concluir = (c: CartaoRadar) => {
+    ev("concluiu");
     if (offline()) enfileirar({ tipo: "status", id: c.id, valor: "done" });
     else enviar(setStatusAction, { id: c.id, status: "done" });
     marcar(c.id, { feito: true }); seguir();
   };
   const adiar = (c: CartaoRadar, data: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
+    ev("adiou", data === datas.amanha ? "amanha" : data === datas.proxSemana ? "proxima semana" : "outra data");
     if (offline()) enfileirar({ tipo: "prazo", id: c.id, valor: data });
     else enviar(prazoRapidoAction, { id: c.id, prazo: data });
     marcar(c.id, { para: data }); setAdiando(false); seguir();
   };
   const alternarPasso = (c: CartaoRadar, i: number) => {
+    ev("passo");
     const ps = (estado[c.id]?.passos ?? c.passos).map((p, k) => (k === i ? { ...p, feito: !p.feito } : p));
     marcar(c.id, { passos: ps });
     enviar(checklistAction, { id: c.id, op: "toggle", idx: String(i) });
   };
   const noFoco = (c: CartaoRadar) => estado[c.id]?.foco ?? c.noFoco;
   const focoAgora = foco.n + lista.reduce((n, c) => n + (estado[c.id]?.foco === undefined || estado[c.id].foco === c.noFoco ? 0 : estado[c.id].foco ? 1 : -1), 0);
-  const alternarFoco = (c: CartaoRadar) => { marcar(c.id, { foco: !noFoco(c) }); enviar(focoAction, { id: c.id }); };
+  const alternarFoco = (c: CartaoRadar) => { ev("foco", noFoco(c) ? "tirou" : "pos"); marcar(c.id, { foco: !noFoco(c) }); enviar(focoAction, { id: c.id }); };
   const dataCurta = (d: string) => fmt[d] ?? `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 
   const concluidos = lista.filter((c) => estado[c.id]?.feito), adiados = lista.filter((c) => estado[c.id]?.para && !estado[c.id]?.feito);
@@ -258,7 +269,7 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
                 {c.podeEditar && <BotaoIcone icone="confirmar" aria-label={t.concluir} tamanho={52} variante="acento" onClick={() => concluir(c)} />}
               </>;
               return pinu
-                ? <PinuNoCartao key={c.id} titulo={c.titulo} pagina={pagina} sugestoes={c.sugestoes} linhaAcima={opcoesAdiar} direita={botoes} lang={lang} t={t} />
+                ? <PinuNoCartao key={c.id} titulo={c.titulo} pagina={pagina} sugestoes={c.sugestoes} linhaAcima={opcoesAdiar} direita={botoes} lang={lang} t={t} onEvento={ev} />
                 : <div className="grid gap-2">{opcoesAdiar}<div className="flex items-center gap-2"><Botao href={pagina} variante="tonal" tamanho="M" icone="abrir-fora" largo className="flex-1">{t.abrir}</Botao>{botoes}</div></div>;
             })()}
           </div>

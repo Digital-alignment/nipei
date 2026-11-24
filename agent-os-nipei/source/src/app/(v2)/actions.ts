@@ -874,6 +874,16 @@ export async function fazerPorMimAction(form: FormData) {
   voltarTarefa(t.id);
 }
 
+/** Radar (DS 10.29): what the person does in it, for the panel's "Radar" module. A closed list of actions; the detail
+ *  is a short code or numbers, never a title or text. */
+const ACOES_RADAR = ["abriu", "concluiu", "adiou", "passo", "foco", "sugestão", "pergunta", "confirmou", "cancelou", "fazer por mim", "fechou"];
+export async function radarEventoAction(acao: string, detalhe = "") {
+  const me = await requireUser();
+  if (!ACOES_RADAR.includes(acao) || me.vendoComo) return;
+  const { registrarEvento } = await import("@/lib/v2/eventos");
+  registrarEvento(me.pessoa?.id ?? me.username, "radar", [acao, detalhe.replace(/[^\w ·\-]/g, "").slice(0, 60)].filter(Boolean).join(" · "), "plataforma");
+}
+
 /** Radar (DS 10.29): the state of the latest "Fazer por mim" of a task, polled by the card every 5 s. */
 export async function estadoTrabalhoAction(id: string) {
   const me = await requireUser();
