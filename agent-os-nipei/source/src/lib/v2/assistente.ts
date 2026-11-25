@@ -597,8 +597,9 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     if (!responderA && !para.length) return { erro: "falta o destinatário" };
     if (para.some((x) => !/^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/.test(x))) return { erro: "e-mail de destinatário inválido" };
     const rascunho = s(a.modo) === "rascunho" || a.rascunho === true;
+    const conclui = tarefasDoEmail(me, { responderA, rascunho }).map((t) => t.title);
     return { tipo: "gmail_enviar", texto, para: para.join(", ") || undefined, assunto: s(a.assunto).slice(0, 200) || undefined, responderA, rascunho,
-      resumo: `${rascunho ? "Rascunho" : "E-mail"}${responderA ? " (resposta)" : ""}${para.length ? ` para ${para.join(", ")}` : ""}`, detalhe: `${s(a.assunto) ? `${s(a.assunto)}\n` : ""}${texto}` };
+      resumo: `${rascunho ? "Rascunho" : "E-mail"}${responderA ? " (resposta)" : ""}${para.length ? ` para ${para.join(", ")}` : ""}${conclui.length ? ` · conclui "${conclui.join('", "')}"` : ""}`, detalhe: `${s(a.assunto) ? `${s(a.assunto)}\n` : ""}${texto}` };
   }
   if (nome === "evento_google") {
     if (!me.pessoa || !getConexoes(me.pessoa.id).google) return { erro: "conta Google não conectada (ficha da pessoa → Conexões)" };
@@ -676,6 +677,12 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
 }
 
 /** Executes a confirmed (server-stored) action; permissions are checked again. Returns a link when there is one. */
+// open tasks that came from this e-mail and the person can edit: sending (not a draft) the reply concludes them
+function tarefasDoEmail(me: Me, v: { responderA?: string; rascunho?: boolean }) {
+  if (!v.responderA || v.rascunho) return [];
+  return getTarefas().filter((t) => t.emailId === v.responderA && t.status !== "done" && can.editTarefa(me, t));
+}
+
 export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<string> {
   const v = validar(me, acao.tipo, acao as unknown as Record<string, unknown>);
   if ("erro" in v) throw new Error(v.erro);
@@ -740,7 +747,12 @@ export async function executarAcao(me: Me, acao: Acao, quem: string): Promise<st
     return "/hoje";
   }
   if (v.tipo === "evento_google") return await criarEventoGoogle(me.pessoa!.id, v);
-  if (v.tipo === "gmail_enviar") return await gmailEnviar(me.pessoa!.id, v);
+  if (v.tipo === "gmail_enviar") {
+    const r = await gmailEnviar(me.pessoa!.id, v);
+    // the reply went out in the thread of a task's e-mail (DS 10.29): that task is done
+    for (const t of tarefasDoEmail(me, v)) updateTarefa(t.id, { title: t.title, equipe: t.equipe, area: t.area, projeto: t.projeto, objetivo: t.objetivo, prazo: t.prazo, responsaveis: t.responsaveis, status: "done", recorrencia: t.recorrencia }, quem);
+    return r;
+  }
   if (v.tipo === "guardar_email") {
     // C7 fase 5: the e-mail and each PDF/photo attachment become sources (canal "gmail"); the result comes back by WhatsApp
     const pessoa = me.pessoa!;
