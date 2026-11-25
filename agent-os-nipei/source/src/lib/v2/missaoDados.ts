@@ -3,6 +3,10 @@ import { getFatos, getFontes, podeRevisar } from "./conhecimento";
 import { diagnosticosAbertos, progresso } from "./diagnostico";
 import { perfilPendente } from "./perfil";
 import { MISSAO, calcularMissao } from "./missao";
+import { getConexoes } from "./conexoes";
+import { concessoesDe } from "./oauthMcp";
+import { funcaoLigada } from "./funcoes";
+import { getConversa } from "./assistente";
 
 // Live inputs for Hoje's "Missão da semana" panel and "Primeiros passos" checklist.
 
@@ -33,7 +37,7 @@ export function missaoDaSemana(me: Me) {
   return r.ativa ? { ...r, missao: MISSAO } : null;
 }
 
-export type Passo = { id: "dados" | "whatsapp" | "foto" | "diagnostico" | "revisar" | "fonte"; feito: boolean; href: string };
+export type Passo = { id: "dados" | "whatsapp" | "foto" | "google" | "ia" | "pinu" | "diagnostico" | "revisar" | "fonte"; feito: boolean; href: string };
 
 /** First steps for a new person, ticked automatically from what they actually did. */
 export function primeirosPassos(me: Me): Passo[] {
@@ -46,6 +50,11 @@ export function primeirosPassos(me: Me): Passo[] {
     { id: "whatsapp", feito: !!p.whatsapp && p.whatsappVerificado, href: editar },
     { id: "foto", feito: !!p.foto, href: editar },
   ];
+  // connecting accounts (DS 10.27): Google, then the person's own AI app (MCP) or own key, then trying the Pinu
+  const cx = getConexoes(p.id), conexoes = `/pessoas/${p.id}?aba=conexoes`;
+  passos.push({ id: "google", feito: !!cx.google, href: conexoes });
+  passos.push({ id: "ia", feito: concessoesDe(p.id).length > 0 || !!cx.ia, href: "/conectar" });
+  if (funcaoLigada("assistente", me)) passos.push({ id: "pinu", feito: getConversa(p.id).some((m) => m.role === "user"), href: "/hoje?pinu=1" });
   const d = diagnosticosAbertos(p)[0];
   if (d) { const r = progresso(d, p.id); passos.push({ id: "diagnostico", feito: r.total > 0 && r.respondidas >= r.total, href: `/pessoas/${p.id}/respostas?d=${d.id}` }); }
   const eu = sou(me), fatos = getFatos();

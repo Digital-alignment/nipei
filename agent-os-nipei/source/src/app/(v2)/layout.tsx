@@ -113,7 +113,7 @@ export default async function V2Layout({ children }: { children: React.ReactNode
       </div>
       {comAssistente && !user.vendoComo && (
         <Suspense>
-          <AssistenteGlobal lang={lang} nome={name.split(/[\s(]/)[0]} atalhos={atalhosPinu(user.gestao)} labels={{ titulo: t.assistente, placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, confirmarTodas: t.confirmarTodas,
+          <AssistenteGlobal lang={lang} nome={name.split(/[\s(]/)[0]} atalhos={atalhosPinu(user.gestao && podeFinancas(user))} labels={{ titulo: t.assistente, placeholder: t.perguntePeca, ouvindo: t.ouvindoAssist, confirmar: t.confirmar, confirmarTodas: t.confirmarTodas,
             cancelar: t.cancelar, feito: t.feitoLbl, nova: t.novaConversa, pensando: t.pensando, fechar: t.fechar, intro: t.assistenteIntro, abrir: t.abrir, semVoz: t.semVoz,
             memoria: t.memoriaAssist, memoriaIntro: t.memoriaIntro, memoriaVazia: t.memoriaVazia, esquecer: t.esquecerLbl, categorias: t.memoriaCategorias,
             vozLigar: t.vozLigar, vozDesligar: t.vozDesligar, ouvir: t.ouvirLbl, parar: t.pararLbl, propostasFala: t.propostasFala,

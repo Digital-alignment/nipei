@@ -196,6 +196,10 @@ export default function AssistenteGlobal({ lang, nome, labels, atalhos }: { lang
     setAtalho(a); focar();
   };
 
+  // ?pinu=1 opens the panel (the "Fazer uma pergunta ao Pinu" first step links here)
+  const abrirPelaUrl = busca?.get("pinu") === "1";
+  useEffect(() => { if (abrirPelaUrl) setAberto(true); }, [abrirPelaUrl]);
+
   // open from anywhere (phone bar, Hoje's field), optionally with a first message
   useEffect(() => {
     const abrir = (e: Event) => {

@@ -50,6 +50,7 @@ export default function Conexoes({ pessoaId, t, ok, gestao }: { pessoaId: string
             : <li className="flex gap-2"><Icone nome="cadeado"  tamanho={15} className="mt-0.5 shrink-0 text-t2" />{c.usoNunca}</li>}
         </ul>
 
+        {!g && googleConfigurado() && <p className="text-xs text-t2 flex gap-1.5"><Icone nome="informacao" tamanho={14} className="mt-0.5 shrink-0" />{c.avisoGoogle}</p>}
         {!g && (googleConfigurado()
           ? <a href="/google/conectar" className="justify-self-start inline-flex items-center gap-1.5 anel-foco inline-flex h-10 items-center gap-2 rounded-pilula bg-ac px-4 font-texto text-sm font-semibold text-ac-ink hover:brightness-[.94]"><Icone nome="abrir-fora"  tamanho={15} />{c.conectar}</a>
           : <p className="text-xs text-warn">{c.naoConfigurado}</p>)}

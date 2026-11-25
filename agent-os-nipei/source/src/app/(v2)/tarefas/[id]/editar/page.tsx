@@ -36,7 +36,7 @@ export default async function EditarTarefa({ params, searchParams }: { params: P
   return (
     <div className="mx-auto max-w-3xl">
       <CabecalhoPagina titulo={<>{t.editarTarefa}</>} />
-      {tarefa.responsible && tarefa.responsaveis.length === 0 && <p className="meta mb-4 text-t2">v1: {tarefa.responsible}</p>}
+      {tarefa.responsible && tarefa.responsaveis.length === 0 && <p className="meta mb-4 text-t2">{t.respAntigo} {tarefa.responsible}</p>}
       <NovaTarefaForm
         editar={{ id: tarefa.id, title: tarefa.title, status: tarefa.status, prioridade: ["baixa", "média", "alta", "urgente"].includes(prio) ? prio : "média", recorrencia: tarefa.recorrencia, area: tarefa.area }}
         equipes={equipes.map((e) => ({ id: e.id, nome: e.nome, cor: e.cor, areas: e.areas }))}

@@ -2,6 +2,13 @@
 
 Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nipëi OS. Decisões de desenho ficam em `DECISOES.md`.
 
+## 2026-11-25 — Preparação para apresentar à Equipe 1
+
+- **Primeiros passos** (Hoje): +3 passos marcados sozinhos — Conectar sua conta Google, Conectar seu Gemini, Claude ou ChatGPT (app MCP conectado ou chave própria; leva a `/conectar`) e Fazer uma pergunta ao Pinu (quem tem o assistente; `/hoje?pinu=1` abre o painel).
+- **Conexões**: aviso antes de "Conectar conta Google" sobre a tela "O Google não verificou este app" (Avançado → Ir para os.nipeihu.app); "Nunca: … nem seus e-mails" virou "E-mails só se você ativar o Gmail".
+- **Finanças pelo Pinu/MCP** (`financas_resumo`, `registrar_lancamento`, atalho Finanças) também obedecem a função "financas" por pessoa do Painel, não só a gestão.
+- Editar tarefa: "v1: <nome>" virou "Responsável no registro antigo (escolha abaixo):".
+
 ## 2026-11-24 — Radar: responder o e-mail conclui a tarefa (10.29)
 
 Enviar (não rascunho) a resposta no fio do e-mail de uma tarefa conclui as tarefas abertas daquele e-mail que a pessoa pode editar; o cartão de proposta diz "conclui …" antes do Confirmar. Antes o e-mail saía e a tarefa ficava aberta. No Radar, confirmar uma proposta que conclui a tarefa do cartão (resposta do e-mail ou `mudar_status`) marca o cartão como feito e segue (evento "concluiu · pinu").
