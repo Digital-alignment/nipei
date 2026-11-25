@@ -3,7 +3,7 @@
 // public/internal) stays on the server. Never put Santuário data here: it would go stale; the skill calls the tools.
 // The official text lives here and is shown in Conexões with a copy button. Change the text → bump VERSAO.
 
-export const VERSAO_SKILLS = "v6 · 23/11/2026";
+export const VERSAO_SKILLS = "v7 · 25/11/2026";
 import type { NomeIcone } from "@/components/ds/Icone";
 
 /** texto = what the person pastes into an external AI app (BASE + passos); passos = what the Pinu itself follows when the
@@ -20,8 +20,8 @@ const SKILLS: Omit<SkillIA, "texto">[] = [
     quando: "Quando pedirem apresentação, slides, proposta, carta a parceiro, texto para site, post ou carrossel, folder ou qualquer material sobre o Santuário Nipëihu, a Aldeia Mutum, a Inî Rau, os retiros ou um projeto do Nipëi.",
     passos: `Passos:
 1. Chame dossie com o tema pedido (vazio = o Santuário inteiro). Use para "externo" se o material for para quem é de fora (visitantes, parceiros, financiadores, redes) e "interno" só se for para a equipe. Na dúvida, externo.
-2. Use só o que o dossiê trouxer. O que faltar, escreva [falta: …] e diga quem poderia saber; nunca invente datas, preços, números, nomes nem resultados.
-3. Siga a seção "Marca e fotos": cores, fontes e tom do guia de marca; logo e fotos pelo endereço direto (lh3.googleusercontent.com). Se não conseguir inserir imagens, indique qual foto vai em cada parte. Não invente cores nem logo.
+2. Use só o que o dossiê trouxer, a partir dos "Fatos confirmados" (as "Notas da equipe" são rascunho: só contexto). Escreva com suas palavras, em português claro e elegante (ou no idioma pedido), escolhendo os fatos que contam a história; não cole os fatos como lista. O que faltar, escreva [falta: …] e diga quem poderia saber; nunca invente datas, preços, números, nomes nem resultados.
+3. Aplique a seção "Marca e fotos" em todo o material: a cor de fundo, a dos títulos e a de destaque do guia (os códigos de cor dele), a fonte de títulos e a de texto (se não existirem no app, a mais parecida), o logo na capa e no fim, e as fotos pelo endereço direto (lh3.googleusercontent.com). Slides: uma ideia por slide, título curto e no máximo 30 palavras; prefira uma foto grande a muito texto. Sem foto para uma parte, diga qual foto falta ([falta: foto de …]). Não invente cores, logo nem fotos. No Gemini, monte a apresentação no Canvas.
 4. Estruturas: apresentação = quem somos · história · o que fazemos · números · pessoas e equipes · próximos passos · contato (8 a 10 slides). Proposta = quem somos · oportunidade · o que propomos · impacto esperado · equipe · próximos passos. Post = gancho · 2 a 4 frases · chamada; respeite o limite da rede.
 5. Cuidado cultural: trate o povo Yawanawá, as lideranças e as medicinas com respeito; não exponha cerimônias nem saberes sagrados além do que o dossiê traz; não use clichês exóticos.
 6. No fim, ofereça: (a) se a pessoa salvar no Google Drive, registrar o link no Acervo (adicionar_acervo); (b) transformar cada [falta] num pedido à equipe que deveria saber (pedir_equipe). Nunca guarde material gerado no Conhecimento.`,

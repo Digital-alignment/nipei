@@ -8,6 +8,7 @@ Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nip�
 - **Conexões**: aviso antes de "Conectar conta Google" sobre a tela "O Google não verificou este app" (Avançado → Ir para os.nipeihu.app); "Nunca: … nem seus e-mails" virou "E-mails só se você ativar o Gmail".
 - **Finanças pelo Pinu/MCP** (`financas_resumo`, `registrar_lancamento`, atalho Finanças) também obedecem a função "financas" por pessoa do Painel, não só a gestão.
 - Editar tarefa: "v1: <nome>" virou "Responsável no registro antigo (escolha abaixo):".
+- **Teste real das exportações e skills (Ashuan, 25/11)**: Docs da visão, Sheets de Finanças, Docs do relatório e as skills no Gemini funcionaram. Corrigido: **Slides** dava 400 (ids de objeto com menos de 5 caracteres; a capa em branco agora sai no fim do lote). Equipe: a reunião era só um ícone de calendário; virou o botão "Reunião e ata", e o bloco do formulário se chama "Registrar a ata". **Material do Santuário** (skill v7): o dossiê começa pelos fatos confirmados, as notas "Sobre" das equipes vão ao fim como rascunho, o guia de marca só leva cores, fontes e logo (o guia do site trazia componentes e regras de CSS), e a skill pede texto reescrito, paleta e fontes do guia em cada slide, uma ideia por slide e Canvas no Gemini.
 
 ## 2026-11-24 — Radar: responder o e-mail conclui a tarefa (10.29)
 

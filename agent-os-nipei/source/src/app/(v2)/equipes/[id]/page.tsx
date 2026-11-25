@@ -387,7 +387,7 @@ export default async function EquipeDetalhe({ params, searchParams }: { params: 
       <CabecalhoPagina selo={chaveEquipe(e.id) ? EQUIPES_DS[chaveEquipe(e.id)!].selo : "broto"} rotulo={e.coordenadores.length > 0 ? `${t.coordenacao}: ${e.coordenadores.map(primeiro).join(", ")}` : t.equipes}
         titulo={e.nome}
         acoes={<>
-          <BotaoIcone icone="calendario" aria-label={t.reuniaoEquipe} href={`/equipes/${id}/reuniao`} />
+          <Botao href={`/equipes/${id}/reuniao`} icone="calendario" variante="tonal" tamanho="P">{t.reuniaoAta}</Botao>
           <BotaoIcone icone="pessoas" aria-label={t.pessoas} href={`/pessoas?equipe=${id}`} />
           <BotaoIcone icone="enviar" aria-label={t.eq.pedirAlgo} href={`/pedidos/novo?equipe=${id}`} />
           <Botao href={`/tarefas/nova?equipe=${id}${pessoaFiltro ? `&responsavel=${pessoaFiltro.id}` : ""}&back=/equipes/${id}`} icone="mais" folha>{t.novaTarefa}</Botao>

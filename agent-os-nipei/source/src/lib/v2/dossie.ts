@@ -94,10 +94,11 @@ export async function montarDossie(me: Me, temaBruto: string, para: Para): Promi
   const partes = [
     `# Dossiê: ${projeto?.nome ?? (geral ? "Santuário Nipeihu (toda a base)" : tema)} · ${para === "externo" ? "para público EXTERNO" : "uso INTERNO"} · ${hoje}`,
     `Use só o que está aqui para escrever. O que faltar, não invente: marque [falta: …] e diga quem poderia saber. ${para === "externo" ? "Material externo: só fatos marcados como públicos (os ainda não classificados entram sem contatos, finanças e jurídico); projetos privados foram tirados." : "Material interno: pode conter procedimentos e números da gestão; não use em material público."}`,
-    sobre.length ? `## Sobre os projetos (escrito pela equipe)\n${sobre.join("\n")}` : "",
-    `## Números\n${numeros.join("\n")}`,
-    secaoMateriais(await getMateriais(), projeto?.nome ?? tema, geral),
+    // facts first: they are the reviewed base; the teams' "Sobre" notes are drafts (mixed languages) and pulled the text down
     `## Fatos confirmados\n${blocos.join("\n\n") || "(nada confirmado sobre este tema)"}`,
+    secaoMateriais(await getMateriais(), projeto?.nome ?? tema, geral),
+    `## Números\n${numeros.join("\n")}`,
+    sobre.length ? `## Notas da equipe sobre os projetos (rascunho interno: use só como contexto, nunca copie o texto)\n${sobre.join("\n")}` : "",
     ...interno,
     acervo.length ? `## Arquivos no Acervo (links do Google Drive; podem ser privados)\n${acervo.map((a) => `- ${a.titulo} (${a.tipo}${a.ano ? `, ${a.ano}` : ""}): ${a.url}`).join("\n")}` : "",
     lacunas.length ? `## O que a base ainda não sabe (perguntas sem resposta)\n${lacunas.map((x) => `- ${x.pergunta}`).join("\n")}` : "",

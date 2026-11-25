@@ -187,14 +187,16 @@ export async function salvarArquivo(pessoaId: string, a: { nome: string; conteud
 export async function criarApresentacao(pessoaId: string, titulo: string, secoes: { titulo: string; texto: string }[]): Promise<string> {
   const p = await gapi<{ presentationId: string; slides?: { objectId: string }[] }>(pessoaId, "slides.googleapis.com", "/v1/presentations", { method: "POST", body: JSON.stringify({ title: titulo }) });
   const reqs: unknown[] = [];
-  const capa = p.slides?.[0]?.objectId;
-  if (capa) reqs.push({ deleteObject: { objectId: capa } });
   [{ titulo, texto: new Date().toLocaleDateString("pt-BR", { timeZone: TZ }) }, ...secoes].forEach((s, i) => {
-    const id = `s${i}`, tt = `s${i}t`, tb = `s${i}b`;
+    // Slides object ids need 5–50 characters ("s0" was refused with 400)
+    const id = `nipei_s${i}`, tt = `nipei_s${i}_t`, tb = `nipei_s${i}_b`;
     reqs.push({ createSlide: { objectId: id, slideLayoutReference: { predefinedLayout: i === 0 ? "TITLE" : "TITLE_AND_BODY" }, placeholderIdMappings: [{ layoutPlaceholder: { type: i === 0 ? "CENTERED_TITLE" : "TITLE" }, objectId: tt }, { layoutPlaceholder: { type: i === 0 ? "SUBTITLE" : "BODY" }, objectId: tb }] } });
     reqs.push({ insertText: { objectId: tt, text: s.titulo.slice(0, 120) } });
     if (s.texto.trim()) reqs.push({ insertText: { objectId: tb, text: s.texto.slice(0, 1200) } });
   });
+  // the blank slide Google creates goes last: a deck is never left without slides mid-batch
+  const capa = p.slides?.[0]?.objectId;
+  if (capa) reqs.push({ deleteObject: { objectId: capa } });
   await gapi(pessoaId, "slides.googleapis.com", `/v1/presentations/${p.presentationId}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests: reqs }) });
   // keep it with the person's other Nipëi files
   const pasta = await pastaNipei(pessoaId);

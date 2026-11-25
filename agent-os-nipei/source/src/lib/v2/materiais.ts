@@ -29,9 +29,11 @@ const listar = async (id: string): Promise<Item[]> => {
   if (!r.ok) throw new Error(`Drive ${r.status}`);
   return lerPasta(await r.text());
 };
-const MARCA_SECAO = /fundament|tipogra|typograph|cor(es)?\b|color|paleta|palette|tom\b|tono|tone|voz|voice|logo|marca|brand|regra|regla|rule/i;
+// only what a deck or post can use: colours, fonts, logo, tone. A website guide's components, rules and
+// sections ("Botones CTA", "Voices from the sanctuary", "Sin bordes") made Gemini ignore the brand (25/11/2026)
+const MARCA_SECAO = /tipogra|typograph|\bcor(es)?\b|\bcolor\b|paleta|palette|\btom\b|\btono\b|\btone\b|logo|brand/i;
 /** A long guide (e.g. a site's DESIGN.md) keeps only its brand sections (headings about type, color, tone, logo…). Pure. */
-export function resumirGuia(txt: string, max = 8000): string {
+export function resumirGuia(txt: string, max = 5000): string {
   const t = txt.replace(/^﻿/, "").replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
   if (t.length <= max) return t;
   const secoes = t.split(/\n(?=#{1,3} )/);
