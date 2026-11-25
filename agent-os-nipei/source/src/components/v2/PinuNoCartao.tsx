@@ -22,7 +22,9 @@ export type TextosPinuCartao = {
 type Recognition = { lang: string; interimResults: boolean; continuous: boolean; start: () => void; stop: () => void;
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null };
 
-export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, direita, lang, t, onEvento }: {
+export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, direita, lang, t, onEvento, tarefa, onConcluida }: {
+  /** the card's task: when a confirmed proposal concludes it (status done, or the reply to its e-mail), onConcluida runs */
+  tarefa?: string; onConcluida?: () => void;
   titulo: string; pagina: string; sugestoes: { id: string; rotulo: string; texto: string }[];
   /** usage measurement (the Radar's panel module): kind of action only */
   onEvento?: (acao: string, detalhe?: string) => void;
@@ -62,6 +64,8 @@ export default function PinuNoCartao({ titulo, pagina, sugestoes, linhaAcima, di
     if ("error" in r && r.error) return setErro(r.error);
     const m = (r as { msgs: MsgSalva[] }).msgs[resposta.mi];
     if (m) setResposta({ mi: resposta.mi, msg: m });
+    const concluiu = m?.cartoes?.some((c) => c.estado === "feito" && ((c.tipo === "mudar_status" && c.id === tarefa && c.status === "done") || (c.tipo === "gmail_enviar" && !!tarefa && !!c.conclui?.includes(tarefa))));
+    if (concluiu) onConcluida?.();
   };
 
   // dictation on the card itself (the device's speech recognition); sends when the person stops talking

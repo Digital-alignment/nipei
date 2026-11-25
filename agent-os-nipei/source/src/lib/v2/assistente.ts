@@ -50,7 +50,7 @@ export type Acao =
   | { tipo: "guardar_email"; id: string; assunto: string; equipe?: string; projeto?: string }
   | { tipo: "revisar_fato"; id: string; decisao: "confirmar" | "descartar" }
   | { tipo: "enviar_whatsapp"; pessoa: string; texto: string }
-  | { tipo: "gmail_enviar"; texto: string; para?: string; assunto?: string; responderA?: string; rascunho?: boolean }
+  | { tipo: "gmail_enviar"; texto: string; para?: string; assunto?: string; responderA?: string; rascunho?: boolean; conclui?: string[] }
   | { tipo: "evento_google"; titulo: string; dia: string; hora?: string; duracaoMin?: number; descricao?: string; convidados?: string[] }
   | { tipo: "lembrar"; texto: string; categoria: Categoria }
   | { tipo: "esquecer"; id: string }
@@ -597,9 +597,9 @@ export function validar(me: Me, nome: string, a: Record<string, unknown>): AcaoP
     if (!responderA && !para.length) return { erro: "falta o destinatário" };
     if (para.some((x) => !/^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/.test(x))) return { erro: "e-mail de destinatário inválido" };
     const rascunho = s(a.modo) === "rascunho" || a.rascunho === true;
-    const conclui = tarefasDoEmail(me, { responderA, rascunho }).map((t) => t.title);
-    return { tipo: "gmail_enviar", texto, para: para.join(", ") || undefined, assunto: s(a.assunto).slice(0, 200) || undefined, responderA, rascunho,
-      resumo: `${rascunho ? "Rascunho" : "E-mail"}${responderA ? " (resposta)" : ""}${para.length ? ` para ${para.join(", ")}` : ""}${conclui.length ? ` · conclui "${conclui.join('", "')}"` : ""}`, detalhe: `${s(a.assunto) ? `${s(a.assunto)}\n` : ""}${texto}` };
+    const ts = tarefasDoEmail(me, { responderA, rascunho });
+    return { tipo: "gmail_enviar", texto, para: para.join(", ") || undefined, assunto: s(a.assunto).slice(0, 200) || undefined, responderA, rascunho, conclui: ts.length ? ts.map((t) => t.id) : undefined,
+      resumo: `${rascunho ? "Rascunho" : "E-mail"}${responderA ? " (resposta)" : ""}${para.length ? ` para ${para.join(", ")}` : ""}${ts.length ? ` · conclui "${ts.map((t) => t.title).join('", "')}"` : ""}`, detalhe: `${s(a.assunto) ? `${s(a.assunto)}\n` : ""}${texto}` };
   }
   if (nome === "evento_google") {
     if (!me.pessoa || !getConexoes(me.pessoa.id).google) return { erro: "conta Google não conectada (ficha da pessoa → Conexões)" };

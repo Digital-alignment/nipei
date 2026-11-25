@@ -272,7 +272,7 @@ export default function Radar({ cartoes, feitasHoje, semana, datas, fmt, pinu, f
                 {c.podeEditar && <BotaoIcone icone="confirmar" aria-label={t.concluir} tamanho={52} variante="acento" onClick={() => concluir(c)} />}
               </>;
               return pinu
-                ? <PinuNoCartao key={c.id} titulo={c.titulo} pagina={pagina} sugestoes={c.sugestoes} linhaAcima={opcoesAdiar} direita={botoes} lang={lang} t={t} onEvento={ev} />
+                ? <PinuNoCartao key={c.id} titulo={c.titulo} pagina={pagina} sugestoes={c.sugestoes} linhaAcima={opcoesAdiar} direita={botoes} lang={lang} t={t} onEvento={ev} tarefa={c.id} onConcluida={() => { ev("concluiu", "pinu"); marcar(c.id, { feito: true }); seguir(); }} />
                 : <div className="grid gap-2">{opcoesAdiar}<div className="flex items-center gap-2"><Botao href={pagina} variante="tonal" tamanho="M" icone="abrir-fora" largo className="flex-1">{t.abrir}</Botao>{botoes}</div></div>;
             })()}
           </div>

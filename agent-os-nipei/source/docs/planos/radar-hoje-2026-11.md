@@ -1,6 +1,10 @@
 # Plano — Radar em Hoje (novembro 2026)
 
-Estado: **fases 1 e 2 feitas** (24/11/2026). Fases 3–4 depois de ver o uso. Rotas a partir de `agent-os-nipei/source/`.
+Estado (24/11/2026): **fases 1 e 2 feitas e em produção**; da fase 3, a medição (Painel → Radar); da fase 4, canal/origem, resposta no fio do e-mail (enviar conclui a tarefa) e propostas confirmadas no próprio cartão. Rotas a partir de `agent-os-nipei/source/`.
+
+**Pendente** (decidir com os dados do Painel → Radar depois de alguns dias de uso):
+- Fase 3: cartões de evento/reunião, pedido à minha equipe, entrega do Hermes pronta, comentário esperando você e fatos a revisar; filtro no topo com mais de ~10 cartões.
+- Fase 4: sugestões por IA sob demanda (só se as regras derem sugestões ruins); deslizar para cima = concluir.
 
 ## A ideia
 
@@ -59,8 +63,8 @@ Filtro no topo (Tudo · Tarefas · Equipe) se passar de ~10 cartões.
 
 ## Fase 4 — Origem e propostas no próprio cartão (depois de ver o uso)
 
-- **Canal da tarefa**: gravar `canal` ao criar (whatsapp, gmail, reunião, pinu, hermes) — hoje só dá para adivinhar pela atividade. Permite o rótulo "WHATSAPP/GMAIL" e "Responder" direto no fio certo.
-- **Propostas do Pinu dentro do cartão** (confirmar sem abrir o painel), reaproveitando `decidirCartaoAction`.
+- ✓ **Canal da tarefa** (24/11): gravar `canal` ao criar (whatsapp, gmail, reunião, pinu, hermes) — hoje só dá para adivinhar pela atividade. Permite o rótulo "WHATSAPP/GMAIL" e "Responder" direto no fio certo.
+- ✓ **Propostas do Pinu dentro do cartão** (`PinuNoCartao`; confirmar o que conclui a tarefa fecha o cartão) (confirmar sem abrir o painel), reaproveitando `decidirCartaoAction`.
 - Se as regras da Fase 2 derem sugestões ruins: sugestões por IA sob demanda, guardadas por dia (como o Resumo do dia).
 - Gestos extras: deslizar para cima = concluir.
 

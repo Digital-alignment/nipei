@@ -4,7 +4,7 @@ Mudanças na implementação do design system (`DESIGN-SYSTEM.md`) na v2 do Nip�
 
 ## 2026-11-24 — Radar: responder o e-mail conclui a tarefa (10.29)
 
-Enviar (não rascunho) a resposta no fio do e-mail de uma tarefa conclui as tarefas abertas daquele e-mail que a pessoa pode editar; o cartão de proposta diz "conclui …" antes do Confirmar. Antes o e-mail saía e a tarefa ficava aberta.
+Enviar (não rascunho) a resposta no fio do e-mail de uma tarefa conclui as tarefas abertas daquele e-mail que a pessoa pode editar; o cartão de proposta diz "conclui …" antes do Confirmar. Antes o e-mail saía e a tarefa ficava aberta. No Radar, confirmar uma proposta que conclui a tarefa do cartão (resposta do e-mail ou `mudar_status`) marca o cartão como feito e segue (evento "concluiu · pinu").
 
 ## 2026-11-24 — Pinu como base de Equipes, fase 2 (10.13.1)
 
