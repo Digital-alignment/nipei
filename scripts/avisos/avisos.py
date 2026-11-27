@@ -145,8 +145,11 @@ def fila(cfg, teste=False):
         try:
             ok = enviar(cfg, p["fone"], texto)
             log(f"{rotulo} → {pid}: {'ok' if ok else 'falhou'}")
+            if not ok:
+                FALHAS.append(pid)
         except Exception as e:
             log(f"{rotulo} → {pid}: ERRO {e}")
+            FALHAS.append(pid)
 
     for f in sorted(glob.glob(f"{FILA}/*.json")):
         a = json.load(open(f))
@@ -215,12 +218,19 @@ def diario(cfg, teste=None):
             continue
         if texto:
             try:
-                log(f"diario → {pid} ({len(tarefas)} tarefas): {'ok' if enviar(cfg, recebem[pid]['fone'], texto) else 'falhou'}")
+                ok = enviar(cfg, recebem[pid]['fone'], texto)
+                log(f"diario → {pid} ({len(tarefas)} tarefas): {'ok' if ok else 'falhou'}")
+                if not ok:
+                    FALHAS.append(pid)
             except Exception as e:
                 log(f"diario → {pid}: ERRO {e}")
+                FALHAS.append(pid)
     if not teste:
         os.makedirs(ESTADO, exist_ok=True)
         open(marca, "w").write(hoje)
+
+
+FALHAS = []  # ids whose send failed in this run
 
 
 def estado(modo, ok, msg=""):
@@ -244,7 +254,8 @@ if __name__ == "__main__":
             os.makedirs(FILA, exist_ok=True)
             fila(cfg, teste=teste)
         if not teste:
-            estado("diario" if modo == "diario" else "fila", True)
+            # a run where sends failed (e.g. the WhatsApp number disconnected) is an error, not "ok"
+            estado("diario" if modo == "diario" else "fila", not FALHAS, f"{len(FALHAS)} envio(s) falharam: {', '.join(FALHAS)}" if FALHAS else "")
     except Exception as e:
         if not teste:
             estado("diario" if modo == "diario" else "fila", False, str(e))
